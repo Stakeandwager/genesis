@@ -1,0 +1,8 @@
+.godot/ 
+/android/ 
+export_presets.cfg 
+*.translation 
+Thumbs.db 
+desktop.ini 
+*.env 
+api_key.txt
