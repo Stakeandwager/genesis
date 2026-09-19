@@ -165,3 +165,15 @@ func _make_material(colour: Color) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
 	material.albedo_color = colour
 	return material
+
+
+func get_start_position() -> Vector3:
+	if corner_nodes.is_empty():
+		return Vector3.ZERO
+	return corner_nodes[0].position
+
+
+func get_start_direction() -> Vector3:
+	if corner_nodes.size() < 2:
+		return Vector3.FORWARD
+	return (corner_nodes[1].position - corner_nodes[0].position).normalized()
