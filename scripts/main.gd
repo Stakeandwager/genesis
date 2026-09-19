@@ -13,7 +13,7 @@ func _ready() -> void:
 	controller = GameController.new()
 	add_child(controller)
 	controller.log_message.connect(_on_controller_log)
-
+	controller.setup(self)
 	build_button.pressed.connect(_on_build_pressed)
 	input_box.text_submitted.connect(_on_text_submitted)
 	status_label.text = "Status: Waiting"
