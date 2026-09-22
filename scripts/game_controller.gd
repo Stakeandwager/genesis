@@ -1,8 +1,9 @@
 extends Node
 class_name GameController
 
-# --- Prototype 002A - Step A2 ---
-# CREATE_TRACK with "sections" is validated, then built piece by piece.
+# --- Prototype 002A - Step A3 ---
+# CREATE_TRACK with "sections" is validated, checked for feasibility,
+# then built piece by piece.
 # CREATE_TRACK without "sections" still builds the Prototype 001 ring,
 # so everything that worked in 001 keeps working.
 
@@ -90,16 +91,28 @@ func _create_composed_track(parameters: Dictionary) -> void:
 		log_message.emit("\n".join(lines))
 		return
 
+	# Step A3: refuse compositions that could never close, before building anything.
+	var gate := FeasibilityGate.check(check["sections"])
+	if not gate["ok"]:
+		var reasons: Array = gate["reasons"]
+		var gate_lines := PackedStringArray()
+		gate_lines.append("CREATE_TRACK failed: %s" % gate["category"])
+		for reason in reasons:
+			gate_lines.append("- " + str(reason))
+		gate_lines.append("no geometry built")
+		log_message.emit("\n".join(gate_lines))
+		return
+
 	track_builder.clear()
 	opponent_builder.clear()
 
 	var report := circuit_builder.build(check["sections"])
 	_frame_view(report["bounds_min"], report["bounds_max"])
 
-	var summary: Dictionary = check["summary"]
+	var direction := "clockwise" if gate["target_turn"] > 0.0 else "anticlockwise"
 	log_message.emit(
-		"CREATE_TRACK built: %d sections, %.0f m of road, net turn %+.0f deg\nopen track: the end is %.0f m from the start, heading off by %.0f deg\n(closing the circuit comes in step A4)"
-		% [report["section_count"], report["total_length"], summary["net_turn"], report["end_gap"], absf(report["heading_error"])]
+		"CREATE_TRACK built: %d sections, %.0f m of road, net turn %+.0f deg\nfeasible: can close as a %s circuit (reachable %+.0f to %+.0f deg)\nopen track: the end is %.0f m from the start, heading off by %.0f deg\n(closing the circuit comes in step A4)"
+		% [report["section_count"], report["total_length"], gate["net_turn"], direction, gate["reachable_min"], gate["reachable_max"], report["end_gap"], absf(report["heading_error"])]
 	)
 
 
