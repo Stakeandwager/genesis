@@ -44,7 +44,7 @@ layout_mode = 2
 
 [node name="TitleLabel" type="Label" parent="UI/CommandPanel/VBoxContainer" unique_id=236722437]
 layout_mode = 2
-text = "AI GAME BUILDER — Tell the game what you want:"
+text = "WHAT DO YOU WANT TO PLAY?"
 
 [node name="InputBox" type="LineEdit" parent="UI/CommandPanel/VBoxContainer" unique_id=263479053]
 layout_mode = 2

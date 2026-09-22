@@ -1,7 +1,7 @@
 extends Node
 class_name AIInterpreter
 
-# --- Prototype 001 - Stages 9 & 11: Natural language -> JSON command ---
+# --- Prototype 001 - Stages 9, 11 & 12: Natural language -> JSON command ---
 # The AI is an INTERPRETER. It never touches Godot directly.
 # Its only output is a string, which the CommandParser must still validate.
 
@@ -9,7 +9,7 @@ signal interpretation_ready(json_text: String)
 signal interpretation_failed(reason: String)
 
 const KEY_PATH := "res://api_key.txt"
-const ENDPOINT := "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent"
+const ENDPOINT := "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent"
 
 const SYSTEM_PROMPT := """You are the command interpreter for a Godot racing game.
 
@@ -23,6 +23,10 @@ CLEAR_WORLD - parameters: none
 
 Return ONLY valid JSON. No explanations. No markdown fences. No code blocks.
 
+Always return exactly ONE JSON object. Never return a JSON array or a list of commands.
+If the request contains several steps, return the single command that produces the final result.
+CREATE_TRACK already removes the old track and its opponents, so "clear everything and make a new track" is just CREATE_TRACK.
+
 If the request cannot be met with these four commands, return:
 {"command": "UNSUPPORTED", "parameters": {"reason": "short explanation"}}
 
@@ -35,6 +39,7 @@ Examples:
 "make the second corner really difficult" -> {"command": "MODIFY_TRACK", "parameters": {"corner": 2, "difficulty": "hard"}}
 "put three cars on the track" -> {"command": "SPAWN_OPPONENTS", "parameters": {"count": 3}}
 "start over" -> {"command": "CLEAR_WORLD", "parameters": {}}
+"wipe it all and give me a fresh track with five corners" -> {"command": "CREATE_TRACK", "parameters": {"corners": 5}}
 """
 
 var http: HTTPRequest
@@ -72,7 +77,10 @@ func interpret(player_text: String) -> void:
 		"generationConfig": {
 			"temperature": 0.1,
 			"maxOutputTokens": 2000,
-			"responseMimeType": "application/json"
+			"responseMimeType": "application/json",
+			"thinkingConfig": {
+				"thinkingLevel": "minimal"
+			}
 		}
 	}
 
@@ -141,7 +149,8 @@ func _on_request_completed(result: int, response_code: int, _headers: PackedStri
 	var text: String = str(parts[0].get("text", "")).strip_edges()
 
 	# Models sometimes wrap JSON in markdown fences despite instructions.
-	text = text.replace("```json", "").replace("```", "").strip_edges()
+	var fence := "`".repeat(3)
+	text = text.replace(fence + "json", "").replace(fence, "").strip_edges()
 
 	print("AI raw output: ", text)
 	interpretation_ready.emit(text)
