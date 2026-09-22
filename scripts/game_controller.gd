@@ -1,9 +1,9 @@
 extends Node
 class_name GameController
 
-# --- Prototype 002A - Step A4 ---
+# --- Prototype 002A - Step A5 ---
 # CREATE_TRACK with "sections" is validated, checked for feasibility,
-# closed by the solver, then built piece by piece.
+# closed by the solver, checked for road separation, then built piece by piece.
 # CREATE_TRACK without "sections" still builds the Prototype 001 ring,
 # so everything that worked in 001 keeps working.
 
@@ -112,6 +112,17 @@ func _create_composed_track(parameters: Dictionary) -> void:
 		)
 		return
 
+	# Step A5: a closed track must not cross itself or run into itself.
+	var separation := SeparationCheck.check(solved["sections"])
+	if not separation["ok"]:
+		var sep_lines := PackedStringArray()
+		sep_lines.append("CREATE_TRACK failed: %s" % separation["category"])
+		for reason in separation["reasons"]:
+			sep_lines.append("- " + str(reason))
+		sep_lines.append("no geometry built")
+		log_message.emit("\n".join(sep_lines))
+		return
+
 	track_builder.clear()
 	opponent_builder.clear()
 
@@ -120,8 +131,8 @@ func _create_composed_track(parameters: Dictionary) -> void:
 
 	var direction := "clockwise" if gate["target_turn"] > 0.0 else "anticlockwise"
 	log_message.emit(
-		"CREATE_TRACK built a closed %s circuit: %d sections, %.0f m of road\nclosure: %.2f m, heading %.2f deg (closed means within %.1f m and %.0f deg), %d rounds\nadjustment used: corners up to %.1f%%, straights up to %.1f%% (limit %.0f%%)\nnet turn proposed %+.0f deg, final %+.0f deg"
-		% [direction, report["section_count"], report["total_length"], solved["closure_distance"], solved["closure_heading_error"], solved["distance_tolerance"], solved["heading_tolerance"], solved["iterations"], solved["max_angle_adjustment"] * 100.0, solved["max_length_adjustment"] * 100.0, solved["angle_limit"] * 100.0, solved["proposed_net_turn"], solved["final_net_turn"]]
+		"CREATE_TRACK built a closed %s circuit: %d sections, %.0f m of road\nclosure: %.2f m, heading %.2f deg (closed means within %.1f m and %.0f deg), %d rounds\nadjustment used: corners up to %.1f%%, straights up to %.1f%% (limit %.0f%%)\nnet turn proposed %+.0f deg, final %+.0f deg\nroad separation: closest approach %.1f m (at least %.0f m required)"
+		% [direction, report["section_count"], report["total_length"], solved["closure_distance"], solved["closure_heading_error"], solved["distance_tolerance"], solved["heading_tolerance"], solved["iterations"], solved["max_angle_adjustment"] * 100.0, solved["max_length_adjustment"] * 100.0, solved["angle_limit"] * 100.0, solved["proposed_net_turn"], solved["final_net_turn"], separation["minimum_separation"], separation["required_separation"]]
 	)
 
 
