@@ -1,9 +1,9 @@
 extends Node
 class_name GameController
 
-# --- Prototype 002A - Step A3 ---
+# --- Prototype 002A - Step A4 ---
 # CREATE_TRACK with "sections" is validated, checked for feasibility,
-# then built piece by piece.
+# closed by the solver, then built piece by piece.
 # CREATE_TRACK without "sections" still builds the Prototype 001 ring,
 # so everything that worked in 001 keeps working.
 
@@ -103,16 +103,25 @@ func _create_composed_track(parameters: Dictionary) -> void:
 		log_message.emit("\n".join(gate_lines))
 		return
 
+	# Step A4: close the circuit, within the permitted adjustment.
+	var solved := ClosureSolver.solve(check["sections"], gate["target_turn"])
+	if not solved["ok"]:
+		log_message.emit(
+			"CREATE_TRACK failed: %s\n- best attempt ends %.1f m from the start, heading off by %.1f deg\n- closed means within %.1f m and %.0f deg\n- adjustment used: corners up to %.1f%%, straights up to %.1f%% (limit %.0f%%)\nno geometry built"
+			% [solved["category"], solved["closure_distance"], solved["closure_heading_error"], solved["distance_tolerance"], solved["heading_tolerance"], solved["max_angle_adjustment"] * 100.0, solved["max_length_adjustment"] * 100.0, solved["angle_limit"] * 100.0]
+		)
+		return
+
 	track_builder.clear()
 	opponent_builder.clear()
 
-	var report := circuit_builder.build(check["sections"])
+	var report := circuit_builder.build(solved["sections"], false)
 	_frame_view(report["bounds_min"], report["bounds_max"])
 
 	var direction := "clockwise" if gate["target_turn"] > 0.0 else "anticlockwise"
 	log_message.emit(
-		"CREATE_TRACK built: %d sections, %.0f m of road, net turn %+.0f deg\nfeasible: can close as a %s circuit (reachable %+.0f to %+.0f deg)\nopen track: the end is %.0f m from the start, heading off by %.0f deg\n(closing the circuit comes in step A4)"
-		% [report["section_count"], report["total_length"], gate["net_turn"], direction, gate["reachable_min"], gate["reachable_max"], report["end_gap"], absf(report["heading_error"])]
+		"CREATE_TRACK built a closed %s circuit: %d sections, %.0f m of road\nclosure: %.2f m, heading %.2f deg (closed means within %.1f m and %.0f deg), %d rounds\nadjustment used: corners up to %.1f%%, straights up to %.1f%% (limit %.0f%%)\nnet turn proposed %+.0f deg, final %+.0f deg"
+		% [direction, report["section_count"], report["total_length"], solved["closure_distance"], solved["closure_heading_error"], solved["distance_tolerance"], solved["heading_tolerance"], solved["iterations"], solved["max_angle_adjustment"] * 100.0, solved["max_length_adjustment"] * 100.0, solved["angle_limit"] * 100.0, solved["proposed_net_turn"], solved["final_net_turn"]]
 	)
 
 
