@@ -1,6 +1,6 @@
 extends Node3D
 
-# --- Prototype 001 - Stages 10 & 11: History + honest error handling ---
+# --- Prototype 002A - Step A1 (based on Prototype 001 Stages 10-12) ---
 # The AI proposes. Godot constructs. Godot validates. The player sees both.
 
 const SUPPORTED_HELP := "I can: build a track, change a corner, add opponents, clear the world."
@@ -91,7 +91,8 @@ func _on_interpretation_failed(reason: String) -> void:
 
 
 func _on_controller_log(text: String) -> void:
-	status_label.text = "Executed: " + text
+	# Status line shows only the first line; the history panel shows everything.
+	status_label.text = "Executed: " + text.split("\n")[0]
 	print("Controller: ", text)
 	var kind := "error" if text.contains("failed") else "ok"
 	_record(pending_request, text, kind)
