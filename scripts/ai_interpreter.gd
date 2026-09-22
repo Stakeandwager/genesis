@@ -1,7 +1,7 @@
 extends Node
 class_name AIInterpreter
 
-# --- Prototype 001 - Stage 9: Natural language -> JSON command ---
+# --- Prototype 001 - Stages 9 & 11: Natural language -> JSON command ---
 # The AI is an INTERPRETER. It never touches Godot directly.
 # Its only output is a string, which the CommandParser must still validate.
 
@@ -55,11 +55,11 @@ func is_available() -> bool:
 
 func interpret(player_text: String) -> void:
 	if busy:
-		interpretation_failed.emit("Still thinking about the last request")
+		interpretation_failed.emit("Still thinking about the last request.")
 		return
 
 	if api_key == "":
-		interpretation_failed.emit("No API key found in api_key.txt")
+		interpretation_failed.emit("No API key found in api_key.txt.")
 		return
 
 	var body := {
@@ -69,7 +69,7 @@ func interpret(player_text: String) -> void:
 		"contents": [{
 			"parts": [{"text": player_text}]
 		}],
-				"generationConfig": {
+		"generationConfig": {
 			"temperature": 0.1,
 			"maxOutputTokens": 2000,
 			"responseMimeType": "application/json"
@@ -86,7 +86,7 @@ func interpret(player_text: String) -> void:
 
 	if error != OK:
 		busy = false
-		interpretation_failed.emit("Could not send request (error %d)" % error)
+		interpretation_failed.emit("Could not send the request. (error %d)" % error)
 
 
 # --- internal ---
@@ -105,32 +105,37 @@ func _load_key() -> void:
 	file.close()
 
 
-func _on_request_completed(_result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+func _on_request_completed(result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
 	busy = false
+
+	# The request never reached Google at all.
+	if result != HTTPRequest.RESULT_SUCCESS:
+		interpretation_failed.emit("Could not reach the AI. Check your internet connection.")
+		print("Network result code: ", result)
+		return
 
 	var raw := body.get_string_from_utf8()
 
 	if response_code != 200:
-		interpretation_failed.emit("AI returned HTTP %d" % response_code)
 		print("AI error body: ", raw)
+		interpretation_failed.emit(_friendly_http_error(response_code))
 		return
 
 	var json := JSON.new()
 	if json.parse(raw) != OK:
-		interpretation_failed.emit("AI response was not JSON")
+		interpretation_failed.emit("The AI sent back something unreadable.")
 		return
 
 	var data = json.data
 
-	# Dig the text out of Gemini's response envelope.
 	if not data.has("candidates") or data["candidates"].is_empty():
-		interpretation_failed.emit("AI returned no candidates")
+		interpretation_failed.emit("The AI returned no answer.")
 		print("AI body: ", raw)
 		return
 
 	var parts = data["candidates"][0].get("content", {}).get("parts", [])
 	if parts.is_empty():
-		interpretation_failed.emit("AI returned empty content")
+		interpretation_failed.emit("The AI returned an empty answer.")
 		return
 
 	var text: String = str(parts[0].get("text", "")).strip_edges()
@@ -140,3 +145,18 @@ func _on_request_completed(_result: int, response_code: int, _headers: PackedStr
 
 	print("AI raw output: ", text)
 	interpretation_ready.emit(text)
+
+
+func _friendly_http_error(code: int) -> String:
+	match code:
+		429:
+			return "The AI is getting too many requests. Wait a minute and try again. (HTTP 429)"
+		500, 502, 503, 504:
+			return "The AI service is busy right now. Try again in a moment. (HTTP %d)" % code
+		400:
+			return "The AI did not accept the request format. (HTTP 400)"
+		401, 403:
+			return "The API key was refused. Check api_key.txt. (HTTP %d)" % code
+		404:
+			return "The AI model name is out of date. (HTTP 404)"
+	return "The AI returned an unexpected error. (HTTP %d)" % code

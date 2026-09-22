@@ -1,8 +1,10 @@
 extends RefCounted
 class_name CommandParser
 
-# --- Prototype 001 - Stage 3: Command validation ---
+# --- Prototype 001 - Stages 3 & 11: Command validation ---
 # The whitelist. Nothing outside this list can ever be executed.
+# UNSUPPORTED is recognised so it can be explained to the player,
+# but it is never executed - it is not on the whitelist.
 
 const ALLOWED_COMMANDS := [
 	"CREATE_TRACK",
@@ -12,11 +14,11 @@ const ALLOWED_COMMANDS := [
 ]
 
 
-# Takes a raw JSON string, returns a validated dictionary.
-# Result always has: ok (bool), command (String), parameters (Dictionary), error (String)
+# Result always has: ok, unsupported, command, parameters, error
 static func parse(json_text: String) -> Dictionary:
 	var result := {
 		"ok": false,
+		"unsupported": false,
 		"command": "",
 		"parameters": {},
 		"error": "",
@@ -40,6 +42,15 @@ static func parse(json_text: String) -> Dictionary:
 		return result
 
 	var command := str(data["command"]).to_upper()
+
+	# The AI is honestly saying it can't do this. Explain it, never execute it.
+	if command == "UNSUPPORTED":
+		result["unsupported"] = true
+		var reason := "no reason given"
+		if data.has("parameters") and typeof(data["parameters"]) == TYPE_DICTIONARY:
+			reason = str(data["parameters"].get("reason", reason))
+		result["error"] = reason
+		return result
 
 	if not command in ALLOWED_COMMANDS:
 		result["error"] = "Rejected command: " + command
