@@ -1,45 +1,59 @@
 extends Node
 class_name AIInterpreter
 
-# --- Prototype 001 - Stages 9, 11 & 12: Natural language -> JSON command ---
-# The AI is an INTERPRETER. It never touches Godot directly.
-# Its only output is a string, which the CommandParser must still validate.
+# --- Prototype 002A - Step A7: Natural language -> composed track ---
+# The AI is an INTERPRETER and a COMPOSER. It never touches Godot directly.
+# Its only output is a string, which must still pass the command whitelist,
+# the section validator, the feasibility gate, the closure solver and the
+# separation check before anything is built.
+#
+# Instructions are NEUTRAL (experiment option A): the AI is told the pieces
+# and the rules of a closed circuit, but never what any style should look
+# like. Whether "technical" becomes different geometry from "high speed" is
+# exactly what the experiment measures.
 
 signal interpretation_ready(json_text: String)
 signal interpretation_failed(reason: String)
 
 const KEY_PATH := "res://api_key.txt"
-const ENDPOINT := "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent"
 
-const SYSTEM_PROMPT := """You are the command interpreter for a Godot racing game.
+# Everything that could change the results is recorded with every track.
+const MODEL := "gemini-3.1-flash-lite"
+const THINKING_LEVEL := "low"
+# Temperature 1.0 so that repeated requests give genuinely different designs.
+const TEMPERATURE := 1.0
+const PROMPT_VERSION := "002A-neutral-1"
 
-Your job is to convert the player's request into exactly one valid game command.
+const ENDPOINT := "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent"
 
-You may ONLY use these commands:
-CREATE_TRACK - parameters: length (200-3000), corners (2-12), difficulty (easy/medium/hard/extreme)
-MODIFY_TRACK - parameters: corner (number, counting from 1), difficulty (easy/medium/hard/extreme)
-SPAWN_OPPONENTS - parameters: count (1-12)
-CLEAR_WORLD - parameters: none
+const SYSTEM_PROMPT := """You design closed racing circuits for a Godot game by composing them from track sections.
 
-Return ONLY valid JSON. No explanations. No markdown fences. No code blocks.
+Convert the player's request into exactly ONE JSON object. Return ONLY the JSON: no explanations, no markdown, no code fences. Never return a list of commands. If the request has several steps, return the single command for the final result; CREATE_TRACK already replaces any existing track.
 
-Always return exactly ONE JSON object. Never return a JSON array or a list of commands.
-If the request contains several steps, return the single command that produces the final result.
-CREATE_TRACK already removes the old track and its opponents, so "clear everything and make a new track" is just CREATE_TRACK.
-
-If the request cannot be met with these four commands, return:
+COMMANDS YOU MAY USE
+CREATE_TRACK - design a new closed circuit
+CLEAR_WORLD - remove everything, with parameters {}
+For any other request, return:
 {"command": "UNSUPPORTED", "parameters": {"reason": "short explanation"}}
 
-Valid format:
-{"command": "COMMAND_NAME", "parameters": {}}
+CREATE_TRACK FORMAT
+{"command": "CREATE_TRACK", "parameters": {"mode": "circuit", "intent": {"style": STYLE}, "sections": [SECTION, SECTION, ...]}}
 
-Examples:
-"make me a race track" -> {"command": "CREATE_TRACK", "parameters": {}}
-"a long hard track with 10 corners" -> {"command": "CREATE_TRACK", "parameters": {"length": 2500, "corners": 10, "difficulty": "hard"}}
-"make the second corner really difficult" -> {"command": "MODIFY_TRACK", "parameters": {"corner": 2, "difficulty": "hard"}}
-"put three cars on the track" -> {"command": "SPAWN_OPPONENTS", "parameters": {"count": 3}}
-"start over" -> {"command": "CLEAR_WORLD", "parameters": {}}
-"wipe it all and give me a fresh track with five corners" -> {"command": "CREATE_TRACK", "parameters": {"corners": 5}}
+STYLE records how the player described the track, as a short lowercase label with underscores, in the player's own terms. If they gave no description, use "unspecified". Interpret the player's description yourself when you design the track.
+
+SECTION TYPES (only these four, with exactly these fields)
+straight: {"type": "straight", "length": L} where L is 20 to 1000 metres
+corner: {"type": "corner", "radius": R, "angle": A} where R is 15 to 300 metres and A is 10 to 120 degrees
+hairpin: {"type": "hairpin", "radius": R, "angle": A} where R is 10 to 60 metres and A is 120 to 200 degrees
+chicane: {"type": "chicane", "radius": R, "offset": O, "direction": "left" or "right"} where R is 15 to 150 metres and O is more than 0 and at most 2 x R
+Angles are signed: positive turns right, negative turns left. Never give a corner, hairpin or chicane a length; it is calculated. A chicane steps the track sideways by O metres and returns to its original direction.
+
+RULES FOR A CLOSED CIRCUIT
+- Sections join end to end, in order, starting at the start line. After the last section the track must arrive back at the start line, facing the way it started.
+- Corner and hairpin angles must add up to exactly +360 (clockwise) or -360 (anticlockwise). Chicanes do not count.
+- Use at least 2 straights and at least 2 corners or hairpins.
+- The game can adjust each angle and each straight length by up to 20% to close the loop, so plan where every section takes the track so that it very nearly closes by itself.
+- The road must never cross itself, and separate parts of the road must stay at least 18 metres apart.
 """
 
 var http: HTTPRequest
@@ -56,6 +70,17 @@ func _ready() -> void:
 
 func is_available() -> bool:
 	return api_key != ""
+
+
+# The settings behind every AI-made track, stored in the experiment record.
+func describe() -> Dictionary:
+	return {
+		"source": "ai",
+		"model": MODEL,
+		"thinking_level": THINKING_LEVEL,
+		"temperature": TEMPERATURE,
+		"prompt_version": PROMPT_VERSION,
+	}
 
 
 func interpret(player_text: String) -> void:
@@ -75,11 +100,11 @@ func interpret(player_text: String) -> void:
 			"parts": [{"text": player_text}]
 		}],
 		"generationConfig": {
-			"temperature": 0.1,
-			"maxOutputTokens": 2000,
+			"temperature": TEMPERATURE,
+			"maxOutputTokens": 8000,
 			"responseMimeType": "application/json",
 			"thinkingConfig": {
-				"thinkingLevel": "minimal"
+				"thinkingLevel": THINKING_LEVEL
 			}
 		}
 	}
@@ -141,7 +166,12 @@ func _on_request_completed(result: int, response_code: int, _headers: PackedStri
 		print("AI body: ", raw)
 		return
 
-	var parts = data["candidates"][0].get("content", {}).get("parts", [])
+	var candidate: Dictionary = data["candidates"][0]
+	if str(candidate.get("finishReason", "")) == "MAX_TOKENS":
+		interpretation_failed.emit("The AI's answer was cut off before it finished.")
+		return
+
+	var parts = candidate.get("content", {}).get("parts", [])
 	if parts.is_empty():
 		interpretation_failed.emit("The AI returned an empty answer.")
 		return
