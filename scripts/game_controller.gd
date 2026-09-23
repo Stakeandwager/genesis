@@ -1,7 +1,7 @@
 extends Node
 class_name GameController
 
-# --- Prototype 002A - Step A7 ---
+# --- Prototype 002A - Step A8 ---
 # CREATE_TRACK with "sections" is validated, checked for feasibility, closed by
 # the solver, checked for road separation, measured, recorded, then built.
 # CREATE_TRACK without "sections" still builds the Prototype 001 ring,
@@ -22,6 +22,8 @@ var current_request := ""
 var current_raw := ""
 # Who produced the command, and with what settings (model, prompt version...).
 var current_source: Dictionary = {}
+# Which experiment run and trial this command belongs to, if any.
+var current_experiment: Dictionary = {}
 
 # Composed tracks can be much bigger than the original ground and camera view,
 # so they are resized to fit, and restored for the Prototype 001 ring.
@@ -98,6 +100,7 @@ func _create_composed_track(parameters: Dictionary) -> void:
 		"request": current_request,
 		"raw_command": current_raw,
 		"source": current_source,
+		"experiment": current_experiment,
 		"intent": intent if typeof(intent) == TYPE_DICTIONARY else {},
 		"proposed_sections": parameters.get("sections", []),
 	}

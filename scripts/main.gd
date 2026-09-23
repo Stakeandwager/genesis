@@ -1,6 +1,6 @@
 extends Node3D
 
-# --- Prototype 002A - Step A7 (based on Prototype 001 Stages 10-12) ---
+# --- Prototype 002A - Step A8 (based on Prototype 001 Stages 10-12) ---
 # The AI proposes. Godot constructs. Godot validates. The player sees both.
 
 const SUPPORTED_HELP := "I can: design a closed race track from your description, or clear the world."
@@ -12,6 +12,7 @@ const SUPPORTED_HELP := "I can: design a closed race track from your description
 
 var controller: GameController
 var interpreter: AIInterpreter
+var experiment: ExperimentRunner
 var history_log: RichTextLabel
 var metrics_log: RichTextLabel
 
@@ -19,6 +20,8 @@ var metrics_log: RichTextLabel
 var pending_request: String = ""
 # Where the pending command came from: typed by hand, or composed by the AI.
 var pending_source: Dictionary = {}
+# Which experiment run and trial the pending command belongs to, if any.
+var pending_experiment: Dictionary = {}
 
 
 func _ready() -> void:
@@ -33,6 +36,12 @@ func _ready() -> void:
 	interpreter.interpretation_failed.connect(_on_interpretation_failed)
 
 	controller.track_measured.connect(_on_track_measured)
+
+	experiment = ExperimentRunner.new()
+	add_child(experiment)
+	experiment.setup(self, controller, interpreter)
+	experiment.progress.connect(_on_experiment_progress)
+	experiment.finished.connect(_on_experiment_finished)
 
 	_build_history_panel()
 	_build_metrics_panel()
@@ -57,12 +66,23 @@ func _on_text_submitted(_submitted_text: String) -> void:
 	_handle_request(input_box.text)
 
 
-func _handle_request(raw_request: String) -> void:
+func _handle_request(raw_request: String, experiment_context: Dictionary = {}) -> void:
 	var request := raw_request.strip_edges()
 
 	if request == "":
 		status_label.text = "Status: Type something first."
 		return
+
+	# Commands for the game itself, not for the AI.
+	if request.begins_with("/"):
+		_run_local_command(request)
+		return
+
+	if experiment.running and experiment_context.is_empty():
+		status_label.text = "An experiment is running. Type /stop to end it."
+		return
+
+	pending_experiment = experiment_context
 
 	# Don't accept a new request while the AI is still answering the last one.
 	if interpreter.busy:
@@ -128,7 +148,50 @@ func _execute_json(json_text: String) -> void:
 	controller.current_request = pending_request
 	controller.current_raw = json_text
 	controller.current_source = pending_source
+	controller.current_experiment = pending_experiment
 	controller.execute(parsed["command"], parsed["parameters"])
+
+
+# --- Commands for the game itself ---
+
+func _run_local_command(request: String) -> void:
+	var parts := request.split(" ", false)
+	var command := parts[0].to_lower()
+
+	match command:
+		"/experiment":
+			var count := 20
+			if parts.size() > 1 and parts[1].is_valid_int():
+				count = parts[1].to_int()
+			var reply := experiment.start(count)
+			status_label.text = reply.split("\n")[0]
+			_record(request, reply, "ok")
+		"/stop":
+			var reply := experiment.stop()
+			status_label.text = reply
+			_record(request, reply, "ok")
+		"/status":
+			var reply := experiment.status()
+			status_label.text = reply
+			_record(request, reply, "ok")
+		"/log":
+			var reply := "Track log: " + TrackLog.location()
+			status_label.text = "Track log location written to the history."
+			_record(request, reply, "ok")
+		_:
+			var help := "Game commands: /experiment [count], /stop, /status, /log"
+			status_label.text = help
+			_record(request, help, "unsupported")
+
+
+func _on_experiment_progress(text: String) -> void:
+	status_label.text = text
+
+
+func _on_experiment_finished(summary_text: String) -> void:
+	status_label.text = "Experiment complete. Results in the history panel."
+	print(summary_text)
+	_record("experiment results", summary_text, "ok")
 
 
 # --- Command history panel ---
