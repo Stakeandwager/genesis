@@ -1,6 +1,6 @@
 extends Node3D
 
-# --- Prototype 002A - Step A8 (based on Prototype 001 Stages 10-12) ---
+# --- Prototype 002B: driving with lap timing and checkpoint HUD ---
 # The AI proposes. Godot constructs. Godot validates. The player sees both.
 
 const SUPPORTED_HELP := "I can: design a closed race track from your description, or clear the world."
@@ -13,6 +13,9 @@ const SUPPORTED_HELP := "I can: design a closed race track from your description
 var controller: GameController
 var interpreter: AIInterpreter
 var experiment: ExperimentRunner
+var checkpoint_tracker: CheckpointTracker
+var car: Car
+var driving := false
 var history_log: RichTextLabel
 var metrics_log: RichTextLabel
 
@@ -25,6 +28,11 @@ var pending_experiment: Dictionary = {}
 
 
 func _ready() -> void:
+	# The panels are built first: the controller reports as soon as it starts,
+	# and there must be somewhere to write that.
+	_build_history_panel()
+	_build_metrics_panel()
+
 	controller = GameController.new()
 	add_child(controller)
 	controller.log_message.connect(_on_controller_log)
@@ -43,8 +51,9 @@ func _ready() -> void:
 	experiment.progress.connect(_on_experiment_progress)
 	experiment.finished.connect(_on_experiment_finished)
 
-	_build_history_panel()
-	_build_metrics_panel()
+	checkpoint_tracker = CheckpointTracker.new()
+	add_child(checkpoint_tracker)
+	checkpoint_tracker.lap_completed.connect(_on_lap_completed)
 
 	build_button.pressed.connect(_on_build_pressed)
 	input_box.text_submitted.connect(_on_text_submitted)
@@ -54,8 +63,40 @@ func _ready() -> void:
 	else:
 		status_label.text = "Status: No API key. Raw JSON only."
 
+	# A fast car can pass straight through a barrier between physics steps,
+	# so the simulation runs more often than the screen refreshes.
+	Engine.physics_ticks_per_second = 120
+
 	print("Main ready. AI pipeline and history active.")
 	print("Track log: ", TrackLog.location())
+
+	_build_startup_track()
+
+
+# A small circuit with a hill in it, so there is something to drive before the
+# AI is asked for anything. It uses the controller's builder: there is no
+# CircuitBuilder node in the scene, the controller creates its own.
+func _build_startup_track() -> void:
+	var test_sections := [
+		{"type": "straight", "length": 200.0},
+		{"type": "corner", "radius": 60.0, "angle": 90.0},
+		{"type": "uphill", "length": 120.0, "grade": 8.0},
+		{"type": "crest", "length": 80.0, "grade": 5.0},
+		{"type": "downhill", "length": 120.0, "grade": 8.0},
+		{"type": "corner", "radius": 60.0, "angle": 90.0},
+		{"type": "straight", "length": 200.0},
+		{"type": "corner", "radius": 60.0, "angle": 90.0},
+		{"type": "straight", "length": 320.0},
+		{"type": "corner", "radius": 60.0, "angle": 90.0},
+	]
+
+	if controller.circuit_builder == null:
+		return
+
+	var report := controller.circuit_builder.build(test_sections, false)
+	controller._frame_view(report["bounds_min"], report["bounds_max"])
+	checkpoint_tracker.initialize(controller.circuit_builder.centreline)
+	_record("startup track", "Built a test circuit with a hill. Type /drive to drive it.", "ok")
 
 
 func _on_build_pressed() -> void:
@@ -126,6 +167,10 @@ func _on_controller_log(text: String) -> void:
 	var kind := "error" if text.contains("failed") else "ok"
 	_record(pending_request, text, kind)
 
+	# A new circuit means new checkpoints.
+	if kind == "ok" and controller.circuit_builder and controller.circuit_builder.built:
+		checkpoint_tracker.initialize(controller.circuit_builder.centreline)
+
 
 # Every command reaches the game through here - AI or hand-typed, no difference.
 func _execute_json(json_text: String) -> void:
@@ -174,14 +219,75 @@ func _run_local_command(request: String) -> void:
 			var reply := experiment.status()
 			status_label.text = reply
 			_record(request, reply, "ok")
+		"/drive":
+			_start_driving()
+		"/view":
+			_stop_driving()
 		"/log":
 			var reply := "Track log: " + TrackLog.location()
 			status_label.text = "Track log location written to the history."
 			_record(request, reply, "ok")
 		_:
-			var help := "Game commands: /experiment [count], /stop, /status, /log"
+			var help := "Game commands: /drive, /view, /experiment [count], /stop, /status, /log"
 			status_label.text = help
 			_record(request, help, "unsupported")
+
+
+# --- driving ---
+
+func _start_driving() -> void:
+	if not controller.circuit_builder.built:
+		status_label.text = "Build a track first, then /drive."
+		_record("/drive", "Build a track first, then /drive.", "error")
+		return
+
+	if car == null:
+		car = Car.new()
+		car.name = "Car"
+		add_child(car)
+
+	car.place_at(controller.circuit_builder.start_position, controller.circuit_builder.start_heading)
+	car.visible = true
+	car.freeze = false
+	car.camera.current = true
+	driving = true
+
+	checkpoint_tracker.initialize(controller.circuit_builder.centreline)
+
+	# Otherwise the steering keys would be typed into the text box.
+	input_box.release_focus()
+	_record("/drive", "Driving. W or Up to accelerate, A and D to steer, Space handbrake, R back to the start. Click the text box and type /view to stop.", "ok")
+
+
+func _stop_driving() -> void:
+	driving = false
+	if car:
+		car.freeze = true
+		car.visible = false
+	if controller.camera:
+		controller.camera.current = true
+	status_label.text = "Back to the overhead view."
+	_record("/view", "Back to the overhead view.", "ok")
+
+
+func _process(_delta: float) -> void:
+	if not driving or car == null:
+		return
+	checkpoint_tracker.update_progress(car.global_position)
+	status_label.text = "%.0f km/h   lap %d   last %s   best %s   (W accelerate, A and D steer, Space handbrake, R restart)" % [
+		car.speed_kmh(),
+		checkpoint_tracker.lap_count,
+		checkpoint_tracker.get_formatted_time(checkpoint_tracker.last_lap_time),
+		checkpoint_tracker.get_formatted_time(checkpoint_tracker.best_lap_time),
+	]
+
+
+func _on_lap_completed(last_time: float, best_time: float) -> void:
+	_record("lap", "Lap %d completed in %s (best %s)" % [
+		checkpoint_tracker.lap_count,
+		checkpoint_tracker.get_formatted_time(last_time),
+		checkpoint_tracker.get_formatted_time(best_time),
+	], "ok")
 
 
 func _on_experiment_progress(text: String) -> void:
@@ -269,11 +375,11 @@ func _on_track_measured(record: Dictionary) -> void:
 	var intent = record.get("intent", {})
 	var style := "not stated"
 	if typeof(intent) == TYPE_DICTIONARY and intent.has("style"):
-		style = str(intent["style"]) + " circuit"
+		style = str(intent["style"])
 	_metric("REQUESTED", style)
 
 	if valid:
-		_metric("RESULT", "Valid circuit", METRIC_GOOD_COLOUR)
+		_metric("RESULT", "Valid " + str(record.get("world", "circuit")), METRIC_GOOD_COLOUR)
 	else:
 		_metric("RESULT", "FAILED: " + str(record.get("category", "")), METRIC_BAD_COLOUR)
 
@@ -287,6 +393,16 @@ func _on_track_measured(record: Dictionary) -> void:
 		_metric("", "(measurements below describe the proposal, not a built track)", METRIC_LABEL_COLOUR)
 
 	var counts: Dictionary = m["counts"]
+
+	# Each kind of world measures different things, so each reads its own.
+	if m.has("zone_count"):
+		_show_world_metrics(m, counts)
+		if not valid:
+			var farm_why: Array = record.get("reasons", [])
+			if not farm_why.is_empty():
+				_metric("REASON", str(farm_why[0]), METRIC_BAD_COLOUR)
+		return
+
 	_metric("SECTIONS", "%d  (%d straight, %d corner, %d hairpin, %d chicane)" % [m["section_count"], counts["straight"], counts["corner"], counts["hairpin"], counts["chicane"]])
 	_metric("LENGTH", "%.0f m" % m["total_length"])
 	_metric("STRAIGHT RATIO", "%.0f%%" % (m["straight_ratio"] * 100.0))
@@ -310,6 +426,31 @@ func _on_track_measured(record: Dictionary) -> void:
 		var why: Array = record.get("reasons", [])
 		if not why.is_empty():
 			_metric("REASON", str(why[0]), METRIC_BAD_COLOUR)
+
+
+# Measurements for worlds that are laid out rather than driven round.
+func _show_world_metrics(m: Dictionary, counts: Dictionary) -> void:
+	var present := PackedStringArray()
+	for key in counts:
+		if int(counts[key]) > 0:
+			present.append("%d %s" % [counts[key], key])
+	_metric("ZONES", "%d   (%s)" % [m["zone_count"], ", ".join(present)])
+	_metric("SIZE", "%.0f m by %.0f m" % [m["farm_width"], m["farm_depth"]])
+	_metric("ENCLOSED", "%.1f hectares" % (float(m["enclosed_area"]) / 10000.0))
+	_metric("WORKED LAND", "%.1f ha  (%.0f%% of the farm)" % [float(m["worked_area"]) / 10000.0, float(m["worked_ratio"]) * 100.0])
+
+	var crops: Dictionary = m.get("crops", {})
+	if not crops.is_empty():
+		var grown := PackedStringArray()
+		for crop in crops:
+			grown.append("%s %.1f ha" % [crop, float(crops[crop]) / 10000.0])
+		_metric("CROPS", ", ".join(grown))
+
+	if float(m.get("building_area", 0.0)) > 0.0:
+		_metric("BUILDINGS", "%.0f m2 of floor" % m["building_area"])
+	if float(m.get("water_area", 0.0)) > 0.0:
+		_metric("WATER", "%.0f m2" % m["water_area"])
+	_metric("FENCE", "%.0f m around the perimeter" % m["fence_length"])
 
 
 func _metric(label: String, value: String, colour := METRIC_VALUE_COLOUR) -> void:

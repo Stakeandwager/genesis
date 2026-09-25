@@ -22,7 +22,7 @@ const MODEL := "gemini-3.1-flash-lite"
 const THINKING_LEVEL := "low"
 # Temperature 1.0 so that repeated requests give genuinely different designs.
 const TEMPERATURE := 1.0
-const PROMPT_VERSION := "002A-neutral-1"
+const PROMPT_VERSION := "002B-worlds-1"
 
 const ENDPOINT := "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent"
 
@@ -33,6 +33,7 @@ Convert the player's request into exactly ONE JSON object. Return ONLY the JSON:
 COMMANDS YOU MAY USE
 CREATE_TRACK - design a new closed circuit
 CLEAR_WORLD - remove everything, with parameters {}
+Other worlds you can build are listed at the end of these instructions.
 For any other request, return:
 {"command": "UNSUPPORTED", "parameters": {"reason": "short explanation"}}
 
@@ -92,9 +93,13 @@ func interpret(player_text: String) -> void:
 		interpretation_failed.emit("No API key found in api_key.txt.")
 		return
 
+	# Every registered world module describes its own vocabulary, so the AI
+	# always knows exactly what the game can build, and nothing more.
+	var instructions := SYSTEM_PROMPT + "\n\nOTHER WORLDS YOU CAN BUILD\n" + WorldRegistry.prompt_sections()
+
 	var body := {
 		"system_instruction": {
-			"parts": [{"text": SYSTEM_PROMPT}]
+			"parts": [{"text": instructions}]
 		},
 		"contents": [{
 			"parts": [{"text": player_text}]

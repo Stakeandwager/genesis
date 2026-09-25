@@ -1,7 +1,7 @@
 extends Node
 class_name GameController
 
-# --- Prototype 002A - Step A8 ---
+# --- Prototype 002B ---
 # CREATE_TRACK with "sections" is validated, checked for feasibility, closed by
 # the solver, checked for road separation, measured, recorded, then built.
 # CREATE_TRACK without "sections" still builds the Prototype 001 ring,
@@ -16,7 +16,9 @@ signal track_measured(record: Dictionary)
 var track_builder: TrackBuilder
 var opponent_builder: OpponentBuilder
 var circuit_builder: CircuitBuilder
+var world_node: Node3D
 
+# Set by main before each command, so the record says what was asked for.
 # Set by main before each command, so the record says what was asked for.
 var current_request := ""
 var current_raw := ""
@@ -49,6 +51,11 @@ func setup(world_root: Node3D) -> void:
 	circuit_builder.name = "CircuitBuilder"
 	world_root.add_child(circuit_builder)
 
+	# Everything a world module builds lives under here.
+	world_node = Node3D.new()
+	world_node.name = "World"
+	world_root.add_child(world_node)
+
 	camera = world_root.get_node_or_null("Camera3D") as Camera3D
 	if camera:
 		original_camera_transform = camera.transform
@@ -59,6 +66,8 @@ func setup(world_root: Node3D) -> void:
 	if ground_box:
 		original_ground_size = ground_box.size
 		original_ground_position = ground_box.position
+
+	log_message.emit("GameController successfully initialized and ready.")
 
 
 func execute(command: String, parameters: Dictionary) -> void:
@@ -85,10 +94,15 @@ func execute(command: String, parameters: Dictionary) -> void:
 			track_builder.clear()
 			opponent_builder.clear()
 			circuit_builder.clear()
+			_clear_world_node()
 			_restore_view()
 			log_message.emit("CLEAR_WORLD")
 		_:
-			log_message.emit("No handler for: " + command)
+			var module := WorldRegistry.find(command)
+			if module:
+				_create_world(module, parameters)
+			else:
+				log_message.emit("No handler for: " + command)
 
 
 # --- the composition pipeline ---
@@ -102,6 +116,7 @@ func _create_composed_track(parameters: Dictionary) -> void:
 		"source": current_source,
 		"experiment": current_experiment,
 		"intent": intent if typeof(intent) == TYPE_DICTIONARY else {},
+		"command": "CREATE_TRACK",
 		"proposed_sections": parameters.get("sections", []),
 	}
 
@@ -184,6 +199,61 @@ func _create_composed_track(parameters: Dictionary) -> void:
 	)
 
 
+# Any world that is not a racing circuit. The module owns the rules, the
+# layout, the measurements and the geometry, so adding a kind of world
+# changes nothing here.
+func _create_world(module: WorldModule, parameters: Dictionary) -> void:
+	var intent = parameters.get("intent", {})
+	var record := {
+		"time": Time.get_datetime_string_from_system(),
+		"request": current_request,
+		"raw_command": current_raw,
+		"source": current_source,
+		"experiment": current_experiment,
+		"world": module.display_name(),
+		"intent": intent if typeof(intent) == TYPE_DICTIONARY else {},
+		"command": module.command(),
+		"proposed": parameters.get("zones", []),
+	}
+
+	var check := module.validate(parameters)
+	if not check["ok"]:
+		_finish_failed(record, "FAILED_SCHEMA", check["errors"])
+		return
+
+	var solved := module.solve(check["content"])
+	if not solved["ok"]:
+		_finish_failed(record, solved["category"], solved["reasons"])
+		return
+
+	record["metrics"] = module.measure(solved["layout"])
+	record["result"] = "VALID"
+	record["category"] = ""
+	record["reasons"] = []
+
+	track_builder.clear()
+	opponent_builder.clear()
+	circuit_builder.clear()
+	_clear_world_node()
+
+	var report := module.build(world_node, solved["layout"])
+	_frame_view(report["bounds_min"], report["bounds_max"])
+
+	TrackLog.append(record)
+	track_measured.emit(record)
+
+	var metrics: Dictionary = record["metrics"]
+	log_message.emit("%s built: %d zones across %.0f m by %.0f m\n(full measurements in the panel)" % [
+		module.display_name().capitalize(), metrics["zone_count"], metrics["farm_width"], metrics["farm_depth"]])
+
+
+func _clear_world_node() -> void:
+	if world_node == null:
+		return
+	for child in world_node.get_children():
+		child.queue_free()
+
+
 func _finish_failed(record: Dictionary, category: String, reasons: Array) -> void:
 	record["result"] = "FAILED"
 	record["category"] = category
@@ -192,7 +262,7 @@ func _finish_failed(record: Dictionary, category: String, reasons: Array) -> voi
 	track_measured.emit(record)
 
 	var lines := PackedStringArray()
-	lines.append("CREATE_TRACK failed: %s" % category)
+	lines.append("%s failed: %s" % [str(record.get("command", "CREATE_TRACK")), category])
 	for reason in reasons:
 		lines.append("- " + str(reason))
 	lines.append("no geometry built")
