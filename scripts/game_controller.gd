@@ -17,6 +17,16 @@ var track_builder: TrackBuilder
 var opponent_builder: OpponentBuilder
 var circuit_builder: CircuitBuilder
 var world_node: Node3D
+# While a plan is running, each step keeps what the earlier steps built.
+var plan_running := false
+var plan_bounds_min := Vector2(INF, INF)
+var plan_bounds_max := Vector2(-INF, -INF)
+# The footprint of each step, so a later step can be placed around an earlier one.
+var plan_footprints: Array = []
+var plan_pending: Dictionary = {}
+var plan_problems: Array = []
+# The description that made whatever is on screen now, so it can be saved.
+var last_build: Dictionary = {}
 
 # Set by main before each command, so the record says what was asked for.
 # Set by main before each command, so the record says what was asked for.
@@ -90,7 +100,10 @@ func execute(command: String, parameters: Dictionary) -> void:
 				log_message.emit("SPAWN_OPPONENTS failed: opponents on composed tracks come in a later step")
 				return
 			_spawn_opponents(parameters)
+		"PLAN":
+			_execute_plan(parameters)
 		"CLEAR_WORLD":
+			last_build = {}
 			track_builder.clear()
 			opponent_builder.clear()
 			circuit_builder.clear()
@@ -181,13 +194,19 @@ func _create_composed_track(parameters: Dictionary) -> void:
 	# Valid: measure the final geometry, build it, and record it.
 	record["metrics"] = TrackMetrics.measure(solved["sections"])
 	record["result"] = "VALID"
+	if not plan_running:
+		last_build = {"command": "CREATE_TRACK", "parameters": parameters, "metrics": record["metrics"], "request": current_request}
 	record["category"] = ""
 	record["reasons"] = []
 
 	track_builder.clear()
 	opponent_builder.clear()
 	var report := circuit_builder.build(solved["sections"], false)
-	_frame_view(report["bounds_min"], report["bounds_max"])
+	if plan_running:
+		_place(circuit_builder, report["bounds_min"], report["bounds_max"])
+	else:
+		circuit_builder.position = Vector3.ZERO
+		_frame_view(report["bounds_min"], report["bounds_max"])
 
 	TrackLog.append(record)
 	track_measured.emit(record)
@@ -197,6 +216,144 @@ func _create_composed_track(parameters: Dictionary) -> void:
 		"CREATE_TRACK built a closed %s circuit: %d sections, %.0f m of road\n(full measurements in the metrics panel)"
 		% [direction, report["section_count"], report["total_length"]]
 	)
+
+
+# --- plans: several approved commands from one request ---
+# A plan is not a new power. Every step is an ordinary command that goes
+# through the same whitelist, the same validator and the same checks. The only
+# new thing is that the worlds are placed beside each other instead of
+# replacing one another.
+
+const MAX_PLAN_STEPS := 4
+
+
+func _execute_plan(parameters: Dictionary) -> void:
+	var record := {
+		"time": Time.get_datetime_string_from_system(),
+		"request": current_request,
+		"raw_command": current_raw,
+		"source": current_source,
+		"experiment": current_experiment,
+		"command": "PLAN",
+		"world": "plan",
+		"intent": parameters.get("intent", {}),
+	}
+
+	var raw = parameters.get("steps", null)
+	if typeof(raw) != TYPE_ARRAY:
+		_finish_failed(record, "FAILED_SCHEMA", ["a plan needs a list of steps"])
+		return
+
+	var steps: Array = raw
+	if steps.is_empty() or steps.size() > MAX_PLAN_STEPS:
+		_finish_failed(record, "FAILED_SCHEMA", ["a plan needs 1 to %d steps (got %d)" % [MAX_PLAN_STEPS, steps.size()]])
+		return
+
+	# Check every step before doing any of them.
+	var problems: Array = []
+	for i in steps.size():
+		var n := i + 1
+		if typeof(steps[i]) != TYPE_DICTIONARY:
+			problems.append("step %d is not an object" % n)
+			continue
+		var step: Dictionary = steps[i]
+		var step_command := str(step.get("command", "")).to_upper()
+		if step_command == "PLAN":
+			problems.append("step %d: a plan may not contain another plan" % n)
+		elif not step_command in CommandParser.allowed_commands():
+			problems.append("step %d: '%s' is not a command this game has" % [n, step_command])
+		if step.has("parameters") and typeof(step["parameters"]) != TYPE_DICTIONARY:
+			problems.append("step %d: parameters must be an object" % n)
+
+	if not problems.is_empty():
+		_finish_failed(record, "FAILED_SCHEMA", problems)
+		return
+
+	# Clear once, then let each step add to the same scene.
+	track_builder.clear()
+	opponent_builder.clear()
+	circuit_builder.clear()
+	_clear_world_node()
+	plan_running = true
+	plan_bounds_min = Vector2(INF, INF)
+	plan_bounds_max = Vector2(-INF, -INF)
+	plan_footprints = []
+	plan_problems = []
+
+	var done := PackedStringArray()
+	for i in steps.size():
+		var step: Dictionary = steps[i]
+		var step_command := str(step["command"]).to_upper()
+		var step_parameters: Dictionary = step.get("parameters", {})
+		plan_pending = step
+		execute(step_command, step_parameters)
+		plan_pending = {}
+		done.append(step_command)
+
+	plan_running = false
+
+	if not plan_problems.is_empty():
+		track_builder.clear()
+		opponent_builder.clear()
+		circuit_builder.clear()
+		_clear_world_node()
+		_finish_failed(record, "FAILED_SCENE", plan_problems)
+		return
+
+	if plan_bounds_min.x < INF:
+		_frame_view(plan_bounds_min, plan_bounds_max)
+
+	record["result"] = "VALID"
+	record["category"] = ""
+	record["reasons"] = []
+	record["steps"] = done
+	last_build = {"command": "PLAN", "parameters": parameters, "metrics": {}, "request": current_request}
+	TrackLog.append(record)
+	log_message.emit("Plan built in %d steps: %s" % [done.size(), ", ".join(done)])
+
+
+# Where a world sits within a plan. The AI says what it wants - beside, or
+# around an earlier world - and this works out the actual position, then
+# checks the result holds together. The AI never supplies coordinates.
+const SCENE_CLEARANCE := 15.0
+
+
+func _place(node: Node3D, bounds_min: Vector2, bounds_max: Vector2) -> void:
+	var step := plan_pending
+	var centre := (bounds_min + bounds_max) * 0.5
+	var offset := Vector2.ZERO
+
+	var around := int(step.get("around", 0))
+	if around >= 1 and around <= plan_footprints.size():
+		# Centre this world on the one it is meant to surround.
+		var target: Dictionary = plan_footprints[around - 1]
+		var target_centre: Vector2 = (target["min"] + target["max"]) * 0.5
+		offset = target_centre - centre
+	elif typeof(step.get("offset", null)) == TYPE_DICTIONARY:
+		var given: Dictionary = step["offset"]
+		offset = Vector2(float(given.get("x", 0.0)), float(given.get("z", 0.0)))
+
+	node.position = Vector3(offset.x, 0.0, offset.y)
+	var placed_min := bounds_min + offset
+	var placed_max := bounds_max + offset
+
+	# Worlds must either stand clear of each other, or contain one another.
+	var index := plan_footprints.size() + 1
+	for i in plan_footprints.size():
+		var other: Dictionary = plan_footprints[i]
+		var other_min: Vector2 = other["min"]
+		var other_max: Vector2 = other["max"]
+		var overlaps: bool = placed_min.x < other_max.x and placed_max.x > other_min.x and placed_min.y < other_max.y and placed_max.y > other_min.y
+		if not overlaps:
+			continue
+		var contains_other: bool = placed_min.x <= other_min.x - SCENE_CLEARANCE and placed_max.x >= other_max.x + SCENE_CLEARANCE and placed_min.y <= other_min.y - SCENE_CLEARANCE and placed_max.y >= other_max.y + SCENE_CLEARANCE
+		var inside_other: bool = other_min.x <= placed_min.x - SCENE_CLEARANCE and other_max.x >= placed_max.x + SCENE_CLEARANCE and other_min.y <= placed_min.y - SCENE_CLEARANCE and other_max.y >= placed_max.y + SCENE_CLEARANCE
+		if not contains_other and not inside_other:
+			plan_problems.append("step %d overlaps step %d: they must stand apart, or one must be big enough to contain the other with %.0f m to spare" % [index, i + 1, SCENE_CLEARANCE])
+
+	plan_footprints.append({"min": placed_min, "max": placed_max})
+	plan_bounds_min = Vector2(minf(plan_bounds_min.x, placed_min.x), minf(plan_bounds_min.y, placed_min.y))
+	plan_bounds_max = Vector2(maxf(plan_bounds_max.x, placed_max.x), maxf(plan_bounds_max.y, placed_max.y))
 
 
 # Any world that is not a racing circuit. The module owns the rules, the
@@ -228,16 +385,28 @@ func _create_world(module: WorldModule, parameters: Dictionary) -> void:
 
 	record["metrics"] = module.measure(solved["layout"])
 	record["result"] = "VALID"
+	if not plan_running:
+		last_build = {"command": module.command(), "parameters": parameters, "metrics": record["metrics"], "request": current_request}
 	record["category"] = ""
 	record["reasons"] = []
 
-	track_builder.clear()
-	opponent_builder.clear()
-	circuit_builder.clear()
-	_clear_world_node()
+	var holder := world_node
+	if plan_running:
+		# Keep whatever earlier steps built: this world gets its own node.
+		holder = Node3D.new()
+		holder.name = module.display_name().capitalize()
+		world_node.add_child(holder)
+	else:
+		track_builder.clear()
+		opponent_builder.clear()
+		circuit_builder.clear()
+		_clear_world_node()
 
-	var report := module.build(world_node, solved["layout"])
-	_frame_view(report["bounds_min"], report["bounds_max"])
+	var report := module.build(holder, solved["layout"])
+	if plan_running:
+		_place(holder, report["bounds_min"], report["bounds_max"])
+	else:
+		_frame_view(report["bounds_min"], report["bounds_max"])
 
 	TrackLog.append(record)
 	track_measured.emit(record)

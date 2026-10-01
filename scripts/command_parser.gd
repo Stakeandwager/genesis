@@ -4,6 +4,7 @@ class_name CommandParser
 # The built-in commands, plus one for every registered world module. A module
 # that is not registered cannot be asked for at all.
 const CORE_COMMANDS := [
+	"PLAN",
 	"CREATE_TRACK",
 	"MODIFY_TRACK",
 	"SPAWN_OPPONENTS",

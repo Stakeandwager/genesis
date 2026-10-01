@@ -223,14 +223,88 @@ func _run_local_command(request: String) -> void:
 			_start_driving()
 		"/view":
 			_stop_driving()
+		"/save":
+			_save_world(request)
+		"/load":
+			_load_world(request)
+		"/worlds":
+			_list_worlds()
+		"/delete":
+			_delete_world(request)
 		"/log":
 			var reply := "Track log: " + TrackLog.location()
 			status_label.text = "Track log location written to the history."
 			_record(request, reply, "ok")
 		_:
-			var help := "Game commands: /drive, /view, /experiment [count], /stop, /status, /log"
+			var help := "Game commands: /save [name], /load [name], /worlds, /delete [name], /drive, /view, /experiment [count], /stop, /status, /log"
 			status_label.text = help
 			_record(request, help, "unsupported")
+
+
+# --- saved worlds ---
+
+func _save_world(request: String) -> void:
+	if controller.last_build.is_empty():
+		status_label.text = "Build something first, then /save a-name."
+		_record(request, "There is nothing built to save yet.", "error")
+		return
+
+	var name := request.substr(5).strip_edges()
+	var result := WorldStore.save_world(
+		name,
+		str(controller.last_build["command"]),
+		controller.last_build["parameters"],
+		controller.last_build.get("metrics", {}),
+		str(controller.last_build.get("request", "")))
+	status_label.text = result["message"]
+	_record(request, result["message"], "ok" if result["ok"] else "error")
+
+
+func _load_world(request: String) -> void:
+	var name := request.substr(5).strip_edges()
+	var result := WorldStore.load_world(name)
+	if not result["ok"]:
+		status_label.text = result["message"]
+		_record(request, result["message"], "error")
+		return
+
+	var world: Dictionary = result["world"]
+	var command := str(world["command"]).to_upper()
+
+	# A saved world is checked exactly like a new one: nothing is trusted
+	# just because it came from a file.
+	if not command in CommandParser.allowed_commands():
+		var refusal := "'%s' is not a command this game has. The saved world cannot be built." % command
+		status_label.text = refusal
+		_record(request, refusal, "error")
+		return
+
+	pending_request = "load " + str(world.get("name", name))
+	pending_source = {"source": "saved", "saved": world.get("saved", "")}
+	pending_experiment = {}
+	controller.current_request = pending_request
+	controller.current_raw = JSON.stringify({"command": command, "parameters": world["parameters"]})
+	controller.current_source = pending_source
+	controller.current_experiment = {}
+	controller.execute(command, world["parameters"])
+
+
+func _list_worlds() -> void:
+	var names := WorldStore.list_worlds()
+	if names.is_empty():
+		status_label.text = "No saved worlds yet. Build something and type /save a-name."
+		_record("/worlds", "No saved worlds yet. Build something and type /save a-name.", "unsupported")
+		return
+	var reply := "Saved worlds (%d): %s\nType /load followed by a name. Files are in %s" % [names.size(), ", ".join(names), WorldStore.location()]
+	status_label.text = "%d saved worlds: %s" % [names.size(), ", ".join(names)]
+	_record("/worlds", reply, "ok")
+
+
+func _delete_world(request: String) -> void:
+	var name := request.substr(7).strip_edges()
+	var result := WorldStore.remove_world(name)
+	status_label.text = result["message"]
+	_record(request, result["message"], "ok" if result["ok"] else "error")
 
 
 # --- driving ---
