@@ -167,6 +167,7 @@ static func solve(sections: Array, target_turn_deg: float) -> Dictionary:
 		"remaining_ahead": _ahead(remaining),
 		"remaining_right": _right(remaining),
 		"proposal": describe_proposal(sections, target_turn_deg),
+		"length_reach": length_reach(sections),
 	}
 
 
@@ -225,6 +226,75 @@ static func _residual(sections: Array, vars: Array, u: PackedFloat64Array, targe
 	var pose := TrackGeometry.end_pose(_apply(sections, vars, u))
 	var p: Vector3 = pose[0]
 	return Vector3(p.x, p.z, (float(pose[1]) - target) * weight)
+
+
+# --- 002C: could ANY straight lengths close this layout? ---
+# Turning sections fix the heading at every straight, so where the track ends
+# is a straight line sum: a fixed part from the turns, plus each straight's
+# length times its direction. Finding the lengths that end nearest the start
+# line is then a small convex problem, solved exactly by coordinate descent.
+# If even the best lengths miss, the layout itself cannot close: no stretching
+# or shrinking can fix it, only changing the turns.
+# Corners keep the angles and radii the AI gave them; heights are ignored.
+const REACH_MIN_LENGTH := 20.0
+const REACH_MAX_LENGTH := 1000.0
+const REACH_SWEEPS := 400
+const REACH_CLOSABLE := 1.0   # metres
+
+
+static func length_reach(sections: Array) -> Dictionary:
+	var pos := Vector3.ZERO
+	var heading := 0.0
+	var directions: Array = []   # Vector2 per straight, metres per metre of length
+	var lengths := PackedFloat64Array()
+	for s in sections:
+		var section: Dictionary = s
+		var t := str(section["type"])
+		if t in TrackGeometry.STRAIGHT_FAMILY:
+			var f := TrackGeometry.forward(heading) * cos(TrackGeometry.pitch_of(section))
+			directions.append(Vector2(f.x, f.z))
+			lengths.append(clampf(float(section.get("length", REACH_MIN_LENGTH)), REACH_MIN_LENGTH, REACH_MAX_LENGTH))
+			continue
+		var pose := TrackGeometry.advance(pos, heading, section)
+		pos = pose[0]
+		heading = pose[1]
+
+	# The fixed part: where the turns alone take the track.
+	var r := Vector2(pos.x, pos.z)
+	for i in directions.size():
+		r += (directions[i] as Vector2) * lengths[i]
+
+	for _sweep in REACH_SWEEPS:
+		for i in directions.size():
+			var d: Vector2 = directions[i]
+			var best := clampf(lengths[i] - r.dot(d) / d.dot(d), REACH_MIN_LENGTH, REACH_MAX_LENGTH)
+			r += d * (best - lengths[i])
+			lengths[i] = best
+		if r.length() < 0.01:
+			break
+
+	var best_miss := r.length()
+	var closable := best_miss <= REACH_CLOSABLE
+	# The direction the track would still need to travel, as a facing angle:
+	# 0 is the start direction, 90 right, 180 back towards the start line.
+	var needed := -r
+	var needed_facing := 0.0
+	if best_miss > 0.0:
+		needed_facing = wrapf(rad_to_deg(atan2(needed.x, -needed.y)), 0.0, 360.0)
+	# Straights that could still help, if any were not already at a limit.
+	var helpful := 0
+	if not closable:
+		for d in directions:
+			if (d as Vector2).dot(needed.normalized()) > 0.2:
+				helpful += 1
+	return {
+		"closable": closable,
+		"best_miss": best_miss,
+		"needed_facing": needed_facing,
+		"helpful_straights": helpful,
+		"straights": directions.size(),
+		"best_lengths": Array(lengths),
+	}
 
 
 static func _ahead(p: Vector3) -> float:

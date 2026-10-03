@@ -181,6 +181,7 @@ func _create_composed_track(parameters: Dictionary) -> void:
 		"remaining_ahead": solved["remaining_ahead"],
 		"remaining_right": solved["remaining_right"],
 		"proposal": solved["proposal"],
+		"length_reach": solved["length_reach"],
 	}
 	record["drift"] = {
 		"max_angle_adjustment": solved["max_angle_adjustment"],
@@ -292,6 +293,15 @@ func _closure_feedback(solved: Dictionary) -> String:
 	lines.append("Your sections turn a total of %+.0f degrees. A closed circuit must turn exactly %+.0f degrees." % [float(p["net_turn"]), float(p["target_turn"])])
 	lines.append("Even after the game adjusted every corner and straight by up to %.0f%%, the track still ended %.0f m from the start line, and it must be within %.0f m." % [
 		float(solved["angle_limit"]) * 100.0, float(solved["closure_distance"]), float(solved["distance_tolerance"])])
+	var reach: Dictionary = solved["length_reach"]
+	if not bool(reach["closable"]):
+		lines.append("")
+		lines.append("Godot also tested every possible length for your straights, from %.0f to %.0f m each, keeping your turns as they are. No choice of lengths closes this layout: the best possible still ends %.0f m from the start line." % [
+			ClosureSolver.REACH_MIN_LENGTH, ClosureSolver.REACH_MAX_LENGTH, float(reach["best_miss"])])
+		lines.append("To close, the track would still need to travel %s, and %s." % [
+			_facing_words(float(reach["needed_facing"])),
+			"none of your straights travel that way" if int(reach["helpful_straights"]) == 0 else "your straights that travel that way are already at their limits"])
+		lines.append("So stretching or shrinking sections cannot fix it. The order or direction of your turns must change.")
 	lines.append("")
 	lines.append("Where each of your sections ends, in metres from the start line (ahead is along the start direction, negative means behind; right is to the right of it, negative means left), and which way the track faces there (0 is the start direction, positive is clockwise):")
 	for e in p["section_ends"]:
@@ -299,6 +309,14 @@ func _closure_feedback(solved: Dictionary) -> String:
 	lines.append("")
 	lines.append("Revise the sections so the circuit closes by itself: it must end on the start line, facing the start direction. Keep everything else about your design that you can. Return ONLY the complete JSON command, in the same format as before.")
 	return "\n".join(lines)
+
+
+# A facing angle in words: 0 is the start direction, positive is clockwise.
+func _facing_words(facing: float) -> String:
+	var names := ["in the start direction", "ahead and to the right", "to the right", "back and to the right",
+		"back towards the start line, opposite to the start direction", "back and to the left", "to the left", "ahead and to the left"]
+	var index := int(round(wrapf(facing, 0.0, 360.0) / 45.0)) % 8
+	return "%s (facing about %.0f degrees, where 0 is the start direction and 180 the opposite)" % [names[index], facing]
 
 
 func _along(ahead: float) -> String:

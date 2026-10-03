@@ -28,7 +28,8 @@ const TEMPERATURE := 1.0
 # never came back, because a hairpin reverses direction without returning.
 const PROMPT_VERSION := "002C-balance-1"
 # Which wording of the closure feedback a revised track was given.
-const REVISION_VERSION := "002C-closure-feedback-1"
+# feedback-2 adds Godot's test of whether ANY straight lengths could close the layout.
+const REVISION_VERSION := "002C-closure-feedback-2"
 
 const ENDPOINT := "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent"
 
