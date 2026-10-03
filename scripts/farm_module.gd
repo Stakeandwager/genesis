@@ -19,6 +19,14 @@ const BUILDING_SIDE := Vector2(5.0, 60.0)     # metres, for buildings
 const LANE_WIDTH := 6.0
 const MARGIN := 12.0                          # between the fence and the zones
 
+# Heights. A farm can be viewed from a long way up, where older graphics chips
+# cannot separate two surfaces a few centimetres apart, so everything is given
+# real thickness instead.
+const PAD_HEIGHT := 1.0                       # the bare ground and lanes
+const ZONE_HEIGHT := 1.6                      # fields sit proud of the lanes
+const POND_HEIGHT := 0.7                      # water sits lower
+const FENCE_HEIGHT := 2.4
+
 const ZONE_COLOURS := {
 	"crop": Color(0.83, 0.72, 0.28),
 	"pasture": Color(0.42, 0.62, 0.30),
@@ -291,7 +299,7 @@ func build(root: Node3D, layout: Dictionary) -> Dictionary:
 	var fence_max: Vector2 = layout["fence_max"]
 
 	# The ground inside the fence: lanes are simply what is left uncovered.
-	_add_slab(root, "Ground", fence_min, fence_max, 0.05, Color(0.44, 0.40, 0.30))
+	_add_slab(root, "Ground", fence_min, fence_max, PAD_HEIGHT, Color(0.44, 0.40, 0.30))
 
 	for i in (layout["zones"] as Array).size():
 		var z: Dictionary = layout["zones"][i]
@@ -303,9 +311,9 @@ func build(root: Node3D, layout: Dictionary) -> Dictionary:
 			colour = CROP_COLOURS.get(str(z.get("crop", "")), colour)
 
 		if type in BUILDINGS:
-			_add_building(root, "%s_%d" % [type, i + 1], from, to, colour, 9.0 if type == "silo" else 6.0)
+			_add_building(root, "%s_%d" % [type, i + 1], from, to, colour, 14.0 if type == "silo" else 9.0)
 		else:
-			_add_slab(root, "%s_%d" % [type, i + 1], from, to, 0.25 if type != "pond" else 0.12, colour)
+			_add_slab(root, "%s_%d" % [type, i + 1], from, to, POND_HEIGHT if type == "pond" else ZONE_HEIGHT, colour)
 
 	_add_fence(root, fence_min, fence_max, layout["gate"])
 
@@ -330,7 +338,7 @@ func _add_building(root: Node3D, name_for: String, from: Vector2, to: Vector2, c
 	walls.mesh = box
 	walls.name = name_for
 	walls.material_override = _material(colour)
-	walls.position = Vector3((from.x + to.x) * 0.5, height * 0.5, (from.y + to.y) * 0.5)
+	walls.position = Vector3((from.x + to.x) * 0.5, PAD_HEIGHT + height * 0.5, (from.y + to.y) * 0.5)
 	root.add_child(walls)
 
 	var roof := MeshInstance3D.new()
@@ -338,7 +346,7 @@ func _add_building(root: Node3D, name_for: String, from: Vector2, to: Vector2, c
 	cap.size = Vector3(to.x - from.x + 1.0, 0.6, to.y - from.y + 1.0)
 	roof.mesh = cap
 	roof.material_override = _material(colour.darkened(0.35))
-	roof.position = Vector3((from.x + to.x) * 0.5, height + 0.3, (from.y + to.y) * 0.5)
+	roof.position = Vector3((from.x + to.x) * 0.5, PAD_HEIGHT + height + 0.4, (from.y + to.y) * 0.5)
 	root.add_child(roof)
 
 
@@ -365,11 +373,21 @@ func _add_fence(root: Node3D, from: Vector2, to: Vector2, gate: Vector2) -> void
 				continue
 			var post := MeshInstance3D.new()
 			var box := BoxMesh.new()
-			box.size = Vector3(0.4, 1.8, 0.4)
+			box.size = Vector3(0.8, FENCE_HEIGHT, 0.8)
 			post.mesh = box
 			post.material_override = _material(colour)
-			post.position = Vector3(at.x, 0.9, at.y)
+			post.position = Vector3(at.x, PAD_HEIGHT + FENCE_HEIGHT * 0.5, at.y)
 			root.add_child(post)
+
+		# A rail between the posts, so the boundary is a line and not a row of dots.
+		var along := (finish - start)
+		var rail := MeshInstance3D.new()
+		var rail_box := BoxMesh.new()
+		rail_box.size = Vector3(maxf(along.length(), 0.6), 0.5, 0.5) if absf(along.y) < 0.01 else Vector3(0.5, 0.5, maxf(along.length(), 0.6))
+		rail.mesh = rail_box
+		rail.material_override = _material(colour.lightened(0.1))
+		rail.position = Vector3((start.x + finish.x) * 0.5, PAD_HEIGHT + FENCE_HEIGHT * 0.75, (start.y + finish.y) * 0.5)
+		root.add_child(rail)
 
 
 func _material(colour: Color) -> StandardMaterial3D:

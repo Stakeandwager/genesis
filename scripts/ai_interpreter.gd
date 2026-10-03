@@ -2,6 +2,7 @@ extends Node
 class_name AIInterpreter
 
 # --- Prototype 002A - Step A7: Natural language -> composed track ---
+# --- 002C: one revision turn, with Godot's closure measurements ---
 # The AI is an INTERPRETER and a COMPOSER. It never touches Godot directly.
 # Its only output is a string, which must still pass the command whitelist,
 # the section validator, the feasibility gate, the closure solver and the
@@ -23,6 +24,8 @@ const THINKING_LEVEL := "low"
 # Temperature 1.0 so that repeated requests give genuinely different designs.
 const TEMPERATURE := 1.0
 const PROMPT_VERSION := "002B-worlds-1"
+# Which wording of the closure feedback a revised track was given.
+const REVISION_VERSION := "002C-closure-feedback-1"
 
 const ENDPOINT := "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent"
 
@@ -66,6 +69,11 @@ RULES FOR A CLOSED CIRCUIT
 var http: HTTPRequest
 var api_key: String = ""
 var busy: bool = false
+# The AI's last answer, kept so a revision can show the AI what it said.
+# The raw parts are kept as well as the text: Gemini 3 models attach a
+# "thought signature" that it expects back in the next turn.
+var last_model_parts: Array = []
+var last_answer_text: String = ""
 
 
 func _ready() -> void:
@@ -91,6 +99,35 @@ func describe() -> Dictionary:
 
 
 func interpret(player_text: String) -> void:
+	_send([{
+		"role": "user",
+		"parts": [{"text": player_text}]
+	}])
+
+
+# Closure feedback (002C): one more turn of the same conversation. The AI sees
+# the player's request, its own previous answer, and what Godot measured, then
+# proposes again. Its answer goes through every check, exactly like the first.
+func revise(player_text: String, feedback: String) -> void:
+	var previous: Array = last_model_parts
+	if previous.is_empty():
+		previous = [{"text": last_answer_text}]
+	_send([
+		{"role": "user", "parts": [{"text": player_text}]},
+		{"role": "model", "parts": previous},
+		{"role": "user", "parts": [{"text": feedback}]},
+	])
+
+
+# The settings behind a revised track: the same as a first attempt, plus which
+# version of the feedback the AI was given.
+func describe_revision() -> Dictionary:
+	var d := describe()
+	d["revision"] = REVISION_VERSION
+	return d
+
+
+func _send(contents: Array) -> void:
 	if busy:
 		interpretation_failed.emit("Still thinking about the last request.")
 		return
@@ -107,9 +144,7 @@ func interpret(player_text: String) -> void:
 		"system_instruction": {
 			"parts": [{"text": instructions}]
 		},
-		"contents": [{
-			"parts": [{"text": player_text}]
-		}],
+		"contents": contents,
 		"generationConfig": {
 			"temperature": TEMPERATURE,
 			"maxOutputTokens": 8000,
@@ -187,11 +222,19 @@ func _on_request_completed(result: int, response_code: int, _headers: PackedStri
 		interpretation_failed.emit("The AI returned an empty answer.")
 		return
 
-	var text: String = str(parts[0].get("text", "")).strip_edges()
+	# Thinking models can return more than one part; the answer is the text.
+	var text := ""
+	for part in parts:
+		if typeof(part) == TYPE_DICTIONARY and part.has("text") and not bool(part.get("thought", false)):
+			text += str(part["text"])
+	text = text.strip_edges()
 
 	# Models sometimes wrap JSON in markdown fences despite instructions.
 	var fence := "`".repeat(3)
 	text = text.replace(fence + "json", "").replace(fence, "").strip_edges()
+
+	last_model_parts = parts
+	last_answer_text = text
 
 	print("AI raw output: ", text)
 	interpretation_ready.emit(text)

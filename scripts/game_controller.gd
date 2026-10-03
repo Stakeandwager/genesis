@@ -7,11 +7,19 @@ class_name GameController
 # CREATE_TRACK without "sections" still builds the Prototype 001 ring,
 # so everything that worked in 001 keeps working.
 #
+# --- 002C: closure feedback ---
+# When an AI-designed circuit fails ONLY because it does not close, Godot
+# tells the AI where its proposal actually ended and asks once for a
+# correction. The correction goes through every check from the start. Both
+# attempts are recorded, linked, with a comparison of the two designs.
+#
 # The AI proposes. Godot constructs. Godot validates. Godot measures.
 
 signal log_message(text: String)
 # Emitted for every composed-track attempt, successful or not.
 signal track_measured(record: Dictionary)
+# Emitted after a first attempt fails closure and may be corrected once.
+signal revision_requested(feedback: String, record: Dictionary)
 
 var track_builder: TrackBuilder
 var opponent_builder: OpponentBuilder
@@ -36,6 +44,10 @@ var current_raw := ""
 var current_source: Dictionary = {}
 # Which experiment run and trial this command belongs to, if any.
 var current_experiment: Dictionary = {}
+# Which attempt this is: {"attempt": 1}, or {"attempt": 2, "revision_of": {...}}.
+var current_attempt: Dictionary = {}
+# /revise off turns closure feedback off, for a like-for-like baseline.
+var revision_enabled := true
 
 # Composed tracks can be much bigger than the original ground and camera view,
 # so they are resized to fit, and restored for the Prototype 001 ring.
@@ -131,7 +143,10 @@ func _create_composed_track(parameters: Dictionary) -> void:
 		"intent": intent if typeof(intent) == TYPE_DICTIONARY else {},
 		"command": "CREATE_TRACK",
 		"proposed_sections": parameters.get("sections", []),
+		"attempt": int(current_attempt.get("attempt", 1)),
 	}
+	if current_attempt.has("revision_of"):
+		record["revision_of"] = current_attempt["revision_of"]
 
 	# Step A1: every piece must be a legal piece.
 	var check := SectionValidator.validate(parameters)
@@ -140,6 +155,8 @@ func _create_composed_track(parameters: Dictionary) -> void:
 		return
 
 	record["proposed_metrics"] = TrackMetrics.measure(check["sections"])
+	if record.has("revision_of"):
+		record["revision_comparison"] = _compare_designs(record["revision_of"].get("proposed_metrics", {}), record["proposed_metrics"])
 
 	# Step A3: refuse compositions that could never close, before building anything.
 	var gate := FeasibilityGate.check(check["sections"])
@@ -161,6 +178,9 @@ func _create_composed_track(parameters: Dictionary) -> void:
 		"distance_tolerance": solved["distance_tolerance"],
 		"heading_tolerance": solved["heading_tolerance"],
 		"iterations": solved["iterations"],
+		"remaining_ahead": solved["remaining_ahead"],
+		"remaining_right": solved["remaining_right"],
+		"proposal": solved["proposal"],
 	}
 	record["drift"] = {
 		"max_angle_adjustment": solved["max_angle_adjustment"],
@@ -171,11 +191,17 @@ func _create_composed_track(parameters: Dictionary) -> void:
 		"final_net_turn": solved["final_net_turn"],
 	}
 	if not solved["ok"]:
+		var may_revise := _may_revise(record)
+		if may_revise:
+			# Recorded, but not the final word: a correction is on its way.
+			record["revision_pending"] = true
 		_finish_failed(record, solved["category"], [
 			"best attempt ends %.1f m from the start, heading off by %.1f deg" % [solved["closure_distance"], solved["closure_heading_error"]],
 			"closed means within %.1f m and %.0f deg" % [solved["distance_tolerance"], solved["heading_tolerance"]],
 			"adjustment used: corners up to %.1f%%, straights up to %.1f%% (limit %.0f%%)" % [solved["max_angle_adjustment"] * 100.0, solved["max_length_adjustment"] * 100.0, solved["angle_limit"] * 100.0],
 		])
+		if may_revise:
+			revision_requested.emit(_closure_feedback(solved), record)
 		return
 
 	record["final_sections"] = solved["sections"]
@@ -216,6 +242,109 @@ func _create_composed_track(parameters: Dictionary) -> void:
 		"CREATE_TRACK built a closed %s circuit: %d sections, %.0f m of road\n(full measurements in the metrics panel)"
 		% [direction, report["section_count"], report["total_length"]]
 	)
+
+
+# --- answers that never became a command ---
+
+# The AI's answer was refused before it reached any world: not valid JSON,
+# not a whitelisted command, or the AI saying it can't do this. That is a
+# result too, so it is logged and announced like any other attempt. Without
+# this, an experiment would wait forever for a result that never came.
+func record_rejection(category: String, reason: String) -> void:
+	var record := {
+		"time": Time.get_datetime_string_from_system(),
+		"request": current_request,
+		"raw_command": current_raw,
+		"source": current_source,
+		"experiment": current_experiment,
+		"command": "",
+		"attempt": int(current_attempt.get("attempt", 1)),
+		"result": "FAILED",
+		"category": category,
+		"reasons": [reason],
+	}
+	if current_attempt.has("revision_of"):
+		record["revision_of"] = current_attempt["revision_of"]
+	TrackLog.append(record)
+	track_measured.emit(record)
+
+
+# --- closure feedback ---
+
+# One correction, only for AI designs, only for a first attempt, and only
+# outside plans (a plan would need the whole plan re-proposed).
+func _may_revise(record: Dictionary) -> bool:
+	return revision_enabled \
+		and not plan_running \
+		and int(record.get("attempt", 1)) == 1 \
+		and str(current_source.get("source", "")) == "ai"
+
+
+# What the AI is told. Plain facts Godot measured; no advice about style.
+func _closure_feedback(solved: Dictionary) -> String:
+	var p: Dictionary = solved["proposal"]
+	var lines := PackedStringArray()
+	lines.append("Godot measured your circuit and it does not close.")
+	lines.append("")
+	lines.append("Measured from the start line, your sections as proposed end %s and %s%s." % [
+		_along(float(p["ahead"])), _across(float(p["right"])), _above(float(p["height"]))])
+	lines.append("They end %.0f m from the start line. A closed circuit must end exactly on it." % float(p["distance"]))
+	lines.append("Your sections turn a total of %+.0f degrees. A closed circuit must turn exactly %+.0f degrees." % [float(p["net_turn"]), float(p["target_turn"])])
+	lines.append("Even after the game adjusted every corner and straight by up to %.0f%%, the track still ended %.0f m from the start line, and it must be within %.0f m." % [
+		float(solved["angle_limit"]) * 100.0, float(solved["closure_distance"]), float(solved["distance_tolerance"])])
+	lines.append("")
+	lines.append("Where each of your sections ends, in metres from the start line (ahead is along the start direction, negative means behind; right is to the right of it, negative means left), and which way the track faces there (0 is the start direction, positive is clockwise):")
+	for e in p["section_ends"]:
+		lines.append("  %d %s: ahead %.0f, right %.0f, facing %.0f" % [int(e["section"]), str(e["type"]), float(e["ahead"]), float(e["right"]), float(e["facing"])])
+	lines.append("")
+	lines.append("Revise the sections so the circuit closes by itself: it must end on the start line, facing the start direction. Keep everything else about your design that you can. Return ONLY the complete JSON command, in the same format as before.")
+	return "\n".join(lines)
+
+
+func _along(ahead: float) -> String:
+	if absf(ahead) < 0.5:
+		return "level with the start line"
+	return "%.0f m past the start line" % ahead if ahead > 0.0 else "%.0f m short of the start line" % -ahead
+
+
+func _across(right: float) -> String:
+	if absf(right) < 0.5:
+		return "directly in line with it"
+	return "%.0f m to its right" % right if right > 0.0 else "%.0f m to its left" % -right
+
+
+func _above(height: float) -> String:
+	if absf(height) < 1.0:
+		return ""
+	return ", %.0f m %s it" % [absf(height), "above" if height > 0.0 else "below"]
+
+
+# Did the correction keep the design, or replace it with something simpler?
+# Compares the two proposals, not the built tracks, so a refused correction
+# can be compared too.
+func _compare_designs(before: Dictionary, after: Dictionary) -> Dictionary:
+	if before.is_empty() or after.is_empty():
+		return {}
+	var before_counts: Dictionary = before.get("counts", {})
+	var after_counts: Dictionary = after.get("counts", {})
+	var type_changes := {}
+	for key in before_counts:
+		var change := int(after_counts.get(key, 0)) - int(before_counts[key])
+		if change != 0:
+			type_changes[key] = change
+	var before_length := float(before.get("total_length", 0.0))
+	var before_turning := float(before.get("direction_change_total", 0.0))
+	return {
+		"sections_before": int(before.get("section_count", 0)),
+		"sections_after": int(after.get("section_count", 0)),
+		"length_before": before_length,
+		"length_after": float(after.get("total_length", 0.0)),
+		"length_ratio": float(after.get("total_length", 0.0)) / before_length if before_length > 0.0 else 0.0,
+		"turning_before": before_turning,
+		"turning_after": float(after.get("direction_change_total", 0.0)),
+		"type_changes": type_changes,
+		"same_piece_counts": type_changes.is_empty(),
+	}
 
 
 # --- plans: several approved commands from one request ---

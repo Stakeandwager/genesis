@@ -9,6 +9,11 @@ class_name ExperimentRunner
 # difference in the geometry can only come from the word. Every attempt goes
 # through exactly the same pipeline as a hand-typed one: nothing is skipped
 # or made easier for the experiment.
+#
+# 002C: with closure feedback on, a trial whose first circuit misses the start
+# line gets one correction. The trial counts once, by its final result; the
+# summary reports first-try and corrected results separately, and whether the
+# correction kept the design. /revise off gives a like-for-like baseline.
 
 signal finished(summary_text: String)
 signal progress(text: String)
@@ -58,7 +63,8 @@ func start(count: int) -> String:
 
 	var total := trials_per_style * STYLES.size()
 	_next()
-	return "Experiment %s started: %d tracks for each of %d styles, %d in total.\nAt about %d seconds each this takes roughly %d minutes. Type /stop to end it early." % [run_id, trials_per_style, STYLES.size(), total, int(delay_between) + 5, int(ceil(total * (delay_between + 5.0) / 60.0))]
+	var feedback_note := "Closure feedback is ON (one correction per missed circuit)." if _controller.revision_enabled else "Closure feedback is OFF (baseline)."
+	return feedback_note + "\nExperiment %s started: %d tracks for each of %d styles, %d in total.\nAt about %d seconds each this takes roughly %d minutes. Type /stop to end it early." % [run_id, trials_per_style, STYLES.size(), total, int(delay_between) + 5, int(ceil(total * (delay_between + 5.0) / 60.0))]
 
 
 func stop() -> String:
@@ -89,11 +95,17 @@ func _next() -> void:
 		"run_id": run_id,
 		"style_asked": style.replace(" ", "_"),
 		"trial": _trial + 1,
+		"revision_enabled": _controller.revision_enabled,
 	})
 
 
 func _on_track_measured(record: Dictionary) -> void:
 	if not running:
+		return
+	# A first attempt that is about to be corrected is logged, but the trial
+	# is decided by the correction.
+	if bool(record.get("revision_pending", false)):
+		progress.emit("Experiment: circuit missed the start line, asking for one correction...")
 		return
 	results.append(record)
 	_retries = 0
@@ -148,7 +160,8 @@ func _summarise() -> void:
 	var lines := PackedStringArray()
 	lines.append("EXPERIMENT %s COMPLETE: %d tracks" % [run_id, results.size()])
 
-	var summary := {"run_id": run_id, "type": "experiment_summary", "trials_per_style": trials_per_style, "styles": {}}
+	var summary := {"run_id": run_id, "type": "experiment_summary", "trials_per_style": trials_per_style, "revision_enabled": _controller.revision_enabled, "styles": {}}
+	lines.append("Closure feedback: " + ("on" if _controller.revision_enabled else "off"))
 
 	for entry in STYLES:
 		var style := str(entry)
@@ -170,6 +183,46 @@ func _summarise() -> void:
 		var style_summary := {"asked": mine.size(), "valid": valid.size(), "failures": failures}
 		lines.append("")
 		lines.append("%s: %d of %d became a track" % [style, valid.size(), mine.size()])
+
+		# First try versus after one correction.
+		var corrected: Array = []
+		var rescued: Array = []
+		for r in mine:
+			if int(r.get("attempt", 1)) == 2:
+				corrected.append(r)
+				if str(r.get("result", "")) == "VALID":
+					rescued.append(r)
+		var first_try := valid.size() - rescued.size()
+		style_summary["first_try_valid"] = first_try
+		style_summary["corrected"] = corrected.size()
+		style_summary["rescued"] = rescued.size()
+		if not corrected.is_empty():
+			lines.append("  first try %d, corrections asked %d, rescued %d" % [first_try, corrected.size(), rescued.size()])
+			var first_miss := 0.0
+			for r in corrected:
+				first_miss += float(r.get("revision_of", {}).get("proposal_distance", 0.0))
+			first_miss /= float(corrected.size())
+			style_summary["average_first_miss"] = first_miss
+			lines.append("  first attempts missed by %.0f m on average" % first_miss)
+		if not rescued.is_empty():
+			var kept := 0
+			var sections_before := 0.0
+			var sections_after := 0.0
+			var length_ratio := 0.0
+			for r in rescued:
+				var c: Dictionary = r.get("revision_comparison", {})
+				if bool(c.get("same_piece_counts", false)):
+					kept += 1
+				sections_before += float(c.get("sections_before", 0))
+				sections_after += float(c.get("sections_after", 0))
+				length_ratio += float(c.get("length_ratio", 0.0))
+			var n := float(rescued.size())
+			style_summary["rescued_kept_pieces"] = kept
+			style_summary["rescued_sections_before"] = sections_before / n
+			style_summary["rescued_sections_after"] = sections_after / n
+			style_summary["rescued_length_ratio"] = length_ratio / n
+			lines.append("  rescued designs: %d of %d kept the same pieces; sections %.1f -> %.1f; length x%.2f" % [
+				kept, rescued.size(), sections_before / n, sections_after / n, length_ratio / n])
 
 		if valid.is_empty():
 			lines.append("  no valid tracks to measure")

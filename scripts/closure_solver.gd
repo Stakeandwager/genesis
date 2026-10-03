@@ -10,6 +10,11 @@ class_name ClosureSolver
 # relative changes. Chicanes are never changed.
 #
 # It never exceeds its limits, and never reports a success it didn't achieve.
+#
+# Closure feedback (002C): it also reports where the AI's OWN proposal ended,
+# before any adjustment, measured from the start line as metres ahead and
+# metres to the right, plus where every section ends. That is what the AI is
+# told when it gets one chance to correct a circuit that did not close.
 # The AI proposes. Godot constructs. Godot validates. Godot measures.
 
 const MAX_ANGLE_ADJUSTMENT := 0.20
@@ -136,6 +141,8 @@ static func solve(sections: Array, target_turn_deg: float) -> Dictionary:
 			max_length = maxf(max_length, absf(u[k]))
 
 	var distance := Vector2(r.x, r.y).length()
+	# r holds (x, z) of the end point; turn it into ahead/right of the start line.
+	var remaining := Vector3(r.x, 0.0, r.y)
 	var heading_error := absf(rad_to_deg(r.z / weight))
 	var tolerance := maxf(final_length * CLOSURE_FRACTION, MIN_ABSOLUTE_TOLERANCE)
 	var closed := distance <= tolerance and heading_error <= HEADING_TOLERANCE
@@ -157,6 +164,43 @@ static func solve(sections: Array, target_turn_deg: float) -> Dictionary:
 		"final_length": final_length,
 		"proposed_net_turn": proposed_net,
 		"final_net_turn": final_net,
+		"remaining_ahead": _ahead(remaining),
+		"remaining_right": _right(remaining),
+		"proposal": describe_proposal(sections, target_turn_deg),
+	}
+
+
+# Where the AI's proposal ends, exactly as proposed, with nothing adjusted.
+# Measured from the start line: "ahead" is along the start direction (positive
+# means past the line, negative means short of it), "right" is to the right of
+# it, "height" is above it. Heading 0 faces -Z and positive angles turn right,
+# as in TrackGeometry. net_turn comes from the geometry itself, so every kind
+# of turning section counts, not just corners and hairpins.
+static func describe_proposal(sections: Array, target_turn_deg: float) -> Dictionary:
+	var pos := Vector3.ZERO
+	var heading := 0.0
+	var ends: Array = []
+	for i in sections.size():
+		var s: Dictionary = sections[i]
+		var pose := TrackGeometry.advance(pos, heading, s)
+		pos = pose[0]
+		heading = pose[1]
+		ends.append({
+			"section": i + 1,
+			"type": str(s["type"]),
+			"ahead": _ahead(pos),
+			"right": _right(pos),
+			"height": pos.y,
+			"facing": rad_to_deg(heading),
+		})
+	return {
+		"ahead": _ahead(pos),
+		"right": _right(pos),
+		"height": pos.y,
+		"distance": Vector2(pos.x, pos.z).length(),
+		"net_turn": rad_to_deg(heading),
+		"target_turn": target_turn_deg,
+		"section_ends": ends,
 	}
 
 
@@ -181,6 +225,14 @@ static func _residual(sections: Array, vars: Array, u: PackedFloat64Array, targe
 	var pose := TrackGeometry.end_pose(_apply(sections, vars, u))
 	var p: Vector3 = pose[0]
 	return Vector3(p.x, p.z, (float(pose[1]) - target) * weight)
+
+
+static func _ahead(p: Vector3) -> float:
+	return Vector3(p.x, 0.0, p.z).dot(TrackGeometry.forward(0.0))
+
+
+static func _right(p: Vector3) -> float:
+	return Vector3(p.x, 0.0, p.z).dot(TrackGeometry.right(0.0))
 
 
 static func _reached(r: Vector3, weight: float, distance: float, heading_deg: float) -> bool:

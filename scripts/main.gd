@@ -1,6 +1,8 @@
 extends Node3D
 
 # --- Prototype 002B: driving with lap timing and checkpoint HUD ---
+# --- 002C: closure feedback. A circuit that misses the start line gets one
+#     visible correction from the AI; /revise off turns it off. ---
 # The AI proposes. Godot constructs. Godot validates. The player sees both.
 
 const SUPPORTED_HELP := "I can: design a closed race track from your description, or clear the world."
@@ -25,6 +27,14 @@ var pending_request: String = ""
 var pending_source: Dictionary = {}
 # Which experiment run and trial the pending command belongs to, if any.
 var pending_experiment: Dictionary = {}
+# Which attempt the pending command is: first try, or the one correction.
+var pending_attempt: Dictionary = {}
+# True from the moment a correction is asked for until the AI answers.
+var revising := false
+
+# A short pause before the correction, so two requests don't arrive at the
+# AI back to back (the free tier limits how fast requests may come).
+const REVISION_DELAY := 4.0
 
 
 func _ready() -> void:
@@ -44,6 +54,7 @@ func _ready() -> void:
 	interpreter.interpretation_failed.connect(_on_interpretation_failed)
 
 	controller.track_measured.connect(_on_track_measured)
+	controller.revision_requested.connect(_on_revision_requested)
 
 	experiment = ExperimentRunner.new()
 	add_child(experiment)
@@ -119,6 +130,10 @@ func _handle_request(raw_request: String, experiment_context: Dictionary = {}) -
 		_run_local_command(request)
 		return
 
+	if revising:
+		status_label.text = "Waiting for the AI's correction..."
+		return
+
 	if experiment.running and experiment_context.is_empty():
 		status_label.text = "An experiment is running. Type /stop to end it."
 		return
@@ -131,6 +146,7 @@ func _handle_request(raw_request: String, experiment_context: Dictionary = {}) -
 		return
 
 	pending_request = request
+	pending_attempt = {"attempt": 1}
 	print("Player input: ", request)
 	input_box.text = ""
 
@@ -151,10 +167,12 @@ func _handle_request(raw_request: String, experiment_context: Dictionary = {}) -
 
 
 func _on_interpretation_ready(json_text: String) -> void:
+	revising = false
 	_execute_json(json_text)
 
 
 func _on_interpretation_failed(reason: String) -> void:
+	revising = false
 	status_label.text = reason
 	print("AI FAILED: ", reason)
 	_record(pending_request, reason, "error")
@@ -174,6 +192,14 @@ func _on_controller_log(text: String) -> void:
 
 # Every command reaches the game through here - AI or hand-typed, no difference.
 func _execute_json(json_text: String) -> void:
+	# So the record keeps what was asked and exactly what was sent, even when
+	# the answer is refused before it becomes a command.
+	controller.current_request = pending_request
+	controller.current_raw = json_text
+	controller.current_source = pending_source
+	controller.current_experiment = pending_experiment
+	controller.current_attempt = pending_attempt
+
 	var parsed := CommandParser.parse(json_text)
 
 	# The AI honestly said it can't do this. Explain, don't execute.
@@ -181,20 +207,50 @@ func _execute_json(json_text: String) -> void:
 		status_label.text = "I don't know how to do that yet."
 		print("UNSUPPORTED: ", parsed["error"])
 		_record(pending_request, "Not supported yet: " + str(parsed["error"]) + "\n" + SUPPORTED_HELP, "unsupported")
+		controller.record_rejection("UNSUPPORTED", str(parsed["error"]))
 		return
 
 	if not parsed["ok"]:
 		status_label.text = "Rejected: " + str(parsed["error"])
 		print("REJECTED: ", parsed["error"])
 		_record(pending_request, "REJECTED: " + str(parsed["error"]), "error")
+		controller.record_rejection("FAILED_PARSE", str(parsed["error"]))
 		return
 
-	# So the experiment record keeps what was asked and exactly what was sent.
-	controller.current_request = pending_request
-	controller.current_raw = json_text
-	controller.current_source = pending_source
-	controller.current_experiment = pending_experiment
 	controller.execute(parsed["command"], parsed["parameters"])
+
+
+# --- closure feedback ---
+
+# The first attempt missed the start line. Show the player, then ask the AI
+# once more with what Godot measured. The answer arrives through
+# _on_interpretation_ready like any other, and is checked like any other.
+func _on_revision_requested(feedback: String, record: Dictionary) -> void:
+	var closure: Dictionary = record.get("closure", {})
+	var proposal: Dictionary = closure.get("proposal", {})
+	_record(pending_request, "First attempt ended %.0f m from the start line (%.0f m after adjusting). Asking the AI for one correction..." % [
+		float(proposal.get("distance", 0.0)), float(closure.get("closure_distance", 0.0))], "unsupported")
+	status_label.text = "Revising..."
+
+	pending_attempt = {
+		"attempt": 2,
+		"revision_of": {
+			"time": record.get("time", ""),
+			"category": record.get("category", ""),
+			"closure_distance": closure.get("closure_distance", 0.0),
+			"proposal_distance": proposal.get("distance", 0.0),
+			"proposal_net_turn": proposal.get("net_turn", 0.0),
+			"proposed_metrics": record.get("proposed_metrics", {}),
+			"feedback": feedback,
+		},
+	}
+	pending_source = interpreter.describe_revision()
+	revising = true
+
+	await get_tree().create_timer(REVISION_DELAY).timeout
+	if not revising:
+		return
+	interpreter.revise(pending_request, feedback)
 
 
 # --- Commands for the game itself ---
@@ -231,12 +287,19 @@ func _run_local_command(request: String) -> void:
 			_list_worlds()
 		"/delete":
 			_delete_world(request)
+		"/revise":
+			var setting := parts[1].to_lower() if parts.size() > 1 else ""
+			if setting == "on" or setting == "off":
+				controller.revision_enabled = setting == "on"
+			var reply := "Closure feedback is %s. Type /revise on or /revise off to change it." % ("on: a circuit that misses the start line gets one correction from the AI" if controller.revision_enabled else "off: every circuit gets one attempt, as before")
+			status_label.text = reply
+			_record(request, reply, "ok")
 		"/log":
 			var reply := "Track log: " + TrackLog.location()
 			status_label.text = "Track log location written to the history."
 			_record(request, reply, "ok")
 		_:
-			var help := "Game commands: /save [name], /load [name], /worlds, /delete [name], /drive, /view, /experiment [count], /stop, /status, /log"
+			var help := "Game commands: /save [name], /load [name], /worlds, /delete [name], /drive, /view, /experiment [count], /stop, /status, /revise [on|off], /log"
 			status_label.text = help
 			_record(request, help, "unsupported")
 
@@ -286,6 +349,7 @@ func _load_world(request: String) -> void:
 	controller.current_raw = JSON.stringify({"command": command, "parameters": world["parameters"]})
 	controller.current_source = pending_source
 	controller.current_experiment = {}
+	controller.current_attempt = {}
 	controller.execute(command, world["parameters"])
 
 
