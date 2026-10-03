@@ -23,7 +23,10 @@ const MODEL := "gemini-3.1-flash-lite"
 const THINKING_LEVEL := "low"
 # Temperature 1.0 so that repeated requests give genuinely different designs.
 const TEMPERATURE := 1.0
-const PROMPT_VERSION := "002B-worlds-1"
+# 002C-balance-1 adds one geometry rule: travel in opposite directions must
+# balance. The 002C experiments showed designs that turned through 360 deg but
+# never came back, because a hairpin reverses direction without returning.
+const PROMPT_VERSION := "002C-balance-1"
 # Which wording of the closure feedback a revised track was given.
 const REVISION_VERSION := "002C-closure-feedback-1"
 
@@ -61,6 +64,7 @@ Angles are signed: positive turns right, negative turns left. Never give a corne
 RULES FOR A CLOSED CIRCUIT
 - Sections join end to end, in order, starting at the start line. After the last section the track must arrive back at the start line, facing the way it started.
 - Corner and hairpin angles must add up to exactly +360 (clockwise) or -360 (anticlockwise). Chicanes do not count.
+- Travel in opposite directions must balance. Every metre the track travels away from the start line must be matched by a metre travelled back towards it, and every metre to the right of the start line by a metre back to the left. Angles adding up to 360 is necessary but not enough on its own: a hairpin reverses the direction of travel, but by itself carries the track back only by its own width, twice its radius.
 - Use at least 2 straights and at least 2 corners or hairpins.
 - The game can adjust each angle and each straight length by up to 20% to close the loop, so plan where every section takes the track so that it very nearly closes by itself.
 - The road must never cross itself, and separate parts of the road must stay at least 18 metres apart.
