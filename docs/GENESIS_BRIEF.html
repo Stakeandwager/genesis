@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Genesis — Continuation Brief</title>
+<style>
+:root { --ink:#1d1f23; --muted:#5b6170; --line:#dcdfe5; --bg:#ffffff; --code:#f4f5f7; --accent:#b8401f; }
+@media (prefers-color-scheme: dark) { :root { --ink:#e6e8ec; --muted:#a3a9b6; --line:#353a44; --bg:#16181c; --code:#20242b; --accent:#f08a5d; } }
+body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.6 Georgia, "Times New Roman", serif; }
+main { max-width:860px; margin:0 auto; padding:2.5rem 1.25rem 4rem; }
+h1 { font-size:2.1rem; margin:0 0 .25rem; }
+h2 { font-size:1.3rem; margin:2.2rem 0 .6rem; padding-bottom:.3rem; border-bottom:1px solid var(--line); color:var(--accent); }
+h1 + p { color:var(--muted); margin-top:0; }
+table { border-collapse:collapse; width:100%; margin:1rem 0; font-size:.94rem; display:block; overflow-x:auto; }
+th, td { border:1px solid var(--line); padding:.45rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--code); }
+code { font-family:Consolas, "Courier New", monospace; font-size:.88em; background:var(--code); padding:.1em .3em; border-radius:3px; }
+pre { background:var(--code); padding:.9rem 1rem; border-radius:6px; overflow-x:auto; }
+pre code { background:none; padding:0; }
+li { margin:.3rem 0; }
+</style></head><body><main>
+<h1>Genesis — Continuation Brief</h1>
+<p>2026-10-05 · branch prototype-002a, commit 7eb2730</p>
+<p>Paste this at the start of a new chat.</p>
+<h2>What this is</h2>
+<p>Genesis is a game where the player describes what they want in plain English, an AI turns that into an approved command, and the game builds it. The long-term aim is a downloadable game where players make their own games.</p>
+<p>It now has a complete play loop: describe a world, it is checked and built, race computer opponents on it, tell it what to change, and race again.</p>
+<p>The principle that governs everything: <strong>the AI proposes; Godot constructs, validates and measures.</strong> The AI never writes code and can only request actions the game explicitly exposes. Every attempt, built or refused, is recorded with its reasons.</p>
+<h2>Where the project is</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Project folder</td>
+<td><code>C:\Users\Owner\Documents\ai-game-builder</code></td>
+</tr>
+<tr>
+<td>Repository</td>
+<td>github.com/Stakeandwager/genesis (private)</td>
+</tr>
+<tr>
+<td>Working branch</td>
+<td>prototype-002a, last commit 7eb2730</td>
+</tr>
+<tr>
+<td>Finished and tagged</td>
+<td>prototype-001 on main</td>
+</tr>
+<tr>
+<td>Engine</td>
+<td>Godot 4.7.1, GDScript</td>
+</tr>
+<tr>
+<td>AI</td>
+<td>Gemini gemini-3.1-flash-lite, key in api_key.txt (git-ignored)</td>
+</tr>
+<tr>
+<td>AI instructions version</td>
+<td>002C-balance-1 (corrections: 002C-closure-feedback-2; edits: 002E-edit-1)</td>
+</tr>
+<tr>
+<td>Track log</td>
+<td><code>%APPDATA%\Godot\app_userdata\AI_Game_Builder\track_log.jsonl</code></td>
+</tr>
+<tr>
+<td>Machine</td>
+<td>Intel HD Graphics 3000, Compatibility renderer; keep geometry cheap</td>
+</tr>
+</tbody>
+</table>
+<h2>What works today</h2>
+<ul>
+<li><strong>Plain English to worlds.</strong> Racing circuits (sections chained, closed by a solver, checked for crossings) and farms (zones packed, fenced, with lanes).</li>
+<li><strong>Plans.</strong> One request can build several worlds, e.g. a track around a farm; the AI says "around", never coordinates.</li>
+<li><strong>Refusals with reasons.</strong> Nothing is ever half-built. Refused AI answers (broken JSON, unsupported) are logged too, as FAILED_PARSE or UNSUPPORTED.</li>
+<li><strong>Closure correction.</strong> When an AI circuit misses the start line, Godot tells the AI where it ended, where every section lands, and whether any straight lengths could close the layout at all; the AI gets one correction. <code>/revise on|off</code> toggles it.</li>
+<li><strong>The play loop.</strong> Once a world exists, the AI sees it with the next request, so "make it longer", "add a chicane", "tighter corners" change that world. Godot reports what changed, by measurement. Changing while driving puts the car back at the start line.</li>
+<li><strong>Racing.</strong> <code>/drive</code> to drive alone; <code>/race [1-5]</code> races computer opponents over 3 laps. Opponents drive the same physics car, brake for corners, keep their own lanes, have different skills, and recover when stuck. Results go to the track log as <code>race_result</code>.</li>
+<li><strong>Saved worlds.</strong> <code>/save</code>, <code>/load</code>, <code>/worlds</code>, <code>/delete</code>. A world is saved as its description and re-checked on loading.</li>
+<li><strong>Experiments.</strong> <code>/experiment 20</code> asks for 20 tracks of each style and summarises first-try results, corrections, rescues and whether rescued designs kept their pieces.</li>
+</ul>
+<p>Game commands: <code>/save</code>, <code>/load</code>, <code>/worlds</code>, <code>/delete</code>, <code>/drive</code>, <code>/race [n]</code>, <code>/view</code>, <code>/experiment [n]</code>, <code>/stop</code>, <code>/status</code>, <code>/revise [on|off]</code>, <code>/log</code>. Raw JSON typed into the box is built directly, without the AI.</p>
+<h2>How it is put together</h2>
+<pre><code>PLAYER -&gt; NATURAL LANGUAGE (+ the current world) -&gt; AI INTERPRETER -&gt; COMMAND SYSTEM -&gt; WORLD REGISTRY
+   RACING: VALIDATE -&gt; FEASIBILITY -&gt; SOLVE -&gt; (one correction) -&gt; SEPARATION -&gt; MEASURE -&gt; BUILD -&gt; RECORD
+   FARM:   VALIDATE -&gt; LAYOUT -&gt; MEASURE -&gt; BUILD -&gt; RECORD
+   then:   DRIVE / RACE, or change it and go round again
+</code></pre>
+<p>The whitelist and the AI's vocabulary are generated from the world registry, so a world cannot be half-added. Turning and straight section types are listed once, in TrackGeometry (<code>YAW_TYPES</code>, <code>STRAIGHT_FAMILY</code>); the gate, solver and length check read those lists.</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>main.gd</td>
+<td>Screen, game commands, driving, racing, play loop and change reports</td>
+</tr>
+<tr>
+<td>ai_interpreter.gd</td>
+<td>Talks to Gemini; standing instructions, corrections, world context for edits</td>
+</tr>
+<tr>
+<td>command_parser.gd</td>
+<td>The whitelist</td>
+</tr>
+<tr>
+<td>game_controller.gd</td>
+<td>Dispatch, plans, placement, closure feedback text, refusal logging</td>
+</tr>
+<tr>
+<td>world_module.gd, world_registry.gd, world_store.gd, track_log.gd</td>
+<td>World interface, registry, saved worlds, attempt log</td>
+</tr>
+<tr>
+<td>section_validator.gd, track_geometry.gd, feasibility_gate.gd, closure_solver.gd, separation_check.gd, track_metrics.gd, circuit_builder.gd</td>
+<td>Racing: check, solve (incl. length_reach), measure, build</td>
+</tr>
+<tr>
+<td>car.gd, checkpoint_tracker.gd, race_director.gd</td>
+<td>Driving, lap timing, opponents and race order</td>
+</tr>
+<tr>
+<td>experiment_runner.gd</td>
+<td>Repeated-request experiments</td>
+</tr>
+<tr>
+<td>farm_module.gd</td>
+<td>The whole farm world in one file</td>
+</tr>
+<tr>
+<td>track_builder.gd, opponent_builder.gd</td>
+<td>Old Prototype 001 ring, still used by CREATE_TRACK without sections</td>
+</tr>
+</tbody>
+</table>
+<h2>Working rules that earned their place</h2>
+<ul>
+<li><strong>Replace whole files, never fragments.</strong></li>
+<li><strong>Installing new files.</strong> Several files download as the newest <code>Downloads\files (N).zip</code>; one file downloads alone, renamed <code>name (1).gd</code> if the name exists. Extract into a dated folder, check sizes against the assistant's list, then copy into scripts:</li>
+</ul>
+<p><code>mkdir "%USERPROFILE%\Downloads\genesis-DATE"
+  tar -xf "%USERPROFILE%\Downloads\files (N).zip" -C "%USERPROFILE%\Downloads\genesis-DATE"
+  copy /Y "%USERPROFILE%\Downloads\genesis-DATE\*.gd" "C:\Users\Owner\Documents\ai-game-builder\scripts\"</code></p>
+<ul>
+<li><strong>Never put .gd files in the project root.</strong> Godot reads the whole folder; duplicates cause "hides a global script class" errors.</li>
+<li><strong>Paste commands one at a time.</strong> Pasted JSON or stray keys run as commands and break the next line.</li>
+<li><strong>PowerShell commands need PowerShell.</strong> From Command Prompt, wrap them: <code>powershell -NoProfile -Command "..."</code></li>
+<li><strong>After adding a script with class_name, Project → Reload Current Project.</strong></li>
+<li><strong>Check the error counter reads zero before running.</strong></li>
+<li><strong>Commit when something works, one step at a time, and push.</strong></li>
+<li><strong>Print before you guess.</strong></li>
+<li><strong>Type lists live in one place.</strong> Adding a section type means touching TrackGeometry's lists, the validator, metrics and builder.</li>
+<li><strong>Old GPUs need real thickness</strong> and a near plane that moves out as the camera pulls back.</li>
+</ul>
+<h2>What the experiments found</h2>
+<p>Technical circuits now close 18 of 20, but never with a hairpin: the AI fixes closure by deleting it. Each run asked for 20 tracks per style, identical wording apart from the style word; high speed and balanced were 20 of 20 every time.</p>
+<table>
+<thead>
+<tr>
+<th>Run (Oct 2026)</th>
+<th>Technical built</th>
+<th>With a hairpin</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Original instructions</td>
+<td>1 of 20</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Plus one correction</td>
+<td>13 of 20</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Balance rule, no correction</td>
+<td>6 of 20 first try</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Balance rule plus length-reach correction</td>
+<td>18 of 20</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>September's 9 of 20 used a 50% solver limit.</strong> Under today's 20% limit, technical designs miss by 160 to 580 m before adjustment, not tens of metres.</li>
+<li><strong>The failure is structural.</strong> Failed designs travel far up the map and barely come back. With every straight free from 20 to 1,000 m, 12 of 13 failed layouts still cannot close: only the order of turns can fix them.</li>
+<li><strong>Telling the AI that worked.</strong> With the length-reach check, 12 of 14 corrections succeeded, against 13 of 19 with position feedback alone.</li>
+<li><strong>Variety is poor.</strong> High speed and balanced are nearly always the same rounded rectangle at different sizes; in 240 tracks the AI never proposed a circle, oval or paperclip, though all are buildable.</li>
+<li><strong>Edits work well.</strong> "Make it longer", "add a chicane" and "tighter corners" each changed only what was asked; the chicane was placed inside a straight, so the track still closed.</li>
+<li><strong>Opponents.</strong> In headless simulations all opponents finished on rectangle, technical, round, high-speed and banked tracks; a non-gamer could catch them.</li>
+</ul>
+<h2>Commits since the last brief, and known rough edges</h2>
+<table>
+<thead>
+<tr>
+<th>Commit</th>
+<th>What</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7eb2730</td>
+<td>002E play loop: change the world you are in; Godot reports what changed</td>
+</tr>
+<tr>
+<td>b089408</td>
+<td>002D opponents (/race); driving uses the track's real position</td>
+</tr>
+<tr>
+<td>e37b785</td>
+<td>Cleanup: banked corners count as turns; shared type lists; separation display</td>
+</tr>
+<tr>
+<td>7c478e7</td>
+<td>Length-reach check in correction feedback</td>
+</tr>
+<tr>
+<td>b7e5664</td>
+<td>Balance rule in the AI's instructions</td>
+</tr>
+<tr>
+<td>f117ce1</td>
+<td>Closure correction; refused AI answers logged</td>
+</tr>
+</tbody>
+</table>
+<p>Known rough edges:</p>
+<ul>
+<li>Banked corners act as ramps and can throw cars over the barrier; opponents recover, the player uses R.</li>
+<li>Loops are built but untested with a car.</li>
+<li>The separation check is flat, so a loop passing over itself reads as a crash.</li>
+<li>The solver does not check that a track returns to its starting height.</li>
+<li>Racing is still special-cased in game_controller.gd rather than a world module.</li>
+<li>Opponent difficulty is untuned; a non-gamer can catch them.</li>
+<li>The AI rewrites the style label on edits ("longer_balanced"); harmless.</li>
+<li>Distant barriers speckle on the HD 3000.</li>
+</ul>
+<h2>Next steps</h2>
+<ol>
+<li><strong>Wrap racing as a world module</strong>, so the special-case racing code in game_controller.gd disappears and every world takes one path. A careful refactor: replay the logged October designs afterwards and confirm identical results.</li>
+<li><strong>Player testing with 5 to 10 people.</strong> Sit them at the laptop, say only "build something you'd want to play", and watch. Record time to first world, failed requests, what they asked for that Genesis can't do, whether they drive or race, and whether they ask to make another. Decide the pass mark beforehand. A <code>/session name</code> command, tagging every log record with the tester, would make each person's results easy to pull out.</li>
+<li><strong>Then let testers decide</strong> between a third world type, opponent difficulty settings, and track variety.</li>
+<li><strong>An author and a timestamp on every saved world</strong>, still outstanding.</li>
+</ol>
+<h2>What to ask the assistant for</h2>
+<p>Work one capability at a time, test it on the real machine, commit, then move on. Give complete replacement files with their byte sizes. Check new code in Godot 4.7.1 headless before handing it over, including physics simulations where driving is involved, and replay logged designs after any change to checking or solving. Say plainly what could not be tested, usually the live Gemini responses.</p>
+<p>And keep the rule that makes all of this debuggable: the AI proposes, Godot decides.</p>
+</main></body></html>
