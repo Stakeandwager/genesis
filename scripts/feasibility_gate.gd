@@ -31,17 +31,20 @@ static func check(sections: Array) -> Dictionary:
 	var straights := 0
 	var turns := 0
 
+	# The type lists come from TrackGeometry, so the gate, the solver and the
+	# geometry always agree on what turns and what can stretch. (002C cleanup:
+	# banked corners turn the track but used to be invisible here.)
 	for s in sections:
-		match str(s["type"]):
-			"straight":
-				straights += 1
-			"corner", "hairpin":
-				turns += 1
-				var angle := float(s["angle"])
-				if angle > 0.0:
-					right_total += angle
-				else:
-					left_total += -angle
+		var t := str(s["type"])
+		if t in TrackGeometry.STRAIGHT_FAMILY:
+			straights += 1
+		elif t in TrackGeometry.YAW_TYPES:
+			turns += 1
+			var angle := float(s["angle"])
+			if angle > 0.0:
+				right_total += angle
+			else:
+				left_total += -angle
 
 	var net := right_total - left_total
 	var lowest := (1.0 - MAX_ANGLE_ADJUSTMENT) * right_total - (1.0 + MAX_ANGLE_ADJUSTMENT) * left_total

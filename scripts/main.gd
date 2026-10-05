@@ -555,7 +555,12 @@ func _on_track_measured(record: Dictionary) -> void:
 	if record.has("separation"):
 		var sep: Dictionary = record["separation"]
 		_metric("SELF-INTERSECTIONS", "%d" % sep["self_intersections"])
-		_metric("MIN SEPARATION", "%.1f m" % sep["minimum_separation"])
+		# -1 means no two stretches of road are far enough apart along the track
+		# to count as separate (a round track, say): nothing could cross.
+		if float(sep["minimum_separation"]) < 0.0:
+			_metric("MIN SEPARATION", "none (no separate stretches)")
+		else:
+			_metric("MIN SEPARATION", "%.1f m" % sep["minimum_separation"])
 	if record.has("drift"):
 		var d: Dictionary = record["drift"]
 		_metric("SOLVER CHANGE", "corners %.1f%%, straights %.1f%%" % [d["max_angle_adjustment"] * 100.0, d["max_length_adjustment"] * 100.0])

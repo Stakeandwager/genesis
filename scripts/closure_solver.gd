@@ -41,11 +41,13 @@ static func solve(sections: Array, target_turn_deg: float) -> Dictionary:
 	for i in sections.size():
 		var s: Dictionary = sections[i]
 		proposed_length += TrackGeometry.section_length(s)
-		match str(s["type"]):
-			"straight":
-				vars.append({"index": i, "kind": "length", "base": float(s["length"]), "limit": MAX_LENGTH_ADJUSTMENT})
-			"corner", "hairpin":
-				vars.append({"index": i, "kind": "angle", "base": float(s["angle"]), "limit": MAX_ANGLE_ADJUSTMENT})
+		# Shared type lists, so the solver adjusts every section that turns or
+		# stretches, exactly as the geometry builds it (002C cleanup).
+		var t := str(s["type"])
+		if t in TrackGeometry.STRAIGHT_FAMILY:
+			vars.append({"index": i, "kind": "length", "base": float(s["length"]), "limit": MAX_LENGTH_ADJUSTMENT})
+		elif t in TrackGeometry.YAW_TYPES:
+			vars.append({"index": i, "kind": "angle", "base": float(s["angle"]), "limit": MAX_ANGLE_ADJUSTMENT})
 
 	var n := vars.size()
 	var u := PackedFloat64Array()
@@ -128,7 +130,7 @@ static func solve(sections: Array, target_turn_deg: float) -> Dictionary:
 	var proposed_net := 0.0
 	for i in adjusted.size():
 		final_length += TrackGeometry.section_length(adjusted[i])
-		if str(adjusted[i]["type"]) in ["corner", "hairpin"]:
+		if str(adjusted[i]["type"]) in TrackGeometry.YAW_TYPES:
 			final_net += float(adjusted[i]["angle"])
 			proposed_net += float(sections[i]["angle"])
 
