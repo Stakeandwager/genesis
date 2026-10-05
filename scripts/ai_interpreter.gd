@@ -30,6 +30,8 @@ const PROMPT_VERSION := "002C-balance-1"
 # Which wording of the closure feedback a revised track was given.
 # feedback-2 adds Godot's test of whether ANY straight lengths could close the layout.
 const REVISION_VERSION := "002C-closure-feedback-2"
+# 002E: the wording that shows the AI the world the player is already in.
+const EDIT_VERSION := "002E-edit-1"
 
 const ENDPOINT := "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent"
 
@@ -79,6 +81,8 @@ var busy: bool = false
 # "thought signature" that it expects back in the next turn.
 var last_model_parts: Array = []
 var last_answer_text: String = ""
+# The exact text of the last request sent, so a revision repeats it.
+var last_prompt_text: String = ""
 
 
 func _ready() -> void:
@@ -103,11 +107,39 @@ func describe() -> Dictionary:
 	}
 
 
-func interpret(player_text: String) -> void:
+func interpret(player_text: String, current_world: Dictionary = {}) -> void:
+	var text := player_text
+	if not current_world.is_empty():
+		text = _with_world(player_text, current_world)
+	last_prompt_text = text
 	_send([{
 		"role": "user",
-		"parts": [{"text": player_text}]
+		"parts": [{"text": text}]
 	}])
+
+
+# 002E: the player is already in a world, so the AI sees it and can change it
+# rather than start again. This goes in the request, not the standing
+# instructions, so first requests and experiments are exactly as before.
+func _with_world(player_text: String, world: Dictionary) -> String:
+	var command := {"command": world.get("command", ""), "parameters": world.get("parameters", {})}
+	return "\n".join([
+		"THE WORLD THE PLAYER IS IN NOW",
+		"The player asked for: \"%s\"" % str(world.get("request", "")),
+		"It was built from this command:",
+		JSON.stringify(command),
+		"",
+		"THE PLAYER NOW SAYS",
+		player_text,
+		"",
+		"If this changes the world above (for example \"make it longer\", \"add a hairpin\", \"tighter corners\"), return the complete command for the whole changed world, keeping everything the player did not ask to change. If it asks for something new instead, return a new command as usual.",
+	])
+
+
+func describe_edit() -> Dictionary:
+	var d := describe()
+	d["edit"] = EDIT_VERSION
+	return d
 
 
 # Closure feedback (002C): one more turn of the same conversation. The AI sees
@@ -117,8 +149,9 @@ func revise(player_text: String, feedback: String) -> void:
 	var previous: Array = last_model_parts
 	if previous.is_empty():
 		previous = [{"text": last_answer_text}]
+	var first := last_prompt_text if last_prompt_text != "" else player_text
 	_send([
-		{"role": "user", "parts": [{"text": player_text}]},
+		{"role": "user", "parts": [{"text": first}]},
 		{"role": "model", "parts": previous},
 		{"role": "user", "parts": [{"text": feedback}]},
 	])

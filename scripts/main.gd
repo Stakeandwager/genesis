@@ -1,6 +1,9 @@
 extends Node3D
 
 # --- Prototype 002B: driving with lap timing and checkpoint HUD ---
+# --- 002E: the play loop. Once a world exists, the AI is shown it with the
+#     next request, so "make it longer" changes this world instead of
+#     starting again. Godot reports what actually changed, by measurement. ---
 # --- 002D: /race [opponents] - race computer-controlled cars round the
 #     circuit. Driving now uses the track's real position, so a circuit
 #     moved by a plan (a track around a farm) is driven where it stands. ---
@@ -35,6 +38,9 @@ var pending_experiment: Dictionary = {}
 var pending_attempt: Dictionary = {}
 # True from the moment a correction is asked for until the AI answers.
 var revising := false
+# 002E: the world as it was when the pending request was sent, so what changed
+# can be measured once the new version is built.
+var editing_from: Dictionary = {}
 
 # A short pause before the correction, so two requests don't arrive at the
 # AI back to back (the free tier limits how fast requests may come).
@@ -156,6 +162,7 @@ func _handle_request(raw_request: String, experiment_context: Dictionary = {}) -
 
 	pending_request = request
 	pending_attempt = {"attempt": 1}
+	editing_from = {}
 	print("Player input: ", request)
 	input_box.text = ""
 
@@ -170,9 +177,13 @@ func _handle_request(raw_request: String, experiment_context: Dictionary = {}) -
 		_record(request, "No API key - type raw JSON instead.", "error")
 		return
 
-	status_label.text = "Designing..."
-	pending_source = interpreter.describe()
-	interpreter.interpret(request)
+	# Experiments always start from nothing; players build on what they have.
+	editing_from = {}
+	if experiment_context.is_empty() and not controller.last_build.is_empty():
+		editing_from = controller.last_build.duplicate(true)
+	status_label.text = "Designing..." if editing_from.is_empty() else "Working on your world..."
+	pending_source = interpreter.describe() if editing_from.is_empty() else interpreter.describe_edit()
+	interpreter.interpret(request, editing_from)
 
 
 func _on_interpretation_ready(json_text: String) -> void:
@@ -194,11 +205,24 @@ func _on_controller_log(text: String) -> void:
 	var kind := "error" if text.contains("failed") else "ok"
 	_record(pending_request, text, kind)
 
+	if kind == "ok" and not editing_from.is_empty() and not controller.plan_running:
+		var changes := _describe_changes(editing_from, controller.last_build)
+		if changes != "":
+			_record(pending_request, changes, "ok")
+		editing_from = {}
+
 	# A new circuit means new checkpoints, and any race on the old one is over.
 	if kind == "ok" and controller.circuit_builder and controller.circuit_builder.built:
+		var was_racing := race.running
 		if race.running:
 			race.stop()
 		checkpoint_tracker.initialize(_track_centreline())
+		# Changed while driving: carry on driving the new version from the start.
+		if driving:
+			car.auto_drive = false
+			car.place_at(_track_start(), controller.circuit_builder.start_heading)
+			if was_racing:
+				_record("race", "The track changed, so the race was stopped. Type /race to race the new version.", "unsupported")
 
 
 # Every command reaches the game through here - AI or hand-typed, no difference.
@@ -449,6 +473,41 @@ func _process(_delta: float) -> void:
 		checkpoint_tracker.get_formatted_time(checkpoint_tracker.last_lap_time),
 		checkpoint_tracker.get_formatted_time(checkpoint_tracker.best_lap_time),
 	]
+
+
+# --- play loop ---
+
+# What changed between two builds, from Godot's own measurements. Only facts
+# that differ are listed; nothing is taken from the AI's description.
+func _describe_changes(before: Dictionary, after: Dictionary) -> String:
+	if after.is_empty() or after.get("parameters", {}) == before.get("parameters", {}):
+		return "Nothing changed: the AI returned the same world."
+	if str(before.get("command", "")) != str(after.get("command", "")):
+		return "Built something new rather than changing the last world."
+	var m0: Dictionary = before.get("metrics", {})
+	var m1: Dictionary = after.get("metrics", {})
+	if m0.is_empty() or m1.is_empty():
+		return "Changed the world."
+	var parts := PackedStringArray()
+	if m0.has("total_length") and absf(float(m1.get("total_length", 0.0)) - float(m0["total_length"])) >= 5.0:
+		parts.append("length %.0f -> %.0f m" % [float(m0["total_length"]), float(m1.get("total_length", 0.0))])
+	if m0.has("minimum_radius") and absf(float(m1.get("minimum_radius", 0.0)) - float(m0["minimum_radius"])) >= 1.0:
+		parts.append("tightest corner %.0f -> %.0f m radius" % [float(m0["minimum_radius"]), float(m1.get("minimum_radius", 0.0))])
+	if m0.has("longest_straight") and absf(float(m1.get("longest_straight", 0.0)) - float(m0["longest_straight"])) >= 5.0:
+		parts.append("longest straight %.0f -> %.0f m" % [float(m0["longest_straight"]), float(m1.get("longest_straight", 0.0))])
+	var c0: Dictionary = m0.get("counts", {})
+	var c1: Dictionary = m1.get("counts", {})
+	for key in c1:
+		if int(c1[key]) != int(c0.get(key, 0)):
+			parts.append("%ss %d -> %d" % [str(key).replace("_", " "), int(c0.get(key, 0)), int(c1[key])])
+	# Farms: a few headline numbers.
+	for key in ["zone_count", "farm_width", "farm_depth", "enclosed_area"]:
+		if m0.has(key) and m1.has(key) and absf(float(m1[key]) - float(m0[key])) >= 1.0:
+			var unit := " m2" if key == "enclosed_area" else ("" if key == "zone_count" else " m")
+			parts.append("%s %.0f -> %.0f%s" % [str(key).replace("_", " "), float(m0[key]), float(m1[key]), unit])
+	if parts.is_empty():
+		return "Changed the world, with no measured difference in size or pieces."
+	return "Changed: " + ", ".join(parts)
 
 
 # --- racing ---
