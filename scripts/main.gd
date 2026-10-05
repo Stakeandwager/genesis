@@ -1,6 +1,9 @@
 extends Node3D
 
 # --- Prototype 002B: driving with lap timing and checkpoint HUD ---
+# --- 002D: /race [opponents] - race computer-controlled cars round the
+#     circuit. Driving now uses the track's real position, so a circuit
+#     moved by a plan (a track around a farm) is driven where it stands. ---
 # --- 002C: closure feedback. A circuit that misses the start line gets one
 #     visible correction from the AI; /revise off turns it off. ---
 # The AI proposes. Godot constructs. Godot validates. The player sees both.
@@ -17,6 +20,7 @@ var interpreter: AIInterpreter
 var experiment: ExperimentRunner
 var checkpoint_tracker: CheckpointTracker
 var car: Car
+var race: RaceDirector
 var driving := false
 var history_log: RichTextLabel
 var metrics_log: RichTextLabel
@@ -66,6 +70,11 @@ func _ready() -> void:
 	add_child(checkpoint_tracker)
 	checkpoint_tracker.lap_completed.connect(_on_lap_completed)
 
+	race = RaceDirector.new()
+	race.name = "RaceDirector"
+	add_child(race)
+	race.announced.connect(_on_race_announced)
+
 	build_button.pressed.connect(_on_build_pressed)
 	input_box.text_submitted.connect(_on_text_submitted)
 
@@ -106,7 +115,7 @@ func _build_startup_track() -> void:
 
 	var report := controller.circuit_builder.build(test_sections, false)
 	controller._frame_view(report["bounds_min"], report["bounds_max"])
-	checkpoint_tracker.initialize(controller.circuit_builder.centreline)
+	checkpoint_tracker.initialize(_track_centreline())
 	_record("startup track", "Built a test circuit with a hill. Type /drive to drive it.", "ok")
 
 
@@ -185,9 +194,11 @@ func _on_controller_log(text: String) -> void:
 	var kind := "error" if text.contains("failed") else "ok"
 	_record(pending_request, text, kind)
 
-	# A new circuit means new checkpoints.
+	# A new circuit means new checkpoints, and any race on the old one is over.
 	if kind == "ok" and controller.circuit_builder and controller.circuit_builder.built:
-		checkpoint_tracker.initialize(controller.circuit_builder.centreline)
+		if race.running:
+			race.stop()
+		checkpoint_tracker.initialize(_track_centreline())
 
 
 # Every command reaches the game through here - AI or hand-typed, no difference.
@@ -277,6 +288,11 @@ func _run_local_command(request: String) -> void:
 			_record(request, reply, "ok")
 		"/drive":
 			_start_driving()
+		"/race":
+			var count := 3
+			if parts.size() > 1 and parts[1].is_valid_int():
+				count = clampi(parts[1].to_int(), 1, 5)
+			_start_race(count)
 		"/view":
 			_stop_driving()
 		"/save":
@@ -299,7 +315,7 @@ func _run_local_command(request: String) -> void:
 			status_label.text = "Track log location written to the history."
 			_record(request, reply, "ok")
 		_:
-			var help := "Game commands: /save [name], /load [name], /worlds, /delete [name], /drive, /view, /experiment [count], /stop, /status, /revise [on|off], /log"
+			var help := "Game commands: /save [name], /load [name], /worlds, /delete [name], /drive, /race [opponents], /view, /experiment [count], /stop, /status, /revise [on|off], /log"
 			status_label.text = help
 			_record(request, help, "unsupported")
 
@@ -384,13 +400,16 @@ func _start_driving() -> void:
 		car.name = "Car"
 		add_child(car)
 
-	car.place_at(controller.circuit_builder.start_position, controller.circuit_builder.start_heading)
+	if race.running:
+		race.stop()
+	car.auto_drive = false
+	car.place_at(_track_start(), controller.circuit_builder.start_heading)
 	car.visible = true
 	car.freeze = false
 	car.camera.current = true
 	driving = true
 
-	checkpoint_tracker.initialize(controller.circuit_builder.centreline)
+	checkpoint_tracker.initialize(_track_centreline())
 
 	# Otherwise the steering keys would be typed into the text box.
 	input_box.release_focus()
@@ -399,6 +418,8 @@ func _start_driving() -> void:
 
 func _stop_driving() -> void:
 	driving = false
+	if race.running:
+		race.stop()
 	if car:
 		car.freeze = true
 		car.visible = false
@@ -412,12 +433,50 @@ func _process(_delta: float) -> void:
 	if not driving or car == null:
 		return
 	checkpoint_tracker.update_progress(car.global_position)
+	if race.running:
+		var left := race.countdown_left()
+		if left > 0.0:
+			status_label.text = "Race starts in %d..." % int(ceil(left))
+		elif race.finished:
+			status_label.text = "%.0f km/h   race over, finished P%d   (type /race to go again, /view to stop)" % [car.speed_kmh(), race.player_position()]
+		else:
+			status_label.text = "%.0f km/h   P%d of %d   lap %d of %d   (W accelerate, A and D steer, Space handbrake)" % [
+				car.speed_kmh(), race.player_position(), race.racers.size(), race.player_lap(), RaceDirector.RACE_LAPS]
+		return
 	status_label.text = "%.0f km/h   lap %d   last %s   best %s   (W accelerate, A and D steer, Space handbrake, R restart)" % [
 		car.speed_kmh(),
 		checkpoint_tracker.lap_count,
 		checkpoint_tracker.get_formatted_time(checkpoint_tracker.last_lap_time),
 		checkpoint_tracker.get_formatted_time(checkpoint_tracker.best_lap_time),
 	]
+
+
+# --- racing ---
+
+func _start_race(count: int) -> void:
+	_start_driving()
+	if not driving:
+		return
+	var reply := race.start(_track_centreline(), controller.circuit_builder.start_heading, car, count, CircuitBuilder.ROAD_HEIGHT)
+	status_label.text = reply
+	_record("/race", reply, "ok" if race.running else "error")
+
+
+func _on_race_announced(text: String) -> void:
+	_record("race", text, "ok")
+
+
+# The circuit's start and centreline where the circuit actually stands. A plan
+# can move the circuit (a track around a farm), so its own numbers are local.
+func _track_start() -> Vector3:
+	return controller.circuit_builder.to_global(controller.circuit_builder.start_position)
+
+
+func _track_centreline() -> PackedVector3Array:
+	var out := PackedVector3Array()
+	for p in controller.circuit_builder.centreline:
+		out.append(controller.circuit_builder.to_global(p))
+	return out
 
 
 func _on_lap_completed(last_time: float, best_time: float) -> void:

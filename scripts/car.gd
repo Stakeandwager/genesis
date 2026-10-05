@@ -29,6 +29,8 @@ var auto_drive := false
 var auto_throttle := 0.0
 var auto_steer := 0.0
 var _steer_target := 0.0
+# 002D: opponents are the same car in another colour. Set before adding.
+var body_colour := Color(0.85, 0.20, 0.16)
 
 
 func _ready() -> void:
@@ -100,12 +102,30 @@ func _physics_process(delta: float) -> void:
 		engine_force = 0.0
 		brake = BRAKE_POWER * 1.5
 
+	# 002D: computer drivers get proportional throttle, brake and steering
+	# rather than the keyboard's all-or-nothing.
+	if auto_drive:
+		var t := clampf(auto_throttle, -1.0, 1.0)
+		if t > 0.0:
+			engine_force = -ENGINE_POWER * t
+			brake = 0.0
+		elif t < 0.0 and forward_speed > 1.0:
+			engine_force = 0.0
+			brake = BRAKE_POWER * -t
+		else:
+			engine_force = 0.0
+			brake = 1.0
+
 	# Steering eases in, and tightens less at speed so the car stays stable.
 	_steer_target = 0.0
-	if left:
-		_steer_target += 1.0
-	if right:
-		_steer_target -= 1.0
+	if auto_drive:
+		# Positive auto_steer means right; the wheels steer left for positive.
+		_steer_target = -clampf(auto_steer, -1.0, 1.0)
+	else:
+		if left:
+			_steer_target += 1.0
+		if right:
+			_steer_target -= 1.0
 	var limit: float = MAX_STEER * lerpf(1.0, STEER_AT_SPEED, clampf(absf(forward_speed) / 60.0, 0.0, 1.0))
 	steering = move_toward(steering, _steer_target * limit, STEER_SPEED * delta)
 
@@ -127,7 +147,7 @@ func _build_body() -> void:
 	shape.position = Vector3(0.0, 0.75, 0.0)
 	add_child(shape)
 
-	_add_box(Vector3(1.9, 0.55, 4.2), Vector3(0.0, 0.75, 0.0), Color(0.85, 0.20, 0.16))
+	_add_box(Vector3(1.9, 0.55, 4.2), Vector3(0.0, 0.75, 0.0), body_colour)
 	_add_box(Vector3(1.3, 0.5, 1.7), Vector3(0.0, 1.25, -0.2), Color(0.10, 0.10, 0.12))
 	_add_box(Vector3(1.8, 0.10, 0.5), Vector3(0.0, 1.35, 1.9), Color(0.12, 0.12, 0.14))
 
