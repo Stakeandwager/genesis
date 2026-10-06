@@ -34,6 +34,8 @@ const STEER_GAIN := 2.2
 const SPEED_GAIN := 0.35
 const OFF_ROAD := 16.0            # metres from the centreline counts as off
 const STUCK_TIME := 3.0
+const RECOVER_CLEARANCE := 10.0   # metres a recovered car is kept from any other car
+const RECOVER_MAX_SHIFT := 80.0   # metres along the road it may be moved to find that
 const SEARCH_WINDOW := 40         # centreline points searched either side
 
 const SKILLS := [0.80, 0.88, 0.95, 0.84, 0.92]
@@ -315,6 +317,15 @@ func _recover(r: Dictionary) -> void:
 	var car: Car = r["car"]
 	var n := _points.size()
 	var i := int(r["index"])
+	# Never put a car back on top of another one. A car stopped on the road
+	# (the player, say) used to catch an opponent behind it for ever: it ran
+	# into the stopped car, was put back on the same spot, and ran into it
+	# again. So the spot moves on along the road until it is clear.
+	var moved := 0.0
+	while _occupied(_points[i], car) and moved < RECOVER_MAX_SHIFT:
+		moved += _points[i].distance_to(_points[(i + 1) % n])
+		i = (i + 1) % n
+	r["index"] = i
 	var here := _points[i]
 	var ahead := _points[(i + 2) % n]
 	var heading := atan2(ahead.x - here.x, -(ahead.z - here.z))
@@ -322,6 +333,19 @@ func _recover(r: Dictionary) -> void:
 	car.auto_throttle = 0.0
 	r["stuck"] = 0.0
 	r["recoveries"] = int(r["recoveries"]) + 1
+
+
+# Whether any other car in the race is too close to this point to put a car
+# there.
+func _occupied(point: Vector3, except: Car) -> bool:
+	for other in racers:
+		var car: Car = other["car"]
+		if car == except or not is_instance_valid(car):
+			continue
+		var p := car.global_position
+		if Vector2(p.x - point.x, p.z - point.z).length() < RECOVER_CLEARANCE:
+			return true
+	return false
 
 
 # --- the end ---
