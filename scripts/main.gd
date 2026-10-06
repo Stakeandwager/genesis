@@ -4,6 +4,8 @@ extends Node3D
 # --- 002E: the play loop. Once a world exists, the AI is shown it with the
 #     next request, so "make it longer" changes this world instead of
 #     starting again. Godot reports what actually changed, by measurement. ---
+# --- 002G: /session NAME tags every log record with the tester's name;
+#     /session end shows what that session showed. ---
 # --- 002F: driving reaches the world only through the controller's
 #     drivable_surface(), so any world that reports one can be driven. ---
 # --- 002D: /race [opponents] - race computer-controlled cars round the
@@ -194,6 +196,7 @@ func _on_interpretation_failed(reason: String) -> void:
 	status_label.text = reason
 	print("AI FAILED: ", reason)
 	_record(pending_request, reason, "error")
+	TrackLog.event("ai_unavailable", {"request": pending_request, "reason": reason})
 
 
 func _on_controller_log(text: String) -> void:
@@ -310,6 +313,8 @@ func _run_local_command(request: String) -> void:
 			_record(request, reply, "ok")
 		"/drive":
 			_start_driving()
+			if driving:
+				TrackLog.event("drive")
 		"/race":
 			var count := 3
 			if parts.size() > 1 and parts[1].is_valid_int():
@@ -332,14 +337,75 @@ func _run_local_command(request: String) -> void:
 			var reply := "Closure feedback is %s. Type /revise on or /revise off to change it." % ("on: a circuit that misses the start line gets one correction from the AI" if controller.revision_enabled else "off: every circuit gets one attempt, as before")
 			status_label.text = reply
 			_record(request, reply, "ok")
+		"/session":
+			_session(request)
 		"/log":
 			var reply := "Track log: " + TrackLog.location()
 			status_label.text = "Track log location written to the history."
 			_record(request, reply, "ok")
 		_:
-			var help := "Game commands: /save [name], /load [name], /worlds, /delete [name], /drive, /race [opponents], /view, /experiment [count], /stop, /status, /revise [on|off], /log"
+			var help := "Game commands: /save [name], /load [name], /worlds, /delete [name], /drive, /race [opponents], /view, /experiment [count], /stop, /status, /revise [on|off], /session [name|end], /log"
 			status_label.text = help
 			_record(request, help, "unsupported")
+
+
+# --- player testing sessions (002G) ---
+
+# /session NAME starts tagging the log for one tester (ending any session
+# already running), /session end stops and shows the results, and /session
+# on its own says what is running.
+func _session(request: String) -> void:
+	var arg := request.substr(8).strip_edges()
+	if arg == "":
+		var reply := "No session is running. Type /session followed by the tester's name to start one."
+		if not TrackLog.session.is_empty():
+			reply = "Session '%s' running since %s. Type /session end to finish it and see the results." % [TrackLog.session["name"], TrackLog.session["started"]]
+		status_label.text = reply
+		_record(request, reply, "ok")
+		return
+
+	if arg.to_lower() == "end":
+		if TrackLog.session.is_empty():
+			status_label.text = "No session is running."
+			_record(request, "No session is running.", "unsupported")
+		else:
+			_end_session(request)
+		return
+
+	# Starting a new session finishes the one before it.
+	if not TrackLog.session.is_empty():
+		_end_session(request)
+
+	var name := arg.substr(0, 30)
+	var started := Time.get_datetime_string_from_system()
+	TrackLog.session = {"name": name, "id": "%s %s" % [name, started], "started": started}
+	TrackLog.event("session_start")
+
+	# A fresh start for every tester: nothing left over from the last person,
+	# and their first request starts a new world rather than changing one.
+	if driving:
+		_stop_driving()
+	pending_request = request
+	controller.execute("CLEAR_WORLD", {})
+	_build_startup_track()
+	var reply := "Session '%s' started. Everything from now on is logged under that name. Type /session end when they have finished." % name
+	status_label.text = reply
+	_record(request, reply, "ok")
+
+
+func _end_session(request: String) -> void:
+	var name: String = TrackLog.session["name"]
+	TrackLog.event("session_end")
+	var records := TrackLog.read_session(str(TrackLog.session["id"]))
+	var summary := SessionReport.summarise(records)
+	var record := {"type": "session_summary", "time": Time.get_datetime_string_from_system()}
+	record.merge(summary)
+	TrackLog.append(record)
+	TrackLog.session = {}
+	var text := SessionReport.describe(name, summary)
+	print(text)
+	status_label.text = "Session '%s' ended. Results in the history panel." % name
+	_record(request, text, "ok")
 
 
 # --- saved worlds ---
@@ -516,6 +582,8 @@ func _start_race(count: int) -> void:
 		return
 	var surface := controller.drivable_surface()
 	var reply := race.start(surface["centreline"], surface["start_heading"], car, count, surface["road_height"])
+	if race.running:
+		TrackLog.event("race_start", {"opponents": count})
 	status_label.text = reply
 	_record("/race", reply, "ok" if race.running else "error")
 
