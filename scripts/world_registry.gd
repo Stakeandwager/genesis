@@ -29,5 +29,9 @@ static func find(command: String) -> WorldModule:
 static func prompt_sections() -> String:
 	var parts := PackedStringArray()
 	for module in modules():
-		parts.append((module as WorldModule).prompt_section())
+		# A world whose rules live elsewhere (racing's, in the standing
+		# instructions) adds nothing here, not even a blank line.
+		var section := (module as WorldModule).prompt_section()
+		if section != "":
+			parts.append(section)
 	return "\n".join(parts)

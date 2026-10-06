@@ -505,29 +505,46 @@ func _place(node: Node3D, bounds_min: Vector2, bounds_max: Vector2) -> void:
 
 # Any world that is not a racing circuit. The module owns the rules, the
 # layout, the measurements and the geometry, so adding a kind of world
-# changes nothing here.
+# changes nothing here. The optional steps (pre_check, solve_record,
+# correction_feedback, post_check, summary) do nothing unless a module
+# provides them.
 func _create_world(module: WorldModule, parameters: Dictionary) -> void:
-	var intent = parameters.get("intent", {})
 	var record := {
 		"time": Time.get_datetime_string_from_system(),
 		"request": current_request,
 		"raw_command": current_raw,
 		"source": current_source,
 		"experiment": current_experiment,
-		"world": module.display_name(),
-		"intent": intent if typeof(intent) == TYPE_DICTIONARY else {},
-		"command": module.command(),
-		"proposed": parameters.get("zones", []),
 	}
+	record.merge(module.record_fields(parameters, current_attempt))
 
 	var check := module.validate(parameters)
 	if not check["ok"]:
 		_finish_failed(record, "FAILED_SCHEMA", check["errors"])
 		return
 
-	var solved := module.solve(check["content"])
+	var pre := module.pre_check(check["content"], record)
+	if not pre["ok"]:
+		_finish_failed(record, pre["category"], pre["reasons"])
+		return
+
+	var solved := module.solve(pre["content"])
+	record.merge(module.solve_record(solved))
 	if not solved["ok"]:
+		var feedback := module.correction_feedback(solved)
+		var may_revise := feedback != "" and _may_revise(record)
+		if may_revise:
+			# Recorded, but not the final word: a correction is on its way.
+			record["revision_pending"] = true
 		_finish_failed(record, solved["category"], solved["reasons"])
+		if may_revise:
+			revision_requested.emit(feedback, record)
+		return
+
+	var post := module.post_check(solved["layout"])
+	record.merge(post["record"])
+	if not post["ok"]:
+		_finish_failed(record, post["category"], post["reasons"])
 		return
 
 	record["metrics"] = module.measure(solved["layout"])
@@ -558,9 +575,7 @@ func _create_world(module: WorldModule, parameters: Dictionary) -> void:
 	TrackLog.append(record)
 	track_measured.emit(record)
 
-	var metrics: Dictionary = record["metrics"]
-	log_message.emit("%s built: %d zones across %.0f m by %.0f m\n(full measurements in the panel)" % [
-		module.display_name().capitalize(), metrics["zone_count"], metrics["farm_width"], metrics["farm_depth"]])
+	log_message.emit(module.summary(record["metrics"], report))
 
 
 func _clear_world_node() -> void:
