@@ -1,17 +1,19 @@
 extends Node
 class_name GameController
 
-# --- Prototype 002B ---
-# CREATE_TRACK with "sections" is validated, checked for feasibility, closed by
-# the solver, checked for road separation, measured, recorded, then built.
+# --- 002F: every world takes one path ---
+# CREATE_TRACK with "sections" and CREATE_FARM are both world modules
+# (racing_module.gd, farm_module.gd), found in the WorldRegistry and run
+# through _create_world(). Racing's checks, solver, closure feedback and
+# record fields all live in its module now; nothing here is racing-specific.
 # CREATE_TRACK without "sections" still builds the Prototype 001 ring,
 # so everything that worked in 001 keeps working.
 #
 # --- 002C: closure feedback ---
-# When an AI-designed circuit fails ONLY because it does not close, Godot
-# tells the AI where its proposal actually ended and asks once for a
-# correction. The correction goes through every check from the start. Both
-# attempts are recorded, linked, with a comparison of the two designs.
+# When a module says a failed design can be corrected (racing: it does not
+# close), the AI is told what Godot measured and asked once for a
+# correction, through revision_requested. AI designs only, first attempts
+# only, never inside a plan.
 #
 # The AI proposes. Godot constructs. Godot validates. Godot measures.
 
@@ -23,8 +25,10 @@ signal revision_requested(feedback: String, record: Dictionary)
 
 var track_builder: TrackBuilder
 var opponent_builder: OpponentBuilder
-var circuit_builder: CircuitBuilder
 var world_node: Node3D
+# The surface a car can drive on in the current world, if it has one:
+# {"node": the built node, "road_height": metres}. See drivable_surface().
+var drivable: Dictionary = {}
 # While a plan is running, each step keeps what the earlier steps built.
 var plan_running := false
 var plan_bounds_min := Vector2(INF, INF)
@@ -36,7 +40,6 @@ var plan_problems: Array = []
 # The description that made whatever is on screen now, so it can be saved.
 var last_build: Dictionary = {}
 
-# Set by main before each command, so the record says what was asked for.
 # Set by main before each command, so the record says what was asked for.
 var current_request := ""
 var current_raw := ""
@@ -69,10 +72,6 @@ func setup(world_root: Node3D) -> void:
 	opponent_builder.name = "OpponentBuilder"
 	world_root.add_child(opponent_builder)
 
-	circuit_builder = CircuitBuilder.new()
-	circuit_builder.name = "CircuitBuilder"
-	world_root.add_child(circuit_builder)
-
 	# Everything a world module builds lives under here.
 	world_node = Node3D.new()
 	world_node.name = "World"
@@ -94,21 +93,19 @@ func setup(world_root: Node3D) -> void:
 
 func execute(command: String, parameters: Dictionary) -> void:
 	match command:
-		"CREATE_TRACK":
-			if parameters.has("sections"):
-				_create_composed_track(parameters)
-			else:
-				circuit_builder.clear()
-				_restore_view()
-				opponent_builder.clear()
-				log_message.emit(track_builder.build(parameters))
+		"CREATE_TRACK" when not parameters.has("sections"):
+			# The Prototype 001 ring. Composed circuits are a world module.
+			_clear_world_node()
+			_restore_view()
+			opponent_builder.clear()
+			log_message.emit(track_builder.build(parameters))
 		"MODIFY_TRACK":
-			if circuit_builder.built:
+			if has_drivable():
 				log_message.emit("MODIFY_TRACK failed: composed tracks are changed with MODIFY_SECTION, which comes in a later step")
 				return
 			_modify_track(parameters)
 		"SPAWN_OPPONENTS":
-			if circuit_builder.built:
+			if has_drivable():
 				log_message.emit("SPAWN_OPPONENTS failed: opponents on composed tracks come in a later step")
 				return
 			_spawn_opponents(parameters)
@@ -118,7 +115,6 @@ func execute(command: String, parameters: Dictionary) -> void:
 			last_build = {}
 			track_builder.clear()
 			opponent_builder.clear()
-			circuit_builder.clear()
 			_clear_world_node()
 			_restore_view()
 			log_message.emit("CLEAR_WORLD")
@@ -128,121 +124,6 @@ func execute(command: String, parameters: Dictionary) -> void:
 				_create_world(module, parameters)
 			else:
 				log_message.emit("No handler for: " + command)
-
-
-# --- the composition pipeline ---
-
-func _create_composed_track(parameters: Dictionary) -> void:
-	var intent = parameters.get("intent", {})
-	var record := {
-		"time": Time.get_datetime_string_from_system(),
-		"request": current_request,
-		"raw_command": current_raw,
-		"source": current_source,
-		"experiment": current_experiment,
-		"intent": intent if typeof(intent) == TYPE_DICTIONARY else {},
-		"command": "CREATE_TRACK",
-		"proposed_sections": parameters.get("sections", []),
-		"attempt": int(current_attempt.get("attempt", 1)),
-	}
-	if current_attempt.has("revision_of"):
-		record["revision_of"] = current_attempt["revision_of"]
-
-	# Step A1: every piece must be a legal piece.
-	var check := SectionValidator.validate(parameters)
-	if not check["ok"]:
-		_finish_failed(record, "FAILED_SCHEMA", check["errors"])
-		return
-
-	record["proposed_metrics"] = TrackMetrics.measure(check["sections"])
-	if record.has("revision_of"):
-		record["revision_comparison"] = _compare_designs(record["revision_of"].get("proposed_metrics", {}), record["proposed_metrics"])
-
-	# Step A3: refuse compositions that could never close, before building anything.
-	var gate := FeasibilityGate.check(check["sections"])
-	record["feasibility"] = {
-		"net_turn": gate["net_turn"],
-		"reachable_min": gate["reachable_min"],
-		"reachable_max": gate["reachable_max"],
-		"target_turn": gate["target_turn"],
-	}
-	if not gate["ok"]:
-		_finish_failed(record, gate["category"], gate["reasons"])
-		return
-
-	# Step A4: close the circuit, within the permitted adjustment.
-	var solved := ClosureSolver.solve(check["sections"], gate["target_turn"])
-	record["closure"] = {
-		"closure_distance": solved["closure_distance"],
-		"closure_heading_error": solved["closure_heading_error"],
-		"distance_tolerance": solved["distance_tolerance"],
-		"heading_tolerance": solved["heading_tolerance"],
-		"iterations": solved["iterations"],
-		"remaining_ahead": solved["remaining_ahead"],
-		"remaining_right": solved["remaining_right"],
-		"proposal": solved["proposal"],
-		"length_reach": solved["length_reach"],
-	}
-	record["drift"] = {
-		"max_angle_adjustment": solved["max_angle_adjustment"],
-		"max_length_adjustment": solved["max_length_adjustment"],
-		"angle_limit": solved["angle_limit"],
-		"length_limit": solved["length_limit"],
-		"proposed_net_turn": solved["proposed_net_turn"],
-		"final_net_turn": solved["final_net_turn"],
-	}
-	if not solved["ok"]:
-		var may_revise := _may_revise(record)
-		if may_revise:
-			# Recorded, but not the final word: a correction is on its way.
-			record["revision_pending"] = true
-		_finish_failed(record, solved["category"], [
-			"best attempt ends %.1f m from the start, heading off by %.1f deg" % [solved["closure_distance"], solved["closure_heading_error"]],
-			"closed means within %.1f m and %.0f deg" % [solved["distance_tolerance"], solved["heading_tolerance"]],
-			"adjustment used: corners up to %.1f%%, straights up to %.1f%% (limit %.0f%%)" % [solved["max_angle_adjustment"] * 100.0, solved["max_length_adjustment"] * 100.0, solved["angle_limit"] * 100.0],
-		])
-		if may_revise:
-			revision_requested.emit(_closure_feedback(solved), record)
-		return
-
-	record["final_sections"] = solved["sections"]
-
-	# Step A5: a closed track must not cross itself or run into itself.
-	var separation := SeparationCheck.check(solved["sections"])
-	record["separation"] = {
-		"minimum_separation": _finite(separation["minimum_separation"]),
-		"required_separation": separation["required_separation"],
-		"self_intersections": separation["self_intersections"],
-	}
-	if not separation["ok"]:
-		_finish_failed(record, separation["category"], separation["reasons"])
-		return
-
-	# Valid: measure the final geometry, build it, and record it.
-	record["metrics"] = TrackMetrics.measure(solved["sections"])
-	record["result"] = "VALID"
-	if not plan_running:
-		last_build = {"command": "CREATE_TRACK", "parameters": parameters, "metrics": record["metrics"], "request": current_request}
-	record["category"] = ""
-	record["reasons"] = []
-
-	track_builder.clear()
-	opponent_builder.clear()
-	var report := circuit_builder.build(solved["sections"], false)
-	if plan_running:
-		_place(circuit_builder, report["bounds_min"], report["bounds_max"])
-	else:
-		circuit_builder.position = Vector3.ZERO
-		_frame_view(report["bounds_min"], report["bounds_max"])
-
-	TrackLog.append(record)
-	track_measured.emit(record)
-
-	var direction := "clockwise" if gate["target_turn"] > 0.0 else "anticlockwise"
-	log_message.emit(
-		"CREATE_TRACK built a closed %s circuit: %d sections, %.0f m of road\n(full measurements in the metrics panel)"
-		% [direction, report["section_count"], report["total_length"]]
-	)
 
 
 # --- answers that never became a command ---
@@ -270,7 +151,7 @@ func record_rejection(category: String, reason: String) -> void:
 	track_measured.emit(record)
 
 
-# --- closure feedback ---
+# --- corrections ---
 
 # One correction, only for AI designs, only for a first attempt, and only
 # outside plans (a plan would need the whole plan re-proposed).
@@ -279,90 +160,6 @@ func _may_revise(record: Dictionary) -> bool:
 		and not plan_running \
 		and int(record.get("attempt", 1)) == 1 \
 		and str(current_source.get("source", "")) == "ai"
-
-
-# What the AI is told. Plain facts Godot measured; no advice about style.
-func _closure_feedback(solved: Dictionary) -> String:
-	var p: Dictionary = solved["proposal"]
-	var lines := PackedStringArray()
-	lines.append("Godot measured your circuit and it does not close.")
-	lines.append("")
-	lines.append("Measured from the start line, your sections as proposed end %s and %s%s." % [
-		_along(float(p["ahead"])), _across(float(p["right"])), _above(float(p["height"]))])
-	lines.append("They end %.0f m from the start line. A closed circuit must end exactly on it." % float(p["distance"]))
-	lines.append("Your sections turn a total of %+.0f degrees. A closed circuit must turn exactly %+.0f degrees." % [float(p["net_turn"]), float(p["target_turn"])])
-	lines.append("Even after the game adjusted every corner and straight by up to %.0f%%, the track still ended %.0f m from the start line, and it must be within %.0f m." % [
-		float(solved["angle_limit"]) * 100.0, float(solved["closure_distance"]), float(solved["distance_tolerance"])])
-	var reach: Dictionary = solved["length_reach"]
-	if not bool(reach["closable"]):
-		lines.append("")
-		lines.append("Godot also tested every possible length for your straights, from %.0f to %.0f m each, keeping your turns as they are. No choice of lengths closes this layout: the best possible still ends %.0f m from the start line." % [
-			ClosureSolver.REACH_MIN_LENGTH, ClosureSolver.REACH_MAX_LENGTH, float(reach["best_miss"])])
-		lines.append("To close, the track would still need to travel %s, and %s." % [
-			_facing_words(float(reach["needed_facing"])),
-			"none of your straights travel that way" if int(reach["helpful_straights"]) == 0 else "your straights that travel that way are already at their limits"])
-		lines.append("So stretching or shrinking sections cannot fix it. The order or direction of your turns must change.")
-	lines.append("")
-	lines.append("Where each of your sections ends, in metres from the start line (ahead is along the start direction, negative means behind; right is to the right of it, negative means left), and which way the track faces there (0 is the start direction, positive is clockwise):")
-	for e in p["section_ends"]:
-		lines.append("  %d %s: ahead %.0f, right %.0f, facing %.0f" % [int(e["section"]), str(e["type"]), float(e["ahead"]), float(e["right"]), float(e["facing"])])
-	lines.append("")
-	lines.append("Revise the sections so the circuit closes by itself: it must end on the start line, facing the start direction. Keep everything else about your design that you can. Return ONLY the complete JSON command, in the same format as before.")
-	return "\n".join(lines)
-
-
-# A facing angle in words: 0 is the start direction, positive is clockwise.
-func _facing_words(facing: float) -> String:
-	var names := ["in the start direction", "ahead and to the right", "to the right", "back and to the right",
-		"back towards the start line, opposite to the start direction", "back and to the left", "to the left", "ahead and to the left"]
-	var index := int(round(wrapf(facing, 0.0, 360.0) / 45.0)) % 8
-	return "%s (facing about %.0f degrees, where 0 is the start direction and 180 the opposite)" % [names[index], facing]
-
-
-func _along(ahead: float) -> String:
-	if absf(ahead) < 0.5:
-		return "level with the start line"
-	return "%.0f m past the start line" % ahead if ahead > 0.0 else "%.0f m short of the start line" % -ahead
-
-
-func _across(right: float) -> String:
-	if absf(right) < 0.5:
-		return "directly in line with it"
-	return "%.0f m to its right" % right if right > 0.0 else "%.0f m to its left" % -right
-
-
-func _above(height: float) -> String:
-	if absf(height) < 1.0:
-		return ""
-	return ", %.0f m %s it" % [absf(height), "above" if height > 0.0 else "below"]
-
-
-# Did the correction keep the design, or replace it with something simpler?
-# Compares the two proposals, not the built tracks, so a refused correction
-# can be compared too.
-func _compare_designs(before: Dictionary, after: Dictionary) -> Dictionary:
-	if before.is_empty() or after.is_empty():
-		return {}
-	var before_counts: Dictionary = before.get("counts", {})
-	var after_counts: Dictionary = after.get("counts", {})
-	var type_changes := {}
-	for key in before_counts:
-		var change := int(after_counts.get(key, 0)) - int(before_counts[key])
-		if change != 0:
-			type_changes[key] = change
-	var before_length := float(before.get("total_length", 0.0))
-	var before_turning := float(before.get("direction_change_total", 0.0))
-	return {
-		"sections_before": int(before.get("section_count", 0)),
-		"sections_after": int(after.get("section_count", 0)),
-		"length_before": before_length,
-		"length_after": float(after.get("total_length", 0.0)),
-		"length_ratio": float(after.get("total_length", 0.0)) / before_length if before_length > 0.0 else 0.0,
-		"turning_before": before_turning,
-		"turning_after": float(after.get("direction_change_total", 0.0)),
-		"type_changes": type_changes,
-		"same_piece_counts": type_changes.is_empty(),
-	}
 
 
 # --- plans: several approved commands from one request ---
@@ -419,7 +216,6 @@ func _execute_plan(parameters: Dictionary) -> void:
 	# Clear once, then let each step add to the same scene.
 	track_builder.clear()
 	opponent_builder.clear()
-	circuit_builder.clear()
 	_clear_world_node()
 	plan_running = true
 	plan_bounds_min = Vector2(INF, INF)
@@ -442,7 +238,6 @@ func _execute_plan(parameters: Dictionary) -> void:
 	if not plan_problems.is_empty():
 		track_builder.clear()
 		opponent_builder.clear()
-		circuit_builder.clear()
 		_clear_world_node()
 		_finish_failed(record, "FAILED_SCENE", plan_problems)
 		return
@@ -503,9 +298,9 @@ func _place(node: Node3D, bounds_min: Vector2, bounds_max: Vector2) -> void:
 	plan_bounds_max = Vector2(maxf(plan_bounds_max.x, placed_max.x), maxf(plan_bounds_max.y, placed_max.y))
 
 
-# Any world that is not a racing circuit. The module owns the rules, the
-# layout, the measurements and the geometry, so adding a kind of world
-# changes nothing here. The optional steps (pre_check, solve_record,
+# Every world: racing circuits, farms, and whatever comes next. The module
+# owns the rules, the layout, the measurements and the geometry, so adding a
+# kind of world changes nothing here. The optional steps (pre_check, solve_record,
 # correction_feedback, post_check, summary) do nothing unless a module
 # provides them.
 func _create_world(module: WorldModule, parameters: Dictionary) -> void:
@@ -561,9 +356,9 @@ func _create_world(module: WorldModule, parameters: Dictionary) -> void:
 		holder.name = module.display_name().capitalize()
 		world_node.add_child(holder)
 	else:
+		# A new world replaces whatever was there, whichever kind it was.
 		track_builder.clear()
 		opponent_builder.clear()
-		circuit_builder.clear()
 		_clear_world_node()
 
 	var report := module.build(holder, solved["layout"])
@@ -571,6 +366,9 @@ func _create_world(module: WorldModule, parameters: Dictionary) -> void:
 		_place(holder, report["bounds_min"], report["bounds_max"])
 	else:
 		_frame_view(report["bounds_min"], report["bounds_max"])
+	# In a plan, the last world that can be driven is the one driven.
+	if report.has("drivable"):
+		drivable = report["drivable"]
 
 	TrackLog.append(record)
 	track_measured.emit(record)
@@ -579,10 +377,52 @@ func _create_world(module: WorldModule, parameters: Dictionary) -> void:
 
 
 func _clear_world_node() -> void:
+	drivable = {}
 	if world_node == null:
 		return
 	for child in world_node.get_children():
 		child.queue_free()
+
+
+# A world built without a request: nothing recorded, nothing to save, and the
+# AI is not shown it as the player's world. Main uses this for the small
+# circuit that is there to drive before anything has been asked for.
+func show_unrecorded(module: WorldModule, layout: Dictionary) -> void:
+	track_builder.clear()
+	opponent_builder.clear()
+	_clear_world_node()
+	var report := module.build(world_node, layout)
+	_frame_view(report["bounds_min"], report["bounds_max"])
+	if report.has("drivable"):
+		drivable = report["drivable"]
+
+
+# --- driving ---
+# Driving and racing reach the world only through here, so any world whose
+# module reports a drivable surface can be driven.
+
+func has_drivable() -> bool:
+	return not drivable.is_empty() and is_instance_valid(drivable["node"]) and bool(drivable["node"].built)
+
+
+# Where the car goes, in world space: a plan may have moved the world (a
+# track around a farm), so the node's own numbers are converted.
+# Returns {} when there is nothing to drive, otherwise start_position,
+# start_heading (radians, 0 is the start direction), centreline and
+# road_height.
+func drivable_surface() -> Dictionary:
+	if not has_drivable():
+		return {}
+	var node: Node3D = drivable["node"]
+	var line := PackedVector3Array()
+	for p in node.centreline:
+		line.append(node.to_global(p))
+	return {
+		"start_position": node.to_global(node.start_position),
+		"start_heading": float(node.start_heading),
+		"centreline": line,
+		"road_height": float(drivable["road_height"]),
+	}
 
 
 func _finish_failed(record: Dictionary, category: String, reasons: Array) -> void:
@@ -598,11 +438,6 @@ func _finish_failed(record: Dictionary, category: String, reasons: Array) -> voi
 		lines.append("- " + str(reason))
 	lines.append("no geometry built")
 	log_message.emit("\n".join(lines))
-
-
-# JSON can't hold infinity, so "nothing measured" is stored as -1.
-func _finite(value: float) -> float:
-	return value if is_finite(value) else -1.0
 
 
 # --- view ---

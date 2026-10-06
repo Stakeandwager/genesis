@@ -154,7 +154,7 @@ func build(root: Node3D, layout: Dictionary) -> Dictionary:
 	circuit.name = "CircuitBuilder"
 	root.add_child(circuit)
 	var report := circuit.build(layout["sections"], false)
-	report["drivable"] = circuit
+	report["drivable"] = {"node": circuit, "road_height": CircuitBuilder.ROAD_HEIGHT}
 	report["direction"] = "clockwise" if float(layout["target_turn"]) > 0.0 else "anticlockwise"
 	return report
 

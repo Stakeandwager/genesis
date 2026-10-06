@@ -4,6 +4,8 @@ extends Node3D
 # --- 002E: the play loop. Once a world exists, the AI is shown it with the
 #     next request, so "make it longer" changes this world instead of
 #     starting again. Godot reports what actually changed, by measurement. ---
+# --- 002F: driving reaches the world only through the controller's
+#     drivable_surface(), so any world that reports one can be driven. ---
 # --- 002D: /race [opponents] - race computer-controlled cars round the
 #     circuit. Driving now uses the track's real position, so a circuit
 #     moved by a plan (a track around a farm) is driven where it stands. ---
@@ -100,8 +102,8 @@ func _ready() -> void:
 
 
 # A small circuit with a hill in it, so there is something to drive before the
-# AI is asked for anything. It uses the controller's builder: there is no
-# CircuitBuilder node in the scene, the controller creates its own.
+# AI is asked for anything. It is built by the racing module but not recorded
+# or remembered, so the first request still starts a new world.
 func _build_startup_track() -> void:
 	var test_sections := [
 		{"type": "straight", "length": 200.0},
@@ -116,11 +118,7 @@ func _build_startup_track() -> void:
 		{"type": "corner", "radius": 60.0, "angle": 90.0},
 	]
 
-	if controller.circuit_builder == null:
-		return
-
-	var report := controller.circuit_builder.build(test_sections, false)
-	controller._frame_view(report["bounds_min"], report["bounds_max"])
+	controller.show_unrecorded(RacingModule.new(), {"sections": test_sections, "target_turn": 360.0})
 	checkpoint_tracker.initialize(_track_centreline())
 	_record("startup track", "Built a test circuit with a hill. Type /drive to drive it.", "ok")
 
@@ -212,7 +210,7 @@ func _on_controller_log(text: String) -> void:
 		editing_from = {}
 
 	# A new circuit means new checkpoints, and any race on the old one is over.
-	if kind == "ok" and controller.circuit_builder and controller.circuit_builder.built:
+	if kind == "ok" and controller.has_drivable():
 		var was_racing := race.running
 		if race.running:
 			race.stop()
@@ -220,7 +218,7 @@ func _on_controller_log(text: String) -> void:
 		# Changed while driving: carry on driving the new version from the start.
 		if driving:
 			car.auto_drive = false
-			car.place_at(_track_start(), controller.circuit_builder.start_heading)
+			car.place_at(_track_start(), _track_heading())
 			if was_racing:
 				_record("race", "The track changed, so the race was stopped. Type /race to race the new version.", "unsupported")
 
@@ -414,7 +412,7 @@ func _delete_world(request: String) -> void:
 # --- driving ---
 
 func _start_driving() -> void:
-	if not controller.circuit_builder.built:
+	if not controller.has_drivable():
 		status_label.text = "Build a track first, then /drive."
 		_record("/drive", "Build a track first, then /drive.", "error")
 		return
@@ -427,7 +425,7 @@ func _start_driving() -> void:
 	if race.running:
 		race.stop()
 	car.auto_drive = false
-	car.place_at(_track_start(), controller.circuit_builder.start_heading)
+	car.place_at(_track_start(), _track_heading())
 	car.visible = true
 	car.freeze = false
 	car.camera.current = true
@@ -516,7 +514,8 @@ func _start_race(count: int) -> void:
 	_start_driving()
 	if not driving:
 		return
-	var reply := race.start(_track_centreline(), controller.circuit_builder.start_heading, car, count, CircuitBuilder.ROAD_HEIGHT)
+	var surface := controller.drivable_surface()
+	var reply := race.start(surface["centreline"], surface["start_heading"], car, count, surface["road_height"])
 	status_label.text = reply
 	_record("/race", reply, "ok" if race.running else "error")
 
@@ -525,17 +524,18 @@ func _on_race_announced(text: String) -> void:
 	_record("race", text, "ok")
 
 
-# The circuit's start and centreline where the circuit actually stands. A plan
-# can move the circuit (a track around a farm), so its own numbers are local.
+# The start and centreline where the drivable world actually stands. A plan
+# can move it (a track around a farm); the controller converts to world space.
 func _track_start() -> Vector3:
-	return controller.circuit_builder.to_global(controller.circuit_builder.start_position)
+	return controller.drivable_surface().get("start_position", Vector3.ZERO)
+
+
+func _track_heading() -> float:
+	return float(controller.drivable_surface().get("start_heading", 0.0))
 
 
 func _track_centreline() -> PackedVector3Array:
-	var out := PackedVector3Array()
-	for p in controller.circuit_builder.centreline:
-		out.append(controller.circuit_builder.to_global(p))
-	return out
+	return controller.drivable_surface().get("centreline", PackedVector3Array())
 
 
 func _on_lap_completed(last_time: float, best_time: float) -> void:
