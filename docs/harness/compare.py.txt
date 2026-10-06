@@ -1,0 +1,38 @@
+import json,sys
+def load(p): return json.load(open(p))
+def strip(r):
+    r=dict(r); r.pop('time',None); return r
+a=load(sys.argv[1])
+match=total=0; bad=[]
+for g in a['groups']:
+    orig=g['original']; prod=g['produced']
+    for i,o in enumerate(orig):
+        total+=1
+        p=prod[i] if i<len(prod) else {}
+        if o.get('result')==p.get('result') and o.get('category')==p.get('category') and o.get('command')==p.get('command'):
+            match+=1
+        else:
+            bad.append((o.get('time'),o.get('command'),o.get('result'),o.get('category'),'->',p.get('command'),p.get('result'),p.get('category')))
+    if len(prod)!=len(orig): bad.append(('count',len(orig),len(prod),orig[0].get('time')))
+print(f"replay vs logged: {match} of {total} match (result, category, command)")
+for b in bad[:20]: print('  MISMATCH',b)
+if len(sys.argv)>2:
+    b=load(sys.argv[2])
+    same_rec=diff_rec=0; same_fb=diff_fb=0; same_msg=diff_msg=0; diffs=[]
+    for ga,gb in zip(a['groups'],b['groups']):
+        for pa,pb in zip(ga['produced'],gb['produced']):
+            if strip(pa)==strip(pb) and list(pa.keys())==list(pb.keys()): same_rec+=1
+            else:
+                diff_rec+=1; diffs.append(('record',pa.get('command'), sorted(k for k in set(pa)|set(pb) if k!='time' and pa.get(k)!=pb.get(k)), list(pa.keys()), list(pb.keys())))
+        if len(ga['produced'])!=len(gb['produced']): diff_rec+=1
+        if ga['messages']==gb['messages']: same_msg+=1
+        else: diff_msg+=1; diffs.append(('messages',ga['messages'],gb['messages']))
+        if ga['feedbacks']==gb['feedbacks']: same_fb+=1
+        else: diff_fb+=1
+        if ga['last_build_command']!=gb['last_build_command']: diffs.append(('last_build',ga['last_build_command'],gb['last_build_command']))
+    print(f"full records identical (all fields, same key order, except time): {same_rec}, different: {diff_rec}")
+    print(f"log messages identical: {same_msg} executions, different: {diff_msg}")
+    print(f"closure feedback identical: {same_fb} executions, different: {diff_fb}")
+    print("prompt byte-identical:", a['prompt']==b['prompt'], len(a['prompt'].encode()), len(b['prompt'].encode()))
+    print("allowed commands (same set):", sorted(a['allowed'])==sorted(b['allowed']), a['allowed'])
+    for d in diffs[:6]: print('  DIFF',d)

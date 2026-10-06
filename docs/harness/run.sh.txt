@@ -1,0 +1,11 @@
+#!/bin/bash
+# usage: run.sh NAME SCRIPTS_DIR [LOG] [extra env]
+P=/home/claude/proj_$1
+LOG=${3:-/home/claude/src/genesis-send/track_log.jsonl}
+rm -rf $P; mkdir -p $P/scripts $P/tests
+cp $2/*.gd $P/scripts/; cp /home/claude/harness/*.gd $P/tests/
+printf 'config_version=5\n\n[application]\nconfig/name="AI_Game_Builder"\nconfig/features=PackedStringArray("4.7")\n' > $P/project.godot
+cd $P
+timeout 300 /home/claude/Godot_v4.7.1-stable_linux.x86_64 --headless --import >/dev/null 2>&1
+/home/claude/Godot_v4.7.1-stable_linux.x86_64 --headless -s res://tests/loadcheck.gd 2>&1 | grep -E "LOADCHECK|CANNOT|SCRIPT ERROR|Parse Error"
+REPLAY_OUT=/home/claude/$1.json REPLAY_LOG=$LOG timeout 900 /home/claude/Godot_v4.7.1-stable_linux.x86_64 --headless -s res://tests/replay.gd 2>&1 | grep -E "REPLAY|SCRIPT ERROR|Parse Error"
