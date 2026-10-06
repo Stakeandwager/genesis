@@ -8,7 +8,7 @@ class_name WorldRegistry
 # validated and measured; if it is not, the AI cannot reach it at all.
 
 static func modules() -> Array:
-	return [FarmModule.new()]
+	return [FarmModule.new(), RacingModule.new()]
 
 
 static func commands() -> Array:
