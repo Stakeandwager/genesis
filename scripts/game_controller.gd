@@ -49,6 +49,11 @@ var current_source: Dictionary = {}
 var current_experiment: Dictionary = {}
 # Which attempt this is: {"attempt": 1}, or {"attempt": 2, "revision_of": {...}}.
 var current_attempt: Dictionary = {}
+# 003: the line Genesis showed the player before building this, generated
+# from the structured command. Kept beside the request, never instead of it:
+# what the player SAID, what Genesis UNDERSTOOD and what Genesis BUILT are
+# three different things and must never become one field.
+var current_readback := ""
 # /revise off turns closure feedback off, for a like-for-like baseline.
 var revision_enabled := true
 
@@ -139,9 +144,12 @@ func record_rejection(category: String, reason: String) -> void:
 		"raw_command": current_raw,
 		"source": current_source,
 		"experiment": current_experiment,
+		"readback": current_readback,
+		"understanding": "UNKNOWN",
 		"command": "",
 		"attempt": int(current_attempt.get("attempt", 1)),
 		"result": "FAILED",
+		"construction": "UNSUPPORTED" if category == "UNSUPPORTED" else "FAILED",
 		"category": category,
 		"reasons": [reason],
 	}
@@ -178,6 +186,8 @@ func _execute_plan(parameters: Dictionary) -> void:
 		"raw_command": current_raw,
 		"source": current_source,
 		"experiment": current_experiment,
+		"readback": current_readback,
+		"understanding": "UNKNOWN",
 		"command": "PLAN",
 		"world": "plan",
 		"intent": parameters.get("intent", {}),
@@ -223,17 +233,71 @@ func _execute_plan(parameters: Dictionary) -> void:
 	plan_footprints = []
 	plan_problems = []
 
+	# --- 003: work every world out, fit them together, THEN build ---
+	# Until now a plan built each world as it went, so a world asked to
+	# contain another only found out how big that other world was after both
+	# existed, and a plan could fail by six metres of grass. Now nothing is
+	# built until every size is known and the containers have been grown.
 	var done := PackedStringArray()
+
+	# Pass 1: work out each world. Nothing is built.
+	var prepared: Array = []
 	for i in steps.size():
 		var step: Dictionary = steps[i]
 		var step_command := str(step["command"]).to_upper()
 		var step_parameters: Dictionary = step.get("parameters", {})
-		plan_pending = step
-		execute(step_command, step_parameters)
-		plan_pending = {}
-		done.append(step_command)
+		var module := WorldRegistry.find(step_command)
+		if module == null:
+			# Not a world (CLEAR_WORLD, the Prototype 001 ring): nothing to
+			# work out in advance, so it is run in order during pass 3.
+			prepared.append({})
+			continue
+		var out := _prepare_world(module, step_parameters)
+		if not bool(out["ok"]):
+			plan_problems.append("step %d could not be worked out" % (i + 1))
+			prepared.append({})
+			continue
+		out["module"] = module
+		out["parameters"] = step_parameters
+		prepared.append(out)
+
+	# Pass 2: make the containers big enough.
+	var fitted: Array = []
+	if plan_problems.is_empty():
+		fitted = _fit_plan(steps, prepared)
+		if not fitted.is_empty():
+			record["fitted"] = fitted
+
+	# Pass 3: build, in the order the AI gave.
+	if plan_problems.is_empty():
+		for i in steps.size():
+			var step: Dictionary = steps[i]
+			var step_command := str(step["command"]).to_upper()
+			var step_parameters: Dictionary = step.get("parameters", {})
+			plan_pending = step
+			var out: Dictionary = prepared[i]
+			if out.is_empty():
+				execute(step_command, step_parameters)
+			else:
+				_build_world(out["module"], out["parameters"], out["layout"], out["record"])
+			plan_pending = {}
+			done.append(step_command)
 
 	plan_running = false
+
+	# A plan that never got built still leaves its worlds in the record, with
+	# a valid proposal and no construction. History is added to, not rewritten.
+	if not plan_problems.is_empty():
+		for out in prepared:
+			var o: Dictionary = out
+			if o.is_empty() or not o.has("record"):
+				continue
+			var step_record: Dictionary = o["record"]
+			step_record["construction"] = "FAILED"
+			step_record["category"] = "FAILED_SCENE"
+			step_record["reasons"] = plan_problems
+			TrackLog.append(step_record)
+			track_measured.emit(step_record)
 
 	if not plan_problems.is_empty():
 		track_builder.clear()
@@ -246,18 +310,105 @@ func _execute_plan(parameters: Dictionary) -> void:
 		_frame_view(plan_bounds_min, plan_bounds_max)
 
 	record["result"] = "VALID"
+	record["construction"] = "BUILT"
 	record["category"] = ""
 	record["reasons"] = []
 	record["steps"] = done
 	last_build = {"command": "PLAN", "parameters": parameters, "metrics": {}, "request": current_request}
 	TrackLog.append(record)
-	log_message.emit("Plan built in %d steps: %s" % [done.size(), ", ".join(done)])
+
+	var lines := PackedStringArray()
+	lines.append("Plan built in %d steps: %s" % [done.size(), ", ".join(done)])
+	for note in fitted:
+		var n: Dictionary = note
+		lines.append("%s grown to %.0f by %.0f m so the %s fits inside it" % [
+			str(n["world"]).capitalize(), float(n["to_width"]), float(n["to_depth"]), str(n["inner"])])
+	log_message.emit("\n".join(lines))
 
 
 # Where a world sits within a plan. The AI says what it wants - beside, or
 # around an earlier world - and this works out the actual position, then
 # checks the result holds together. The AI never supplies coordinates.
 const SCENE_CLEARANCE := 15.0
+# No world may be grown past this. A container grows to fit what it holds,
+# and a huge circuit inside a small farm would otherwise ask for kilometres
+# of fence that this machine cannot draw.
+const PLAN_MAX_EXTENT := 2000.0
+
+
+# --- 003: fitting a plan together before anything is built ---
+# The player says what they want related to what. They do not know, and
+# should not have to know, that their farm comes out 430 m across and their
+# circuit 412 m - six metres a side short of holding it. So Genesis measures
+# both and grows whichever one is the container.
+#
+# "around": N centres two worlds on each other. One must then contain the
+# other with SCENE_CLEARANCE to spare. If neither does, the bigger one is
+# asked to grow; if it cannot (a circuit's shape IS the design, so it never
+# can), the smaller one is asked to contain the bigger instead, which is the
+# same relationship seen from the other side.
+#
+# Every growth is recorded. Godot changing what the AI proposed is drift, and
+# drift is measured here as it is everywhere else.
+func _fit_plan(steps: Array, prepared: Array) -> Array:
+	var notes: Array = []
+	for i in steps.size():
+		var out: Dictionary = prepared[i]
+		if out.is_empty():
+			continue
+		var around := WorldRegistry.around_of(steps[i])
+		if around < 1 or around > prepared.size() or around - 1 == i:
+			continue
+		var other: Dictionary = prepared[around - 1]
+		if other.is_empty():
+			continue
+
+		var a: WorldModule = out["module"]
+		var b: WorldModule = other["module"]
+		var size_a: Vector2 = a.extent(out["layout"])
+		var size_b: Vector2 = b.extent(other["layout"])
+		if _holds(size_a, size_b) or _holds(size_b, size_a):
+			continue
+
+		# Try the bigger one as the container, then the smaller one.
+		var order: Array = [[a, out, size_a, b, other, size_b], [b, other, size_b, a, out, size_a]]
+		if size_b.x * size_b.y > size_a.x * size_a.y:
+			order.reverse()
+
+		var grew := false
+		for attempt in order:
+			var outer: WorldModule = attempt[0]
+			var outer_out: Dictionary = attempt[1]
+			var outer_size: Vector2 = attempt[2]
+			var inner: WorldModule = attempt[3]
+			var inner_size: Vector2 = attempt[5]
+			var needed := inner_size + Vector2(SCENE_CLEARANCE, SCENE_CLEARANCE) * 2.0
+			var target := Vector2(maxf(outer_size.x, needed.x), maxf(outer_size.y, needed.y))
+			if target.x > PLAN_MAX_EXTENT or target.y > PLAN_MAX_EXTENT:
+				continue
+			if not outer.grow_to(outer_out["layout"], target):
+				continue
+			var now: Vector2 = outer.extent(outer_out["layout"])
+			notes.append({
+				"world": outer.display_name(),
+				"inner": inner.display_name(),
+				"from_width": outer_size.x, "from_depth": outer_size.y,
+				"to_width": now.x, "to_depth": now.y,
+			})
+			grew = true
+			break
+
+		if not grew:
+			plan_problems.append(
+				"%s is %.0f by %.0f m and %s is %.0f by %.0f m: neither can be made to hold the other" % [
+					a.display_name(), size_a.x, size_a.y, b.display_name(), size_b.x, size_b.y])
+	return notes
+
+
+# Does a world this size hold one that size, with room to spare, when the two
+# are centred on each other?
+func _holds(outer: Vector2, inner: Vector2) -> bool:
+	return outer.x >= inner.x + SCENE_CLEARANCE * 2.0 and outer.y >= inner.y + SCENE_CLEARANCE * 2.0
 
 
 func _place(node: Node3D, bounds_min: Vector2, bounds_max: Vector2) -> void:
@@ -265,7 +416,9 @@ func _place(node: Node3D, bounds_min: Vector2, bounds_max: Vector2) -> void:
 	var centre := (bounds_min + bounds_max) * 0.5
 	var offset := Vector2.ZERO
 
-	var around := int(step.get("around", 0))
+	# 003: one reading, shared with the readback, so the line the player was
+	# shown and the placement they get can never disagree.
+	var around := WorldRegistry.around_of(step)
 	if around >= 1 and around <= plan_footprints.size():
 		# Centre this world on the one it is meant to surround.
 		var target: Dictionary = plan_footprints[around - 1]
@@ -304,24 +457,41 @@ func _place(node: Node3D, bounds_min: Vector2, bounds_max: Vector2) -> void:
 # correction_feedback, post_check, summary) do nothing unless a module
 # provides them.
 func _create_world(module: WorldModule, parameters: Dictionary) -> void:
+	var prepared := _prepare_world(module, parameters)
+	if not bool(prepared["ok"]):
+		return
+	_build_world(module, parameters, prepared["layout"], prepared["record"])
+
+
+# --- 003: working a world out, without building it ---
+# Everything up to but not including geometry: validate, check, solve, check
+# again, measure. A plan runs this for EVERY step before it builds any of
+# them, because a world asked to contain another cannot know how much room to
+# leave until the thing going inside it has been measured.
+#
+# Returns {"ok", "record", "layout"}. A failure writes its own record and
+# announces itself exactly as it always did.
+func _prepare_world(module: WorldModule, parameters: Dictionary) -> Dictionary:
 	var record := {
 		"time": Time.get_datetime_string_from_system(),
 		"request": current_request,
 		"raw_command": current_raw,
 		"source": current_source,
 		"experiment": current_experiment,
+		"readback": current_readback,
+		"understanding": "UNKNOWN",
 	}
 	record.merge(module.record_fields(parameters, current_attempt))
 
 	var check := module.validate(parameters)
 	if not check["ok"]:
 		_finish_failed(record, "FAILED_SCHEMA", check["errors"])
-		return
+		return {"ok": false}
 
 	var pre := module.pre_check(check["content"], record)
 	if not pre["ok"]:
 		_finish_failed(record, pre["category"], pre["reasons"])
-		return
+		return {"ok": false}
 
 	var solved := module.solve(pre["content"])
 	record.merge(module.solve_record(solved))
@@ -334,20 +504,28 @@ func _create_world(module: WorldModule, parameters: Dictionary) -> void:
 		_finish_failed(record, solved["category"], solved["reasons"])
 		if may_revise:
 			revision_requested.emit(feedback, record)
-		return
+		return {"ok": false}
 
 	var post := module.post_check(solved["layout"])
 	record.merge(post["record"])
 	if not post["ok"]:
 		_finish_failed(record, post["category"], post["reasons"])
-		return
+		return {"ok": false}
 
 	record["metrics"] = module.measure(solved["layout"])
+	# The PROPOSAL is valid. Whether anything gets built is a separate
+	# question, answered later and recorded in its own field.
 	record["result"] = "VALID"
-	if not plan_running:
-		last_build = {"command": module.command(), "parameters": parameters, "metrics": record["metrics"], "request": current_request}
 	record["category"] = ""
 	record["reasons"] = []
+	return {"ok": true, "record": record, "layout": solved["layout"]}
+
+
+# --- 003: building a world that has already been worked out ---
+func _build_world(module: WorldModule, parameters: Dictionary, layout: Dictionary, record: Dictionary) -> void:
+	record["construction"] = "BUILT"
+	if not plan_running:
+		last_build = {"command": module.command(), "parameters": parameters, "metrics": record["metrics"], "request": current_request}
 
 	var holder := world_node
 	if plan_running:
@@ -361,7 +539,7 @@ func _create_world(module: WorldModule, parameters: Dictionary) -> void:
 		opponent_builder.clear()
 		_clear_world_node()
 
-	var report := module.build(holder, solved["layout"])
+	var report := module.build(holder, layout)
 	if plan_running:
 		_place(holder, report["bounds_min"], report["bounds_max"])
 	else:
@@ -427,6 +605,11 @@ func drivable_surface() -> Dictionary:
 
 func _finish_failed(record: Dictionary, category: String, reasons: Array) -> void:
 	record["result"] = "FAILED"
+	# 003: what actually happened in the game, kept apart from whether the
+	# proposal was valid and from whether the player was understood. A plan
+	# that fails is rolled back whole, so there is no PARTIAL to record: the
+	# value stays unused until the engine can keep what worked.
+	record["construction"] = "FAILED"
 	record["category"] = category
 	record["reasons"] = reasons
 	TrackLog.append(record)

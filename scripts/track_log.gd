@@ -19,7 +19,21 @@ const PATH := "user://track_log.jsonl"
 static var session: Dictionary = {}
 
 
+# 003: every record gets an id, so that evidence arriving later - the player
+# confirming or correcting what Genesis said it understood - can be written
+# as its own record pointing back at this one. The original interpretation
+# is never edited: history is added to, not rewritten.
+static var serial: int = 0
+
+
+static func next_id() -> String:
+	serial += 1
+	return "%d-%d" % [Time.get_unix_time_from_system(), serial]
+
+
 static func append(record: Dictionary) -> void:
+	if not record.has("id"):
+		record["id"] = next_id()
 	if not session.is_empty():
 		record["session"] = {"name": session["name"], "id": session["id"]}
 

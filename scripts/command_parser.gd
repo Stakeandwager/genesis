@@ -32,8 +32,13 @@ static func parse(json_text: String) -> Dictionary:
 	var command := str(data["command"]).to_upper()
 	if command == "UNSUPPORTED":
 		result["unsupported"] = true
+		result["command"] = command
 		var reason := "no reason given"
 		if data.has("parameters") and typeof(data["parameters"]) == TYPE_DICTIONARY:
+			# 003: the parameters are kept, not just the reason, because an
+			# UNSUPPORTED answer now also carries what the AI understood, and
+			# Genesis must show that before explaining what it cannot do.
+			result["parameters"] = data["parameters"]
 			reason = str(data["parameters"].get("reason", reason))
 		result["error"] = reason
 		return result

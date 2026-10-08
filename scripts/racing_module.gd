@@ -174,6 +174,21 @@ func measure(layout: Dictionary) -> Dictionary:
 	return TrackMetrics.measure(layout["sections"])
 
 
+# How much ground the circuit covers, measured from the sections rather than
+# from built geometry, so a plan can know it before building anything.
+func extent(layout: Dictionary) -> Vector2:
+	var box := TrackGeometry.bounds(layout["sections"])
+	return (box[1] as Vector2) - (box[0] as Vector2)
+
+
+# A circuit cannot grow. Its shape IS the design: the straights are the
+# lengths the player asked for and the corners the radii they asked for.
+# Stretching it to fit round something else would quietly hand them a
+# different track. So racing opts out, and the other world grows instead.
+func can_grow() -> bool:
+	return false
+
+
 # The circuit is built by its own CircuitBuilder, a child of root, so a plan
 # can move it by moving root. Driving finds it through the "drivable" entry.
 func build(root: Node3D, layout: Dictionary) -> Dictionary:
@@ -189,6 +204,77 @@ func build(root: Node3D, layout: Dictionary) -> Dictionary:
 func summary(_metrics: Dictionary, report: Dictionary) -> String:
 	return "CREATE_TRACK built a closed %s circuit: %d sections, %.0f m of road\n(full measurements in the metrics panel)" % [
 		report["direction"], report["section_count"], report["total_length"]]
+
+
+# "a closed circuit with two 300 m straights, two 200 m straights and
+#  50 m corners"
+#
+# Straights are grouped by length and corners by radius, because that is how
+# a player describes a track: "two long straights", "tight corners". The
+# number of sections is not read out - nobody asks for eight sections.
+func readback(parameters: Dictionary) -> String:
+	var raw = parameters.get("sections", null)
+	if typeof(raw) != TYPE_ARRAY or (raw as Array).is_empty():
+		return "a closed racing circuit"
+
+	# Straights before corners, however the AI ordered the sections. The
+	# sections go round in a sequence, but a player hears a description as a
+	# list of parts, and "two straights, two corners" reads where "straights,
+	# corners, more straights" does not.
+	var rank := {"straight": 0, "corner": 1, "hairpin": 2, "chicane": 3}
+	var order: Array = []
+	var groups := {}
+	for entry in (raw as Array):
+		if typeof(entry) != TYPE_DICTIONARY:
+			continue
+		var section: Dictionary = entry
+		var type := str(section.get("type", "")).to_lower()
+		if not rank.has(type):
+			continue
+		var measure := 0.0
+		var singular := ""
+		var plural := ""
+		match type:
+			"straight":
+				measure = float(section.get("length", 0.0))
+				singular = "%.0f m straight" % measure
+				plural = "%.0f m straights" % measure
+			"corner", "hairpin":
+				measure = float(section.get("radius", 0.0))
+				singular = "%.0f m %s" % [measure, type]
+				plural = "%.0f m %ss" % [measure, type]
+			"chicane":
+				measure = float(section.get("offset", 0.0))
+				singular = "%.0f m chicane" % measure
+				plural = "%.0f m chicanes" % measure
+		var key := "%s|%.0f" % [type, measure]
+		if not groups.has(key):
+			groups[key] = {"singular": singular, "plural": plural, "count": 0,
+				"rank": int(rank[type]), "measure": measure}
+			order.append(key)
+		groups[key]["count"] = int(groups[key]["count"]) + 1
+
+	# Longest first within a kind, so "two 800 m straights" leads.
+	order.sort_custom(func(a, b): return _before(groups[a], groups[b]))
+
+	var parts := PackedStringArray()
+	for key in order:
+		var g: Dictionary = groups[key]
+		parts.append(Readback.count_of(int(g["count"]), str(g["singular"]), str(g["plural"])))
+
+	if parts.is_empty():
+		return "a closed racing circuit"
+	return "a closed circuit with " + Readback.join_capped(parts)
+
+
+func _before(a: Dictionary, b: Dictionary) -> bool:
+	if int(a["rank"]) != int(b["rank"]):
+		return int(a["rank"]) < int(b["rank"])
+	return float(a["measure"]) > float(b["measure"])
+
+
+func readback_short(_parameters: Dictionary) -> String:
+	return "a race circuit"
 
 
 # The panel racing has always shown, in the same order, moved here from

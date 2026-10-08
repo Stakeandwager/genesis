@@ -33,7 +33,11 @@ const TEMPERATURE := 1.0
 # circuit rules are unchanged word for word, but their place in the prompt is
 # not, so tracks made under 002H are not comparable with earlier ones. Old
 # records keep their own version string, so the two never get mixed up.
-const PROMPT_VERSION := "002H-neutral-1"
+#
+# 003-readback-1 adds one thing: an UNSUPPORTED answer must say what it
+# understood the player to want, not only why it cannot be built. Everything
+# a world can build is unchanged, so designs are still comparable with 002H.
+const PROMPT_VERSION := "003-readback-1"
 # Which wording of the closure feedback a revised track was given.
 # feedback-2 adds Godot's test of whether ANY straight lengths could close the layout.
 const REVISION_VERSION := "002C-closure-feedback-2"
@@ -58,7 +62,8 @@ where each COMMAND is one of the world commands listed at the end. Up to 4 steps
 To build one world around another, give the later step "around": N, where N is the number of the earlier step (1 for the first). The game works out where everything goes; never give coordinates. The surrounding world must be large enough to contain the inner one with room to spare, or the whole plan is refused.
 
 For a request this game cannot build, return:
-{"command": "UNSUPPORTED", "parameters": {"reason": "short explanation"}}
+{"command": "UNSUPPORTED", "parameters": {"understood": "what the player is asking for", "reason": "short explanation of why this game cannot build it"}}
+UNDERSTOOD is what they want, as a short phrase that completes "you want ...", in your own words rather than theirs. Say it even when you cannot build it: being told the right thing is impossible is different from being told the wrong thing is.
 
 STYLE records how the player described what they asked for, as a short lowercase label with underscores, in the player's own terms. If they gave no description, use "unspecified". Interpret the player's description yourself when you design the world.
 """

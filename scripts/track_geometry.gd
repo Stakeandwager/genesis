@@ -114,6 +114,29 @@ static func advance(pos: Vector3, heading: float, s: Dictionary) -> Array:
 	return [pos, heading]
 
 
+# --- 003: how much ground a circuit covers, before any of it is built ---
+# The same points CircuitBuilder walks when it draws the road, measured
+# without drawing anything. A plan needs every world's size before it builds
+# the first one, so that a world asked to contain another can be made big
+# enough first. Returns [min, max] on the ground plane.
+static func bounds(sections: Array) -> Array:
+	var low := Vector2(INF, INF)
+	var high := Vector2(-INF, -INF)
+	var pos := Vector3.ZERO
+	var heading := 0.0
+	for s in sections:
+		for sample in sample(pos, heading, s):
+			var p: Vector3 = sample[0]
+			low = Vector2(minf(low.x, p.x), minf(low.y, p.z))
+			high = Vector2(maxf(high.x, p.x), maxf(high.y, p.z))
+		var pose := advance(pos, heading, s)
+		pos = pose[0]
+		heading = pose[1]
+	if low.x > high.x:
+		return [Vector2.ZERO, Vector2.ZERO]
+	return [low, high]
+
+
 static func end_pose(sections: Array) -> Array:
 	var pos := Vector3.ZERO
 	var heading := 0.0

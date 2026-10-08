@@ -239,7 +239,12 @@ func _execute_json(json_text: String) -> void:
 	var parsed := CommandParser.parse(json_text)
 
 	# The AI honestly said it can't do this. Explain, don't execute.
+	# 003: it still shows what it understood first. A refusal of the wrong
+	# request is its own misunderstanding, and what players ask for and
+	# cannot have is evidence about what Genesis should become.
 	if parsed["unsupported"]:
+		controller.current_readback = WorldRegistry.readback("UNSUPPORTED", parsed["parameters"])
+		_show_readback()
 		status_label.text = "I don't know how to do that yet."
 		print("UNSUPPORTED: ", parsed["error"])
 		_record(pending_request, "Not supported yet: " + str(parsed["error"]) + "\n" + SUPPORTED_HELP, "unsupported")
@@ -247,13 +252,31 @@ func _execute_json(json_text: String) -> void:
 		return
 
 	if not parsed["ok"]:
+		controller.current_readback = ""
 		status_label.text = "Rejected: " + str(parsed["error"])
 		print("REJECTED: ", parsed["error"])
 		_record(pending_request, "REJECTED: " + str(parsed["error"]), "error")
 		controller.record_rejection("FAILED_PARSE", str(parsed["error"]))
 		return
 
+	# 003: say what Genesis understood BEFORE building, so the line is shown
+	# whether or not construction then succeeds, and so a build that works
+	# can never be mistaken for a request that was understood.
+	controller.current_readback = WorldRegistry.readback(parsed["command"], parsed["parameters"])
+	_show_readback()
+
 	controller.execute(parsed["command"], parsed["parameters"])
+
+
+# The readback goes in the history panel against the request it belongs to,
+# in its own colour. It is deliberately not a question: stopping the game
+# after every sentence to ask YES or NO would turn playing into a form.
+func _show_readback() -> void:
+	var line := str(controller.current_readback)
+	if line == "":
+		return
+	print("READBACK: ", line)
+	_record(pending_request, "I understand: you want " + line + ".", "understood")
 
 
 # --- closure feedback ---
@@ -754,6 +777,10 @@ func _record(player_text: String, result_text: String, kind: String) -> void:
 		colour = Color(0.95, 0.5, 0.4)
 	elif kind == "unsupported":
 		colour = Color(0.95, 0.75, 0.3)
+	elif kind == "understood":
+		# 003: what Genesis understood, in its own colour, so the player can
+		# find it without reading the result to know whether to trust it.
+		colour = Color(0.60, 0.78, 0.95)
 
 	for line in result_text.split("\n"):
 		history_log.push_color(colour)

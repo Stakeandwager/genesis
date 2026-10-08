@@ -113,6 +113,81 @@ func summary(_metrics: Dictionary, _report: Dictionary) -> String:
 	return "%s built\n(full measurements in the panel)" % display_name().capitalize()
 
 
+# --- 003: how big this world is, before it is built ---
+# Its size on the ground, in metres, worked out from the solved layout. A
+# plan needs every world's size before it builds the first one: a world asked
+# to contain another cannot know how much room to leave until the thing going
+# inside it has been measured.
+func extent(_layout: Dictionary) -> Vector2:
+	return Vector2.ZERO
+
+
+# Make this world at least this big, keeping everything the AI asked for the
+# size it asked for. A world grows by putting more ground around what it
+# holds, never by stretching it: the farm's fields stay the size the player
+# asked for and the dungeon's rooms stay where they were put.
+#
+# This is the rule that lets a player say "a race track in a farm" without
+# knowing that the farm comes out 430 m across. They describe the
+# relationship; Genesis solves the geometry.
+#
+# It is written once, here, so it holds for every world there will ever be. A
+# new world gets it by doing two things: returning its size from extent(),
+# and running its own outer bounds through grown() when it draws them. It
+# opts out by overriding can_grow().
+func grow_to(layout: Dictionary, size: Vector2) -> bool:
+	if not can_grow():
+		return false
+	var wanted: Vector2 = layout.get("min_extent", Vector2.ZERO)
+	layout["min_extent"] = Vector2(maxf(wanted.x, size.x), maxf(wanted.y, size.y))
+	return true
+
+
+# Can more ground be put around this world without changing what it is?
+# True for anything laid out inside a boundary. False where the shape itself
+# is the design: a circuit's straights are the lengths the player asked for,
+# so stretching it to fit round something else would quietly give them a
+# different track from the one they described.
+func can_grow() -> bool:
+	return true
+
+
+# A world's outer bounds, pushed out if a plan asked it to hold something.
+# Growth is about the middle, so whatever sits inside stays centred in it.
+# Every world that can grow runs its own bounds through this, which is what
+# keeps one rule in one place instead of a copy per world.
+func grown(low: Vector2, high: Vector2, layout: Dictionary) -> Array:
+	var wanted: Vector2 = layout.get("min_extent", Vector2.ZERO)
+	var size := high - low
+	var out := Vector2(maxf(size.x, wanted.x), maxf(size.y, wanted.y))
+	if out.is_equal_approx(size):
+		return [low, high]
+	var middle := (low + high) * 0.5
+	return [middle - out * 0.5, middle + out * 0.5]
+
+
+# --- 003: what Genesis understood ---
+# This world's command, said back to the player in plain English, as a noun
+# phrase that fits after "I understand: you want ...".
+#
+# It is built from the parameters, NOT from what the player typed, so that a
+# dropped word shows up as a line that does not match what was asked. It is
+# written before anything is validated, so it must cope with parameters that
+# turn out to be nonsense: it describes what was proposed, not what is legal.
+#
+# Say the things players actually get misunderstood on - how many, how big,
+# what is joined to what - and not the things nobody mishears.
+func readback(_parameters: Dictionary) -> String:
+	return Readback.article(display_name())
+
+
+# The same world in a few words, for a plan. A plan's meaning is mostly how
+# its worlds are related, and a line long enough to bury the relationship at
+# the end is a line nobody reads to the end of.
+func readback_short(_parameters: Dictionary) -> String:
+	return Readback.article(display_name())
+
+
 # --- 002I: each world writes its own metrics panel ---
 # How this world's measurements are shown, as [label, value] pairs in the
 # order they appear. An empty label prints the value on its own, in the

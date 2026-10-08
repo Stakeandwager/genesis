@@ -559,12 +559,28 @@ func _overlaps(a: Rect2, b: Rect2) -> bool:
 
 # --- building it ---
 
+# --- 003: the dungeon as a container ---
+
+# The ground the dungeon stands on. Normally that is the rooms and corridors
+# with a lane of rock around them, but a plan may have asked this dungeon to
+# contain another world, and then the rock is pushed out to make room. The
+# rooms never move: the dungeon the player described is the one they get.
+func _ground(layout: Dictionary) -> Array:
+	var bounds := _bounds(layout, _rects(layout))
+	return grown(bounds["min"] - Vector2(GAP, GAP), bounds["max"] + Vector2(GAP, GAP), layout)
+
+
+func extent(layout: Dictionary) -> Vector2:
+	var ground := _ground(layout)
+	return (ground[1] as Vector2) - (ground[0] as Vector2)
+
+
 func build(root: Node3D, layout: Dictionary) -> Dictionary:
 	var rooms: Array = layout["rooms"]
 	var rects := _rects(layout)
-	var bounds := _bounds(layout, rects)
-	var low: Vector2 = bounds["min"] - Vector2(GAP, GAP)
-	var high: Vector2 = bounds["max"] + Vector2(GAP, GAP)
+	var ground := _ground(layout)
+	var low: Vector2 = ground[0]
+	var high: Vector2 = ground[1]
 
 	_slab(root, "Ground", low, high, PAD_HEIGHT, PAD_COLOUR)
 
@@ -692,6 +708,89 @@ func _material(colour: Color) -> StandardMaterial3D:
 	m.albedo_color = colour
 	m.roughness = 0.95
 	return m
+
+
+# "a dungeon of 5 rooms joined by 4 doors, entered through a 40 m great_hall
+#  with four rooms off it"
+#
+# A dungeon's meaning is its shape, not its room list, so this reads out how
+# the rooms are joined: which room you come in by, whether everything hangs
+# off one hall, whether it is a chain, and whether there is a way back round.
+# "Four rooms off the great hall" is precisely the kind of thing a player can
+# ask for and not get, with the room count still correct.
+func readback(parameters: Dictionary) -> String:
+	var raw_rooms = parameters.get("rooms", null)
+	var raw_doors = parameters.get("doors", null)
+	if typeof(raw_rooms) != TYPE_ARRAY or (raw_rooms as Array).is_empty():
+		return "a dungeon"
+
+	var rooms: Array = raw_rooms
+	var names := PackedStringArray()
+	var sizes: Array = []
+	for entry in rooms:
+		if typeof(entry) != TYPE_DICTIONARY:
+			names.append("a room")
+			sizes.append(0.0)
+			continue
+		var room: Dictionary = entry
+		# The AI names rooms with underscores, as the format asks. A player
+		# reading the line should see "great hall", not "great_hall".
+		names.append(str(room.get("name", "a room")).replace("_", " "))
+		sizes.append(maxf(float(room.get("width", 0.0)), float(room.get("depth", 0.0))))
+
+	var doors: Array = raw_doors if typeof(raw_doors) == TYPE_ARRAY else []
+	var degree := {}
+	for i in rooms.size():
+		degree[i] = 0
+	var counted := 0
+	for pair in doors:
+		if typeof(pair) != TYPE_ARRAY or (pair as Array).size() != 2:
+			continue
+		var a := int(float((pair as Array)[0])) - 1
+		var b := int(float((pair as Array)[1])) - 1
+		if a < 0 or b < 0 or a >= rooms.size() or b >= rooms.size() or a == b:
+			continue
+		degree[a] = int(degree[a]) + 1
+		degree[b] = int(degree[b]) + 1
+		counted += 1
+
+	var opening := "a dungeon of %s joined by %s" % [
+		Readback.count_of(rooms.size(), "room"), Readback.count_of(counted, "door")]
+
+	var entrance := str(names[0])
+	var entrance_size := float(sizes[0])
+	var entered := ", entered through %s" % (
+		"a %.0f m %s" % [entrance_size, entrance] if entrance_size > 0.0 else Readback.article(entrance))
+
+	# Does one room carry most of the doors? That is "four rooms off the hall".
+	var hub := 0
+	for i in rooms.size():
+		if int(degree[i]) > int(degree[hub]):
+			hub = i
+	var hub_doors := int(degree[hub])
+	var shape := ""
+	if hub_doors >= 2 and hub_doors * 2 >= counted and rooms.size() > 2:
+		var off := Readback.count_of(hub_doors, "room")
+		if hub == 0:
+			shape = " with %s off it" % off
+		else:
+			shape = " with %s off %s" % [off, str(names[hub])]
+	elif counted == rooms.size() - 1 and hub_doors <= 2:
+		shape = ", each one leading to the next"
+
+	var loops := counted - rooms.size() + 1
+	var round_again := ""
+	if loops > 0:
+		round_again = ", and %s back round" % Readback.count_of(loops, "way")
+
+	return opening + entered + shape + round_again
+
+
+func readback_short(parameters: Dictionary) -> String:
+	var rooms = parameters.get("rooms", null)
+	if typeof(rooms) != TYPE_ARRAY or (rooms as Array).is_empty():
+		return "a dungeon"
+	return "a dungeon of %s" % Readback.count_of((rooms as Array).size(), "room")
 
 
 func metric_lines(metrics: Dictionary, record: Dictionary) -> Array:

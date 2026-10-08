@@ -272,8 +272,9 @@ func measure(layout: Dictionary) -> Dictionary:
 				var crop := str(z.get("crop", "unknown"))
 				crops[crop] = float(crops.get(crop, 0.0)) + area
 
-	var fence_min: Vector2 = layout["fence_min"]
-	var fence_max: Vector2 = layout["fence_max"]
+	var fence := _fence(layout)
+	var fence_min: Vector2 = fence[0]
+	var fence_max: Vector2 = fence[1]
 	var enclosed := (fence_max.x - fence_min.x) * (fence_max.y - fence_min.y)
 
 	return {
@@ -292,11 +293,28 @@ func measure(layout: Dictionary) -> Dictionary:
 	}
 
 
+# --- 003: the farm as a container ---
+
+# Where the fence actually goes. Normally that is where solve() put it, but
+# a plan may have asked this farm to contain another world, and then the
+# fence is pushed out to make room. The zones never move and never change
+# size: the farm the player described is exactly the farm they get, with
+# more land around it.
+func _fence(layout: Dictionary) -> Array:
+	return grown(layout["fence_min"], layout["fence_max"], layout)
+
+
+func extent(layout: Dictionary) -> Vector2:
+	var fence := _fence(layout)
+	return (fence[1] as Vector2) - (fence[0] as Vector2)
+
+
 # --- geometry ---
 
 func build(root: Node3D, layout: Dictionary) -> Dictionary:
-	var fence_min: Vector2 = layout["fence_min"]
-	var fence_max: Vector2 = layout["fence_max"]
+	var fence := _fence(layout)
+	var fence_min: Vector2 = fence[0]
+	var fence_max: Vector2 = fence[1]
 
 	# The ground inside the fence: lanes are simply what is left uncovered.
 	_add_slab(root, "Ground", fence_min, fence_max, PAD_HEIGHT, Color(0.44, 0.40, 0.30))
@@ -394,6 +412,51 @@ func _material(colour: Color) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = colour
 	return m
+
+
+# "a farm with a farmhouse, a 200 m orchard and a 300 m corn field"
+#
+# Zones of the same type and size are counted together, because "four 50 m
+# crop fields" is what the player asked for and four separate entries is not
+# how they think about it. A crop is named by what grows in it: "corn field"
+# rather than "crop", since getting wheat when you asked for corn is an
+# understanding failure the player must be able to see.
+func readback(parameters: Dictionary) -> String:
+	var raw = parameters.get("zones", null)
+	if typeof(raw) != TYPE_ARRAY or (raw as Array).is_empty():
+		return "a farm"
+
+	var order: Array = []
+	var groups := {}
+	for entry in (raw as Array):
+		if typeof(entry) != TYPE_DICTIONARY:
+			continue
+		var zone: Dictionary = entry
+		var type := str(zone.get("type", "")).to_lower()
+		if type == "":
+			continue
+		var width := float(zone.get("width", 0.0))
+		var depth := float(zone.get("depth", 0.0))
+		var name := type
+		if type == "crop":
+			var crop := str(zone.get("crop", "")).to_lower()
+			name = (crop + " field") if crop != "" else "crop field"
+		var key := "%s|%.0f|%.0f" % [name, width, depth]
+		if not groups.has(key):
+			groups[key] = {"name": name, "width": width, "depth": depth, "count": 0}
+			order.append(key)
+		groups[key]["count"] = int(groups[key]["count"]) + 1
+
+	var parts := PackedStringArray()
+	for key in order:
+		var g: Dictionary = groups[key]
+		var size := Readback.size_of(float(g["width"]), float(g["depth"]))
+		var described := "%s %s" % [size, str(g["name"])] if size != "0 m" else str(g["name"])
+		parts.append(Readback.count_of(int(g["count"]), described))
+
+	if parts.is_empty():
+		return "a farm"
+	return "a farm with " + Readback.join_capped(parts)
 
 
 # The panel the farm has always shown, moved here from main.gd unchanged.
