@@ -24,7 +24,7 @@ const MARGIN := 12.0                          # between the fence and the zones
 # real thickness instead.
 const PAD_HEIGHT := 1.0                       # the bare ground and lanes
 const ZONE_HEIGHT := 1.6                      # fields sit proud of the lanes
-const POND_HEIGHT := 0.7                      # water sits lower
+const POND_HEIGHT := 1.3                      # water sits lower
 const FENCE_HEIGHT := 2.4
 
 const ZONE_COLOURS := {
