@@ -396,6 +396,37 @@ func _material(colour: Color) -> StandardMaterial3D:
 	return m
 
 
+# The panel the farm has always shown, moved here from main.gd unchanged.
+func metric_lines(metrics: Dictionary, _record: Dictionary) -> Array:
+	var counts: Dictionary = metrics.get("counts", {})
+	var present := PackedStringArray()
+	for key in counts:
+		if int(counts[key]) > 0:
+			present.append("%d %s" % [int(counts[key]), str(key)])
+
+	var lines: Array = [
+		["ZONES", "%d   (%s)" % [int(metrics["zone_count"]), ", ".join(present)]],
+		["SIZE", "%.0f m by %.0f m" % [float(metrics["farm_width"]), float(metrics["farm_depth"])]],
+		["ENCLOSED", "%.1f hectares" % (float(metrics["enclosed_area"]) / 10000.0)],
+		["WORKED LAND", "%.1f ha  (%.0f%% of the farm)" % [
+			float(metrics["worked_area"]) / 10000.0, float(metrics["worked_ratio"]) * 100.0]],
+	]
+
+	var crops: Dictionary = metrics.get("crops", {})
+	if not crops.is_empty():
+		var grown := PackedStringArray()
+		for crop in crops:
+			grown.append("%s %.1f ha" % [str(crop), float(crops[crop]) / 10000.0])
+		lines.append(["CROPS", ", ".join(grown)])
+
+	if float(metrics.get("building_area", 0.0)) > 0.0:
+		lines.append(["BUILDINGS", "%.0f m2 of floor" % float(metrics["building_area"])])
+	if float(metrics.get("water_area", 0.0)) > 0.0:
+		lines.append(["WATER", "%.0f m2" % float(metrics["water_area"])])
+	lines.append(["FENCE", "%.0f m around the perimeter" % float(metrics["fence_length"])])
+	return lines
+
+
 func _number(zone: Dictionary, key: String, n: int, type: String, errors: Array) -> float:
 	if not zone.has(key):
 		errors.append("zone %d (%s): missing '%s'" % [n, type, key])

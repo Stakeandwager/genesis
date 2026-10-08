@@ -716,70 +716,18 @@ func _on_track_measured(record: Dictionary) -> void:
 	if not valid:
 		_metric("", "(measurements below describe the proposal, not a built track)", METRIC_LABEL_COLOUR)
 
-	var counts: Dictionary = m["counts"]
-
-	# Each kind of world measures different things, so each reads its own.
-	if m.has("zone_count"):
-		_show_world_metrics(m, counts)
-		if not valid:
-			var farm_why: Array = record.get("reasons", [])
-			if not farm_why.is_empty():
-				_metric("REASON", str(farm_why[0]), METRIC_BAD_COLOUR)
-		return
-
-	_metric("SECTIONS", "%d  (%d straight, %d corner, %d hairpin, %d chicane)" % [m["section_count"], counts["straight"], counts["corner"], counts["hairpin"], counts["chicane"]])
-	_metric("LENGTH", "%.0f m" % m["total_length"])
-	_metric("STRAIGHT RATIO", "%.0f%%" % (m["straight_ratio"] * 100.0))
-	_metric("LONGEST STRAIGHT", "%.0f m" % m["longest_straight"])
-	_metric("SHORTEST STRAIGHT", "%.0f m" % m["shortest_straight"])
-	_metric("TIGHTEST RADIUS", "%.0f m" % m["minimum_radius"])
-	_metric("DIRECTION CHANGE", "%.0f deg" % m["direction_change_total"])
-
-	if record.has("closure"):
-		var c: Dictionary = record["closure"]
-		_metric("CLOSURE ERROR", "%.2f m, %.2f deg" % [c["closure_distance"], c["closure_heading_error"]])
-	if record.has("separation"):
-		var sep: Dictionary = record["separation"]
-		_metric("SELF-INTERSECTIONS", "%d" % sep["self_intersections"])
-		# -1 means no two stretches of road are far enough apart along the track
-		# to count as separate (a round track, say): nothing could cross.
-		if float(sep["minimum_separation"]) < 0.0:
-			_metric("MIN SEPARATION", "none (no separate stretches)")
-		else:
-			_metric("MIN SEPARATION", "%.1f m" % sep["minimum_separation"])
-	if record.has("drift"):
-		var d: Dictionary = record["drift"]
-		_metric("SOLVER CHANGE", "corners %.1f%%, straights %.1f%%" % [d["max_angle_adjustment"] * 100.0, d["max_length_adjustment"] * 100.0])
+	# 002I: each world writes its own panel. This used to guess the world
+	# from which keys it measured, which meant a new world either crashed
+	# here or showed nothing until main.gd was edited.
+	var module := WorldRegistry.find(str(record.get("command", "CREATE_TRACK")))
+	if module:
+		for line in module.metric_lines(m, record):
+			_metric(str((line as Array)[0]), str((line as Array)[1]))
 
 	if not valid:
 		var why: Array = record.get("reasons", [])
 		if not why.is_empty():
 			_metric("REASON", str(why[0]), METRIC_BAD_COLOUR)
-
-
-# Measurements for worlds that are laid out rather than driven round.
-func _show_world_metrics(m: Dictionary, counts: Dictionary) -> void:
-	var present := PackedStringArray()
-	for key in counts:
-		if int(counts[key]) > 0:
-			present.append("%d %s" % [counts[key], key])
-	_metric("ZONES", "%d   (%s)" % [m["zone_count"], ", ".join(present)])
-	_metric("SIZE", "%.0f m by %.0f m" % [m["farm_width"], m["farm_depth"]])
-	_metric("ENCLOSED", "%.1f hectares" % (float(m["enclosed_area"]) / 10000.0))
-	_metric("WORKED LAND", "%.1f ha  (%.0f%% of the farm)" % [float(m["worked_area"]) / 10000.0, float(m["worked_ratio"]) * 100.0])
-
-	var crops: Dictionary = m.get("crops", {})
-	if not crops.is_empty():
-		var grown := PackedStringArray()
-		for crop in crops:
-			grown.append("%s %.1f ha" % [crop, float(crops[crop]) / 10000.0])
-		_metric("CROPS", ", ".join(grown))
-
-	if float(m.get("building_area", 0.0)) > 0.0:
-		_metric("BUILDINGS", "%.0f m2 of floor" % m["building_area"])
-	if float(m.get("water_area", 0.0)) > 0.0:
-		_metric("WATER", "%.0f m2" % m["water_area"])
-	_metric("FENCE", "%.0f m around the perimeter" % m["fence_length"])
 
 
 func _metric(label: String, value: String, colour := METRIC_VALUE_COLOUR) -> void:

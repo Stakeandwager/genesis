@@ -191,6 +191,43 @@ func summary(_metrics: Dictionary, report: Dictionary) -> String:
 		report["direction"], report["section_count"], report["total_length"]]
 
 
+# The panel racing has always shown, in the same order, moved here from
+# main.gd unchanged. The last three come from the record rather than the
+# measurements: they describe how the track came to be built.
+func metric_lines(metrics: Dictionary, record: Dictionary) -> Array:
+	var counts: Dictionary = metrics.get("counts", {})
+	var lines: Array = [
+		["SECTIONS", "%d  (%d straight, %d corner, %d hairpin, %d chicane)" % [
+			int(metrics["section_count"]), int(counts.get("straight", 0)), int(counts.get("corner", 0)),
+			int(counts.get("hairpin", 0)), int(counts.get("chicane", 0))]],
+		["LENGTH", "%.0f m" % float(metrics["total_length"])],
+		["STRAIGHT RATIO", "%.0f%%" % (float(metrics["straight_ratio"]) * 100.0)],
+		["LONGEST STRAIGHT", "%.0f m" % float(metrics["longest_straight"])],
+		["SHORTEST STRAIGHT", "%.0f m" % float(metrics["shortest_straight"])],
+		["TIGHTEST RADIUS", "%.0f m" % float(metrics["minimum_radius"])],
+		["DIRECTION CHANGE", "%.0f deg" % float(metrics["direction_change_total"])],
+	]
+
+	if record.has("closure"):
+		var c: Dictionary = record["closure"]
+		lines.append(["CLOSURE ERROR", "%.2f m, %.2f deg" % [
+			float(c["closure_distance"]), float(c["closure_heading_error"])]])
+	if record.has("separation"):
+		var sep: Dictionary = record["separation"]
+		lines.append(["SELF-INTERSECTIONS", "%d" % int(sep["self_intersections"])])
+		# -1 means no two stretches of road are far enough apart along the
+		# track to count as separate (a round track, say): nothing could cross.
+		if float(sep["minimum_separation"]) < 0.0:
+			lines.append(["MIN SEPARATION", "none (no separate stretches)"])
+		else:
+			lines.append(["MIN SEPARATION", "%.1f m" % float(sep["minimum_separation"])])
+	if record.has("drift"):
+		var d: Dictionary = record["drift"]
+		lines.append(["SOLVER CHANGE", "corners %.1f%%, straights %.1f%%" % [
+			float(d["max_angle_adjustment"]) * 100.0, float(d["max_length_adjustment"]) * 100.0]])
+	return lines
+
+
 # --- closure feedback (002C), moved here unchanged from game_controller.gd ---
 
 # What the AI is told. Plain facts Godot measured; no advice about style.

@@ -111,3 +111,21 @@ func build(_root: Node3D, _layout: Dictionary) -> Dictionary:
 # metrics is what measure() returned; report is what build() returned.
 func summary(_metrics: Dictionary, _report: Dictionary) -> String:
 	return "%s built\n(full measurements in the panel)" % display_name().capitalize()
+
+
+# --- 002I: each world writes its own metrics panel ---
+# How this world's measurements are shown, as [label, value] pairs in the
+# order they appear. An empty label prints the value on its own, in the
+# label colour, for a note rather than a measurement.
+#
+# metrics is what measure() returned. record is the whole log record, so a
+# world can also show what its own checks found (racing shows its closure
+# error and separation, which are not measurements of the built track but of
+# how it came to be built).
+#
+# Before this, main.gd knew which keys each world measured and guessed the
+# world from them. A world that measured neither sections nor zones fell
+# through and crashed the panel. Now a world that returns nothing here shows
+# nothing, and a new world needs no edit outside its own file.
+func metric_lines(_metrics: Dictionary, _record: Dictionary) -> Array:
+	return []
