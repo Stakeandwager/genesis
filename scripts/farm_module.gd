@@ -68,19 +68,6 @@ Fields, water and yards are 20 to 300 metres a side. Buildings are 5 to 60 metre
 Use 2 to 24 zones. Do not give positions: the game works out the layout, the fence and the lanes."""
 
 
-# What the farm adds to its log record: the zones as proposed.
-func record_fields(parameters: Dictionary, attempt: Dictionary) -> Dictionary:
-	var fields := super(parameters, attempt)
-	fields["proposed"] = parameters.get("zones", [])
-	return fields
-
-
-# What the player is told once the farm is built.
-func summary(metrics: Dictionary, _report: Dictionary) -> String:
-	return "%s built: %d zones across %.0f m by %.0f m\n(full measurements in the panel)" % [
-		display_name().capitalize(), metrics["zone_count"], metrics["farm_width"], metrics["farm_depth"]]
-
-
 # --- what the AI proposed ---
 
 func validate(parameters: Dictionary) -> Dictionary:
