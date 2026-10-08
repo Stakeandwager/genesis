@@ -26,7 +26,14 @@ const TEMPERATURE := 1.0
 # 002C-balance-1 adds one geometry rule: travel in opposite directions must
 # balance. The 002C experiments showed designs that turned through 360 deg but
 # never came back, because a hairpin reverses direction without returning.
-const PROMPT_VERSION := "002C-balance-1"
+#
+# 002H-neutral-1 is the first world-neutral wording. The AI is no longer
+# introduced as a racing circuit designer with other worlds as a footnote:
+# every world, racing included, now describes itself through its module. The
+# circuit rules are unchanged word for word, but their place in the prompt is
+# not, so tracks made under 002H are not comparable with earlier ones. Old
+# records keep their own version string, so the two never get mixed up.
+const PROMPT_VERSION := "002H-neutral-1"
 # Which wording of the closure feedback a revised track was given.
 # feedback-2 adds Godot's test of whether ANY straight lengths could close the layout.
 const REVISION_VERSION := "002C-closure-feedback-2"
@@ -35,42 +42,25 @@ const EDIT_VERSION := "002E-edit-1"
 
 const ENDPOINT := "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent"
 
-const SYSTEM_PROMPT := """You design closed racing circuits for a Godot game by composing them from track sections.
+const SYSTEM_PROMPT := """You turn a player's request into exactly ONE command for Genesis, a game that builds worlds in Godot.
 
-Convert the player's request into exactly ONE JSON object. Return ONLY the JSON: no explanations, no markdown, no code fences. Never return a list of commands. If the request has several steps, return the single command for the final result; CREATE_TRACK already replaces any existing track.
+Return ONLY the JSON: no explanations, no markdown, no code fences. Never return a list of commands. If the request has several steps, return the single command for the final result; a new world replaces whatever was there before, whichever kind it was.
 
 COMMANDS YOU MAY USE
 PLAN - build several things in one request
-CREATE_TRACK - design a new closed circuit
 CLEAR_WORLD - remove everything, with parameters {}
-Other worlds you can build are listed at the end of these instructions.
+UNSUPPORTED - for a request this game cannot build
+One command for each kind of world, listed under WORLDS YOU CAN BUILD at the end of these instructions. Those are the only worlds that exist. Never invent a command, a type or a field that is not listed there: anything else is refused before it reaches the game.
 
-A PLAN is for a request that needs more than one thing, such as a farm with a track around it:
-{"command": "PLAN", "parameters": {"steps": [{"command": "CREATE_FARM", "parameters": {...}}, {"command": "CREATE_TRACK", "parameters": {...}}]}}
-Up to 4 steps. A step is a normal command with its normal parameters, and a plan may not contain another plan.
+A PLAN is for a request that needs more than one thing, such as one world placed inside another:
+{"command": "PLAN", "parameters": {"steps": [{"command": COMMAND, "parameters": {...}}, {"command": COMMAND, "parameters": {...}}]}}
+where each COMMAND is one of the world commands listed at the end. Up to 4 steps. A step is a normal command with its normal parameters, and a plan may not contain another plan.
 To build one world around another, give the later step "around": N, where N is the number of the earlier step (1 for the first). The game works out where everything goes; never give coordinates. The surrounding world must be large enough to contain the inner one with room to spare, or the whole plan is refused.
-For any other request, return:
+
+For a request this game cannot build, return:
 {"command": "UNSUPPORTED", "parameters": {"reason": "short explanation"}}
 
-CREATE_TRACK FORMAT
-{"command": "CREATE_TRACK", "parameters": {"mode": "circuit", "intent": {"style": STYLE}, "sections": [SECTION, SECTION, ...]}}
-
-STYLE records how the player described the track, as a short lowercase label with underscores, in the player's own terms. If they gave no description, use "unspecified". Interpret the player's description yourself when you design the track.
-
-SECTION TYPES (only these four, with exactly these fields)
-straight: {"type": "straight", "length": L} where L is 20 to 1000 metres
-corner: {"type": "corner", "radius": R, "angle": A} where R is 15 to 300 metres and A is 10 to 120 degrees
-hairpin: {"type": "hairpin", "radius": R, "angle": A} where R is 10 to 60 metres and A is 120 to 200 degrees
-chicane: {"type": "chicane", "radius": R, "offset": O, "direction": "left" or "right"} where R is 15 to 150 metres and O is more than 0 and at most 2 x R
-Angles are signed: positive turns right, negative turns left. Never give a corner, hairpin or chicane a length; it is calculated. A chicane steps the track sideways by O metres and returns to its original direction.
-
-RULES FOR A CLOSED CIRCUIT
-- Sections join end to end, in order, starting at the start line. After the last section the track must arrive back at the start line, facing the way it started.
-- Corner and hairpin angles must add up to exactly +360 (clockwise) or -360 (anticlockwise). Chicanes do not count.
-- Travel in opposite directions must balance. Every metre the track travels away from the start line must be matched by a metre travelled back towards it, and every metre to the right of the start line by a metre back to the left. Angles adding up to 360 is necessary but not enough on its own: a hairpin reverses the direction of travel, but by itself carries the track back only by its own width, twice its radius.
-- Use at least 2 straights and at least 2 corners or hairpins.
-- The game can adjust each angle and each straight length by up to 20% to close the loop, so plan where every section takes the track so that it very nearly closes by itself.
-- The road must never cross itself, and separate parts of the road must stay at least 18 metres apart.
+STYLE records how the player described what they asked for, as a short lowercase label with underscores, in the player's own terms. If they gave no description, use "unspecified". Interpret the player's description yourself when you design the world.
 """
 
 var http: HTTPRequest
@@ -176,7 +166,7 @@ func _send(contents: Array) -> void:
 
 	# Every registered world module describes its own vocabulary, so the AI
 	# always knows exactly what the game can build, and nothing more.
-	var instructions := SYSTEM_PROMPT + "\n\nOTHER WORLDS YOU CAN BUILD\n" + WorldRegistry.prompt_sections()
+	var instructions := SYSTEM_PROMPT + "\nWORLDS YOU CAN BUILD\n" + WorldRegistry.prompt_sections()
 
 	var body := {
 		"system_instruction": {

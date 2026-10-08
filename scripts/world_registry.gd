@@ -26,12 +26,13 @@ static func find(command: String) -> WorldModule:
 
 
 # Everything the AI needs to know about the worlds it can ask for.
+# Since 002H every world describes itself, racing included, so this is the
+# whole of the AI's world vocabulary. A module that returns nothing adds
+# nothing, not even a blank line.
 static func prompt_sections() -> String:
 	var parts := PackedStringArray()
 	for module in modules():
-		# A world whose rules live elsewhere (racing's, in the standing
-		# instructions) adds nothing here, not even a blank line.
 		var section := (module as WorldModule).prompt_section()
 		if section != "":
 			parts.append(section)
-	return "\n".join(parts)
+	return "\n\n".join(parts)

@@ -15,9 +15,19 @@ class_name RacingModule
 #   measure        TrackMetrics
 #   build          CircuitBuilder
 #
-# The AI's rules for circuits stay in the standing instructions in
-# ai_interpreter.gd, so prompt_section() is empty and the AI is shown exactly
-# the same text as before.
+# --- 002H: racing describes itself ---
+# Racing's rules used to live in the standing instructions in
+# ai_interpreter.gd, which made it the one world the AI was told about by
+# hand. They are now here, where every other world keeps its own, so adding
+# or removing a world is one file and nothing else.
+#
+# SECTION TYPES and RULES FOR A CLOSED CIRCUIT below are byte for byte what
+# the standing instructions used to say; only their place has changed. Two
+# things did change: the heading now names the command the way every other
+# world does, and the STYLE paragraph moved into the core instructions,
+# because every world records a style, not just this one. The AI is also no
+# longer introduced to Genesis as a racing game. PROMPT_VERSION moves with
+# all of that, so these tracks are not compared with the old ones.
 
 func command() -> String:
 	return "CREATE_TRACK"
@@ -27,10 +37,27 @@ func display_name() -> String:
 	return "circuit"
 
 
-# Racing's rules are already in the standing instructions. Moving them here
-# would change the AI's prompt, so they stay where they are.
+# Everything the AI needs to compose a closed circuit, and nothing about
+# style: what a style word does to the geometry is what the experiment
+# measures, so it is never described here.
 func prompt_section() -> String:
-	return ""
+	return """CREATE_TRACK - design a closed racing circuit
+{"command": "CREATE_TRACK", "parameters": {"mode": "circuit", "intent": {"style": STYLE}, "sections": [SECTION, SECTION, ...]}}
+
+SECTION TYPES (only these four, with exactly these fields)
+straight: {"type": "straight", "length": L} where L is 20 to 1000 metres
+corner: {"type": "corner", "radius": R, "angle": A} where R is 15 to 300 metres and A is 10 to 120 degrees
+hairpin: {"type": "hairpin", "radius": R, "angle": A} where R is 10 to 60 metres and A is 120 to 200 degrees
+chicane: {"type": "chicane", "radius": R, "offset": O, "direction": "left" or "right"} where R is 15 to 150 metres and O is more than 0 and at most 2 x R
+Angles are signed: positive turns right, negative turns left. Never give a corner, hairpin or chicane a length; it is calculated. A chicane steps the track sideways by O metres and returns to its original direction.
+
+RULES FOR A CLOSED CIRCUIT
+- Sections join end to end, in order, starting at the start line. After the last section the track must arrive back at the start line, facing the way it started.
+- Corner and hairpin angles must add up to exactly +360 (clockwise) or -360 (anticlockwise). Chicanes do not count.
+- Travel in opposite directions must balance. Every metre the track travels away from the start line must be matched by a metre travelled back towards it, and every metre to the right of the start line by a metre back to the left. Angles adding up to 360 is necessary but not enough on its own: a hairpin reverses the direction of travel, but by itself carries the track back only by its own width, twice its radius.
+- Use at least 2 straights and at least 2 corners or hairpins.
+- The game can adjust each angle and each straight length by up to 20% to close the loop, so plan where every section takes the track so that it very nearly closes by itself.
+- The road must never cross itself, and separate parts of the road must stay at least 18 metres apart."""
 
 
 # The record fields racing has always written, in the same order. Racing
