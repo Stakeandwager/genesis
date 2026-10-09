@@ -140,6 +140,12 @@ func _handle_request(raw_request: String, experiment_context: Dictionary = {}) -
 		status_label.text = "Status: Type something first."
 		return
 
+	# 003 Stage 2: before this input is treated as anything else, ask what it
+	# says about the readback it follows. A build that works proves nothing
+	# about understanding; only the player can settle that.
+	if not _judge_last_readback(request):
+		return
+
 	# Commands for the game itself, not for the AI.
 	if request.begins_with("/"):
 		_run_local_command(request)
@@ -205,6 +211,11 @@ func _on_controller_log(text: String) -> void:
 	print("Controller: ", text)
 	var kind := "error" if text.contains("failed") else "ok"
 	_record(pending_request, text, kind)
+	# 003 Stage 2: remember whether the readback now waiting for evidence
+	# actually produced a world, so that driving or saving cannot be read as
+	# acceptance of a request that built nothing.
+	if not awaiting_readback.is_empty():
+		awaiting_readback["built"] = kind == "ok"
 
 	if kind == "ok" and not editing_from.is_empty() and not controller.plan_running:
 		var changes := _describe_changes(editing_from, controller.last_build)
@@ -235,6 +246,9 @@ func _execute_json(json_text: String) -> void:
 	controller.current_source = pending_source
 	controller.current_experiment = pending_experiment
 	controller.current_attempt = pending_attempt
+	# 003 Stage 2: the id is made here, before the record exists, so the
+	# readback can be shown with something for later evidence to point at.
+	controller.current_record_id = TrackLog.next_id()
 
 	var parsed := CommandParser.parse(json_text)
 
@@ -271,12 +285,64 @@ func _execute_json(json_text: String) -> void:
 # The readback goes in the history panel against the request it belongs to,
 # in its own colour. It is deliberately not a question: stopping the game
 # after every sentence to ask YES or NO would turn playing into a form.
+# 003 Stage 2: the readback whose correctness is still unsettled, and the
+# request before it, so that asking again in different words can be spotted.
+var awaiting_readback: Dictionary = {}
+var last_judged_request := ""
+
+
+# Decide what this input says about the readback before it, write that down,
+# and say whether the input should carry on being handled as a request.
+# "yes" is an answer, not a world called yes, so it stops here.
+func _judge_last_readback(request: String) -> bool:
+	if awaiting_readback.is_empty():
+		# A bare yes or no with nothing to answer is not a world. Sending it
+		# to the AI spends a request to be told that "confirmation of an
+		# unspecified action" cannot be built, which helps nobody.
+		if Understanding.is_bare_answer(request):
+			status_label.text = "There is nothing to confirm just now."
+			_record(request, "There is nothing to confirm just now.", "understood")
+			input_box.text = ""
+			return false
+		last_judged_request = request
+		return true
+
+	var about := awaiting_readback
+	var verdict := Understanding.judge(request, str(about.get("request", "")), bool(about.get("built", false)))
+	if verdict.is_empty():
+		return true
+
+	awaiting_readback = {}
+	var written := Understanding.record(about, verdict, request)
+	TrackLog.append(written)
+	print("UNDERSTANDING: %s (%s) about %s" % [
+		str(verdict["understanding"]), str(verdict["evidence"]), str(about.get("id", ""))])
+
+	var said := Understanding.reply(verdict)
+	if said != "":
+		_record(request, said, "understood")
+		status_label.text = said
+
+	last_judged_request = request
+	if bool(verdict["consumed"]):
+		input_box.text = ""
+		return false
+	return true
+
+
 func _show_readback() -> void:
 	var line := str(controller.current_readback)
 	if line == "":
 		return
 	print("READBACK: ", line)
 	_record(pending_request, "I understand: you want " + line + ".", "understood")
+	# 003 Stage 2: this readback is now waiting to find out whether it was
+	# right. Whatever the player does next is the evidence.
+	awaiting_readback = {
+		"id": controller.current_record_id,
+		"request": pending_request,
+		"readback": line,
+	}
 
 
 # --- closure feedback ---

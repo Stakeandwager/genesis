@@ -54,6 +54,10 @@ var current_attempt: Dictionary = {}
 # what the player SAID, what Genesis UNDERSTOOD and what Genesis BUILT are
 # three different things and must never become one field.
 var current_readback := ""
+# 003 Stage 2: the id this request's record will carry, made before the
+# record exists so that the readback shown to the player can be pointed at
+# by evidence that only arrives later - a "yes", a correction, a drive.
+var current_record_id := ""
 # /revise off turns closure feedback off, for a like-for-like baseline.
 var revision_enabled := true
 
@@ -146,6 +150,7 @@ func record_rejection(category: String, reason: String) -> void:
 		"experiment": current_experiment,
 		"readback": current_readback,
 		"understanding": "UNKNOWN",
+		"id": current_record_id if current_record_id != "" else TrackLog.next_id(),
 		"command": "",
 		"attempt": int(current_attempt.get("attempt", 1)),
 		"result": "FAILED",
@@ -188,6 +193,7 @@ func _execute_plan(parameters: Dictionary) -> void:
 		"experiment": current_experiment,
 		"readback": current_readback,
 		"understanding": "UNKNOWN",
+		"id": current_record_id if current_record_id != "" else TrackLog.next_id(),
 		"command": "PLAN",
 		"world": "plan",
 		"intent": parameters.get("intent", {}),
@@ -480,6 +486,7 @@ func _prepare_world(module: WorldModule, parameters: Dictionary) -> Dictionary:
 		"experiment": current_experiment,
 		"readback": current_readback,
 		"understanding": "UNKNOWN",
+		"id": current_record_id if current_record_id != "" else TrackLog.next_id(),
 	}
 	record.merge(module.record_fields(parameters, current_attempt))
 

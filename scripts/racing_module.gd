@@ -221,7 +221,18 @@ func readback(parameters: Dictionary) -> String:
 	# sections go round in a sequence, but a player hears a description as a
 	# list of parts, and "two straights, two corners" reads where "straights,
 	# corners, more straights" does not.
-	var rank := {"straight": 0, "corner": 1, "hairpin": 2, "chicane": 3}
+	# Every section type the validator accepts, not only the four the AI is
+	# told about. A track typed as raw JSON, or a later prompt that offers
+	# more pieces, must still be described in full. A readback that silently
+	# drops a piece is the worst kind: not wrong, just absent, so the player
+	# has no way to see that it went missing. A headless test caught exactly
+	# that - four straights and four banked corners read back as "four 250 m
+	# straights", with the banking gone.
+	var rank := {
+		"straight": 0, "uphill": 1, "downhill": 1, "crest": 1, "dip": 1,
+		"corner": 2, "banked_corner": 2, "hairpin": 3, "loop_segment": 4,
+		"chicane": 5,
+	}
 	var order: Array = []
 	var groups := {}
 	for entry in (raw as Array):
@@ -229,7 +240,7 @@ func readback(parameters: Dictionary) -> String:
 			continue
 		var section: Dictionary = entry
 		var type := str(section.get("type", "")).to_lower()
-		if not rank.has(type):
+		if type == "":
 			continue
 		var measure := 0.0
 		var singular := ""
@@ -239,18 +250,40 @@ func readback(parameters: Dictionary) -> String:
 				measure = float(section.get("length", 0.0))
 				singular = "%.0f m straight" % measure
 				plural = "%.0f m straights" % measure
+			"uphill", "downhill":
+				measure = float(section.get("length", 0.0))
+				singular = "%.0f m %s at %.0f%%" % [measure, type, float(section.get("grade", 0.0))]
+				plural = "%.0f m %ss at %.0f%%" % [measure, type, float(section.get("grade", 0.0))]
+			"crest", "dip":
+				measure = float(section.get("length", 0.0))
+				singular = "%.0f m %s" % [measure, type]
+				plural = "%.0f m %ss" % [measure, type]
 			"corner", "hairpin":
 				measure = float(section.get("radius", 0.0))
 				singular = "%.0f m %s" % [measure, type]
 				plural = "%.0f m %ss" % [measure, type]
+			"banked_corner":
+				measure = float(section.get("radius", 0.0))
+				singular = "%.0f m corner banked at %.0f deg" % [measure, float(section.get("bank", 0.0))]
+				plural = "%.0f m corners banked at %.0f deg" % [measure, float(section.get("bank", 0.0))]
+			"loop_segment":
+				measure = float(section.get("radius", 0.0))
+				singular = "%.0f m loop" % measure
+				plural = "%.0f m loops" % measure
 			"chicane":
 				measure = float(section.get("offset", 0.0))
 				singular = "%.0f m chicane" % measure
 				plural = "%.0f m chicanes" % measure
+			_:
+				# A piece this readback has never heard of is named rather
+				# than dropped, so adding a section type can make the wording
+				# plain but can never make a piece disappear.
+				singular = type.replace("_", " ")
+				plural = singular + "s"
 		var key := "%s|%.0f" % [type, measure]
 		if not groups.has(key):
 			groups[key] = {"singular": singular, "plural": plural, "count": 0,
-				"rank": int(rank[type]), "measure": measure}
+				"rank": int(rank.get(type, 9)), "measure": measure}
 			order.append(key)
 		groups[key]["count"] = int(groups[key]["count"]) + 1
 

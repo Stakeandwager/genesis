@@ -762,21 +762,25 @@ func readback(parameters: Dictionary) -> String:
 	var entered := ", entered through %s" % (
 		"a %.0f m %s" % [entrance_size, entrance] if entrance_size > 0.0 else Readback.article(entrance))
 
-	# Does one room carry most of the doors? That is "four rooms off the hall".
 	var hub := 0
 	for i in rooms.size():
 		if int(degree[i]) > int(degree[hub]):
 			hub = i
 	var hub_doors := int(degree[hub])
 	var shape := ""
-	if hub_doors >= 2 and hub_doors * 2 >= counted and rooms.size() > 2:
+
+	# A chain comes first, because every room in the middle of one has two
+	# doors and would otherwise look like a hub. A room with two doors is
+	# not a hall with rooms off it; it is a place you walk through.
+	if counted == rooms.size() - 1 and hub_doors <= 2:
+		shape = ", each one leading to the next"
+	elif hub_doors >= 3 and hub_doors * 2 >= counted:
+		# One room carries most of the doors: "four rooms off the hall".
 		var off := Readback.count_of(hub_doors, "room")
 		if hub == 0:
 			shape = " with %s off it" % off
 		else:
 			shape = " with %s off %s" % [off, str(names[hub])]
-	elif counted == rooms.size() - 1 and hub_doors <= 2:
-		shape = ", each one leading to the next"
 
 	var loops := counted - rooms.size() + 1
 	var round_again := ""
