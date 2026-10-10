@@ -389,6 +389,11 @@ func post_check(layout: Dictionary) -> Dictionary:
 						str(layout["rooms"][i]["name"])])
 					break
 
+	# 005: what a body can actually reach through what will be built. Kept
+	# beside the logical reachability pre_check already did, never merged
+	# with it: when the two disagree, the disagreement is the finding.
+	var walk := walkable(layout)
+
 	var record := {
 		"extent": {
 			"width": across.x,
@@ -396,10 +401,19 @@ func post_check(layout: Dictionary) -> Dictionary:
 			"limit": MAX_EXTENT,
 		},
 		"crossings": crossings.size(),
+		"walkable": walk,
 	}
 
 	if not crossings.is_empty():
 		return {"ok": false, "category": "FAILED_CORRIDOR", "reasons": crossings, "record": record}
+	if not (walk["unreachable"] as Array).is_empty():
+		var why: Array = [
+			"every room has a door to it, but a person %.1f m across cannot get to %s" % [
+				BODY, ", ".join(walk["unreachable"])],
+		]
+		for b in walk["blocked_doors"]:
+			why.append(str(b))
+		return {"ok": false, "category": "FAILED_UNWALKABLE", "reasons": why, "record": record}
 	if across.x > MAX_EXTENT or across.y > MAX_EXTENT:
 		return {
 			"ok": false,
@@ -412,6 +426,147 @@ func post_check(layout: Dictionary) -> Dictionary:
 			"record": record,
 		}
 	return {"ok": true, "category": "", "reasons": [], "record": record}
+
+
+# --- 005: logical and physical reachability, measured apart ---
+# pre_check already refuses a dungeon with a room no door leads to. That is
+# LOGICAL reachability: a property of the graph the AI proposed.
+#
+# It says nothing about whether a person could actually get there. The walls
+# are built by cutting each doorway out of a side, and if that cut ever
+# misses - as the hub/chain wording once did - a room ends up logically
+# connected and physically sealed. Every check Genesis had would pass and
+# the dungeon would be unplayable.
+#
+# So this walks the corridors through the geometry as built, with a body of
+# a real width, and reports what can actually be reached. The two numbers
+# are kept apart on purpose: when they disagree, the disagreement is the
+# finding.
+
+const BODY := 1.6                # metres across, about a person
+const STEP := 0.5                # how finely a corridor is walked
+
+
+# Can a body this wide get from room to room through what was built?
+# Returns reached rooms, and every door it could not get through.
+func walkable(layout: Dictionary) -> Dictionary:
+	var rooms: Array = layout["rooms"]
+	var rects := _rects(layout)
+
+	# The floor: rooms and corridors. Anywhere else is not somewhere to walk.
+	var floors: Array = []
+	for r in rects:
+		floors.append(r)
+	var openings := {}
+	for i in rooms.size():
+		openings[i] = []
+	for door in layout["doors"]:
+		var d: Vector2i = door
+		var legs := _corridor(layout, d.x, d.y)
+		for leg in legs:
+			floors.append(leg)
+		if not legs.is_empty():
+			openings[d.x].append(legs[0])
+			openings[d.y].append(legs[legs.size() - 1])
+
+	# The walls, exactly the ones build() puts up.
+	var walls: Array = []
+	for i in rooms.size():
+		for w in _wall_rects(rects[i], openings[i]):
+			walls.append(w)
+
+	# Walk each door's corridor and see whether a body fits the whole way.
+	var passable := {}
+	var blocked: Array = []
+	for door in layout["doors"]:
+		var d: Vector2i = door
+		var path := _corridor_path(layout, d.x, d.y)
+		var stuck := _first_blockage(path, floors, walls)
+		if stuck.is_empty():
+			passable[d] = true
+		else:
+			blocked.append("%s to %s: %s" % [
+				str(rooms[d.x]["name"]), str(rooms[d.y]["name"]), str(stuck["why"])])
+
+	# Reachability over the doors a body can actually use.
+	var links := {}
+	for i in rooms.size():
+		links[i] = []
+	for door in passable:
+		var d: Vector2i = door
+		links[d.x].append(d.y)
+		links[d.y].append(d.x)
+	var seen := {0: true}
+	var queue: Array = [0]
+	while not queue.is_empty():
+		var at: int = queue.pop_front()
+		for nxt in links[at]:
+			if not seen.has(nxt):
+				seen[nxt] = true
+				queue.append(nxt)
+
+	var unreachable: Array = []
+	for i in rooms.size():
+		if not seen.has(i):
+			unreachable.append(str(rooms[i]["name"]))
+
+	return {
+		"reached": seen.size(),
+		"room_count": rooms.size(),
+		"unreachable": unreachable,
+		"blocked_doors": blocked,
+		"body": BODY,
+	}
+
+
+# Where the first blockage is on this path, or nothing. A point is walkable
+# when it is on a floor and no wall is within half a body of it.
+func _first_blockage(path: Array, floors: Array, walls: Array) -> Dictionary:
+	var half := BODY * 0.5
+	for point in path:
+		var p: Vector2 = point
+		var on_floor := false
+		for f in floors:
+			if (f as Rect2).has_point(p):
+				on_floor = true
+				break
+		if not on_floor:
+			return {"why": "the way out is not floored at (%.0f, %.0f)" % [p.x, p.y]}
+		for w in walls:
+			if (w as Rect2).grow(half).has_point(p):
+				return {"why": "a wall blocks the doorway at (%.0f, %.0f)" % [p.x, p.y]}
+	return {}
+
+
+# The corridor as points to walk, from one room's middle to the other's.
+func _corridor_path(layout: Dictionary, a: int, b: int) -> Array:
+	var pitch := float(layout["pitch"])
+	var slots: Dictionary = layout["slots"]
+	var sa: Vector2i = slots[a]
+	var sb: Vector2i = slots[b]
+	var from := Vector2(sa.x, sa.y) * pitch
+	var to := Vector2(sb.x, sb.y) * pitch
+
+	var corners: Array = [from]
+	if absi(sa.x - sb.x) + absi(sa.y - sb.y) != 1:
+		var za := (float(sa.y) + (0.5 if sb.y > sa.y else -0.5)) * pitch
+		var zb := (float(sb.y) + (0.5 if sa.y > sb.y else -0.5)) * pitch
+		var xb := (float(sb.x) + (0.5 if sa.x > sb.x else -0.5)) * pitch
+		corners.append(Vector2(from.x, za))
+		corners.append(Vector2(xb, za))
+		corners.append(Vector2(xb, zb))
+		corners.append(Vector2(to.x, zb))
+	corners.append(to)
+
+	var out: Array = []
+	for i in corners.size() - 1:
+		var p0: Vector2 = corners[i]
+		var p1: Vector2 = corners[i + 1]
+		var span := p0.distance_to(p1)
+		var steps := maxi(1, int(span / STEP))
+		for k in steps + 1:
+			out.append(p0.lerp(p1, float(k) / float(steps)))
+	return out
 
 
 # --- measurements ---
@@ -457,9 +612,12 @@ func measure(layout: Dictionary) -> Dictionary:
 	var bounds := _bounds(layout, rects)
 	var across: Vector2 = bounds["max"] - bounds["min"]
 
+	var walk := walkable(layout)
 	return {
 		"room_count": rooms.size(),
 		"door_count": doors.size(),
+		"walk_reached": int(walk["reached"]),
+		"walk_blocked": (walk["blocked_doors"] as Array).size(),
 		"floor_area": floor_area,
 		"corridor_area": corridor_area,
 		"corridor_length": corridor_length,
@@ -674,6 +832,49 @@ func _touches(leg: Rect2, rect: Rect2, side: String) -> bool:
 	return false
 
 
+# The walls of one room as flat rectangles, doorways already cut out. The
+# builder raises these into boxes and the walker tests against them, so what
+# is checked is exactly what is built.
+func _wall_rects(rect: Rect2, openings: Array) -> Array:
+	var sides := [
+		{"name": "north", "axis": "x", "fixed": rect.position.y, "from": rect.position.x, "to": rect.position.x + rect.size.x},
+		{"name": "south", "axis": "x", "fixed": rect.position.y + rect.size.y, "from": rect.position.x, "to": rect.position.x + rect.size.x},
+		{"name": "west", "axis": "y", "fixed": rect.position.x, "from": rect.position.y, "to": rect.position.y + rect.size.y},
+		{"name": "east", "axis": "y", "fixed": rect.position.x + rect.size.x, "from": rect.position.y, "to": rect.position.y + rect.size.y},
+	]
+	var out: Array = []
+	for side in sides:
+		var cuts: Array = []
+		for opening in openings:
+			var o: Rect2 = opening
+			if not _touches(o, rect, str(side["name"])):
+				continue
+			if str(side["axis"]) == "x":
+				cuts.append(Vector2(o.position.x, o.position.x + o.size.x))
+			else:
+				cuts.append(Vector2(o.position.y, o.position.y + o.size.y))
+		cuts.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
+
+		var at := float(side["from"])
+		var stop := float(side["to"])
+		for cut in cuts:
+			var c: Vector2 = cut
+			if c.x > at:
+				out.append(_flat(side, at, minf(c.x, stop)))
+			at = maxf(at, c.y)
+		if at < stop:
+			out.append(_flat(side, at, stop))
+	return out
+
+
+func _flat(spec: Dictionary, from: float, to: float) -> Rect2:
+	var fixed := float(spec["fixed"])
+	var half := WALL_THICK * 0.5
+	if str(spec["axis"]) == "x":
+		return Rect2(from, fixed - half, to - from, WALL_THICK)
+	return Rect2(fixed - half, from, WALL_THICK, to - from)
+
+
 func _wall_piece(root: Node3D, number: int, side: String, piece: int, spec: Dictionary, from: float, to: float) -> void:
 	if to - from < 0.1:
 		return
@@ -811,6 +1012,8 @@ func metric_lines(metrics: Dictionary, record: Dictionary) -> Array:
 		["DEEPEST", "%s   %d doors from the entrance" % [
 			str(metrics["deepest_room"]), int(metrics["deepest"])]],
 		["DEAD ENDS", "%d" % int(metrics["dead_ends"])],
+		["WALKABLE", "%d of %d rooms reachable by a body %.1f m across" % [
+			int(metrics["walk_reached"]), int(metrics["room_count"]), BODY]],
 		["WAYS ROUND", "none, every room is on one path" if loops <= 0 else "%d loop%s" % [loops, "" if loops == 1 else "s"]],
 	]
 	if record.has("placement"):
