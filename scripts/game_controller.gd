@@ -22,6 +22,9 @@ signal log_message(text: String)
 signal track_measured(record: Dictionary)
 # Emitted after a first attempt fails closure and may be corrected once.
 signal revision_requested(feedback: String, record: Dictionary)
+# 004: a tool spec was accepted. The car picks this up so a change applies
+# to the car already on the track, not only to the next one built.
+signal equipped(tool_name: String, spec: Dictionary)
 
 var track_builder: TrackBuilder
 var opponent_builder: OpponentBuilder
@@ -58,6 +61,12 @@ var current_readback := ""
 # record exists so that the readback shown to the player can be pointed at
 # by evidence that only arrives later - a "yes", a correction, a drive.
 var current_record_id := ""
+
+# --- 004: what the player is equipped with ---
+# Every tool starts at its free default, so a player who never asks for
+# anything drives exactly the car Genesis has always given them. EQUIP
+# replaces an entry; nothing else can.
+var kit: Dictionary = ToolRegistry.free_kit()
 # /revise off turns closure feedback off, for a like-for-like baseline.
 var revision_enabled := true
 
@@ -118,6 +127,8 @@ func execute(command: String, parameters: Dictionary) -> void:
 				log_message.emit("SPAWN_OPPONENTS failed: opponents on composed tracks come in a later step")
 				return
 			_spawn_opponents(parameters)
+		"EQUIP":
+			_equip(parameters)
 		"PLAN":
 			_execute_plan(parameters)
 		"CLEAR_WORLD":
@@ -133,6 +144,51 @@ func execute(command: String, parameters: Dictionary) -> void:
 				_create_world(module, parameters)
 			else:
 				log_message.emit("No handler for: " + command)
+
+
+# --- 004: asking for a tool ---
+# The same shape as building a world: validate, record, apply, say what
+# happened. A spec outside the limits is refused with its reasons, exactly
+# as an unclosable circuit is, and the player keeps the tool they had.
+func _equip(parameters: Dictionary) -> void:
+	var record := {
+		"time": Time.get_datetime_string_from_system(),
+		"request": current_request,
+		"raw_command": current_raw,
+		"source": current_source,
+		"experiment": current_experiment,
+		"readback": current_readback,
+		"understanding": "UNKNOWN",
+		"id": current_record_id if current_record_id != "" else TrackLog.next_id(),
+		"command": "EQUIP",
+		"tool": str(parameters.get("tool", "")),
+		"proposed_spec": parameters.get("spec", {}),
+	}
+
+	var tool := ToolRegistry.find(str(parameters.get("tool", "")))
+	if tool == null:
+		_finish_failed(record, "FAILED_SCHEMA", [
+			"this game has no tool called '%s' (it has %s)" % [
+				str(parameters.get("tool", "")), ", ".join(ToolRegistry.names())]])
+		return
+
+	var checked := tool.validate(parameters)
+	if not bool(checked["ok"]):
+		_finish_failed(record, "FAILED_SCHEMA", checked["errors"])
+		return
+
+	var spec: Dictionary = checked["spec"]
+	kit[tool.name()] = spec
+	record["spec"] = spec
+	record["result"] = "VALID"
+	record["construction"] = "BUILT"
+	record["category"] = ""
+	record["reasons"] = []
+	record["metrics"] = {}
+	TrackLog.append(record)
+	track_measured.emit(record)
+	equipped.emit(tool.name(), spec)
+	log_message.emit(tool.summary(spec))
 
 
 # --- answers that never became a command ---

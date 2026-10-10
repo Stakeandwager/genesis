@@ -12,7 +12,13 @@ class_name FarmModule
 const ZONE_TYPES := ["crop", "pasture", "orchard", "pond", "barn", "farmhouse", "silo", "yard"]
 const BUILDINGS := ["barn", "farmhouse", "silo"]
 
-const MIN_ZONES := 2
+# 003: one. A farm with a single barn in it is a farm, and "build a farm
+# with a barn" is about the most natural thing a first-time player can type.
+# It used to be refused for a reason they had no way to understand, while
+# the AI had read them perfectly - an understanding success thrown away by
+# an arbitrary validation rule. Nothing in the geometry needs two: a single
+# slab inside a fence packs, measures and builds like any other.
+const MIN_ZONES := 1
 const MAX_ZONES := 24
 const FIELD_SIDE := Vector2(20.0, 300.0)      # metres, for fields and water
 const BUILDING_SIDE := Vector2(5.0, 60.0)     # metres, for buildings

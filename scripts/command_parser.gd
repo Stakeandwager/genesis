@@ -9,6 +9,10 @@ const CORE_COMMANDS := [
 	"MODIFY_TRACK",
 	"SPAWN_OPPONENTS",
 	"CLEAR_WORLD",
+	# 004: asking for a tool. Which tools exist comes from ToolRegistry, so
+	# a spec for a tool that is not registered is refused like any other
+	# word the game does not have.
+	"EQUIP",
 ]
 
 

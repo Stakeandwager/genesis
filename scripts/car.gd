@@ -12,13 +12,41 @@ class_name Car
 # up. Physics runs at 120 steps a second (set in main) because a fast car can
 # otherwise pass straight through a barrier between frames.
 
-const ENGINE_POWER := 900.0
-const REVERSE_POWER := 350.0
-const BRAKE_POWER := 18.0
-const MAX_STEER := 0.5           # radians, about 29 degrees
+# --- 004: the car is specified, not hard-coded ---
+# These were seven constants, so every player got the same car however they
+# described it. They are now filled from a spec that CarTool has validated,
+# and the values below are exactly what they always were, so a player who
+# asks for nothing gets precisely the car Genesis has always given them.
+#
+# Nothing writes to these except equip(), and equip() only ever receives a
+# spec that passed the validator. A number out of range never reaches here.
+var engine_power := 900.0
+var reverse_power := 350.0
+var brake_power := 18.0
+var max_steer := 0.5             # radians, about 29 degrees
+var downforce := 9.0
+
+# Not part of any spec: how quickly the wheel turns, and how much the lock
+# tightens at speed. The same for every car, because they are about how a
+# car is driven rather than what it is.
 const STEER_SPEED := 3.5
-const STEER_AT_SPEED := 0.45     # steering tightens less the faster you go
-const DOWNFORCE := 9.0
+const STEER_AT_SPEED := 0.45
+
+
+# Take a validated spec. Reverse power keeps its old ratio to engine power,
+# so a stronger car reverses proportionally harder and no spec has to
+# mention it.
+func equip(spec: Dictionary) -> void:
+	if spec.is_empty():
+		return
+	engine_power = float(spec.get("power", engine_power))
+	reverse_power = engine_power * (350.0 / 900.0)
+	brake_power = float(spec.get("braking", brake_power))
+	max_steer = deg_to_rad(float(spec.get("steering", rad_to_deg(max_steer))))
+	downforce = float(spec.get("grip", downforce))
+	var paint := str(spec.get("paint", ""))
+	if CarTool.PAINTS.has(paint):
+		body_colour = CarTool.PAINTS[paint]
 
 var start_position := Vector3.ZERO
 var start_heading := 0.0
@@ -85,14 +113,14 @@ func _physics_process(delta: float) -> void:
 	# Positive engine force drives the car towards its own +Z, which is
 	# backwards, so forwards is negative.
 	if accelerate:
-		engine_force = -ENGINE_POWER
+		engine_force = -engine_power
 		brake = 0.0
 	elif backwards:
 		if forward_speed > 1.0:
 			engine_force = 0.0
-			brake = BRAKE_POWER
+			brake = brake_power
 		else:
-			engine_force = REVERSE_POWER
+			engine_force = reverse_power
 			brake = 0.0
 	else:
 		engine_force = 0.0
@@ -100,18 +128,18 @@ func _physics_process(delta: float) -> void:
 
 	if handbrake:
 		engine_force = 0.0
-		brake = BRAKE_POWER * 1.5
+		brake = brake_power * 1.5
 
 	# 002D: computer drivers get proportional throttle, brake and steering
 	# rather than the keyboard's all-or-nothing.
 	if auto_drive:
 		var t := clampf(auto_throttle, -1.0, 1.0)
 		if t > 0.0:
-			engine_force = -ENGINE_POWER * t
+			engine_force = -engine_power * t
 			brake = 0.0
 		elif t < 0.0 and forward_speed > 1.0:
 			engine_force = 0.0
-			brake = BRAKE_POWER * -t
+			brake = brake_power * -t
 		else:
 			engine_force = 0.0
 			brake = 1.0
@@ -126,11 +154,11 @@ func _physics_process(delta: float) -> void:
 			_steer_target += 1.0
 		if right:
 			_steer_target -= 1.0
-	var limit: float = MAX_STEER * lerpf(1.0, STEER_AT_SPEED, clampf(absf(forward_speed) / 60.0, 0.0, 1.0))
+	var limit: float = max_steer * lerpf(1.0, STEER_AT_SPEED, clampf(absf(forward_speed) / 60.0, 0.0, 1.0))
 	steering = move_toward(steering, _steer_target * limit, STEER_SPEED * delta)
 
 	# Downforce: the faster it goes, the harder it is pressed onto the road.
-	apply_central_force(-global_transform.basis.y * DOWNFORCE * forward_speed * absf(forward_speed) * 0.01)
+	apply_central_force(-global_transform.basis.y * downforce * forward_speed * absf(forward_speed) * 0.01)
 
 	_follow_with_camera(delta)
 

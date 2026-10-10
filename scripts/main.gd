@@ -69,6 +69,7 @@ func _ready() -> void:
 
 	controller.track_measured.connect(_on_track_measured)
 	controller.revision_requested.connect(_on_revision_requested)
+	controller.equipped.connect(_on_equipped)
 
 	experiment = ExperimentRunner.new()
 	add_child(experiment)
@@ -566,6 +567,13 @@ func _delete_world(request: String) -> void:
 
 # --- driving ---
 
+# 004: a new spec reaches the car already on the track, so "give it more
+# grip" changes the car you are sitting in rather than the next one.
+func _on_equipped(tool_name: String, spec: Dictionary) -> void:
+	if tool_name == "car" and car != null:
+		car.equip(spec)
+
+
 func _start_driving() -> void:
 	if not controller.has_drivable():
 		status_label.text = "Build a track first, then /drive."
@@ -576,6 +584,9 @@ func _start_driving() -> void:
 		car = Car.new()
 		car.name = "Car"
 		add_child(car)
+	# 004: whatever the player is equipped with, every time. A kit nobody
+	# has changed is the default car, so this is a no-op until it is not.
+	car.equip(controller.kit.get("car", {}))
 
 	if race.running:
 		race.stop()

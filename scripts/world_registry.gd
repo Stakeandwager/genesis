@@ -65,6 +65,8 @@ static func readback(command: String, parameters: Dictionary) -> String:
 			return str(parameters.get("understood", "")).strip_edges()
 		"CLEAR_WORLD":
 			return "to clear everything away"
+		"EQUIP":
+			return ToolRegistry.readback(parameters)
 		"PLAN":
 			return _plan_readback(parameters)
 	var module := find(command)
