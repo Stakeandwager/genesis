@@ -1,0 +1,66 @@
+# Builds the Godot web export on every push to prototype-002a and publishes it
+# to Netlify. The game is exported with the SINGLE-THREADED template, so the
+# result is plain static files and needs no COOP/COEP headers.
+#
+# No API key is ever placed in the build. api_key.txt is deliberately absent,
+# and the game says so: "No API key. Raw JSON only." Anything under res:// is
+# packed into index.pck, which anyone can download and read, so a key here
+# would be a published key.
+#
+# Secrets this needs, set in GitHub under Settings -> Secrets and variables
+# -> Actions:
+#   NETLIFY_AUTH_TOKEN   a personal access token from Netlify
+#   NETLIFY_SITE_ID      the site's API ID, on its Site configuration page
+
+name: web build
+
+on:
+  push:
+    branches: [prototype-002a]
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    env:
+      GODOT: "4.7.1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch Godot and its web export template
+        run: |
+          set -eux
+          base="https://github.com/godotengine/godot/releases/download/${GODOT}-stable"
+          curl -sSL -o godot.zip "$base/Godot_v${GODOT}-stable_linux.x86_64.zip"
+          curl -sSL -o templates.tpz "$base/Godot_v${GODOT}-stable_export_templates.tpz"
+          unzip -q godot.zip
+          chmod +x "Godot_v${GODOT}-stable_linux.x86_64"
+          mkdir -p "$HOME/.local/share/godot/export_templates/${GODOT}.stable"
+          unzip -q -o templates.tpz -d tpl "templates/web*"
+          cp tpl/templates/web*.zip "$HOME/.local/share/godot/export_templates/${GODOT}.stable/"
+
+      - name: Import, then export
+        run: |
+          set -eux
+          test ! -f api_key.txt
+          cp export_presets.web.cfg export_presets.cfg
+          mkdir -p build
+          "./Godot_v${GODOT}-stable_linux.x86_64" --headless --import || true
+          "./Godot_v${GODOT}-stable_linux.x86_64" --headless \
+            --export-release "Web" "$PWD/build/index.html"
+          ls -la build
+          test -s build/index.wasm
+
+      - name: Publish to Netlify
+        uses: nwtgck/actions-netlify@v3.0
+        with:
+          publish-dir: ./build
+          production-deploy: false
+          deploy-message: ${{ github.event.head_commit.message }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          enable-pull-request-comment: false
+          enable-commit-comment: true
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
