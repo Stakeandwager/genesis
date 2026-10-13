@@ -582,6 +582,10 @@ func _delete_world(request: String) -> void:
 func _on_equipped(tool_name: String, spec: Dictionary) -> void:
 	if tool_name == "car" and car != null:
 		car.equip(spec)
+	# 010: and the same for the body already standing in a dungeon, so "lighter
+	# on my feet" changes the one you are in rather than the next one.
+	if tool_name == "boots" and walker != null:
+		walker.equip(spec)
 
 
 func _start_driving() -> void:
@@ -632,6 +636,10 @@ func _start_exploring() -> void:
 		walker.name = "Walker"
 		add_child(walker)
 
+	# 010: whatever the player is equipped with, every time. A kit nobody has
+	# changed is the ordinary boots, so this is a no-op until it is not.
+	walker.equip(controller.kit.get("boots", {}))
+
 	var surface := controller.standable_surface()
 	walker.place_at(surface["start_position"], float(surface["start_heading"]))
 	walker.visible = true
@@ -670,7 +678,8 @@ func _stop_driving() -> void:
 
 func _process(_delta: float) -> void:
 	if exploring and walker != null:
-		status_label.text = "Walking   %.1f m/s   (W and S walk, A and D turn, Shift run, R back to the entrance)" % walker.speed_mps()
+		status_label.text = "Walking   %.1f of %.1f m/s   (W and S walk, A and D turn, Shift run, R back to the entrance)" % [
+			walker.speed_mps(), walker.top_speed()]
 		return
 	if not driving or car == null:
 		return

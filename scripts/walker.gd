@@ -39,12 +39,26 @@ class_name Walker
 # magnitude, and here that magnitude scales the FORCE rather than the speed -
 # a half-pressed stick is half the push, which settles at half the top speed
 # and takes the same time to get there. Nothing special-cases the gamepad.
-const MASS := 80.0                 # kg, about a person
-const PUSH := 240.0                # newtons the legs apply, about 3 m/s/s
-const RUN_PUSH := 430.0            # holding shift
-const DRAG := 0.67                 # how fast speed bleeds away, per second
-const TURN_PUSH := 24.0            # the same arrangement for turning
-const TURN_DRAG := 10.0            # gives 2.4 rad/s, the old TURN
+# --- 010: these are a spec now, not constants ---
+# They were constants, so every player moved identically however they
+# described themselves - the same trap car.gd was in before 004. They are now
+# filled from a spec BootsTool has validated, and the values below are exactly
+# what 009 settled on, so a player who asks for nothing moves precisely as
+# they always have.
+#
+# Nothing writes to these except equip(), and equip() only ever receives a
+# spec that passed the validator. A number out of range never reaches here,
+# and neither does a combination that would carry a body at a car's pace.
+var mass := 80.0                   # kg, about a person
+var push := 240.0                  # newtons the legs apply, about 3 m/s/s
+var run_push := 430.0              # holding shift
+var drag := 0.67                   # how fast speed bleeds away, per second
+var turn_push := 24.0              # the same arrangement for turning
+var colour := Color(0.42, 0.30, 0.20)
+
+# Not part of any spec: how turning settles. The same for every body, because
+# it is about how a body is steered rather than what it is.
+const TURN_DRAG := 10.0
 const GRAVITY := 20.0
 const BODY := 1.6                  # metres across, matching DungeonModule.BODY
 const TALL := 1.8                  # capsule height, about a person
@@ -90,7 +104,7 @@ func _build_body() -> void:
 	mesh.mesh = capsule
 	mesh.name = "Figure"
 	var material := StandardMaterial3D.new()
-	material.albedo_color = Color(0.86, 0.74, 0.46)
+	material.albedo_color = colour
 	material.roughness = 0.9
 	mesh.material_override = material
 	add_child(mesh)
@@ -143,15 +157,15 @@ func _physics_process(delta: float) -> void:
 
 	# Turning: a push against its own drag, so a tap nudges and a hold
 	# settles at a steady rate instead of snapping to one.
-	spin += (TURN_PUSH * turn - TURN_DRAG * spin) * delta
+	spin += (turn_push * turn - TURN_DRAG * spin) * delta
 	rotate_y(spin * delta)
 
 	# Walking: force over mass, less drag. Nothing assigns a speed.
-	var push := RUN_PUSH if running else PUSH
+	var effort := run_push if running else push
 	var along := -transform.basis.z
-	var drive := Vector3(along.x, 0.0, along.z).normalized() * (push * forward / MASS)
+	var drive := Vector3(along.x, 0.0, along.z).normalized() * (effort * forward / mass)
 	var flat := Vector3(velocity.x, 0.0, velocity.z)
-	flat += (drive - flat * DRAG) * delta
+	flat += (drive - flat * drag) * delta
 	velocity.x = flat.x
 	velocity.z = flat.z
 
@@ -161,6 +175,38 @@ func _physics_process(delta: float) -> void:
 		velocity.y -= GRAVITY * delta
 
 	move_and_slide()
+
+
+# Take a validated spec. Running keeps its ratio to walking, the way a car's
+# reverse power keeps its ratio to engine power, so no spec has to mention it.
+func equip(spec: Dictionary) -> void:
+	if spec.is_empty():
+		return
+	push = float(spec.get("push", push))
+	run_push = push * BootsTool.RUN_RATIO
+	mass = float(spec.get("weight", mass))
+	drag = float(spec.get("footing", drag))
+	turn_push = float(spec.get("turning", turn_push))
+	var named := str(spec.get("colour", ""))
+	if BootsTool.COLOURS.has(named):
+		colour = BootsTool.COLOURS[named]
+	_repaint()
+
+
+func _repaint() -> void:
+	var figure := get_node_or_null("Figure") as MeshInstance3D
+	if figure == null:
+		return
+	var material := StandardMaterial3D.new()
+	material.albedo_color = colour
+	material.roughness = 0.9
+	figure.material_override = material
+
+
+# What this body settles at, from its own numbers. The same arithmetic
+# BootsTool bounds, read from the one place that owns it.
+func top_speed() -> float:
+	return BootsTool.top_speed({"push": push, "weight": mass, "footing": drag})
 
 
 func speed_mps() -> float:
