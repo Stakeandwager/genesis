@@ -42,9 +42,15 @@ func _initialize() -> void:
 	# --- ordinary readbacks ---
 	for trial in [
 		[{}, "the ordinary brown boots"],
-		[{"push": 420.0}, "brown boots that get you moving quickly"],
-		[{"footing": 1.3}, "brown boots that stop sharply"],
+		# 011: a spec that changes the pace says so in the same sentence. The
+		# first two of these said only "get you moving quickly" and "stop
+		# sharply", each true and each half the story.
+		[{"push": 420.0}, "brown boots that get you moving quickly, and walk at 7.8 m/s"],
+		[{"footing": 1.3}, "brown boots that stop sharply, though they only walk at 2.3 m/s"],
 		[{"colour": "black", "nickname": "Seven League"}, "the ordinary black boots called Seven League"],
+		# Weight alone moves the pace without any wording of its own, which is
+		# exactly the case a player would otherwise never be told about.
+		[{"weight": 130.0}, "brown boots that weigh you down, though they only walk at 2.8 m/s"],
 	]:
 		var checked: Dictionary = boots.validate({"tool": "boots", "spec": trial[0]})
 		var said := boots.readback(checked["spec"]) if bool(checked["ok"]) else "REFUSED: " + str(checked["errors"])
@@ -85,7 +91,12 @@ func _initialize() -> void:
 
 	# --- the readback goes through the registry, like every other tool ---
 	var through := ToolRegistry.readback({"tool": "boots", "spec": {"weight": 130.0}})
-	_check(through == "brown boots that weigh you down", "the registry reads boots back: " + through)
+	_check(through == "brown boots that weigh you down, though they only walk at 2.8 m/s",
+		"the registry reads boots back: " + through)
+
+	# A spec that changes nothing a player would feel says nothing about pace.
+	var nudge := ToolRegistry.readback({"tool": "boots", "spec": {"push": 250.0}})
+	_check(not nudge.contains("m/s"), "a change too small to feel is not mentioned: " + nudge)
 
 	print("")
 	for l in lines:
