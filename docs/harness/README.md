@@ -38,6 +38,7 @@ back to its real name in a scratch project, never into this project.
 | walk_physics_test.gd | Walking is a force on a mass: top speed lands where `push / (mass * drag)` says, a half-pressed stick settles at half of it, and letting go coasts (009) | `--fixed-fps 120 -s res://tests/walk_physics_test.gd` |
 | behaviour_test.gd | The third layer: do the boots **do** what the readback promised? Top speed against the stated figure, stopping distance from a controlled speed, and a refused spec leaving the equipped item alone (012) | `--fixed-fps 120 -s res://tests/behaviour_test.gd` |
 | silence_test.gd | A player who answers nothing scores nothing, where the old arithmetic scored them 100% (012) | `-s res://tests/silence_test.gd` |
+| order_test.gd | The first command that resolves after it is accepted: the goal whitelist, routing over the door graph, and arrival decided from where the character ended up rather than from what it says (014) | `--fixed-fps 120 -s res://tests/order_test.gd` |
 | explore_test.gd | `/explore` played the way the owner plays it: the body lands on the floor, walks out of the entrance, and counts as using the world (008) | `--fixed-fps 120 -s res://tests/explore_test.gd` |
 
 drive_test.gd and session_test.gd need the files in tests/ to keep their
@@ -183,6 +184,13 @@ sixpence" in its own file measures a promise nobody made.
 - Change one thing, rerun everything, compare old and new.
 - Say plainly what was not tested: live Gemini answers, the real UI scene,
   the feel on the owner's HD 3000.
+- `git stash` is how the held-until-tested arrangement goes wrong. Work
+  stashed out of the mirror is invisible while the next feature is built on
+  top of it, and copying the mirror into a scratch project then clobbers the
+  tested copy there too. It happened during 014: boots_tool.gd and
+  session_report.gd silently lost 013 and 012, and two suites that had passed
+  an hour earlier started failing on missing functions. Pop before building
+  anything new, or check `git stash list` first.
 - Limits that are not whole numbers must not be written as a `Vector2`. Its
   components are 32-bit, so 0.40 becomes 0.4000000059604645 and a spec asking
   for exactly the documented minimum is refused for being below it. The first
