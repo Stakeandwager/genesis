@@ -19,9 +19,32 @@ class_name Walker
 # box the player needs in order to type /view, and a web build makes that
 # worse. Turning with keys is clumsier and costs nobody a trapped cursor.
 
-const WALK := 4.5                  # metres a second
-const RUN := 8.0                   # holding shift
-const TURN := 2.4                  # radians a second
+# --- 009: speed is not set, it is reached ---
+#
+# These were WALK, RUN and TURN: three speeds switched on and off, which is
+# why nobody could say whether 4.5 m/s was right. A number picked by hand can
+# only be defended by taste.
+#
+# Movement is now a force on a mass against drag, so top speed is a RESULT:
+#
+#     top speed  =  push / (mass * drag)  =  240 / (80 * 0.67)  =  4.5 m/s
+#
+# which is the old WALK, reached in about a second and a half rather than
+# instantly. The same arithmetic gives running 8.0 m/s, and stopping is drag
+# alone, so a body carries its momentum into a wall instead of halting on the
+# frame a key comes up.
+#
+# This is also what makes an analogue input mean something. A keyboard key
+# reports 1 or 0 and has no pressure to read, but a gamepad stick reports its
+# magnitude, and here that magnitude scales the FORCE rather than the speed -
+# a half-pressed stick is half the push, which settles at half the top speed
+# and takes the same time to get there. Nothing special-cases the gamepad.
+const MASS := 80.0                 # kg, about a person
+const PUSH := 240.0                # newtons the legs apply, about 3 m/s/s
+const RUN_PUSH := 430.0            # holding shift
+const DRAG := 0.67                 # how fast speed bleeds away, per second
+const TURN_PUSH := 24.0            # the same arrangement for turning
+const TURN_DRAG := 10.0            # gives 2.4 rad/s, the old TURN
 const GRAVITY := 20.0
 const BODY := 1.6                  # metres across, matching DungeonModule.BODY
 const TALL := 1.8                  # capsule height, about a person
@@ -38,6 +61,10 @@ var start_heading := 0.0
 var auto_walk := false
 var auto_forward := 0.0
 var auto_turn := 0.0
+
+# How fast the body is turning, in radians a second. Carried between frames
+# because turning now has momentum of its own.
+var spin := 0.0
 
 
 func _ready() -> void:
@@ -87,6 +114,7 @@ func place_at(pos: Vector3, heading: float) -> void:
 
 func reset() -> void:
 	velocity = Vector3.ZERO
+	spin = 0.0
 	global_position = start_position
 	rotation = Vector3(0.0, start_heading, 0.0)
 
@@ -94,7 +122,10 @@ func reset() -> void:
 func _physics_process(delta: float) -> void:
 	var forward := auto_forward
 	var turn := auto_turn
+	var running := false
 	if not auto_walk:
+		# get_axis keeps a gamepad stick's magnitude, which is the pressure
+		# there is to read. A key simply pins it to 1.
 		forward = Input.get_axis("ui_down", "ui_up")
 		turn = Input.get_axis("ui_right", "ui_left")
 		if Input.is_key_pressed(KEY_W):
@@ -105,16 +136,24 @@ func _physics_process(delta: float) -> void:
 			turn = 1.0
 		elif Input.is_key_pressed(KEY_D):
 			turn = -1.0
+		running = Input.is_key_pressed(KEY_SHIFT)
 		if Input.is_key_pressed(KEY_R):
 			reset()
 			return
 
-	rotate_y(turn * TURN * delta)
+	# Turning: a push against its own drag, so a tap nudges and a hold
+	# settles at a steady rate instead of snapping to one.
+	spin += (TURN_PUSH * turn - TURN_DRAG * spin) * delta
+	rotate_y(spin * delta)
 
-	var speed := RUN if (not auto_walk and Input.is_key_pressed(KEY_SHIFT)) else WALK
-	var heading := -transform.basis.z * forward * speed
-	velocity.x = heading.x
-	velocity.z = heading.z
+	# Walking: force over mass, less drag. Nothing assigns a speed.
+	var push := RUN_PUSH if running else PUSH
+	var along := -transform.basis.z
+	var drive := Vector3(along.x, 0.0, along.z).normalized() * (push * forward / MASS)
+	var flat := Vector3(velocity.x, 0.0, velocity.z)
+	flat += (drive - flat * DRAG) * delta
+	velocity.x = flat.x
+	velocity.z = flat.z
 
 	if is_on_floor():
 		velocity.y = 0.0
