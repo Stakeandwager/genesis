@@ -40,7 +40,12 @@ const MAX_EXTENT := 1400.0               # metres across, either way
 # anything else. Each slab is drawn from the ground up, so a lower number
 # means a slab hidden inside a taller one.
 const PAD_HEIGHT := 1.0                  # the bare floor under everything
-const CORRIDOR_HEIGHT := 1.3             # corridors sit above the pad
+# Corridors sit just UNDER the room floor, not 0.3 m below it. The old gap
+# made every doorway a step up, and a CharacterBody3D cannot climb a step: a
+# walker reached 1 room in 5 while the geometric check still reported 5 of 5
+# (walker_test.gd). The remaining 2 cm keeps room floors drawing on top where
+# the two overlap, which is all the difference was ever for.
+const CORRIDOR_HEIGHT := 1.58            # corridors sit just under the room floor
 const ROOM_HEIGHT := 1.6                 # room floors sit above corridors
 const WALL_HEIGHT := 3.0                 # walls stand on the room floor
 const WALL_THICK := 0.8
@@ -890,6 +895,7 @@ func _wall_piece(root: Node3D, number: int, side: String, piece: int, spec: Dict
 	wall.mesh = box
 	wall.name = "Wall_%d_%s_%d" % [number, side, piece]
 	wall.material_override = _material(WALL_COLOUR)
+	_solid(wall, box.size)
 	root.add_child(wall)
 
 
@@ -901,7 +907,28 @@ func _slab(root: Node3D, name_for: String, from: Vector2, to: Vector2, height: f
 	slab.name = name_for
 	slab.material_override = _material(colour)
 	slab.position = Vector3((from.x + to.x) * 0.5, height * 0.5, (from.y + to.y) * 0.5)
+	_solid(slab, box.size)
 	root.add_child(slab)
+
+
+# --- 007: the dungeon becomes solid ---
+# Until now every floor and wall was a bare MeshInstance3D: something to look
+# at, nothing to stand on. A body dropped into it fell through the world and
+# walked through stone, which is why geometric reachability was the only kind
+# that could be measured - there was nothing to collide with.
+#
+# Collision is taken from the SAME box size the mesh was built from, never
+# re-derived, for the reason _wall_rects exists: a checker that measures
+# something other than what was built is worse than no checker.
+func _solid(piece: Node3D, size: Vector3) -> void:
+	var body := StaticBody3D.new()
+	body.name = "Solid"
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = size
+	shape.shape = box
+	body.add_child(shape)
+	piece.add_child(body)
 
 
 func _material(colour: Color) -> StandardMaterial3D:
