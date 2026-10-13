@@ -33,6 +33,7 @@ back to its real name in a scratch project, never into this project.
 | walk_test.gd | Logical and physical reachability agree on five shapes; a room with no openings has four solid walls (005) | `-s res://tests/walk_test.gd` |
 | walk_negative.gd | The physical check **can fail**: a sealed doorway is detected and its coordinate named (005) | `-s res://tests/walk_negative.gd` |
 | sweep_test.gd | Whether any *legal command* can reach `FAILED_UNWALKABLE` — 147 dungeons across the whole legal space (005) | `-s res://tests/sweep_test.gd` |
+| walker_test.gd | Walks a real `CharacterBody3D` through every doorway and reports which rooms a **moving body** reaches, against what the geometry claims (007) | `--fixed-fps 120 -s res://tests/walker_test.gd` |
 
 drive_test.gd and session_test.gd need the files in tests/ to keep their
 names: session_test.gd extends drive_test.gd.
@@ -62,6 +63,36 @@ doorway is a 0.3 m step up**, and the geometric check treats floors as flat
 rectangles and cannot see height at all. It would call a three-metre cliff
 walkable. A moving body is a different instrument, and the first time it
 disagrees with the geometry is the first real measurement.
+
+## What walker_test.gd found
+
+That prediction was right, and worse than expected. The first run, with a real
+`CharacterBody3D` 1.6 m across:
+
+```
+a row of five      geometry 5/5, body 1/5   <-- DISAGREES
+    door (0, 1) stopped at (-10.4, 2.2, 0.0), stuck 1.6 m short of (-12.0, 0.0)
+four off a hall    geometry 5/5, body 1/5   <-- DISAGREES
+two rooms          geometry 2/2, body 1/2   <-- DISAGREES
+```
+
+**Every doorway in the game was impassable.** A body could leave a room, because
+stepping down is free, and could never enter the next one. The `y = 2.2` is the
+proof: the capsule is standing on the corridor floor, 0.3 m below the room floor
+it is trying to reach, and a `CharacterBody3D` has no step-up.
+
+Two things made this invisible for months. Nothing in the dungeon had collision
+at all — every floor and wall was a bare `MeshInstance3D` — so there was no body
+to get stuck, and the only reachability anyone could measure was a drawing of
+one. And the geometric check treats floors as flat rectangles, so it could not
+have seen a step of any size.
+
+The fix was one constant: corridors now sit 2 cm under the room floor rather
+than 30 cm. The 2 cm is all that was ever needed to keep room floors drawing on
+top where the two overlap.
+
+This is the clearest example in the project of the rule below. The suite was
+green. 147 dungeons passed. Nobody could walk through any of them.
 
 ## Rules
 
