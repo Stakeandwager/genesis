@@ -34,6 +34,7 @@ back to its real name in a scratch project, never into this project.
 | walk_negative.gd | The physical check **can fail**: a sealed doorway is detected and its coordinate named (005) | `-s res://tests/walk_negative.gd` |
 | sweep_test.gd | Whether any *legal command* can reach `FAILED_UNWALKABLE` — 147 dungeons across the whole legal space (005) | `-s res://tests/sweep_test.gd` |
 | walker_test.gd | Walks a real `CharacterBody3D` through every doorway and reports which rooms a **moving body** reaches, against what the geometry claims (007) | `--fixed-fps 120 -s res://tests/walker_test.gd` |
+| walk_physics_test.gd | Walking is a force on a mass: top speed lands where `push / (mass * drag)` says, a half-pressed stick settles at half of it, and letting go coasts (009) | `--fixed-fps 120 -s res://tests/walk_physics_test.gd` |
 | explore_test.gd | `/explore` played the way the owner plays it: the body lands on the floor, walks out of the entrance, and counts as using the world (008) | `--fixed-fps 120 -s res://tests/explore_test.gd` |
 
 drive_test.gd and session_test.gd need the files in tests/ to keep their
@@ -114,6 +115,11 @@ range_test.gd, which passes.
 - Change one thing, rerun everything, compare old and new.
 - Say plainly what was not tested: live Gemini answers, the real UI scene,
   the feel on the owner's HD 3000.
+- Read `Engine.physics_ticks_per_second`, never the `--fixed-fps` figure.
+  They are different things: Main sets physics to 120 and a scratch project
+  leaves it at 60, so assuming 120 halves every measured time. This already
+  reported walking as twice as quick as it is, in the first run of
+  walk_physics_test.gd.
 - A green suite is not evidence that the thing under test is doing anything.
   Ask of each new check whether a legal input could ever make it fail;
   sweep_test.gd exists because the answer was no.
