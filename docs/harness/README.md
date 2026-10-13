@@ -36,6 +36,8 @@ back to its real name in a scratch project, never into this project.
 | walker_test.gd | Walks a real `CharacterBody3D` through every doorway and reports which rooms a **moving body** reaches, against what the geometry claims (007) | `--fixed-fps 120 -s res://tests/walker_test.gd` |
 | boots_test.gd | The second tool: the registry takes it unchanged, a field out of range is refused, and a spec whose fields are **all legal** but whose combination is absurd is refused by its consequence (010) | `-s res://tests/boots_test.gd` |
 | walk_physics_test.gd | Walking is a force on a mass: top speed lands where `push / (mass * drag)` says, a half-pressed stick settles at half of it, and letting go coasts (009) | `--fixed-fps 120 -s res://tests/walk_physics_test.gd` |
+| behaviour_test.gd | The third layer: do the boots **do** what the readback promised? Top speed against the stated figure, stopping distance from a controlled speed, and a refused spec leaving the equipped item alone (012) | `--fixed-fps 120 -s res://tests/behaviour_test.gd` |
+| silence_test.gd | A player who answers nothing scores nothing, where the old arithmetic scored them 100% (012) | `-s res://tests/silence_test.gd` |
 | explore_test.gd | `/explore` played the way the owner plays it: the body lands on the floor, walks out of the entrance, and counts as using the world (008) | `--fixed-fps 120 -s res://tests/explore_test.gd` |
 
 drive_test.gd and session_test.gd need the files in tests/ to keep their
@@ -108,6 +110,29 @@ that file or in what it calls, not the harness.
 Recorded here so nobody spends ten minutes waiting for it again. Everything it
 covers - the arithmetic of the /session report - is also covered by
 range_test.gd, which passes.
+
+## What behaviour_test.gd found
+
+The three boots, measured from the same 2.0 m/s on the same ground:
+
+```
+ordinary       top 4.48 m/s   stops in 2.80 m / 4.45 s
+stops sharply  top 2.14 m/s   stops in 1.33 m / 2.12 s
+heavy          top 2.56 m/s   stops in 2.80 m / 4.45 s
+```
+
+Every stated figure held and "stop sharply" really does, at 48% of ordinary's
+distance. But look at the third row: **a 140 kg body stops in exactly the same
+distance as an 80 kg one.** Drag in 009 is `velocity * drag` with no mass term,
+so weight changes top speed and nothing else. That is not how momentum works.
+
+The readback is honest about it - "weigh you down" never promised a longer
+stop - so this test passes. It is the model that is wrong, not the account of
+it, and the two are worth keeping apart.
+
+The criteria are stated in the file BEFORE the run, and they are not invented
+there: they are the readback's own claims. A test that defines "stops on a
+sixpence" in its own file measures a promise nobody made.
 
 ## Rules
 
