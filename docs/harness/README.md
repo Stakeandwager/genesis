@@ -34,6 +34,7 @@ back to its real name in a scratch project, never into this project.
 | walk_negative.gd | The physical check **can fail**: a sealed doorway is detected and its coordinate named (005) | `-s res://tests/walk_negative.gd` |
 | sweep_test.gd | Whether any *legal command* can reach `FAILED_UNWALKABLE` — 147 dungeons across the whole legal space (005) | `-s res://tests/sweep_test.gd` |
 | walker_test.gd | Walks a real `CharacterBody3D` through every doorway and reports which rooms a **moving body** reaches, against what the geometry claims (007) | `--fixed-fps 120 -s res://tests/walker_test.gd` |
+| explore_test.gd | `/explore` played the way the owner plays it: the body lands on the floor, walks out of the entrance, and counts as using the world (008) | `--fixed-fps 120 -s res://tests/explore_test.gd` |
 
 drive_test.gd and session_test.gd need the files in tests/ to keep their
 names: session_test.gd extends drive_test.gd.
@@ -93,6 +94,18 @@ top where the two overlap.
 
 This is the clearest example in the project of the rule below. The suite was
 green. 147 dungeons passed. Nobody could walk through any of them.
+
+## Known broken
+
+`report_test.gd` **hangs** and prints nothing at all, not even the engine
+banner. It is not a regression: it does the same against the committed code
+with every later change reverted, so it has been broken for some time. A
+minimal SceneTree script in the same project runs fine, so the fault is in
+that file or in what it calls, not the harness.
+
+Recorded here so nobody spends ten minutes waiting for it again. Everything it
+covers - the arithmetic of the /session report - is also covered by
+range_test.gd, which passes.
 
 ## Rules
 
