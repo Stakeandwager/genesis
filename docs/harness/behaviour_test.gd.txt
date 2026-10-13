@@ -109,7 +109,7 @@ func _run() -> void:
 
 	var specs := {
 		"ordinary": boots.validate({"tool": "boots", "spec": {}})["spec"],
-		"stops sharply": boots.validate({"tool": "boots", "spec": {"footing": 1.4}})["spec"],
+		"stops sharply": boots.validate({"tool": "boots", "spec": {"brake": 1100.0}})["spec"],
 		"heavy": boots.validate({"tool": "boots", "spec": {"weight": 140.0}})["spec"],
 	}
 
@@ -144,14 +144,38 @@ func _run() -> void:
 		"\"stop sharply\" really does: %.2f m against ordinary's %.2f m, from the same %.1f m/s" % [
 			sharp, ordinary, START])
 
-	# --- claim 3: what the readback does NOT say should not happen either ---
-	# "weigh you down" is about weight. In this model drag does not depend on
-	# mass, so heavy boots should stop in the SAME distance from the same
-	# speed. If they do, the readback is honest. If they stop differently, the
-	# model has an effect nobody was told about.
+	# --- claim 3: weight tells on stopping ---
+	# Until 013 it did not: drag was velocity * drag with no mass in it, so a
+	# 140 kg body stopped in exactly the same distance as an 80 kg one.
+	# Braking is now a force the legs apply, so deceleration is brake / mass.
 	var heavy: float = float(measured["heavy"]["stop"]["distance"])
-	_check(absf(heavy - ordinary) <= ordinary * 0.1,
-		"heavy boots stop in the same distance from the same speed: %.2f m against %.2f m" % [heavy, ordinary])
+	_check(heavy > ordinary * 1.2,
+		"a heavy body takes longer to stop: %.2f m against %.2f m from the same %.1f m/s" % [
+			heavy, ordinary, START])
+
+	# --- claim 4: the game's own prediction matches what the body did ---
+	# This is the part that makes the layer worth having. The prediction comes
+	# from BootsTool, not from this file, so a model that drifts from its own
+	# arithmetic is caught rather than quietly re-measured.
+	for label in measured:
+		var m: Dictionary = measured[label]
+		var predicted := BootsTool.stopping_distance(m["spec"], START)
+		var actual := float(m["stop"]["distance"])
+		lines.append("  %-14s predicted %.3f m, measured %.3f m" % [label, predicted, actual])
+		_check(absf(actual - predicted) <= maxf(predicted * 0.12, 0.05),
+			"%s: prediction and measurement agree (%.3f m against %.3f m)" % [label, predicted, actual])
+
+	# --- claim 5: stopping sharply no longer costs top speed ---
+	# footing used to do two jobs, so "stop on a sixpence" quietly halved the
+	# walk. brake is its own quantity and touches nothing else.
+	var sharp_spec: Dictionary = boots.validate({"tool": "boots", "spec": {"brake": 1100.0}})["spec"]
+	var plain_spec: Dictionary = boots.validate({"tool": "boots", "spec": {}})["spec"]
+	_check(absf(BootsTool.top_speed(sharp_spec) - BootsTool.top_speed(plain_spec)) < 0.001,
+		"asking to stop sharply leaves the walking pace alone (%.2f m/s either way)" % BootsTool.top_speed(sharp_spec))
+	_check(BootsTool.stopping_distance(sharp_spec, START) < BootsTool.stopping_distance(plain_spec, START) * 0.6,
+		"and really does stop shorter: %.2f m against %.2f m" % [
+			BootsTool.stopping_distance(sharp_spec, START),
+			BootsTool.stopping_distance(plain_spec, START)])
 
 	# --- a refused spec must not replace what the player has ---
 	var kit := ToolRegistry.free_kit()

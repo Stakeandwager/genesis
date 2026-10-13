@@ -111,7 +111,49 @@ Recorded here so nobody spends ten minutes waiting for it again. Everything it
 covers - the arithmetic of the /session report - is also covered by
 range_test.gd, which passes.
 
-## What behaviour_test.gd found
+## 013: the model is named, so the prediction means something
+
+The brief that prompted this used `d = v^2 / 2a`, constant deceleration. The
+model running was linear drag, `d = v/k`, where a body never formally stops.
+Both are reasonable; they are not the same, and a prediction is arithmetic
+about nothing until the model is named.
+
+Naming it closed two faults at once. Braking is now a bounded FORCE rather
+than more drag, so deceleration is `brake / weight`:
+
+- a heavy body finally takes longer to stop, which drag could never express
+  because `velocity * drag` has no mass in it;
+- and asking to stop sharply no longer costs top speed, because `footing` has
+  stopped doing two jobs.
+
+The game predicts its own stopping distance, in `BootsTool.stopping_distance`,
+from the exact solution of `dv/dt = -(b + k*v)`:
+
+```
+d = v/k - (b / k^2) * ln(1 + k*v / b)
+```
+
+which becomes `v^2 / (2b)` as drag goes to nothing - the schoolbook formula is
+the special case, not the model. The prediction lives beside the thing it
+predicts, for the reason `around_of()` and `_wall_rects()` exist.
+
+Measured against it, from 2.0 m/s:
+
+```
+ordinary       predicted 0.340 m, measured 0.322 m
+stops sharply  predicted 0.137 m, measured 0.120 m
+heavy          predicted 0.537 m, measured 0.518 m
+```
+
+**The measurement is consistently about 5% short of the prediction, in the
+same direction every time.** That is not noise and should not be hidden behind
+a tolerance: the prediction solves the continuous equation, while the game
+applies drag and braking one after the other inside a discrete frame. The bias
+is the integration, not the physics, and it would shrink at a higher tick
+rate. It is recorded here so that if it ever changes sign or size, somebody
+notices.
+
+## What behaviour_test.gd found before 013
 
 The three boots, measured from the same 2.0 m/s on the same ground:
 
