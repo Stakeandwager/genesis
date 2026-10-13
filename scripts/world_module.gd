@@ -103,6 +103,11 @@ func measure(_layout: Dictionary) -> Dictionary:
 # "road_height": metres}, where N has built, centreline, start_position and
 # start_heading in its own coordinates (CircuitBuilder does). The controller
 # converts them to world space for driving and racing.
+#
+# 008: a world a body can walk in reports "standable": {"node": N,
+# "entrance": where a body starts in N's own coordinates, "heading": radians}.
+# The controller converts it the same way, so a world moved by a plan is
+# entered where it stands. A world may report both, one, or neither.
 func build(_root: Node3D, _layout: Dictionary) -> Dictionary:
 	return {"bounds_min": Vector2.ZERO, "bounds_max": Vector2.ZERO}
 

@@ -771,11 +771,24 @@ func build(root: Node3D, layout: Dictionary) -> Dictionary:
 			rect.position, rect.position + rect.size, ROOM_HEIGHT, colour)
 		_walls(root, i + 1, rect, openings[i])
 
+	# 008: where a body comes in. The entrance is room 1 by definition, and a
+	# body starts at its centre, standing on its floor. Reported in this
+	# node's own coordinates, as the drivable surface is, so a plan that moves
+	# the dungeon moves where the player appears with it.
+	var entrance: Rect2 = rects[0]
 	return {
 		"bounds_min": low,
 		"bounds_max": high,
 		"room_count": rooms.size(),
 		"door_count": (layout["doors"] as Array).size(),
+		"standable": {
+			"node": root,
+			"entrance": Vector3(
+				entrance.position.x + entrance.size.x * 0.5,
+				ROOM_HEIGHT + 1.0,
+				entrance.position.y + entrance.size.y * 0.5),
+			"heading": 0.0,
+		},
 	}
 
 

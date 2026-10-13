@@ -129,6 +129,11 @@ static func judge(input: String, previous_request: String, was_built: bool) -> D
 		match command:
 			"drive":
 				return _verdict("ACCEPTED_BY_USE", "DROVE_IT", "medium", false)
+			# 008: a dungeon could never be used, only built and left, so the
+			# strongest evidence it could ever earn was silence. Walking into
+			# one is the same act as driving a track and counts the same.
+			"explore":
+				return _verdict("ACCEPTED_BY_USE", "WALKED_IT", "medium", false)
 			"race":
 				return _verdict("ACCEPTED_BY_USE", "RACED_IT", "medium", false)
 			"save":

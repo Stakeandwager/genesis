@@ -29,6 +29,11 @@ var checkpoint_tracker: CheckpointTracker
 var car: Car
 var race: RaceDirector
 var driving := false
+# 008: the walker and whether the player is inside the world on foot. The
+# sibling of car/driving, kept apart from it so a world can be walked without
+# anything knowing about cars.
+var walker: Walker
+var exploring := false
 var history_log: RichTextLabel
 var metrics_log: RichTextLabel
 
@@ -410,8 +415,13 @@ func _run_local_command(request: String) -> void:
 			if parts.size() > 1 and parts[1].is_valid_int():
 				count = clampi(parts[1].to_int(), 1, 5)
 			_start_race(count)
+		"/explore":
+			_start_exploring()
+			if exploring:
+				TrackLog.event("explore")
 		"/view":
 			_stop_driving()
+			_stop_exploring()
 		"/save":
 			_save_world(request)
 		"/load":
@@ -434,7 +444,7 @@ func _run_local_command(request: String) -> void:
 			status_label.text = "Track log location written to the history."
 			_record(request, reply, "ok")
 		_:
-			var help := "Game commands: /save [name], /load [name], /worlds, /delete [name], /drive, /race [opponents], /view, /experiment [count], /stop, /status, /revise [on|off], /session [name|end], /log"
+			var help := "Game commands: /save [name], /load [name], /worlds, /delete [name], /drive, /race [opponents], /explore, /view, /experiment [count], /stop, /status, /revise [on|off], /session [name|end], /log"
 			status_label.text = help
 			_record(request, help, "unsupported")
 
@@ -604,6 +614,47 @@ func _start_driving() -> void:
 	_record("/drive", "Driving. W or Up to accelerate, A and D to steer, Space handbrake, R back to the start. Click the text box and type /view to stop.", "ok")
 
 
+# --- 008: walking ---
+# The same shape as _start_driving, and for the same reason: a world is walked
+# because its module reports somewhere to stand, never because Main knows what
+# a dungeon is.
+func _start_exploring() -> void:
+	if not controller.has_standable():
+		status_label.text = "Build a dungeon first, then /explore."
+		_record("/explore", "Build a dungeon first, then /explore.", "error")
+		return
+
+	if driving:
+		_stop_driving()
+
+	if walker == null:
+		walker = Walker.new()
+		walker.name = "Walker"
+		add_child(walker)
+
+	var surface := controller.standable_surface()
+	walker.place_at(surface["start_position"], float(surface["start_heading"]))
+	walker.visible = true
+	walker.camera.current = true
+	exploring = true
+
+	# Otherwise the movement keys would be typed into the text box.
+	input_box.release_focus()
+	_record("/explore", "Walking. W and S to walk, A and D to turn, Shift to run, R back to the entrance. Click the text box and type /view to stop.", "ok")
+
+
+func _stop_exploring() -> void:
+	if not exploring:
+		return
+	exploring = false
+	if walker:
+		walker.visible = false
+	if controller.camera:
+		controller.camera.current = true
+	status_label.text = "Back to the overhead view."
+	_record("/view", "Back to the overhead view.", "ok")
+
+
 func _stop_driving() -> void:
 	driving = false
 	if race.running:
@@ -618,6 +669,9 @@ func _stop_driving() -> void:
 
 
 func _process(_delta: float) -> void:
+	if exploring and walker != null:
+		status_label.text = "Walking   %.1f m/s   (W and S walk, A and D turn, Shift run, R back to the entrance)" % walker.speed_mps()
+		return
 	if not driving or car == null:
 		return
 	checkpoint_tracker.update_progress(car.global_position)

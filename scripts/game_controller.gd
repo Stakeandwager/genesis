@@ -32,6 +32,13 @@ var world_node: Node3D
 # The surface a car can drive on in the current world, if it has one:
 # {"node": the built node, "road_height": metres}. See drivable_surface().
 var drivable: Dictionary = {}
+
+# --- 008: the same arrangement for a world that is walked ---
+# {"node": the built node, "entrance": where a body starts in that node's own
+# coordinates, "heading": radians}. See standable_surface(). A world is walked
+# because its module reports one, never because the controller knows what a
+# dungeon is.
+var standable: Dictionary = {}
 # While a plan is running, each step keeps what the earlier steps built.
 var plan_running := false
 var plan_bounds_min := Vector2(INF, INF)
@@ -610,6 +617,8 @@ func _build_world(module: WorldModule, parameters: Dictionary, layout: Dictionar
 	# In a plan, the last world that can be driven is the one driven.
 	if report.has("drivable"):
 		drivable = report["drivable"]
+	if report.has("standable"):
+		standable = report["standable"]
 
 	TrackLog.append(record)
 	track_measured.emit(record)
@@ -619,6 +628,7 @@ func _build_world(module: WorldModule, parameters: Dictionary, layout: Dictionar
 
 func _clear_world_node() -> void:
 	drivable = {}
+	standable = {}
 	if world_node == null:
 		return
 	for child in world_node.get_children():
@@ -636,6 +646,8 @@ func show_unrecorded(module: WorldModule, layout: Dictionary) -> void:
 	_frame_view(report["bounds_min"], report["bounds_max"])
 	if report.has("drivable"):
 		drivable = report["drivable"]
+	if report.has("standable"):
+		standable = report["standable"]
 
 
 # --- driving ---
@@ -663,6 +675,25 @@ func drivable_surface() -> Dictionary:
 		"start_heading": float(node.start_heading),
 		"centreline": line,
 		"road_height": float(drivable["road_height"]),
+	}
+
+
+# --- 008: walking ---
+
+func has_standable() -> bool:
+	return not standable.is_empty() and is_instance_valid(standable["node"])
+
+
+# Where a body starts, in world space. A plan may have moved the world, so the
+# node's own numbers are converted, exactly as drivable_surface() does.
+# Returns {} when there is nothing to walk.
+func standable_surface() -> Dictionary:
+	if not has_standable():
+		return {}
+	var node: Node3D = standable["node"]
+	return {
+		"start_position": node.to_global(standable["entrance"]),
+		"start_heading": float(standable.get("heading", 0.0)),
 	}
 
 
