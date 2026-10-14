@@ -56,6 +56,8 @@ var drag := 0.67                   # how fast speed bleeds away, per second
 var turn_push := 24.0              # the same arrangement for turning
 var brake := 400.0                 # newtons the legs apply to stop
 var colour := Color(0.42, 0.30, 0.20)
+# 021: appearance, which changes nothing anybody can do.
+var skin := Color(0.78, 0.62, 0.48)
 
 # Not part of any spec: how turning settles. The same for every body, because
 # it is about how a body is steered rather than what it is.
@@ -63,6 +65,7 @@ const TURN_DRAG := 10.0
 const GRAVITY := 20.0
 const BODY := 1.6                  # metres across, matching DungeonModule.BODY
 const TALL := 1.8                  # capsule height, about a person
+const HEAD := 0.52                 # a head is about half a metre across
 const EYE := 1.25                  # camera height above the body's middle
 const BEHIND := 2.4                # how far back the camera sits
 const DROP := 0.18                 # how far the camera tilts down
@@ -92,6 +95,7 @@ func _ready() -> void:
 	add_child(shape)
 
 	_build_body()
+	_build_head()
 	_build_camera()
 
 
@@ -109,6 +113,69 @@ func _build_body() -> void:
 	material.roughness = 0.9
 	mesh.material_override = material
 	add_child(mesh)
+
+
+# --- 021: a head, and a face on it ---
+# A capsule with a photo stuck to its side is not a person. The head is a
+# small box above the body; the face is a flat panel just in front of it, so
+# a picture can be shown without a mesh that knows what a face is.
+func _build_head() -> void:
+	var head := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = Vector3(HEAD, HEAD, HEAD)
+	head.mesh = box
+	head.name = "Head"
+	head.position = Vector3(0.0, TALL * 0.5 + HEAD * 0.5, 0.0)
+	head.material_override = _skin_material()
+	add_child(head)
+
+	var face := MeshInstance3D.new()
+	var panel := QuadMesh.new()
+	panel.size = Vector2(HEAD * 0.92, HEAD * 0.92)
+	face.mesh = panel
+	face.name = "Face"
+	# Just in front of the head's front face, looking the way the body does.
+	face.position = Vector3(0.0, 0.0, -HEAD * 0.5 - 0.01)
+	face.rotation = Vector3(0.0, PI, 0.0)
+	face.visible = false
+	head.add_child(face)
+
+
+func _skin_material() -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.albedo_color = skin
+	material.roughness = 0.85
+	return material
+
+
+# Take a validated look spec. A face that cannot be read leaves a plain head
+# rather than failing: the picture may have moved since it was asked for, and
+# that is not worth a crash.
+func wear(spec: Dictionary) -> void:
+	if spec.is_empty():
+		return
+	var named := str(spec.get("skin", ""))
+	if LookTool.SKINS.has(named):
+		skin = LookTool.SKINS[named]
+	var head := get_node_or_null("Head") as MeshInstance3D
+	if head == null:
+		return
+	head.material_override = _skin_material()
+
+	var face := head.get_node_or_null("Face") as MeshInstance3D
+	if face == null:
+		return
+	var picture := LookTool.face_texture(str(spec.get("face", "")))
+	if picture == null:
+		face.visible = false
+		return
+	var material := StandardMaterial3D.new()
+	material.albedo_texture = picture
+	material.roughness = 0.9
+	# A photo is already lit; shading it again makes it muddy.
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	face.material_override = material
+	face.visible = true
 
 
 func _build_camera() -> void:

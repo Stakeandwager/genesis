@@ -120,6 +120,45 @@ set `NETLIFY_AUTH_TOKEN` and `NETLIFY_SITE_ID` as GitHub secrets so a push
 deploys. After that, a stranger with the link can type a sentence and get a
 world, which is the first time that has ever been true.
 
+## A likeness from a photo (021 and beyond)
+
+**OWNER, 2026-10-14: wanted, all three stages.** Appearance was already a
+solved category - every tool splits its spec into what changes WHAT YOU CAN DO
+(bounded, refused, measured) and what changes HOW YOU LOOK (free, unlimited).
+A face is the second kind, so it needed no new idea.
+
+**Stage 1 is built (021).** `LookTool` is the third tool and the first with no
+bounded capabilities at all, which is worth having for its own sake: it proves
+the interface is about describing things rather than limiting them. The body
+has a head, and a picture from the player's own computer goes on the front of
+it. A file that is absent, or is not a picture, is refused with the reason -
+the same wall a car's power goes through, applied to a file.
+
+**The photo stays on the machine.** It is read off disk, turned into a texture
+and drawn. Nothing is uploaded, nothing is stored by Genesis, and no template,
+measurement or identity is derived from it. The spec carries a PATH, never an
+image, and the readback never says the path back - half a file path is usually
+somebody's name. That keeps this cosmetic rather than biometric, and the line
+is far easier to hold from the start than to walk back across later.
+
+**Stage 2 - a head shaped like yours.** NOT BUILT, and it needs a decision
+before it can be. Single-image face reconstruction needs either a hosted
+service, which means the photo leaves the machine and the cosmetic/biometric
+line above is crossed, or a local model, which Godot cannot host and the
+owner's HD 3000 cannot run. There is no third option. HUMAN DECISION: which of
+those two costs is acceptable, or whether stage 2 waits for different hardware.
+
+**Stage 3 - yours, animated.** NOT BUILT, and it is not code. A rigged
+humanoid with a walk cycle is authored art - Synty, Quaternius, Mixamo or
+similar. HUMAN DECISION: which assets to licence. Once they exist the wiring
+is a session's work.
+
+**Also not decided:** face recognition as a LOGIN was raised and argued
+against. It answers the *identity* leg of ownership at the highest possible
+price: harder than an email login, less reliable, and it makes the LLC a
+biometric data controller under BIPA, the Texas statute and GDPR special
+category rules. Ordinary accounts do the same job for nothing.
+
 ## Human decision needed
 
 1. **Commit authorship.** Commits since 2026-10-10 are authored by

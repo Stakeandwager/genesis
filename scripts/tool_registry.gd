@@ -10,7 +10,7 @@ class_name ToolRegistry
 # Adding a tool is one file and one entry below. Nothing else changes.
 
 static func tools() -> Array:
-	return [CarTool.new(), BootsTool.new()]
+	return [CarTool.new(), BootsTool.new(), LookTool.new()]
 
 
 static func find(tool_name: String) -> ToolModule:

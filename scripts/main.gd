@@ -636,6 +636,13 @@ func _on_equipped(tool_name: String, spec: Dictionary) -> void:
 	# on my feet" changes the one you are in rather than the next one.
 	if tool_name == "boots" and walker != null:
 		walker.equip(spec)
+	# 021: and how the body looks, which the player can change while standing
+	# in the world, the same as everything else.
+	if tool_name == "look":
+		if walker != null:
+			walker.wear(spec)
+		if npc != null:
+			npc.wear(spec)
 
 
 func _start_driving() -> void:
@@ -689,6 +696,7 @@ func _start_exploring() -> void:
 	# 010: whatever the player is equipped with, every time. A kit nobody has
 	# changed is the ordinary boots, so this is a no-op until it is not.
 	walker.equip(controller.kit.get("boots", {}))
+	walker.wear(controller.kit.get("look", {}))
 
 	var surface := controller.standable_surface()
 	walker.place_at(surface["start_position"], float(surface["start_heading"]))
