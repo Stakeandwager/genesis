@@ -38,6 +38,7 @@ back to its real name in a scratch project, never into this project.
 | walk_physics_test.gd | Walking is a force on a mass: top speed lands where `push / (mass * drag)` says, a half-pressed stick settles at half of it, and letting go coasts (009) | `--fixed-fps 120 -s res://tests/walk_physics_test.gd` |
 | behaviour_test.gd | The third layer: do the boots **do** what the readback promised? Top speed against the stated figure, stopping distance from a controlled speed, and a refused spec leaving the equipped item alone (012) | `--fixed-fps 120 -s res://tests/behaviour_test.gd` |
 | silence_test.gd | A player who answers nothing scores nothing, where the old arithmetic scored them 100% (012) | `-s res://tests/silence_test.gd` |
+| interference_test.gd | Shut the door while he is walking through it: the state changes, the route is really blocked, the character stops, and the ledger says why (018) | `--fixed-fps 120 -s res://tests/interference_test.gd` |
 | repeat_test.gd | The same world and the same order, three times from scratch: same verdict, same attempted actions, same distance (Verified Living World, repeatability) | `--fixed-fps 120 -s res://tests/repeat_test.gd` |
 | ledger_audit_test.gd | Reads the ledger back **off disk** after the fact and audits it: every order resolved once, the carrier's account apart from the verdict, and the last claim about each object checked against the world (Verified Living World, condition 5) | `--fixed-fps 120 -s res://tests/ledger_audit_test.gd` |
 | things_said_test.gd | The readback names what is IN the dungeon, so a dungeon with a lamp does not read back like one without (016) | `-s res://tests/things_said_test.gd` |
@@ -202,6 +203,52 @@ The readback now names each thing and the room it is in, and says nothing when
 there is nothing - so silence means "there is nothing", which is true. The
 prompt also now says a thing the player names must appear in `things`, in the
 room they said.
+
+## 018: a world that can be interfered with
+
+Until now the world could not change once an errand began, so nothing could
+ever interfere with one - and an errand nobody can interfere with proves very
+little. Doorways were permanent gaps in walls.
+
+`SHUT` and `OPEN` take the two rooms a door joins, and a player may use them at
+any moment, including while somebody is walking through that door. Nothing
+warns the character and nothing re-plans for it: the door becomes real, with
+collision, and the body walks into it.
+
+```
+the door's state really changed
+and a real door stands in the corridor
+the vault is no longer reachable (2 of 3 rooms)
+and no route to it can be planned
+an errand through a shut door is refused rather than attempted
+...
+door shut with the carrier 2 m from the vault
+carrier said "stopped making progress"; the key ended in room 1
+the ledger says NOT_DELIVERED
+```
+
+`is_shut` is read by `walkable()`, by `route()` and by the metrics panel, so
+routing, the reachability measurement and the character's own plan cannot
+disagree about whether a door is open - the rule `around_of()` and
+`_wall_rects()` exist for, applied a third time.
+
+Shutting a door rebuilds the dungeon from its layout so the geometry is really
+different, and every body and object keeps the position it already had. A door
+closing must not teleport anybody, or the interference would be cheating in
+the other direction.
+
+### What THE IMPOSSIBLE HEIST would still need
+
+Worth writing down so nobody quotes the demo before it exists. Of the eight
+mechanics in that brief, Genesis now has two: an object that can be carried,
+and a door that can be shut. Still absent, entirely:
+
+- a guard that can SEE anything,
+- a guard that patrols or responds to a disturbance,
+- a lock, or any door that needs a particular thing to open,
+- a countdown,
+- an exit that counts as an escape,
+- any notion of stealth or of being noticed.
 
 ## Attempt is not accomplishment
 
