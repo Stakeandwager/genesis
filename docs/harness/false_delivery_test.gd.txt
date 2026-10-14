@@ -245,6 +245,26 @@ func _run() -> void:
 	_judge("5b object gone", _outcome(), false)
 	_check(_outcome() == "INCONCLUSIVE", "   and that, and only that, is INCONCLUSIVE")
 
+	# --- 5c. wrong destination ---
+	# The key is really carried and really set down - in the middle room, not
+	# the vault it was sent to. The carrier did everything except the thing it
+	# was asked for.
+	await _world("{\"name\": \"red_key\", \"in\": 1}")
+	await _order("red_key", "room_3")
+	var guard := 0
+	while guard < Engine.physics_ticks_per_second * 60 and main.npc.state == Npc.GOING:
+		guard += 1
+		await physics_frame
+		if main.npc.load_node != null and _room_of(main.npc) == 1:
+			break
+	main.npc.drop()
+	main.npc.halt("stopped walking")
+	await physics_frame
+	lines.append("  5c key set down in room %d, asked for room 3" % (_room_of(_node_of("red_key")) + 1))
+	_judge("5c wrong destination", _outcome(), false)
+	_check(str(main.controller.last_outcome_record.get("thing_in", "")) == "middle",
+		"   and the record names where it actually went")
+
 	# --- 6. displaced after delivery ---
 	# The errand succeeds, then the key is taken out of room 3 before the
 	# ledger looks. The final check must reject it.
@@ -257,6 +277,17 @@ func _run() -> void:
 	main.controller.finish_order(main.npc.global_position, 1.0, 1.0, "stopped walking")
 	lines.append("  6 re-checked with the key in room %d" % (_room_of(_node_of("red_key")) + 1))
 	_judge("6 displaced after delivery", _outcome(), false)
+
+	# --- 7. the carrier's attempts are recorded, and are not the verdict ---
+	var account: Dictionary = main.controller.last_outcome_record.get("carrier", {})
+	var tried: Array = account.get("attempted", [])
+	_check(not tried.is_empty(), "the carrier's attempted actions are on the record (%d of them)" % tried.size())
+	var words := PackedStringArray()
+	for step in tried:
+		words.append("%s/%s" % [str((step as Dictionary)["action"]), str((step as Dictionary)["result"])])
+	lines.append("  7 attempted: " + ", ".join(words))
+	_check(main.controller.last_outcome_record.has("verified"),
+		"and the check that was made is written down beside them")
 
 	print("")
 	for l in lines:

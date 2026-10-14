@@ -38,6 +38,7 @@ back to its real name in a scratch project, never into this project.
 | walk_physics_test.gd | Walking is a force on a mass: top speed lands where `push / (mass * drag)` says, a half-pressed stick settles at half of it, and letting go coasts (009) | `--fixed-fps 120 -s res://tests/walk_physics_test.gd` |
 | behaviour_test.gd | The third layer: do the boots **do** what the readback promised? Top speed against the stated figure, stopping distance from a controlled speed, and a refused spec leaving the equipped item alone (012) | `--fixed-fps 120 -s res://tests/behaviour_test.gd` |
 | silence_test.gd | A player who answers nothing scores nothing, where the old arithmetic scored them 100% (012) | `-s res://tests/silence_test.gd` |
+| repeat_test.gd | The same world and the same order, three times from scratch: same verdict, same attempted actions, same distance (Verified Living World, repeatability) | `--fixed-fps 120 -s res://tests/repeat_test.gd` |
 | ledger_audit_test.gd | Reads the ledger back **off disk** after the fact and audits it: every order resolved once, the carrier's account apart from the verdict, and the last claim about each object checked against the world (Verified Living World, condition 5) | `--fixed-fps 120 -s res://tests/ledger_audit_test.gd` |
 | things_said_test.gd | The readback names what is IN the dungeon, so a dungeon with a lamp does not read back like one without (016) | `-s res://tests/things_said_test.gd` |
 | false_delivery_test.gd | NPC-DELIVERY-001: six adversarial challenges trying to make Genesis report a delivery it has not earned. Acceptance is **zero false successes** (015) | `--fixed-fps 120 -s res://tests/false_delivery_test.gd` |
@@ -202,6 +203,43 @@ there is nothing - so silence means "there is nothing", which is true. The
 prompt also now says a thing the player names must appear in `things`, in the
 room they said.
 
+## Attempt is not accomplishment
+
+> Genesis must never confuse an instruction with an accomplishment, an
+> attempted action with a completed action, or a claim of success with
+> verified evidence of success.
+
+The record is built so that confusion is not expressible. An outcome has three
+parts that cannot be mistaken for one another:
+
+- `carrier` - what the body says it did. Its words, where it stopped, how far
+  it walked, and `attempted`: every action it tried, in order, with what came
+  of each (`pick_up/picked_up`, `pick_up/out_of_reach`, `pick_up/never_reached_it`,
+  `set_down/set_down`). None of this is evidence of anything but effort.
+- `verified` - the check that was made: what was looked at, against what, and
+  what was found. Written down so the verdict can be re-examined without
+  rerunning it.
+- `outcome` - the verdict, read from the world.
+
+A carrier that reports `pick_up/picked_up` and `set_down/set_down` can still
+end at `NOT_DELIVERED`, and does, in challenge 5c: it really carried the key
+and really set it down, in the wrong room.
+
+## Reproducibility
+
+The same world, the same order, three runs from scratch:
+
+```
+run 1: DELIVERED  vault  42.1 m  12.9 s  [pick_up/picked_up, set_down/set_down]
+run 2: DELIVERED  vault  42.1 m  12.9 s  [pick_up/picked_up, set_down/set_down]
+run 3: DELIVERED  vault  42.1 m  12.9 s  [pick_up/picked_up, set_down/set_down]
+```
+
+Widest gap between runs: 0.00 m. This matters more than it looks - without it
+a passing suite means only that the dice fell well, and a fault found in the
+editor could never be reproduced here. A ledger nobody can reproduce is an
+anecdote.
+
 ## Auditing the ledger, rather than the code
 
 Every other test here asks whether the code did the right thing.
@@ -250,6 +288,7 @@ Six attempts to make the ledger lie, and what it said:
 | 4 blue key in room 3, red key elsewhere | `NOT_DELIVERED` |
 | 5 corridor walled off after the errand began | `NOT_DELIVERED` |
 | 5b the key removed from the world entirely | `INCONCLUSIVE` |
+| 5c key really carried, really set down, in room 2 | `NOT_DELIVERED`, naming room 2 |
 | 6 key moved out of room 3 before the final check | `NOT_DELIVERED` |
 
 **False successes: 0.**
