@@ -161,6 +161,7 @@ func _run() -> void:
 	main.controller.finish_order(main.npc.global_position, 1.0, 1.0, "stopped making progress")
 	_check(_thing_room("lamp") == 1, "the lamp was put back in the store by hand")
 
+
 	# --- the five steps of the delivery test, named ---
 	# 1 identity and starting place, recorded before anything moved
 	_check(str(ordered.get("thing", "")) == "lamp" and str(ordered.get("thing_from", "")) == "store",
@@ -180,12 +181,23 @@ func _run() -> void:
 		"there is a wording for not being able to tell")
 	var lost: Node3D = (main.controller.standable["things"] as Array)[0]["node"]
 	var kept := lost.global_position
+	# Standing outside every room is a KNOWN failure: we can see exactly where
+	# it is. "Cannot tell" has to mean cannot tell.
 	lost.global_position = Vector3(5000, 5000, 5000)
 	main.controller.pending_order = {"id": "x", "room": 2, "room_name": "vault", "thing": "lamp"}
 	main.controller.finish_order(main.npc.global_position, 1.0, 1.0, "stopped walking")
-	_check(str(main.controller.last_outcome_record.get("outcome", "")) == "INCONCLUSIVE",
-		"a thing standing in no room is INCONCLUSIVE, not a failure")
+	_check(str(main.controller.last_outcome_record.get("outcome", "")) == "NOT_DELIVERED",
+		"a thing standing in no room is a known failure, not an unknown")
 	lost.global_position = kept
+
+	# Gone from the world is the one thing that cannot be judged.
+	lost.get_parent().remove_child(lost)
+	lost.queue_free()
+	await physics_frame
+	main.controller.pending_order = {"id": "y", "room": 2, "room_name": "vault", "thing": "lamp"}
+	main.controller.finish_order(main.npc.global_position, 1.0, 1.0, "stopped walking")
+	_check(str(main.controller.last_outcome_record.get("outcome", "")) == "INCONCLUSIVE",
+		"a thing gone from the world is INCONCLUSIVE")
 
 	print("")
 	for l in lines:

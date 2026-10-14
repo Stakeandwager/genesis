@@ -38,6 +38,7 @@ back to its real name in a scratch project, never into this project.
 | walk_physics_test.gd | Walking is a force on a mass: top speed lands where `push / (mass * drag)` says, a half-pressed stick settles at half of it, and letting go coasts (009) | `--fixed-fps 120 -s res://tests/walk_physics_test.gd` |
 | behaviour_test.gd | The third layer: do the boots **do** what the readback promised? Top speed against the stated figure, stopping distance from a controlled speed, and a refused spec leaving the equipped item alone (012) | `--fixed-fps 120 -s res://tests/behaviour_test.gd` |
 | silence_test.gd | A player who answers nothing scores nothing, where the old arithmetic scored them 100% (012) | `-s res://tests/silence_test.gd` |
+| false_delivery_test.gd | NPC-DELIVERY-001: six adversarial challenges trying to make Genesis report a delivery it has not earned. Acceptance is **zero false successes** (015) | `--fixed-fps 120 -s res://tests/false_delivery_test.gd` |
 | carry_test.gd | One complete errand across all four layers: a thing on the whitelist, built as a body, fetched and carried, and delivery answered by reading the THING'S position out of the scene (015) | `--fixed-fps 120 -s res://tests/carry_test.gd` |
 | order_test.gd | The first command that resolves after it is accepted: the goal whitelist, routing over the door graph, and arrival decided from where the character ended up rather than from what it says (014) | `--fixed-fps 120 -s res://tests/order_test.gd` |
 | explore_test.gd | `/explore` played the way the owner plays it: the body lands on the floor, walks out of the entrance, and counts as using the world (008) | `--fixed-fps 120 -s res://tests/explore_test.gd` |
@@ -177,6 +178,32 @@ it, and the two are worth keeping apart.
 The criteria are stated in the file BEFORE the run, and they are not invented
 there: they are the readback's own claims. A test that defines "stops on a
 sixpence" in its own file measures a promise nobody made.
+
+## NPC-DELIVERY-001
+
+Six attempts to make the ledger lie, and what it said:
+
+| Challenge | Outcome |
+| --- | --- |
+| 1 normal delivery | `DELIVERED` |
+| 2 carrier claims arrival, key never left the entrance | `NOT_DELIVERED` |
+| 3 carrier reaches room 3 empty-handed | `NOT_DELIVERED` |
+| 4 blue key in room 3, red key elsewhere | `NOT_DELIVERED` |
+| 5 corridor walled off after the errand began | `NOT_DELIVERED` |
+| 5b the key removed from the world entirely | `INCONCLUSIVE` |
+| 6 key moved out of room 3 before the final check | `NOT_DELIVERED` |
+
+**False successes: 0.**
+
+Challenge 5 is the one that changed the code. Its first run reported
+`INCONCLUSIVE` for a key stalled in a corridor, which overstated our
+ignorance: we knew exactly where that key was, it simply was not in a room.
+`INCONCLUSIVE` now means what it says - the thing is not in the world at all -
+and 5b exists to prove that case is still reachable.
+
+The implementation detail the brief asked to settle: the check is **room
+membership**, not raw coordinates. The test asserts first that no two room
+rectangles intersect, so "which room is it in" has exactly one answer.
 
 ## The delivery invariant
 
