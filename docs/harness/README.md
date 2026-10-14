@@ -38,6 +38,7 @@ back to its real name in a scratch project, never into this project.
 | walk_physics_test.gd | Walking is a force on a mass: top speed lands where `push / (mass * drag)` says, a half-pressed stick settles at half of it, and letting go coasts (009) | `--fixed-fps 120 -s res://tests/walk_physics_test.gd` |
 | behaviour_test.gd | The third layer: do the boots **do** what the readback promised? Top speed against the stated figure, stopping distance from a controlled speed, and a refused spec leaving the equipped item alone (012) | `--fixed-fps 120 -s res://tests/behaviour_test.gd` |
 | silence_test.gd | A player who answers nothing scores nothing, where the old arithmetic scored them 100% (012) | `-s res://tests/silence_test.gd` |
+| carry_test.gd | One complete errand across all four layers: a thing on the whitelist, built as a body, fetched and carried, and delivery answered by reading the THING'S position out of the scene (015) | `--fixed-fps 120 -s res://tests/carry_test.gd` |
 | order_test.gd | The first command that resolves after it is accepted: the goal whitelist, routing over the door graph, and arrival decided from where the character ended up rather than from what it says (014) | `--fixed-fps 120 -s res://tests/order_test.gd` |
 | explore_test.gd | `/explore` played the way the owner plays it: the body lands on the floor, walks out of the entrance, and counts as using the world (008) | `--fixed-fps 120 -s res://tests/explore_test.gd` |
 
@@ -176,6 +177,25 @@ it, and the two are worth keeping apart.
 The criteria are stated in the file BEFORE the run, and they are not invented
 there: they are the readback's own claims. A test that defines "stops on a
 sixpence" in its own file measures a promise nobody made.
+
+## What carry_test.gd found on its first runs
+
+Two faults, both only visible once something had to be picked up.
+
+The character walked to the middle of the room the lamp was in and stopped two
+and a half metres short of it. Reaching a room is not reaching what is in it.
+
+Then, with the lamp made the last waypoint, it stalled anyway with the body
+pressed against the crate. A route is sampled every half metre along the
+corridor and on to the room's centre, so the leg carried points BEYOND where
+the lamp stood - and a thing is solid, so walking to them meant walking
+through it. The leg is now cut at the point nearest the thing.
+
+Both times the ledger said the errand failed and named where the lamp actually
+was. That is the part worth keeping: the carrying code was broken twice and
+neither failure could be reported as a success, because delivery is answered
+by reading the thing's position out of the scene and the character is never
+asked.
 
 ## Rules
 
