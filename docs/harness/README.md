@@ -178,6 +178,29 @@ The criteria are stated in the file BEFORE the run, and they are not invented
 there: they are the readback's own claims. A test that defines "stops on a
 sixpence" in its own file measures a promise nobody made.
 
+## The delivery invariant
+
+> A carrier's claim is evidence of an attempted action, not evidence of
+> delivery.
+
+Written into the shape of the record, not into anybody's manners:
+
+1. **Before.** The order's own record carries what was to be carried, the room
+   it stood in and its coordinates, written before anything moves. Without it
+   a delivery cannot be told from a thing that was already there.
+2. **During.** The carrier's account lives under `carrier` - what it said, where
+   it stopped, how far and how long. The world's answer lives under `outcome`.
+   Nothing can read one as the other.
+3. **At rest.** The thing's position is read out of the scene once, after the
+   character has stopped and set it down - never a coordinate that crossed the
+   room on the way past.
+4. **Tolerance**, stated rather than numeric: delivered means standing INSIDE
+   the destination room's rectangle, by the same `room_of` the module uses for
+   everything else.
+5. **Three outcomes**, because "cannot tell" is not "failed":
+   `DELIVERED`, `NOT_DELIVERED` (and where it actually is), `INCONCLUSIVE`
+   (gone from the scene, or standing in no room at all).
+
 ## What carry_test.gd found on its first runs
 
 Two faults, both only visible once something had to be picked up.

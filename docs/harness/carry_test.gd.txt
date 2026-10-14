@@ -126,6 +126,8 @@ func _run() -> void:
 	_check(main.npc != null, "a character sets off")
 	_check(str(main.controller.pending_order.get("thing", "")) == "lamp",
 		"and the pending order knows what it is carrying")
+	# Step 1 of the delivery test: taken NOW, while it describes this errand.
+	var ordered: Dictionary = main.controller.last_order_record.duplicate(true)
 	var seconds: float = await _settle()
 
 	var ended := _thing_room("lamp")
@@ -158,6 +160,32 @@ func _run() -> void:
 	await physics_frame
 	main.controller.finish_order(main.npc.global_position, 1.0, 1.0, "stopped making progress")
 	_check(_thing_room("lamp") == 1, "the lamp was put back in the store by hand")
+
+	# --- the five steps of the delivery test, named ---
+	# 1 identity and starting place, recorded before anything moved
+	_check(str(ordered.get("thing", "")) == "lamp" and str(ordered.get("thing_from", "")) == "store",
+		"the order's record says what was carried and where it started: %s in the %s" % [
+			str(ordered.get("thing", "")), str(ordered.get("thing_from", ""))])
+
+	# 2 the carrier's account kept apart from the world's answer
+	var resolved: Dictionary = main.controller.last_outcome_record
+	_check(resolved.has("carrier") and resolved.has("outcome"),
+		"the outcome keeps the carrier's account apart from the world's answer")
+	_check(str((resolved["carrier"] as Dictionary)["said"]) != str(resolved["outcome"]),
+		"they are different things: carrier said \"%s\", world says %s" % [
+			str((resolved["carrier"] as Dictionary)["said"]), str(resolved["outcome"])])
+
+	# 5 a third outcome when the world cannot answer
+	_check(NpcGoals.delivery_line("INCONCLUSIVE", "lamp", "vault", "").contains("Cannot tell"),
+		"there is a wording for not being able to tell")
+	var lost: Node3D = (main.controller.standable["things"] as Array)[0]["node"]
+	var kept := lost.global_position
+	lost.global_position = Vector3(5000, 5000, 5000)
+	main.controller.pending_order = {"id": "x", "room": 2, "room_name": "vault", "thing": "lamp"}
+	main.controller.finish_order(main.npc.global_position, 1.0, 1.0, "stopped walking")
+	_check(str(main.controller.last_outcome_record.get("outcome", "")) == "INCONCLUSIVE",
+		"a thing standing in no room is INCONCLUSIVE, not a failure")
+	lost.global_position = kept
 
 	print("")
 	for l in lines:
