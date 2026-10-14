@@ -13,8 +13,10 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: 024, the suite that was skipped as
-  broken for ten releases and was only stale.
+- Last commit at the time of writing: 027, the seven limitations in the AI's
+  prompt read against the code - two of them were wider than the fact behind
+  them - and a restraint in `RefusalCheck` that its own comments described and
+  nothing enforced.
 - Godot 4.7.1, Compatibility renderer. The owner's machine is an Intel HD 3000
   through ANGLE: no WebGL2, so **the web build cannot be viewed there**.
 
@@ -73,13 +75,13 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-35 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **33 suites**, and since 024 every one of them runs —
+36 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **34 suites**, and since 024 every one of them runs —
 nothing is skipped as broken. `--all` adds the two slow racing suites.
 
-Last full run (025, Godot 4.7.1 on Linux, headless, in a cloud container):
-**suites with something to look at: 0**. Not run on the owner's Windows
-machine.
+Last full run (027, Godot 4.7.1 on Linux, headless, in a cloud container):
+**suites with something to look at: 0**, both without `--all` and with it.
+Not run on the owner's Windows machine.
 
 ## What Genesis is
 
@@ -115,7 +117,10 @@ verified, and what remains uncertain.
 - **One reading.** Anything that both acts and describes must read from the
   same function, or the two diverge and the description becomes a lie.
   `WorldRegistry.around_of()`, `DungeonModule._wall_rects()`,
-  `DungeonModule.is_shut()`, `BootsTool.top_speed()`.
+  `DungeonModule.is_shut()`, `BootsTool.top_speed()`, and since 027
+  `RefusalCheck.sentences_of()` — the same rule applied to punctuation, after
+  two functions disagreed about what a sentence was and one of them won
+  silently (TRAPS 16).
 - **Refuse, never clamp.** A spec outside its limits is refused with the limit
   named. `BootsTool` also refuses a combination whose fields are each legal.
 - **A readback must not be silent about part of the request**, or it cannot
@@ -181,6 +186,15 @@ verified, and what remains uncertain.
   `WorldRegistry.around_of`, `TrackLog.next_id`), so a capability cannot be
   deleted while the prompt still promises it. That is partial: it cannot catch
   a claim that was never quite true, only one that has stopped being true.
+
+  **027 did the other half, for the limitations rather than the
+  capabilities**, which were the claims with no test behind them at all. All
+  seven are now asserted as facts about the code in `tests/limits_test.gd`,
+  never as words in the prompt. Two were stated wider than the fact behind
+  them and are narrowed; see 027 below and TRAPS 15. What is still unaudited
+  by this route is the **capability** half at its width — each one points at a
+  live function, but nothing asks whether the function does as much as the
+  sentence promises.
 - **Persistence is partial, and this entry said "none of any kind" for
   releases while `/save` and `/load` were sitting in `main.gd`.** 023 copied
   the claim into the AI's capability list, so Genesis was telling players it
@@ -298,6 +312,122 @@ Linux, headless, in a cloud container:
 - No product behaviour was touched, so there is nothing new for the owner to
   find in the editor from this commit.
 
+## 027 — the limitations, read against the code
+
+**Objective.** The task this file named for an unattended run: read the AI
+prompt's claims against what the functions actually do, one at a time, and
+tighten the test where a claim turns out to be looser than the code. Starting
+with the **limitations**, because they were the claims with no test behind
+them at all, and because TRAPS 14 — the only entry in that file about a false
+statement Genesis made about itself to a player — was a limitation.
+
+**Starting state.** Branch `prototype-002a` at 8d4f8a2 (026). Baseline run,
+Godot 4.7.1 headless: suites with something to look at: 0, 33 suites.
+
+**What the audit found.** Five of the seven limitations in WHAT GENESIS REALLY
+CANNOT DO are true at exactly the width they are stated: one character (an
+ORDER has no field that could name a second), one order at a time, no locks,
+one set of equipment, and a farm's size coming out of its zones. Two were
+**true about the mechanism and too wide about what a player gets** — which is
+a different fault from TRAPS 14's false limitation, and grep does not find it:
+
+- *"A sequence of steps to be done in order is not possible."* **carry is
+  itself a staged errand**: the character walks to the thing, picks it up at
+  the waypoint where the thing stands, and carries it on to the room. That is
+  one ORDER, and it is one of only two goals Genesis has. The sentence invited
+  the model to refuse *"take the red key to room 3"* as a sequence — which is
+  close to verbatim one of the requests in the owner's 023 session.
+- *"No zone of a farm is checked against anything else for overlap, so 'do not
+  let the circuit cross the barn' cannot be promised."* Nothing checks, and
+  nothing needs to: zones are laid out in rows with a lane between them and
+  **cannot overlap each other**. Swept 300 random legal farms — no overlap
+  anywhere, tightest gap 6.0 m, exactly `LANE_WIDTH`. So *"do not let the barn
+  sit in the pond"* was already true of every farm Genesis builds and would
+  have been refused. What really is unchecked is a zone against something
+  OUTSIDE the farm, which is the circuit and nothing else.
+
+**And a second fault, in the wall that stands in front of a refusal.**
+`RefusalCheck` decides two things per sentence — the negation must come before
+the capability word, and a sentence about NUMBER is honest and left alone —
+and its comments say so twice. Neither was scoped to a sentence. `_plain()`
+replaces every `"."` with a space, and `_denial_in()` then split on `"."`, so
+there was always exactly one "sentence": the whole refusal. It had been that
+way since 023.
+
+The consequence ran the dangerous way. **One honest clause about number
+anywhere silenced the check completely**: *"This game does not include a
+physics engine"* is caught, and goes through clean the moment the model also
+says, truthfully, *"There are not two characters to compare."* That mixture —
+one true limit of number beside one false claim about a capability — is the
+likeliest thing a model writes when refusing a hundred-word brief. Every
+suite had used single-sentence reasons, which is why nothing saw it.
+
+**Implementation.**
+
+- `scripts/ai_interpreter.gd`: the two limitations narrowed. The prompt now
+  says what really cannot be done (a CHAIN OF ORDERS, a step conditional on
+  an earlier one) and, in the same breath, that carry is a staged errand and
+  must never be refused as a sequence; and that a farm's zones cannot overlap
+  each other while a zone against anything outside the farm is unchecked.
+- `scripts/refusal_check.gd`: `sentences_of()` now owns what a sentence is,
+  in one place, and `_denial_in()` is handed the sentences instead of
+  re-deriving them from text another function has already flattened. A full
+  stop, an exclamation mark, a question mark and a newline end a sentence; a
+  comma and a semicolon do not, because *"does not support A, B, or C"* is one
+  list under one negation and splitting it would lose the negation for every
+  item but the first — the shape three of 023's six real refusals had. A
+  decimal point does not end one either.
+- `scripts/refusal_check.gd`: one new capability entry, **fetching and
+  carrying**, so a refusal that denies the staged errand is contradicted.
+  Narrowing the prompt alone would have been TRAPS 11 again: the instance
+  fixed and the class left, with nothing to catch the lie the old wording
+  invited if a model makes it anyway.
+- `tests/limits_test.gd`, new: all seven limitations as facts about the code,
+  plus the multi-sentence refusals, plus two negative wording checks of the
+  kind 025 added for "Nothing persists" — so a sentence shown to be too wide
+  cannot quietly come back.
+- `docs/TRAPS.md`: traps 15 and 16.
+
+No product behaviour changed outside the prompt and the refusal note. Nothing
+was touched in a module, a validator, a builder or the ledger.
+
+**Evidence — what was actually run.** Godot 4.7.1
+(`4.7.1.stable.official.a13da4feb`), Linux, headless, in a cloud container:
+
+- Baseline before the change: 0 suites with something to look at.
+- After: 0 suites with something to look at, with `limits_test` added and
+  passing (69 assertions). `--all`, including the two slow racing suites: 0.
+- **The new checks were proved able to fail** (TRAPS 6), five ways, each
+  reverted afterwards and `cmp` used to confirm the files came back
+  byte-identical: the dead sentence split put back (2 failures, both the
+  multi-sentence cases); the fetching-and-carrying words removed (1); the two
+  over-wide limitations put back in the prompt (3); the farm layout made to
+  pack zones on top of each other (2 — 2537 overlaps, tightest gap -0.0 m);
+  and a `"who"` field added to the validated goal (2).
+- The farm sweep is 300 random legal farms, reported as a sweep. It is a
+  sample of the legal space, not a proof over it.
+
+**What the tests did NOT prove.**
+
+- **No model has seen the new prompt.** The two narrowed limitations exist to
+  change what Gemini refuses, and a headless harness has no key and no model.
+  What is tested is that the sentences say what they now say and that the
+  facts behind them hold. Whether the model stops refusing *"take the red key
+  to room 3"* can only be seen in the editor with a live key. That is the one
+  observation worth having from this commit.
+- **`RefusalCheck` is still phrase matching**, and widening what it can see
+  widens what it can get wrong. The new entry fires on carry words after a
+  negation in the same sentence. The number guard covers *"there is no second
+  character to carry anything"*; a phrasing nobody thought of is not covered,
+  and the cost is a note the player can disagree with, never an overturned
+  verdict.
+- Nothing ran on the owner's Windows machine. `run_tests.bat` was not edited
+  and not executed; the new suite is picked up by both runners from
+  `tests/*.gd` with no list to maintain.
+- The **capability** half of the prompt is still only checked for the
+  existence of the functions it names, not for whether each does as much as
+  its sentence promises. That is the obvious next member of this class.
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -307,15 +437,28 @@ deploys. After that, a stranger with the link can type a sentence and get a
 world, which is the first time that has ever been true. Nothing the assistant
 can do moves this: the key must not be in the repository.
 
-**Smallest useful assistant task next.** 024 found a test that had gone stale
-against a rule the code changed under it. That is a class, not an instance,
-and the obvious next member is the one this handover already flags: the
-capability statement in the AI prompt is hand-written prose, and
-`tests/log_023_test.gd` can only catch a claim that has *stopped* being true,
-never one that was never quite true. Reading the prompt's claims against what
-the functions actually do — one claim at a time, with the test tightened where
-a claim turns out to be looser than the code — is a session's work and needs
-no decision from the owner.
+**For the owner's next editor session, and it is two sentences' worth of
+typing.** 027 narrowed two limitations specifically to stop the model refusing
+things Genesis does. The requests that would show it:
+
+- *"have the character take the red key to room 3"* — in a dungeon with a key
+  in it. Before 027 the prompt told the model that a sequence of steps in
+  order was impossible; `carry` is exactly that, done inside one order. If
+  this still comes back `UNSUPPORTED`, the prompt wording is not enough and
+  the next move is an example in the prompt rather than a rule.
+- *"a farm with a barn and a pond, and do not let the barn sit in the pond"* —
+  which is already true of every farm, and which the old wording invited a
+  refusal of.
+
+**Smallest useful assistant task next.** The same class, other half. 027 read
+the seven **limitations** against the code and asserted each as a fact. The
+**capabilities** are still checked only for the existence of the functions
+they name: `log_023_test` proves `BootsTool.stopping_distance` exists, not
+that Genesis "predicts a stopping distance from the numbers and then measures
+the real one, and reports both" — which is a wider sentence than the function
+on its own supports. Eight claims, one at a time, each asserted at the width
+the prompt states it or the prompt narrowed. That needs no decision from the
+owner.
 
 Worth a look while it is cheap: `sweep_test` still reports that no legal
 command reaches `FAILED_UNWALKABLE`, which is TRAPS 6's own example and has

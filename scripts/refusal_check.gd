@@ -129,6 +129,23 @@ const CAPABILITIES := [
 		"but": "Genesis does route. A character finds its way room to room through doors that are actually passable, and a door shut while it is walking is handled.",
 	},
 	{
+		# 027. This entry exists for the same reason the one below it does: the
+		# PROMPT was inviting the lie. It said "a sequence of steps to be done
+		# in order is not possible", which is true of a CHAIN OF ORDERS and
+		# false of carry - the one errand Genesis has that is itself staged.
+		# The character walks to the thing, picks it up at the waypoint where
+		# it stands, and carries it on to the room. "take the red key to room
+		# 3" is one ORDER, and 023's own session asked for exactly that.
+		"name": "fetching and carrying",
+		"words": [
+			"carry", "carries", "carrying", "carried",
+			"fetch", "fetches", "fetching",
+			"pick up", "picks up", "picked up", "picking up", "pick it up",
+		],
+		"denials": [],
+		"but": "Genesis does have a character fetch a thing and take it somewhere. ORDER carry is a staged errand: it walks to the thing, picks it up where the thing stands, and carries it on to the room - and whether it arrived is then read from the thing's own position.",
+	},
+	{
 		# 025. This entry exists because of a claim the PROMPT made, not one
 		# the AI invented: "Nothing persists ... so nothing can be saved and
 		# reloaded" was written into the capability list in 023 and was false
@@ -160,9 +177,11 @@ const CAPABILITIES := [
 # Each entry is {"capability", "denial", "but"}.
 static func quarrel_with(reason: String) -> Array:
 	var found: Array = []
+	var whole := _plain(reason)
+	var sentences := sentences_of(reason)
 	for entry in CAPABILITIES:
 		var capability: Dictionary = entry
-		var caught := _denial_in(_plain(reason), capability)
+		var caught := _denial_in(whole, sentences, capability)
 		if caught != "":
 			found.append({
 				"capability": str(capability["name"]),
@@ -173,15 +192,27 @@ static func quarrel_with(reason: String) -> Array:
 
 
 # The phrase that denied this capability, or "". Outright denials are matched
-# anywhere; a capability word counts only with a negation before it in the
-# same sentence.
-static func _denial_in(said: String, capability: Dictionary) -> String:
+# anywhere in the refusal; a capability word counts only with a negation
+# before it IN THE SAME SENTENCE, and only in a sentence that is not about
+# number. Both of those rules are scoped to a sentence, so the sentences are
+# worked out once, by sentences_of(), and handed in.
+#
+# 027: since 023, when this file was written, they were scoped to nothing.
+# _plain() replaced every "." with a space, and _denial_in then split on "."
+# - so there was always exactly one "sentence", the whole refusal. The
+# consequence ran the wrong way: one honest clause about number ANYWHERE
+# silenced the check entirely. "There are not two characters to compare. This game does not
+# include a physics engine" went through clean, while the second sentence on
+# its own was caught. That is the likeliest shape of a real refusal to one of
+# the owner's hundred-word briefs: one true limit of number, one false claim
+# about a capability.
+static func _denial_in(whole: String, sentences: Array, capability: Dictionary) -> String:
 	for denial in (capability["denials"] as Array):
-		if said.contains(str(denial)):
+		if whole.contains(str(denial)):
 			return str(denial)
 
-	for sentence in said.split(".", false):
-		var one := " %s " % str(sentence).strip_edges()
+	for sentence in sentences:
+		var one := " %s " % str(sentence)
 		var about_number := false
 		for quantity in ABOUT_NUMBER:
 			if one.contains(quantity):
@@ -218,6 +249,37 @@ static func note(quarrels: Array) -> String:
 		lines.append("- " + str((q as Dictionary)["but"]))
 	lines.append("The request may still be impossible for another reason, but not for that one. Worth asking again.")
 	return "\n".join(lines)
+
+
+# What counts as a sentence, in one place, because two rules above depend on
+# it. A comma or a semicolon does NOT end one: "does not support A, B, or C"
+# is a single list under a single negation, and splitting it would lose the
+# negation for every item but the first - which is the shape _denial_in was
+# written for in the first place.
+const ENDERS := [".", "!", "?", "\n"]
+
+
+static func sentences_of(text: String) -> Array:
+	var out: Array = []
+	var current := ""
+	for i in text.length():
+		var character := text[i]
+		if character in ENDERS and not _inside_number(text, i):
+			if _plain(current) != "":
+				out.append(_plain(current))
+			current = ""
+		else:
+			current += character
+	if _plain(current) != "":
+		out.append(_plain(current))
+	return out
+
+
+# "the road comes within 1.8 m" is one number, not two sentences.
+static func _inside_number(text: String, at: int) -> bool:
+	if text[at] != "." or at == 0 or at + 1 >= text.length():
+		return false
+	return text[at - 1].is_valid_int() and text[at + 1].is_valid_int()
 
 
 # Lowercased, with the punctuation that gets between a phrase and a match

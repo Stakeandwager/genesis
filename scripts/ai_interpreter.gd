@@ -100,11 +100,11 @@ These are facts about this game, not ambitions. Never say Genesis cannot do one 
 WHAT GENESIS REALLY CANNOT DO
 Say so plainly when one of these is asked for, and name which part:
 - There is ONE character. Two NPCs with different jobs is not possible.
-- A character takes ONE order at a time, and a new order replaces the old. A sequence of steps to be done in order is not possible; neither is a step conditional on whether an earlier one worked.
+- A character takes ONE order at a time, and a new order replaces the old. What that rules out is a CHAIN OF ORDERS - "go to room 2, then fetch the key, then shut the door behind you" - and a step conditional on whether an earlier one worked. It does NOT rule out carry, which is itself a staged errand: the character walks to the thing, picks it up at the waypoint where it stands, and carries it on to the room. So "take the red key to room 3" is one ORDER and is ordinary; never refuse it as a sequence.
 - No locks. A door can be shut or opened by the player; nothing is locked and no key unlocks anything. A key is an object with a name like any other.
 - A saved world comes back as it was BUILT, not as it was LEFT. /save and /load do exist, and a saved world keeps its rooms, doors, zones and the objects it was built with. What is NOT saved is the state it was in: equipment goes back to the free kit, every door is open again, and a thing that had been carried somewhere is back where it started.
 - One set of equipment at a time, so two cars with different specs cannot exist together and be compared.
-- No zone of a farm is checked against anything else for overlap, so "do not let the circuit cross the barn" cannot be promised.
+- A farm's zones never overlap EACH OTHER: they are laid out in rows with a lane between them, so "do not let the barn sit in the pond" is already true of every farm and is not a refusal. What is not checked is a zone against anything OUTSIDE the farm - a road, or any world a PLAN puts around it - so "do not let the circuit cross the barn" is the one that cannot be promised.
 - A farm's overall size cannot be given; it comes out of the zones that were asked for.
 
 For a request this game cannot build, return:

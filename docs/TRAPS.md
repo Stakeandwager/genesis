@@ -346,6 +346,110 @@ Fixed in 025, in all three places: the prompt, `HANDOVER.md` and the README.
 
 ---
 
+## 15. A limitation stated wider than it is true
+
+**Signature:** the limitation is not false. Every word of it is defensible
+about the mechanism, and it still makes Genesis refuse something ordinary,
+because the sentence a player hears is wider than the fact behind it.
+
+**Cause:** two of the seven limitations in the AI's prompt, found by 027
+reading each one against the code instead of against itself.
+
+*"A sequence of steps to be done in order is not possible."* True of a chain
+of ORDERS, which is what it was written about. But **carry is itself a staged
+errand** - the character walks to the thing, picks it up at the waypoint where
+the thing stands, and carries it on to the room. That is a sequence of steps
+done in order, inside one order, and it is one of only two goals Genesis has.
+The sentence invited the model to refuse *"take the red key to room 3"* as a
+sequence, and the owner's own 023 session asked for exactly that.
+
+*"No zone of a farm is checked against anything else for overlap, so 'do not
+let the circuit cross the barn' cannot be promised."* True about **checking**
+and false about the **outcome**. Zones are laid out in rows with a lane
+between them and cannot overlap each other at all - 300 random legal farms,
+no overlap, the tightest gap exactly one lane. So *"do not let the barn sit in
+the pond"* is already true of every farm Genesis builds, and would have been
+refused. What is genuinely unchecked is a zone against something OUTSIDE the
+farm, which is the circuit and nothing else.
+
+**Do:**
+
+- TRAPS 14 says grep for the feature a limitation denies. That catches a
+  limitation that is **false**. This is the one that is **true and too wide**,
+  and grep does not catch it, because the feature it denies does not exist
+  under that name. The question to ask instead is: *what would a player get if
+  they asked for this anyway?* For the farm the answer was "exactly what they
+  asked for". That is the test.
+- Say what is impossible, then say what is NOT, in the same breath, when the
+  two are a word apart. The prompt now says a chain of orders is impossible
+  **and** that carry is a staged errand and must never be refused as a
+  sequence.
+- A limitation that explains its own mechanism is the suspicious kind. "No
+  zone is CHECKED for overlap" describes the implementation; "zones never
+  overlap" describes the world the player gets. Only the second is a claim
+  worth putting in front of a player, and they pointed opposite ways.
+
+Narrowed in 027. `tests/limits_test.gd` now asserts all seven limitations as
+facts about the code - a save file that carries no door state, a kit with one
+slot per tool, a goal with no way to name a character, a farm measured at the
+size its zones make it - rather than as sentences in the prompt.
+
+---
+
+## 16. A restraint described in the comments and scoped to nothing
+
+**Signature:** a check behaves correctly on every input anyone has tried, and
+its comments explain a rule it is not applying. The rule is real, it is
+written down twice, and no line of code enforces it.
+
+**Cause:** `RefusalCheck` decides two things per SENTENCE, and says so: the
+negation must come **before** the capability word, and a sentence that is
+about NUMBER ("verification of two NPCs is not possible") is honest and left
+alone. Both rules read a sentence at a time:
+
+```
+for sentence in said.split(".", false):
+```
+
+But `said` had been through `_plain()` first, and `_plain()` **replaces every
+"." with a space**. So the split returned one element - the whole refusal -
+and both rules had been running over the entire reason since 023.
+
+The consequence ran the dangerous way. One honest clause about number
+*anywhere* silenced the check completely:
+
+```
+"This game does not include a physics engine or simulation tools."
+    -> caught
+"There are not two characters to compare. This game does not include a
+ physics engine or simulation tools."
+    -> nothing
+```
+
+That second shape - one true limit of number beside one false claim about a
+capability - is the likeliest thing a model writes when it refuses a
+hundred-word brief, and 023's whole lesson was that those briefs are the
+realistic input. Every suite had used single-sentence reasons, so nothing saw
+it.
+
+**Do:**
+
+- When two functions have to agree about what a delimiter means, one of them
+  owns it. `sentences_of()` now decides what a sentence is, in one place, and
+  `_denial_in()` is handed the sentences rather than re-deriving them from
+  text another function has already flattened. This is `around_of()` and
+  `_wall_rects()` again, for punctuation.
+- A rule scoped to a unit must be tested with **more than one of that unit**.
+  A per-sentence rule tested only on single sentences is tested on the one
+  input that cannot tell whether the scoping works.
+- A comment describing a restraint is a claim about the code, and goes
+  unchecked for the same reason a skipped test and a limitation do: it reads
+  like documentation rather than like an assertion.
+
+Fixed in 027, with the multi-sentence cases in `tests/limits_test.gd`.
+
+---
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
 > A fluent sentence is not evidence that anything was understood.
