@@ -1,0 +1,121 @@
+# Genesis — handover
+
+Written so another session can resume from the repository rather than from
+invented history. Kept current at each meaningful intersection, as
+`docs/PROTOCOL.md` requires.
+
+**Owner's decisions are marked OWNER. Everything else is an assistant proposal
+that the owner has not ruled on.** Do not promote one to the other.
+
+---
+
+## Starting state
+
+- Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
+  work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
+- Last commit at the time of writing: `8f97f5c`.
+- Godot 4.7.1, Compatibility renderer. The owner's machine is an Intel HD 3000
+  through ANGLE: no WebGL2, so **the web build cannot be viewed there**.
+
+## Run the tests first
+
+```
+run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
+./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
+```
+
+29 suites in `tests/`, run against the scripts beside them. `--all` adds the
+slow racing suites. Last full run: **suites with something to look at: 0**.
+`report_test` is skipped as known broken; `replay` and `prompt_test` are tools,
+not suites.
+
+## What Genesis is
+
+**OWNER.** A player's sentence becomes a world they can act in, and the system
+measures whether it did what it claimed:
+
+```
+PLAYER -> NATURAL LANGUAGE -> AI INTERPRETATION -> STRUCTURED COMMAND -> GODOT ACTION
+```
+
+The AI interprets and proposes. It never writes code, never invents a command,
+and is held to a whitelist. Godot validates, builds and measures.
+
+**OWNER.** Four evidence layers are kept apart and never merged:
+interpretation, validation, construction, behaviour.
+
+## What exists
+
+Three worlds — farm, racing circuit, dungeon — all described in words. A
+circuit can be driven and raced. A dungeon can be walked on foot (`/explore`),
+contains objects that can be carried, has doors that can be shut mid-errand,
+and holds one character who can be ordered about in plain English.
+
+Two tools in the Foundry: a car and boots, each a bounded spec the player
+describes and the validator refuses rather than clamps.
+
+The record keeps: what was asked, what Genesis understood, whether the proposal
+was valid, whether it was built, what the carrier attempted, what the world
+verified, and what remains uncertain.
+
+## Rules that have earned their place
+
+- **One reading.** Anything that both acts and describes must read from the
+  same function, or the two diverge and the description becomes a lie.
+  `WorldRegistry.around_of()`, `DungeonModule._wall_rects()`,
+  `DungeonModule.is_shut()`, `BootsTool.top_speed()`.
+- **Refuse, never clamp.** A spec outside its limits is refused with the limit
+  named. `BootsTool` also refuses a combination whose fields are each legal.
+- **A readback must not be silent about part of the request**, or it cannot
+  catch a dropped clause, which is the only thing it is for.
+- **Silence is not agreement.** `ACCEPTED_BY_SILENCE` is recorded and excluded
+  from the understanding score.
+- **A carrier's claim is evidence of an attempt, not of delivery.** Delivery is
+  read from the thing's position in the world. There is no code path by which a
+  character reports its own success.
+- **"Cannot tell" means cannot tell.** `INCONCLUSIVE` is only for a thing that
+  is not in the world; a thing in the wrong place is a known failure.
+
+## Limitations — unverified or absent
+
+- **Nothing has been tested by anybody but the owner.** No stranger has used
+  Genesis. The external-usability claim is entirely unmeasured.
+- **The web build ships with no API key**, so a visitor gets raw JSON and no
+  natural language — the thesis itself is unavailable to a stranger. A proxy
+  function holding the key server-side is unbuilt. ASSISTANT PROPOSAL: build it
+  before any stranger test.
+- **The assistant's test suite is written by the same hand as the code** and
+  inherits its assumptions. It has missed three real faults that the owner's
+  editor found in one day. Treat a green suite as necessary, never sufficient.
+- No persistence of any kind: equipment, worlds and objects do not survive a
+  restart, so nothing can be owned.
+- No guard that perceives anything, no locks, no countdown, no escape
+  condition, no stealth. `docs/harness/README.md` lists what THE IMPOSSIBLE
+  HEIST would still need.
+- Worlds are untextured boxes. No art.
+- `report_test.gd` hangs with no output; pre-existing, cause unknown.
+- Prediction and measurement of stopping distance differ by a consistent 5%,
+  which is the discrete integration, not the physics. Recorded rather than
+  hidden behind the tolerance that passes it.
+
+## Next action
+
+ASSISTANT PROPOSAL, not yet accepted: the API-key proxy for the web build,
+because it is the only thing standing between the current build and a stranger
+being able to use Genesis the way it is meant to be used, and it needs no
+hardware the assistant lacks.
+
+## Human decision needed
+
+1. **Commit authorship.** Commits since 2026-10-10 are authored by
+   "Claude Opus 5"; before that by the owner with the assistant as co-author.
+   The protocol asks for a record of what the AI contributed and what the human
+   accepted, which the current arrangement gives accurately. The owner has not
+   ruled on which they want.
+2. **Whether scripts may be pushed before the owner has run them.** The
+   protocol permits pushing tested work; the assistant cannot test on the
+   owner's hardware, and that hardware has repeatedly found what the suite did
+   not. Current practice: scripts wait, docs and tests do not.
+3. **Whether work should happen while the owner is away.** The assistant does
+   not run on its own — nothing happens between messages. Autonomy would
+   require a scheduled task, which does not exist.
