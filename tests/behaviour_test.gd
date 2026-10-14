@@ -1,0 +1,198 @@
+extends SceneTree
+
+# 012 - the third layer: do the boots BEHAVE as described?
+#
+# Genesis records three things about a request today: whether the player was
+# understood, whether the proposal was valid, and whether it was built. It
+# records nothing about whether the thing built then did what was promised.
+# A spec can be interpreted correctly, validated correctly, equipped
+# correctly, and still not behave as the readback said it would.
+#
+# THE CRITERION IS NOT INVENTED HERE
+# A test that defines "stops on a sixpence" in its own file measures a promise
+# nobody made. Genesis already makes a falsifiable promise, in the readback:
+#
+#     "brown boots that stop sharply, though they only walk at 2.1 m/s"
+#
+# That is two claims. One is numeric and exact - 2.1 m/s. One is comparative -
+# "stop sharply", which can only mean shorter than ordinary. So those are what
+# is checked, and the criteria below are stated BEFORE the run, so a failure
+# cannot be explained away afterwards.
+#
+# THE CONTROL
+# Stopping is measured from the SAME starting speed for every spec, on the
+# same ground. Otherwise a spec with a lower top speed would appear to stop
+# sooner merely by having been slower, and the measurement would be of the
+# wrong thing.
+
+# --- criteria, declared before the run ---
+const START := 2.0                 # m/s, the controlled speed every trial starts at
+const STOPPED := 0.10              # m/s, slow enough to call stopped
+const SPEED_TOLERANCE := 0.05      # a stated top speed must hold to 5%
+const SHARPLY := 0.75              # "stops sharply" must be at most this much of
+                                   # ordinary's stopping distance
+
+var lines: Array = []
+var failures: Array = []
+
+
+func _check(ok: bool, what: String) -> void:
+	lines.append(("PASS  " if ok else "FAIL  ") + what)
+	if not ok:
+		failures.append(what)
+
+
+func _initialize() -> void:
+	_run.call_deferred()
+
+
+func _ground() -> void:
+	var ground := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(4000, 2, 4000)
+	shape.shape = box
+	shape.position = Vector3(0, -1, 0)
+	ground.add_child(shape)
+	root.add_child(ground)
+
+
+# Top speed under full effort, measured rather than predicted.
+func _top_speed(spec: Dictionary) -> float:
+	var w := Walker.new()
+	root.add_child(w)
+	w.auto_walk = true
+	w.place_at(Vector3(0, 1.0, 0), 0.0)
+	w.equip(spec)
+	w.auto_forward = 1.0
+	for i in Engine.physics_ticks_per_second * 12:
+		await physics_frame
+	var v := w.speed_mps()
+	w.queue_free()
+	await physics_frame
+	return v
+
+
+# From the same speed, on the same ground, with no input: how far and how long
+# to stop.
+func _stopping(spec: Dictionary) -> Dictionary:
+	var w := Walker.new()
+	root.add_child(w)
+	w.auto_walk = true
+	w.place_at(Vector3(0, 1.0, 0), 0.0)
+	w.equip(spec)
+	w.auto_forward = 0.0
+	for i in 30:
+		await physics_frame
+	# Set the controlled speed directly, so every spec starts level.
+	w.velocity.x = 0.0
+	w.velocity.z = -START
+	var from := w.global_position
+	var ticks := 0
+	var limit := Engine.physics_ticks_per_second * 30
+	while ticks < limit and w.speed_mps() > STOPPED:
+		ticks += 1
+		await physics_frame
+	var out := {
+		"distance": from.distance_to(w.global_position),
+		"seconds": float(ticks) / float(Engine.physics_ticks_per_second),
+	}
+	w.queue_free()
+	await physics_frame
+	return out
+
+
+func _run() -> void:
+	_ground()
+	await physics_frame
+	var boots := BootsTool.new()
+
+	var specs := {
+		"ordinary": boots.validate({"tool": "boots", "spec": {}})["spec"],
+		"stops sharply": boots.validate({"tool": "boots", "spec": {"brake": 1100.0}})["spec"],
+		"heavy": boots.validate({"tool": "boots", "spec": {"weight": 140.0}})["spec"],
+	}
+
+	lines.append("  criteria set before the run: a stated top speed holds to %d%%," % int(SPEED_TOLERANCE * 100.0))
+	lines.append("  and \"stops sharply\" means at most %d%% of ordinary's stopping distance." % int(SHARPLY * 100.0))
+	lines.append("")
+
+	var measured := {}
+	for label in specs:
+		var spec: Dictionary = specs[label]
+		var said := boots.readback(spec)
+		var top: float = await _top_speed(spec)
+		var stop: Dictionary = await _stopping(spec)
+		measured[label] = {"top": top, "stop": stop, "said": said, "spec": spec}
+		lines.append("  %-14s top %.2f m/s   stops in %.2f m / %.2f s" % [
+			label, top, float(stop["distance"]), float(stop["seconds"])])
+		lines.append("      readback: %s" % said)
+	lines.append("")
+
+	# --- claim 1: the number the readback states is the number you get ---
+	for label in measured:
+		var m: Dictionary = measured[label]
+		var promised := BootsTool.top_speed(m["spec"])
+		var got := float(m["top"])
+		_check(absf(got - promised) <= promised * SPEED_TOLERANCE,
+			"%s: the readback promises %.2f m/s and the body reaches %.2f" % [label, promised, got])
+
+	# --- claim 2: "stops sharply" stops sharply, from the same speed ---
+	var ordinary: float = float(measured["ordinary"]["stop"]["distance"])
+	var sharp: float = float(measured["stops sharply"]["stop"]["distance"])
+	_check(sharp <= ordinary * SHARPLY,
+		"\"stop sharply\" really does: %.2f m against ordinary's %.2f m, from the same %.1f m/s" % [
+			sharp, ordinary, START])
+
+	# --- claim 3: weight tells on stopping ---
+	# Until 013 it did not: drag was velocity * drag with no mass in it, so a
+	# 140 kg body stopped in exactly the same distance as an 80 kg one.
+	# Braking is now a force the legs apply, so deceleration is brake / mass.
+	var heavy: float = float(measured["heavy"]["stop"]["distance"])
+	_check(heavy > ordinary * 1.2,
+		"a heavy body takes longer to stop: %.2f m against %.2f m from the same %.1f m/s" % [
+			heavy, ordinary, START])
+
+	# --- claim 4: the game's own prediction matches what the body did ---
+	# This is the part that makes the layer worth having. The prediction comes
+	# from BootsTool, not from this file, so a model that drifts from its own
+	# arithmetic is caught rather than quietly re-measured.
+	for label in measured:
+		var m: Dictionary = measured[label]
+		var predicted := BootsTool.stopping_distance(m["spec"], START)
+		var actual := float(m["stop"]["distance"])
+		lines.append("  %-14s predicted %.3f m, measured %.3f m" % [label, predicted, actual])
+		_check(absf(actual - predicted) <= maxf(predicted * 0.12, 0.05),
+			"%s: prediction and measurement agree (%.3f m against %.3f m)" % [label, predicted, actual])
+
+	# --- claim 5: stopping sharply no longer costs top speed ---
+	# footing used to do two jobs, so "stop on a sixpence" quietly halved the
+	# walk. brake is its own quantity and touches nothing else.
+	var sharp_spec: Dictionary = boots.validate({"tool": "boots", "spec": {"brake": 1100.0}})["spec"]
+	var plain_spec: Dictionary = boots.validate({"tool": "boots", "spec": {}})["spec"]
+	_check(absf(BootsTool.top_speed(sharp_spec) - BootsTool.top_speed(plain_spec)) < 0.001,
+		"asking to stop sharply leaves the walking pace alone (%.2f m/s either way)" % BootsTool.top_speed(sharp_spec))
+	_check(BootsTool.stopping_distance(sharp_spec, START) < BootsTool.stopping_distance(plain_spec, START) * 0.6,
+		"and really does stop shorter: %.2f m against %.2f m" % [
+			BootsTool.stopping_distance(sharp_spec, START),
+			BootsTool.stopping_distance(plain_spec, START)])
+
+	# --- a refused spec must not replace what the player has ---
+	var kit := ToolRegistry.free_kit()
+	var before: Dictionary = kit["boots"].duplicate()
+	var good: Dictionary = boots.validate({"tool": "boots", "spec": {"footing": 1.2}})
+	if bool(good["ok"]):
+		kit["boots"] = good["spec"]
+	var bad: Dictionary = boots.validate({"tool": "boots", "spec": {"push": 5000.0}})
+	if bool(bad["ok"]):
+		kit["boots"] = bad["spec"]
+	_check(not bool(bad["ok"]) and absf(float(kit["boots"]["footing"]) - 1.2) < 0.001,
+		"a refused spec leaves the equipped boots alone")
+	_check(float(before["footing"]) != float(kit["boots"]["footing"]),
+		"and the accepted one before it did take effect")
+
+	print("")
+	for l in lines:
+		print(l)
+	print("BEHAVIOUR TEST failures=%d" % failures.size())
+	quit(failures.size())

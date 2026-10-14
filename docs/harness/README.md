@@ -1,8 +1,26 @@
 # Genesis test harness
 
-The headless tests the assistant used from 002F onward. They are stored as
-.txt so Godot never loads them from the project. To use them, copy each one
-back to its real name in a scratch project, never into this project.
+**The tests now live in `tests/` in this repository and run against the
+scripts beside them**, so what is tested is what is committed. Run the lot
+with one command:
+
+```
+run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
+./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64         (Linux)
+```
+
+Add `--all` for the slow racing suites, which take minutes rather than
+seconds. The runner skips `report_test` (hangs, see below), and `replay` and
+`prompt_test`, which are tools rather than suites. It exits non-zero if
+anything needs looking at.
+
+This matters beyond convenience: anybody can now reproduce the evidence
+without being told how, which is what "independent reproducibility" has to
+mean. The copies below are the same files kept as .txt, for reading in a
+browser and for scratch projects.
+
+The .txt copies are stored that way so that older checkouts never load them
+from the project.
 
 ## Set up (Linux sandbox)
 
