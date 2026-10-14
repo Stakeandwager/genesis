@@ -56,16 +56,23 @@ jobs:
           ls -la build
           test -s build/index.wasm
 
+      # The Netlify CLI rather than a third-party action: its flags are the
+      # documented ones, and nothing here depends on another project's input
+      # names staying what they were.
+      #
+      # --prod puts every push on ONE URL rather than minting a new preview
+      # link each time, because the point of this is a place the owner can
+      # revisit and complain about. When there is a stranger-facing link to
+      # protect, this becomes a preview and the live URL moves deliberately.
       - name: Publish to Netlify
-        uses: nwtgck/actions-netlify@v3.0
-        with:
-          publish-dir: ./build
-          functions-dir: ./netlify/functions
-          production-deploy: false
-          deploy-message: ${{ github.event.head_commit.message }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          enable-pull-request-comment: false
-          enable-commit-comment: true
+        run: |
+          npx --yes netlify-cli@17 deploy \
+            --prod \
+            --dir build \
+            --functions netlify/functions \
+            --message "${{ github.event.head_commit.message }}" \
+            --auth "$NETLIFY_AUTH_TOKEN" \
+            --site "$NETLIFY_SITE_ID"
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
