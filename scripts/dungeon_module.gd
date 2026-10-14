@@ -29,6 +29,9 @@ class_name DungeonModule
 const MIN_ROOMS := 2
 const MAX_ROOMS := 24
 const MAX_DOORS := 48
+const MAX_THINGS := 8                    # 015: objects that can be carried
+const THING_SIZE := 0.9                  # metres across, a crate or a lamp
+const THING_COLOUR := Color(0.78, 0.62, 0.22)
 const MIN_SIDE := 4.0                    # metres, smallest room
 const MAX_SIDE := 40.0                   # metres, largest room
 const GAP := 6.0                         # empty lane between slots
@@ -70,10 +73,12 @@ func display_name() -> String:
 
 func prompt_section() -> String:
 	return """CREATE_DUNGEON - design a dungeon of rooms joined by doors
-{"command": "CREATE_DUNGEON", "parameters": {"intent": {"style": STYLE}, "rooms": [ROOM, ROOM, ...], "doors": [[A, B], ...]}}
+{"command": "CREATE_DUNGEON", "parameters": {"intent": {"style": STYLE}, "rooms": [ROOM, ROOM, ...], "doors": [[A, B], ...], "things": [THING, ...]}}
 
 ROOM: {"name": NAME, "width": W, "depth": D} where NAME is a short lowercase label with underscores, and W and D are 4 to 40 metres
 DOOR: [A, B] where A and B are room numbers, 1 for the first room in your list. A door joins two different rooms, and the same pair may only be joined once.
+THING: {"name": NAME, "in": R} - an object sitting in room R, which a character can pick up and carry. R is a room's name or its number counting from 1. NAME is a short lowercase label with underscores and may not be the name of a room. At most 8.
+If the player names something that is IN the dungeon - "a lamp in the store", "with a key in the entrance", "a chest somewhere" - it MUST appear in "things", in the room they said. A room is a place; a thing is an object inside one, and the two are never swapped. Leave "things" out only when the player asked for nothing to be in it.
 Use 2 to 24 rooms and at most 48 doors. Do not give positions: the game works out where every room goes and runs the corridors.
 Room 1 is the entrance, where the player comes in.
 Every room must be reachable from room 1 by following doors, or the design is refused. More doors than rooms is allowed and makes loops: ways round that come back."""
@@ -87,6 +92,7 @@ func record_fields(parameters: Dictionary, attempt: Dictionary) -> Dictionary:
 		"command": command(),
 		"proposed_rooms": parameters.get("rooms", []),
 		"proposed_doors": parameters.get("doors", []),
+		"proposed_things": parameters.get("things", []),
 		"attempt": int(attempt.get("attempt", 1)),
 	}
 	if attempt.has("revision_of"):
@@ -157,13 +163,79 @@ func validate(parameters: Dictionary) -> Dictionary:
 		seen_pairs[key] = true
 		clean_doors.append(Vector2i(mini(a, b) - 1, maxi(a, b) - 1))
 
+	# --- 015: things that can be picked up ---
+	# A thing is a name and the room it starts in. Nothing else: no weight, no
+	# use, no value. An object exists so that an errand can be about something
+	# arriving rather than about somebody walking.
+	var clean_things: Array = []
+	var raw_things = parameters.get("things", [])
+	if typeof(raw_things) != TYPE_ARRAY:
+		errors.append("things must be a list")
+		raw_things = []
+	var things: Array = raw_things
+	if things.size() > MAX_THINGS:
+		errors.append("at most %d things in a dungeon (got %d)" % [MAX_THINGS, things.size()])
+	var thing_names := {}
+	for i in things.size():
+		var n := i + 1
+		if typeof(things[i]) != TYPE_DICTIONARY:
+			errors.append("thing %d must be an object, for example {\"name\": \"lamp\", \"in\": 1}" % n)
+			continue
+		var thing: Dictionary = things[i]
+		var label := str(thing.get("name", "")).strip_edges().to_lower().replace(" ", "_")
+		if label == "":
+			errors.append("thing %d: no name" % n)
+			continue
+		if thing_names.has(label):
+			errors.append("thing %d: two things are both called '%s'" % [n, label])
+			continue
+		if names.has(label):
+			errors.append("thing %d: '%s' is already the name of a room" % [n, label])
+			continue
+		thing_names[label] = true
+		# 019: a room may be named or numbered here, exactly as it may be in
+		# an order. The AI reached for the name without being asked to -
+		# reasonably, since names are how rooms are addressed everywhere else -
+		# and every test had used a number, so nothing had ever exercised it.
+		var where := _room_index(thing.get("in", null), clean_rooms)
+		if where < 0:
+			var given = thing.get("in", null)
+			errors.append("thing %d: '%s' is in '%s', and this dungeon's rooms are %s" % [
+				n, label, "nothing" if given == null else str(given),
+				", ".join(_room_names(clean_rooms))])
+			continue
+		clean_things.append({"name": label, "in": where})
+
 	if errors.is_empty() and clean_doors.size() < clean_rooms.size() - 1:
 		errors.append("%d rooms need at least %d doors to all be reachable (got %d)" % [
 			clean_rooms.size(), clean_rooms.size() - 1, clean_doors.size()])
 
 	if not errors.is_empty():
 		return {"ok": false, "errors": errors, "content": {}}
-	return {"ok": true, "errors": [], "content": {"rooms": clean_rooms, "doors": clean_doors}}
+	return {"ok": true, "errors": [], "content": {
+		"rooms": clean_rooms, "doors": clean_doors, "things": clean_things}}
+
+
+# Which room something is in: a number counting from 1, or a room's name.
+# Returns the index counting from 0, or -1 for neither.
+static func _room_index(given, rooms: Array) -> int:
+	if given == null:
+		return -1
+	if typeof(given) == TYPE_INT or typeof(given) == TYPE_FLOAT:
+		var number := int(given)
+		return number - 1 if number >= 1 and number <= rooms.size() else -1
+	var wanted := str(given).to_lower().strip_edges().replace(" ", "_")
+	for i in rooms.size():
+		if str((rooms[i] as Dictionary).get("name", "")).to_lower() == wanted:
+			return i
+	return -1
+
+
+static func _room_names(rooms: Array) -> Array:
+	var out: Array = []
+	for r in rooms:
+		out.append(str((r as Dictionary).get("name", "")).replace("_", " "))
+	return out
 
 
 func _side(room: Dictionary, field: String, n: int, errors: Array) -> float:
@@ -288,7 +360,8 @@ func solve(content: Dictionary) -> Dictionary:
 		"ok": ok,
 		"category": "FAILED_PLACEMENT",
 		"reasons": [],
-		"layout": {"rooms": rooms, "doors": doors, "pitch": pitch, "slots": slots},
+		"layout": {"rooms": rooms, "doors": doors, "pitch": pitch, "slots": slots,
+			"things": content.get("things", [])},
 		"placement": {
 			"pitch": pitch,
 			"placed": slots.size(),
@@ -485,6 +558,13 @@ func walkable(layout: Dictionary) -> Dictionary:
 	var blocked: Array = []
 	for door in layout["doors"]:
 		var d: Vector2i = door
+		# 018: a door somebody has shut is not a way through. The same
+		# function answers both "is this doorway wide enough" and "is it
+		# open", so routing, the walkability metric and the character's own
+		# plan cannot disagree about it.
+		if is_shut(layout, d.x, d.y):
+			blocked.append(d)
+			continue
 		var path := _corridor_path(layout, d.x, d.y)
 		var stuck := _first_blockage(path, floors, walls)
 		if stuck.is_empty():
@@ -738,6 +818,54 @@ func extent(layout: Dictionary) -> Vector2:
 	return (ground[1] as Vector2) - (ground[0] as Vector2)
 
 
+# --- 018: doors that can be shut ---
+#
+# A doorway was a permanent gap in a wall. Nothing in the world could change
+# while a character was crossing it, so nothing could ever interfere with an
+# errand - and an errand that cannot be interfered with proves very little.
+#
+# Shut doors live in the layout, so every question about getting about reads
+# the same list: walkable(), route(), the metrics panel and the body itself.
+# Shut is a property of the WORLD, not of anybody's plan, which is why a
+# character that set off through an open door and finds it closed stops rather
+# than re-planning around a door it remembers.
+static func door_key(a: int, b: int) -> Vector2i:
+	return Vector2i(mini(a, b), maxi(a, b))
+
+
+static func is_shut(layout: Dictionary, a: int, b: int) -> bool:
+	var closed = layout.get("shut", [])
+	if typeof(closed) != TYPE_ARRAY:
+		return false
+	return (closed as Array).has(door_key(a, b))
+
+
+# Shut or open one door, in the layout. Returns whether anything changed, so a
+# command that shuts a door already shut can say so rather than claiming work.
+static func set_shut(layout: Dictionary, a: int, b: int, closed: bool) -> bool:
+	if not layout.has("shut"):
+		layout["shut"] = []
+	var list: Array = layout["shut"]
+	var key := door_key(a, b)
+	if closed and not list.has(key):
+		list.append(key)
+		return true
+	if not closed and list.has(key):
+		list.erase(key)
+		return true
+	return false
+
+
+# Where a door stands, in this node's own coordinates: the middle of the
+# corridor between two rooms. A shut door is built here, and it is real -
+# a body walks into it rather than through it.
+func door_spot(layout: Dictionary, a: int, b: int) -> Vector2:
+	var path := _corridor_path(layout, a, b)
+	if path.is_empty():
+		return Vector2.ZERO
+	return path[path.size() / 2]
+
+
 # --- 014: a way through, for something that has to walk it ---
 #
 # Routing is over the door graph, not a navigation mesh, and over the doors
@@ -844,6 +972,31 @@ func build(root: Node3D, layout: Dictionary) -> Dictionary:
 			rect.position, rect.position + rect.size, ROOM_HEIGHT, colour)
 		_walls(root, i + 1, rect, openings[i])
 
+	# 018: a shut door is a slab across the corridor, with collision, so it
+	# stops a body the way a wall does rather than by rule.
+	for door in layout["doors"]:
+		var d: Vector2i = door
+		if not is_shut(layout, d.x, d.y):
+			continue
+		var at := door_spot(layout, d.x, d.y)
+		var legs := _corridor(layout, d.x, d.y)
+		var across := true
+		if not legs.is_empty():
+			var leg: Rect2 = legs[legs.size() / 2]
+			across = leg.size.x >= leg.size.y
+		_door_slab(root, "%d_%d" % [d.x + 1, d.y + 1], at, across)
+
+	# 015: a thing stands on the floor of the room it starts in, slightly off
+	# centre so it is not underneath whoever walks in. It is a real body with
+	# collision, because a thing you can walk through is a picture of a thing.
+	var placed: Array = []
+	for i in (layout.get("things", []) as Array).size():
+		var thing: Dictionary = (layout["things"] as Array)[i]
+		var room: Rect2 = rects[int(thing["in"])]
+		var spot := room.position + room.size * 0.5 + Vector2(room.size.x * 0.22, 0.0)
+		var node := _thing(root, str(thing["name"]), spot)
+		placed.append({"name": str(thing["name"]), "node": node, "from": int(thing["in"])})
+
 	# 008: where a body comes in. The entrance is room 1 by definition, and a
 	# body starts at its centre, standing on its floor. Reported in this
 	# node's own coordinates, as the drivable surface is, so a plan that moves
@@ -867,7 +1020,13 @@ func build(root: Node3D, layout: Dictionary) -> Dictionary:
 				ROOM_HEIGHT + 1.0,
 				entrance.position.y + entrance.size.y * 0.5),
 			"heading": 0.0,
+			"things": placed,
 		},
+		# 015: the things, as they stand in the world. A delivery is checked by
+		# reading a thing's POSITION out of the scene, never by asking whoever
+		# carried it - the same wall as a character not reporting its own
+		# arrival.
+		"things": placed,
 	}
 
 
@@ -991,6 +1150,33 @@ func _wall_piece(root: Node3D, number: int, side: String, piece: int, spec: Dict
 	root.add_child(wall)
 
 
+# One shut door: a slab filling the corridor, standing on its floor.
+func _door_slab(root: Node3D, label: String, at: Vector2, across: bool) -> void:
+	var mesh := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = Vector3(0.6, WALL_HEIGHT, CORRIDOR + 1.0) if across else Vector3(CORRIDOR + 1.0, WALL_HEIGHT, 0.6)
+	mesh.mesh = box
+	mesh.name = "Door_" + label
+	mesh.material_override = _material(Color(0.62, 0.26, 0.20))
+	mesh.position = Vector3(at.x, CORRIDOR_HEIGHT + WALL_HEIGHT * 0.5, at.y)
+	_solid(mesh, box.size)
+	root.add_child(mesh)
+
+
+# One thing: a small box with collision, sitting on the room floor.
+func _thing(root: Node3D, label: String, at: Vector2) -> Node3D:
+	var mesh := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = Vector3(THING_SIZE, THING_SIZE, THING_SIZE)
+	mesh.mesh = box
+	mesh.name = "Thing_" + label
+	mesh.material_override = _material(THING_COLOUR)
+	mesh.position = Vector3(at.x, ROOM_HEIGHT + THING_SIZE * 0.5, at.y)
+	_solid(mesh, box.size)
+	root.add_child(mesh)
+	return mesh
+
+
 func _slab(root: Node3D, name_for: String, from: Vector2, to: Vector2, height: float, colour: Color) -> void:
 	var slab := MeshInstance3D.new()
 	var box := BoxMesh.new()
@@ -1107,7 +1293,53 @@ func readback(parameters: Dictionary) -> String:
 	if loops > 0:
 		round_again = ", and %s back round" % Readback.count_of(loops, "way")
 
-	return opening + entered + shape + round_again
+	return opening + entered + shape + round_again + _things_said(parameters, names)
+
+
+# --- 016: say what is IN it ---
+# The readback described the rooms and the doors and said nothing at all about
+# the things, so a dungeon built with a lamp in it read back exactly like one
+# without. A player asked for a lamp, the AI left it out, the line did not
+# mention it, and nobody noticed until the errand was refused for having
+# nothing to carry.
+#
+# A readback that is silent about part of what was asked for cannot be used to
+# catch a dropped clause, which is the only reason it exists. So the things
+# are named, with the room each is in, and a dungeon with nothing in it says
+# nothing - silence then means "there is nothing", which is true.
+func _things_said(parameters: Dictionary, names: PackedStringArray) -> String:
+	var raw = parameters.get("things", null)
+	if typeof(raw) != TYPE_ARRAY or (raw as Array).is_empty():
+		return ""
+	var said := PackedStringArray()
+	for entry in (raw as Array):
+		if typeof(entry) != TYPE_DICTIONARY:
+			continue
+		var thing: Dictionary = entry
+		var label := str(thing.get("name", "")).replace("_", " ").strip_edges()
+		if label == "":
+			continue
+		# The readback resolves a name the same way the validator does, or it
+		# quietly drops the room and says "a lamp" - which is how the first
+		# version read, and is exactly the half-silence this line exists to
+		# prevent.
+		var where := -1
+		var given = thing.get("in", null)
+		if typeof(given) == TYPE_INT or typeof(given) == TYPE_FLOAT:
+			where = int(given) - 1
+		else:
+			var wanted := str(given).to_lower().strip_edges().replace(" ", "_")
+			for i in names.size():
+				if str(names[i]).to_lower().replace(" ", "_") == wanted:
+					where = i
+					break
+		if where >= 0 and where < names.size():
+			said.append("%s in the %s" % [Readback.article(label), str(names[where])])
+		else:
+			said.append(Readback.article(label))
+	if said.is_empty():
+		return ""
+	return ", with " + Readback.join_list(said)
 
 
 func readback_short(parameters: Dictionary) -> String:

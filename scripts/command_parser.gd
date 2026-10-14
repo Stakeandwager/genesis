@@ -17,6 +17,10 @@ const CORE_COMMANDS := [
 	# NpcGoals, so a goal that is not whitelisted is refused like any other
 	# word the game does not have.
 	"ORDER",
+	# 018: shutting and opening a door, which a player may do at any moment,
+	# including while a character is walking through it.
+	"SHUT",
+	"OPEN",
 ]
 
 

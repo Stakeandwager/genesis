@@ -39,7 +39,7 @@ const TEMPERATURE := 1.0
 # a world can build is unchanged, so designs are still comparable with 002H.
 # 004-tools-1 adds EQUIP and the tools the registry describes. Worlds are
 # unchanged, so world designs stay comparable with 003.
-const PROMPT_VERSION := "014-orders-1"
+const PROMPT_VERSION := "018-doors-1"
 # Which wording of the closure feedback a revised track was given.
 # feedback-2 adds Godot's test of whether ANY straight lengths could close the layout.
 const REVISION_VERSION := "002C-closure-feedback-2"
@@ -56,6 +56,7 @@ COMMANDS YOU MAY USE
 PLAN - build several things in one request
 EQUIP - give the player a tool made to their description, listed under TOOLS YOU CAN GIVE at the end
 ORDER - send the dungeon's character somewhere, listed under ORDERS YOU CAN GIVE at the end
+SHUT / OPEN - close or open a door of the dungeon that is standing, named by the two rooms it joins: {"command": "SHUT", "parameters": {"between": [ROOM, ROOM]}}. A player may do this at any moment, including while a character is walking through that door.
 CLEAR_WORLD - remove everything, with parameters {}
 UNSUPPORTED - for a request this game cannot build
 One command for each kind of world, listed under WORLDS YOU CAN BUILD at the end of these instructions. Those are the only worlds that exist. Never invent a command, a type or a field that is not listed there: anything else is refused before it reaches the game.

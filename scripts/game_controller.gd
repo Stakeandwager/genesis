@@ -27,7 +27,10 @@ signal revision_requested(feedback: String, record: Dictionary)
 signal equipped(tool_name: String, spec: Dictionary)
 # 014: a character has somewhere to go. Main owns the body; the controller
 # owns the record and decides, afterwards, whether it got there.
-signal ordered(goal: Dictionary, marks: Array, holder: Node3D)
+signal ordered(goal: Dictionary, marks: Array, holder: Node3D, thing: Node3D, pickup: int)
+# 018: a door opened or shut, so the world can be rebuilt around whatever is
+# standing in it.
+signal door_changed(layout: Dictionary)
 
 var track_builder: TrackBuilder
 var opponent_builder: OpponentBuilder
@@ -47,6 +50,14 @@ var standable: Dictionary = {}
 # Only one at a time: a new order replaces the old one, because a player who
 # says "no, the other room" means now.
 var pending_order: Dictionary = {}
+# The last order accepted and the last outcome written, kept so the ledger can
+# be read back without parsing the log file.
+# What the carrier says it tried to do, handed over by whoever owns the body.
+# Attempts, never accomplishments: it goes into the record beside the verdict,
+# never into it.
+var last_attempts: Array = []
+var last_order_record: Dictionary = {}
+var last_outcome_record: Dictionary = {}
 var npc_at := Vector3.INF
 # While a plan is running, each step keeps what the earlier steps built.
 var plan_running := false
@@ -147,6 +158,10 @@ func execute(command: String, parameters: Dictionary) -> void:
 			_equip(parameters)
 		"ORDER":
 			_order(parameters)
+		"SHUT":
+			_set_door(parameters, true)
+		"OPEN":
+			_set_door(parameters, false)
 		"PLAN":
 			_execute_plan(parameters)
 		"CLEAR_WORLD":
@@ -194,7 +209,8 @@ func _order(parameters: Dictionary) -> void:
 	}
 
 	var rooms: Array = standable.get("rooms", []) if has_standable() else []
-	var checked := NpcGoals.validate(parameters, rooms)
+	var things: Array = standable.get("things", []) if has_standable() else []
+	var checked := NpcGoals.validate(parameters, rooms, things)
 	if not bool(checked["ok"]):
 		_finish_failed(record, "FAILED_SCHEMA", checked["errors"])
 		return
@@ -213,13 +229,68 @@ func _order(parameters: Dictionary) -> void:
 		if found >= 0:
 			from_room = found
 
-	var marks := module.route(layout, from_room, int(goal["room"]))
-	if marks.is_empty() and from_room != int(goal["room"]):
-		# A refusal, not a failure to try: 005 already measured which doorways
-		# a body can pass, and there is no way through to this one.
-		_finish_failed(record, "FAILED_UNWALKABLE", [
-			NpcGoals.outcome_line("NO_ROUTE", str(goal["room_name"]), 0.0, 0.0)])
-		return
+	# 015: a carry is two legs - fetch it, then take it - and the thing is
+	# picked up at the end of the first leg, which is why the pickup mark is
+	# computed here rather than guessed by the body.
+	var marks: Array = []
+	var pickup := -1
+	var carried: Node3D = null
+	if str(goal.get("thing", "")) != "":
+		var found := _thing_node(str(goal["thing"]))
+		if found == null:
+			_finish_failed(record, "FAILED_SCENE", [
+				"the %s is not in the world any more" % str(goal["thing"]).replace("_", " ")])
+			return
+		carried = found
+		var local_thing: Vector3 = (standable["node"] as Node3D).to_local(found.global_position)
+		var thing_room := module.room_of(layout, Vector2(local_thing.x, local_thing.z))
+		if thing_room < 0:
+			_finish_failed(record, "FAILED_SCENE", [
+				"the %s is not in any room" % str(goal["thing"]).replace("_", " ")])
+			return
+		var to_thing := module.route(layout, from_room, thing_room)
+		var onward := module.route(layout, thing_room, int(goal["room"]))
+		if (to_thing.is_empty() and from_room != thing_room) or (onward.is_empty() and thing_room != int(goal["room"])):
+			_finish_failed(record, "FAILED_UNWALKABLE", [
+				NpcGoals.outcome_line("NO_ROUTE", str(goal["room_name"]), 0.0, 0.0)])
+			return
+		# The first leg ENDS at the thing. A route is sampled every half metre
+		# along the corridor and on to the room's middle, so it carries points
+		# BEYOND where the thing stands - and a thing is solid, so walking to
+		# them means walking through it. The first version stalled with the
+		# body pressed against the lamp, two thirds of a metre from picking it
+		# up, and the ledger correctly called the errand a failure.
+		#
+		# So the leg is cut at the point nearest the thing and the thing's own
+		# position is put on the end.
+		var here := Vector2(local_thing.x, local_thing.z)
+		var nearest := 0
+		var best := 1e9
+		for i in to_thing.size():
+			var step: Vector2 = to_thing[i]
+			var away := step.distance_to(here)
+			if away < best:
+				best = away
+				nearest = i
+		to_thing = to_thing.slice(0, nearest)
+		to_thing.append(here)
+		marks = to_thing + onward
+		pickup = to_thing.size() - 1
+		# Step 1 of the delivery test: what the thing is and where it was
+		# BEFORE the errand, written into the order's own record. Without it
+		# the ledger cannot tell a delivery from a thing that was already
+		# there.
+		record["thing"] = str(goal["thing"])
+		record["thing_from"] = str((layout["rooms"] as Array)[thing_room]["name"])
+		record["thing_at"] = [snappedf(local_thing.x, 0.1), snappedf(local_thing.z, 0.1)]
+	else:
+		marks = module.route(layout, from_room, int(goal["room"]))
+		if marks.is_empty() and from_room != int(goal["room"]):
+			# A refusal, not a failure to try: 005 already measured which
+			# doorways a body can pass, and there is no way through to this one.
+			_finish_failed(record, "FAILED_UNWALKABLE", [
+				NpcGoals.outcome_line("NO_ROUTE", str(goal["room_name"]), 0.0, 0.0)])
+			return
 
 	record["goal"] = goal
 	record["result"] = "VALID"
@@ -229,10 +300,11 @@ func _order(parameters: Dictionary) -> void:
 	record["metrics"] = {}
 	record["outcome"] = "PENDING"
 	pending_order = {"id": str(record["id"]), "room": int(goal["room"]),
-		"room_name": str(goal["room_name"])}
+		"room_name": str(goal["room_name"]), "thing": str(goal.get("thing", ""))}
+	last_order_record = record
 	TrackLog.append(record)
 	track_measured.emit(record)
-	ordered.emit(goal, marks, standable["node"])
+	ordered.emit(goal, marks, standable["node"], carried, pickup)
 	log_message.emit(NpcGoals.sent_line(parameters))
 
 
@@ -245,8 +317,45 @@ func finish_order(at: Vector3, seconds: float, travelled: float, why: String) ->
 		return
 	var module := WorldRegistry.find(str(standable.get("command", "")))
 	var layout: Dictionary = standable.get("layout", {})
+	var carrying := str(pending_order.get("thing", ""))
 	var outcome := "GAVE_UP" if why == "gave up" else "BLOCKED"
-	if module != null and is_instance_valid(standable["node"]):
+	var actually := ""
+
+	if carrying != "":
+		# A delivery is proven by where the THING is, read out of the scene at
+		# rest, after the character has stopped and set it down. The character
+		# is not asked and could not be believed: a bug in the carrying code
+		# must show up as a thing in the wrong room, not as a success.
+		#
+		# The tolerance is stated rather than numeric: the thing counts as
+		# delivered when it stands INSIDE the destination room's rectangle.
+		# One reading, once, at rest - not a coordinate that crossed a
+		# boundary on the way past.
+		#
+		# Three outcomes, because "I cannot tell" is not "it failed":
+		#   DELIVERED      the thing is in the room it was sent to
+		#   NOT_DELIVERED  the thing is somewhere else - a named room, or no
+		#                  room at all (a corridor, or still in somebody's
+		#                  hands). Where it is is KNOWN; it is simply not
+		#                  where it was sent.
+		#   INCONCLUSIVE   the world cannot answer at all: the thing is gone
+		#                  from the scene, or there is no geometry to ask.
+		#
+		# The first run of the false delivery test called a key stalled in a
+		# corridor INCONCLUSIVE. That overstated our ignorance: we knew exactly
+		# where the key was. "Cannot tell" has to mean cannot tell.
+		var node := _thing_node(carrying)
+		if node == null or module == null or not is_instance_valid(standable["node"]):
+			outcome = "INCONCLUSIVE"
+		else:
+			var spot: Vector3 = (standable["node"] as Node3D).to_local(node.global_position)
+			var in_room := module.room_of(layout, Vector2(spot.x, spot.z))
+			if in_room == int(pending_order["room"]):
+				outcome = "DELIVERED"
+			else:
+				outcome = "NOT_DELIVERED"
+				actually = str((layout["rooms"] as Array)[in_room]["name"]) if in_room >= 0 else ""
+	elif module != null and is_instance_valid(standable["node"]):
 		var local: Vector3 = (standable["node"] as Node3D).to_local(at)
 		if module.room_of(layout, Vector2(local.x, local.z)) == int(pending_order["room"]):
 			outcome = "ARRIVED"
@@ -255,7 +364,24 @@ func finish_order(at: Vector3, seconds: float, travelled: float, why: String) ->
 		"type": "outcome",
 		"time": Time.get_datetime_string_from_system(),
 		"about": str(pending_order["id"]),
+		# The world's answer. What the carrier said for itself is kept apart,
+		# under "carrier", so nothing can read one as the other.
 		"outcome": outcome,
+		"thing": carrying,
+		"thing_in": actually,
+		"carrier": {"said": why, "stopped_at": [snappedf(at.x, 0.1), snappedf(at.z, 0.1)],
+			"seconds": snappedf(seconds, 0.1), "travelled": snappedf(travelled, 0.1),
+			# Actions ATTEMPTED and what came of each. "picked up the key" is
+			# something that was tried; it is not proof the key moved.
+			"attempted": last_attempts.duplicate(true)},
+		# The check that was made, written down so the verdict can be
+		# re-examined without rerunning anything: what was asked for, what was
+		# looked at, and what was found.
+		"verified": {
+			"check": "the thing's position, read from the world at rest, against the destination room",
+			"destination": str(pending_order.get("room_name", "")),
+			"found_in": actually if actually != "" else ("(no room)" if outcome != "INCONCLUSIVE" else "(not in the world)"),
+		},
 		"why": why,
 		"room": int(pending_order["room"]),
 		"room_name": str(pending_order["room_name"]),
@@ -263,10 +389,112 @@ func finish_order(at: Vector3, seconds: float, travelled: float, why: String) ->
 		"seconds": snappedf(seconds, 0.1),
 		"travelled": snappedf(travelled, 0.1),
 	}
+	last_outcome_record = resolved
 	TrackLog.append(resolved)
-	log_message.emit(NpcGoals.outcome_line(
-		outcome, str(pending_order["room_name"]), travelled, seconds))
+	if carrying != "":
+		log_message.emit(NpcGoals.delivery_line(
+			outcome, carrying, str(pending_order["room_name"]), actually))
+	else:
+		log_message.emit(NpcGoals.outcome_line(
+			outcome, str(pending_order["room_name"]), travelled, seconds))
 	pending_order = {}
+
+
+# --- 018: shutting a door, at any moment ---
+#
+# A player may do this while a character is halfway along the corridor it
+# stands in. Nothing warns the character and nothing re-plans for it: the door
+# becomes real, and the body walks into it. That is the point - a world that
+# can only be changed between errands cannot be interfered with, and an errand
+# nobody can interfere with proves very little.
+#
+# The world is rebuilt from the layout so the door is actually there, with
+# collision, rather than being true only in a list.
+func _set_door(parameters: Dictionary, closed: bool) -> void:
+	var record := {
+		"time": Time.get_datetime_string_from_system(),
+		"request": current_request,
+		"raw_command": current_raw,
+		"source": current_source,
+		"experiment": current_experiment,
+		"readback": current_readback,
+		"understanding": "UNKNOWN",
+		"id": current_record_id if current_record_id != "" else TrackLog.next_id(),
+		"command": "SHUT" if closed else "OPEN",
+		"proposed_door": parameters,
+	}
+
+	if not has_standable():
+		_finish_failed(record, "FAILED_SCENE", ["there are no doors here: build a dungeon first"])
+		return
+
+	var rooms: Array = standable.get("rooms", [])
+	var checked := NpcGoals.validate_door(parameters, rooms, standable.get("layout", {}))
+	if not bool(checked["ok"]):
+		_finish_failed(record, "FAILED_SCHEMA", checked["errors"])
+		return
+
+	var door: Dictionary = checked["door"]
+	var layout: Dictionary = standable["layout"]
+	var changed := DungeonModule.set_shut(layout, int(door["a"]), int(door["b"]), closed)
+
+	record["door"] = door
+	record["result"] = "VALID"
+	record["construction"] = "BUILT"
+	record["category"] = ""
+	record["reasons"] = []
+	record["metrics"] = {}
+	record["changed"] = changed
+	TrackLog.append(record)
+	track_measured.emit(record)
+
+	if changed:
+		door_changed.emit(layout)
+	log_message.emit(NpcGoals.door_line(door, closed, changed))
+
+
+# Rebuild the dungeon that is standing, from its own layout, keeping the
+# things where they actually are rather than where they started. Used when a
+# door opens or shuts: the geometry has to change for real.
+func rebuild_standing_world() -> void:
+	if not has_standable():
+		return
+	var module := WorldRegistry.find(str(standable.get("command", "")))
+	if module == null:
+		return
+	var holder: Node3D = standable["node"]
+	var layout: Dictionary = standable["layout"]
+
+	# Where everything stands now, so nothing is put back where it began.
+	var carried := {}
+	for entry in (standable.get("things", []) as Array):
+		var t: Dictionary = entry
+		var node = t.get("node", null)
+		if is_instance_valid(node):
+			carried[str(t["name"])] = (node as Node3D).global_position
+
+	for child in holder.get_children():
+		child.queue_free()
+	var report := module.build(holder, layout)
+	standable = report["standable"]
+	standable["command"] = str(module.command())
+
+	for entry in (standable.get("things", []) as Array):
+		var t: Dictionary = entry
+		if carried.has(str(t["name"])):
+			(t["node"] as Node3D).global_position = carried[str(t["name"])]
+
+
+# The thing in the world with this name, or null. Looked up fresh every time,
+# because a carried thing has moved in the scene tree and only the world knows
+# where it is now.
+func _thing_node(label: String) -> Node3D:
+	for entry in (standable.get("things", []) as Array):
+		var t: Dictionary = entry
+		if str(t.get("name", "")) == label:
+			var node = t.get("node", null)
+			return node if is_instance_valid(node) else null
+	return null
 
 
 func _equip(parameters: Dictionary) -> void:

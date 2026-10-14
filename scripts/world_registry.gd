@@ -69,6 +69,10 @@ static func readback(command: String, parameters: Dictionary) -> String:
 			return ToolRegistry.readback(parameters)
 		"ORDER":
 			return NpcGoals.readback(parameters)
+		"SHUT":
+			return NpcGoals.door_readback(parameters, true)
+		"OPEN":
+			return NpcGoals.door_readback(parameters, false)
 		"PLAN":
 			return _plan_readback(parameters)
 	var module := find(command)

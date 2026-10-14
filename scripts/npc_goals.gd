@@ -18,7 +18,7 @@ class_name NpcGoals
 # measuring where it ended up against the geometry - never by the character
 # saying so.
 
-const GOALS := ["go_to"]
+const GOALS := ["go_to", "carry"]
 
 # How long a character may spend on one goal before it is given up, and how
 # long it may make no progress before it is called blocked.
@@ -30,6 +30,10 @@ static func prompt_section() -> String:
 	return """ORDER go_to - send a character to a room of the dungeon
 {"command": "ORDER", "parameters": {"goal": "go_to", "room": ROOM}}
 
+ORDER carry - have the character fetch a thing and take it somewhere
+{"command": "ORDER", "parameters": {"goal": "carry", "thing": THING, "room": ROOM}}
+THING is the name of something in the dungeon that is standing now. The character goes to it, picks it up, and takes it to ROOM. An order to carry says what the player wants carried; it does not say the thing will get there.
+
 ROOM is the name of a room in the dungeon that is standing now, or its number counting from 1. Only rooms that exist may be named.
 There is one character. Ordering it somewhere while it is already going somewhere replaces the old order.
 This is only for a dungeon. There is nobody to order about in any other world.
@@ -39,7 +43,7 @@ An order says where the player wants the character to go. It does not say that t
 # Check a proposed goal against the rooms that actually exist. Returns ok,
 # errors and a clean goal with the room resolved to its number, so nothing
 # downstream has to think about names again.
-static func validate(parameters: Dictionary, rooms: Array) -> Dictionary:
+static func validate(parameters: Dictionary, rooms: Array, things: Array = []) -> Dictionary:
 	var errors: Array = []
 	var goal := str(parameters.get("goal", "")).to_lower().strip_edges()
 	if goal == "":
@@ -75,9 +79,30 @@ static func validate(parameters: Dictionary, rooms: Array) -> Dictionary:
 		if room < 0:
 			errors.append("this dungeon has no room called '%s' (it has %s)" % [str(asked), ", ".join(names)])
 
+	# 015: carrying needs something to carry, named from what is actually in
+	# the dungeon. A thing the AI invented is refused exactly as an invented
+	# room is.
+	var thing := ""
+	if goal == "carry":
+		var thing_names: Array = []
+		for t in things:
+			thing_names.append(str((t as Dictionary).get("name", "")))
+		var wanted := str(parameters.get("thing", "")).to_lower().strip_edges().replace(" ", "_")
+		if wanted == "":
+			errors.append("carrying needs something to carry%s" % (
+				" (this dungeon has %s)" % ", ".join(thing_names) if not thing_names.is_empty() else ""))
+		elif thing_names.is_empty():
+			errors.append("there is nothing to carry in this dungeon")
+		elif not thing_names.has(wanted):
+			errors.append("this dungeon has nothing called '%s' (it has %s)" % [
+				str(parameters.get("thing", "")), ", ".join(thing_names)])
+		else:
+			thing = wanted
+
 	if not errors.is_empty():
 		return {"ok": false, "errors": errors, "goal": {}}
-	return {"ok": true, "errors": [], "goal": {"goal": goal, "room": room, "room_name": names[room]}}
+	return {"ok": true, "errors": [], "goal": {
+		"goal": goal, "room": room, "room_name": names[room], "thing": thing}}
 
 
 # "to send someone to the vault"
@@ -87,6 +112,19 @@ static func validate(parameters: Dictionary, rooms: Array) -> Dictionary:
 # not what will happen.
 static func readback(parameters: Dictionary) -> String:
 	var goal := str(parameters.get("goal", "")).to_lower().strip_edges()
+	if goal == "carry":
+		var thing := str(parameters.get("thing", "")).replace("_", " ")
+		var asked_room = parameters.get("room", null)
+		var where := ""
+		if asked_room == null:
+			where = "somewhere"
+		elif typeof(asked_room) == TYPE_INT or typeof(asked_room) == TYPE_FLOAT:
+			where = "room %d" % int(asked_room)
+		else:
+			where = _place(str(asked_room))
+		if thing == "":
+			return "to have something carried to %s" % where
+		return "to have the %s carried to %s" % [thing, where]
 	if goal != "go_to":
 		return ""
 	var asked = parameters.get("room", null)
@@ -94,7 +132,84 @@ static func readback(parameters: Dictionary) -> String:
 		return "to send someone somewhere"
 	if typeof(asked) == TYPE_INT or typeof(asked) == TYPE_FLOAT:
 		return "to send someone to room %d" % int(asked)
-	return "to send someone to the %s" % str(asked).replace("_", " ")
+	return "to send someone to %s" % _place(str(asked))
+
+
+# --- 018: which door ---
+# Named by the two rooms it joins, because a door has no name of its own and a
+# player would say "the door between the hall and the vault".
+static func validate_door(parameters: Dictionary, rooms: Array, layout: Dictionary) -> Dictionary:
+	var errors: Array = []
+	var names: Array = []
+	for r in rooms:
+		names.append(str((r as Dictionary).get("name", "")))
+
+	var raw = parameters.get("between", null)
+	if typeof(raw) != TYPE_ARRAY or (raw as Array).size() != 2:
+		errors.append("a door is named by the two rooms it joins, for example {\"between\": [\"hall\", \"vault\"]} (this dungeon has %s)" % ", ".join(names))
+		return {"ok": false, "errors": errors, "door": {}}
+
+	var ends: Array = []
+	for side in (raw as Array):
+		var found := -1
+		if typeof(side) == TYPE_INT or typeof(side) == TYPE_FLOAT:
+			var number := int(side)
+			if number >= 1 and number <= names.size():
+				found = number - 1
+		else:
+			var wanted := str(side).to_lower().strip_edges().replace(" ", "_")
+			for i in names.size():
+				if str(names[i]).to_lower().replace(" ", "_") == wanted:
+					found = i
+					break
+		if found < 0:
+			errors.append("this dungeon has no room called '%s' (it has %s)" % [str(side), ", ".join(names)])
+		ends.append(found)
+
+	if not errors.is_empty():
+		return {"ok": false, "errors": errors, "door": {}}
+	if int(ends[0]) == int(ends[1]):
+		return {"ok": false, "errors": ["a door joins two different rooms"], "door": {}}
+
+	var wanted_key := DungeonModule.door_key(int(ends[0]), int(ends[1]))
+	var exists := false
+	for d in (layout.get("doors", []) as Array):
+		var pair: Vector2i = d
+		if DungeonModule.door_key(pair.x, pair.y) == wanted_key:
+			exists = true
+	if not exists:
+		return {"ok": false, "errors": [
+			"there is no door between the %s and the %s" % [
+				str(names[int(ends[0])]).replace("_", " "), str(names[int(ends[1])]).replace("_", " ")]],
+			"door": {}}
+
+	return {"ok": true, "errors": [], "door": {
+		"a": int(ends[0]), "b": int(ends[1]),
+		"a_name": str(names[int(ends[0])]), "b_name": str(names[int(ends[1])])}}
+
+
+static func door_readback(parameters: Dictionary, closed: bool) -> String:
+	var raw = parameters.get("between", null)
+	if typeof(raw) != TYPE_ARRAY or (raw as Array).size() != 2:
+		return "to %s a door" % ("shut" if closed else "open")
+	return "to %s the door between %s and %s" % [
+		"shut" if closed else "open",
+		_place(str((raw as Array)[0])), _place(str((raw as Array)[1]))]
+
+
+static func door_line(door: Dictionary, closed: bool, changed: bool) -> String:
+	var where := "between %s and %s" % [
+		_place(str(door.get("a_name", ""))), _place(str(door.get("b_name", "")))]
+	if not changed:
+		return "The door %s was already %s." % [where, "shut" if closed else "open"]
+	return "The door %s is %s now." % [where, "shut" if closed else "open"]
+
+
+# A room in a sentence. "the vault" reads well; "the room 3" does not, because
+# the name already says what it is.
+static func _place(label: String) -> String:
+	var said := label.replace("_", " ")
+	return said if said.begins_with("room ") else "the " + said
 
 
 # What is being attempted, said once the order is accepted. Phrased as an
@@ -103,10 +218,31 @@ static func sent_line(parameters: Dictionary) -> String:
 	var said := readback(parameters)
 	if said.begins_with("to send someone "):
 		return "Sending someone " + said.substr(16) + "."
+	if said.begins_with("to have "):
+		return "Fetching " + said.substr(8).replace(" carried to ", " to ") + "."
 	return "Sent."
 
 
 # What happened, in the player's words. Never said by the character.
+# What happened to a delivery, measured from where the thing ENDED UP rather
+# than from anything the carrier says.
+static func delivery_line(outcome: String, thing: String, room_name: String, actually: String) -> String:
+	var what := thing.replace("_", " ")
+	var where := room_name.replace("_", " ")
+	match outcome:
+		"DELIVERED":
+			return "The %s is in %s." % [what, _place(room_name)]
+		"NOT_DELIVERED":
+			if actually == "":
+				return "The %s did not get to %s. It is not in any room." % [what, _place(room_name)]
+			return "The %s did not get to %s. It is in %s." % [
+				what, _place(room_name), _place(actually)]
+		"INCONCLUSIVE":
+			return "Cannot tell whether the %s got to %s: it is not in the world any more." % [
+				what, _place(room_name)]
+	return "Nothing happened."
+
+
 static func outcome_line(outcome: String, room_name: String, metres: float, seconds: float) -> String:
 	var where := room_name.replace("_", " ")
 	match outcome:

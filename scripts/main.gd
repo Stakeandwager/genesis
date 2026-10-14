@@ -79,6 +79,7 @@ func _ready() -> void:
 	controller.revision_requested.connect(_on_revision_requested)
 	controller.equipped.connect(_on_equipped)
 	controller.ordered.connect(_on_ordered)
+	controller.door_changed.connect(_on_door_changed)
 
 	experiment = ExperimentRunner.new()
 	add_child(experiment)
@@ -587,7 +588,7 @@ func _delete_world(request: String) -> void:
 # Main gives the order a body and nothing else. It does not decide whether the
 # body arrived; it reports where the body stopped and the controller measures
 # that against the geometry.
-func _on_ordered(_goal: Dictionary, marks: Array, holder: Node3D) -> void:
+func _on_ordered(_goal: Dictionary, marks: Array, holder: Node3D, thing: Node3D, pickup: int) -> void:
 	if npc == null:
 		npc = Npc.new()
 		npc.name = "Npc"
@@ -602,11 +603,29 @@ func _on_ordered(_goal: Dictionary, marks: Array, holder: Node3D) -> void:
 		var local := Vector3(point.x, 0.0, point.y)
 		var there := holder.to_global(local)
 		world_marks.append(Vector2(there.x, there.z))
-	npc.follow(world_marks)
+	if thing != null and is_instance_valid(thing):
+		npc.fetch(world_marks, thing, pickup)
+	else:
+		npc.follow(world_marks)
+
+
+# 018: a door opened or shut. The world is rebuilt from the layout so the door
+# is really there, and whoever is walking stays exactly where they are - a door
+# shutting must not teleport anybody, or the interference would be cheating in
+# the other direction.
+func _on_door_changed(_layout: Dictionary) -> void:
+	var walker_where := walker.global_position if walker != null else Vector3.ZERO
+	var npc_where := npc.global_position if npc != null else Vector3.ZERO
+	controller.rebuild_standing_world()
+	if walker != null:
+		walker.global_position = walker_where
+	if npc != null:
+		npc.global_position = npc_where
 
 
 func _on_npc_stopped(why: String, at: Vector3, seconds: float, travelled: float) -> void:
 	controller.npc_at = at
+	controller.last_attempts = npc.attempts.duplicate(true) if npc != null else []
 	controller.finish_order(at, seconds, travelled, why)
 
 
