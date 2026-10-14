@@ -242,38 +242,44 @@ func readback(parameters: Dictionary) -> String:
 		var type := str(section.get("type", "")).to_lower()
 		if type == "":
 			continue
+		# Every measurement here comes out of a raw request, so each is read
+		# through the one function that decides what a number is. A length of
+		# null, {} or [250] threw, and the throw returned this whole readback
+		# as the empty string: a player who mistyped one section was told
+		# nothing about any of them. _sized() keeps the piece in the sentence
+		# and drops only the measurement it could not read.
 		var measure := 0.0
 		var singular := ""
 		var plural := ""
 		match type:
 			"straight":
-				measure = float(section.get("length", 0.0))
-				singular = "%.0f m straight" % measure
-				plural = "%.0f m straights" % measure
+				measure = Readback.measure(section, "length")
+				singular = _sized(measure, "straight")
+				plural = _sized(measure, "straights")
 			"uphill", "downhill":
-				measure = float(section.get("length", 0.0))
-				singular = "%.0f m %s at %.0f%%" % [measure, type, float(section.get("grade", 0.0))]
-				plural = "%.0f m %ss at %.0f%%" % [measure, type, float(section.get("grade", 0.0))]
+				measure = Readback.measure(section, "length")
+				singular = _graded(measure, type, section)
+				plural = _graded(measure, type + "s", section)
 			"crest", "dip":
-				measure = float(section.get("length", 0.0))
-				singular = "%.0f m %s" % [measure, type]
-				plural = "%.0f m %ss" % [measure, type]
+				measure = Readback.measure(section, "length")
+				singular = _sized(measure, type)
+				plural = _sized(measure, type + "s")
 			"corner", "hairpin":
-				measure = float(section.get("radius", 0.0))
-				singular = "%.0f m %s" % [measure, type]
-				plural = "%.0f m %ss" % [measure, type]
+				measure = Readback.measure(section, "radius")
+				singular = _sized(measure, type)
+				plural = _sized(measure, type + "s")
 			"banked_corner":
-				measure = float(section.get("radius", 0.0))
-				singular = "%.0f m corner banked at %.0f deg" % [measure, float(section.get("bank", 0.0))]
-				plural = "%.0f m corners banked at %.0f deg" % [measure, float(section.get("bank", 0.0))]
+				measure = Readback.measure(section, "radius")
+				singular = _banked(measure, "corner", section)
+				plural = _banked(measure, "corners", section)
 			"loop_segment":
-				measure = float(section.get("radius", 0.0))
-				singular = "%.0f m loop" % measure
-				plural = "%.0f m loops" % measure
+				measure = Readback.measure(section, "radius")
+				singular = _sized(measure, "loop")
+				plural = _sized(measure, "loops")
 			"chicane":
-				measure = float(section.get("offset", 0.0))
-				singular = "%.0f m chicane" % measure
-				plural = "%.0f m chicanes" % measure
+				measure = Readback.measure(section, "offset")
+				singular = _sized(measure, "chicane")
+				plural = _sized(measure, "chicanes")
 			_:
 				# A piece this readback has never heard of is named rather
 				# than dropped, so adding a section type can make the wording
@@ -300,10 +306,42 @@ func readback(parameters: Dictionary) -> String:
 	return "a closed circuit with " + Readback.join_capped(parts)
 
 
+# A piece with its measurement, or the piece alone when the request did not
+# give a number for it. Never "a 0 m straight" for a length of null: a
+# readback that states a number the player never gave is trap 8, and this is
+# the layer that exists to catch exactly that.
+func _sized(measure: float, noun: String) -> String:
+	if is_nan(measure):
+		return noun
+	return "%.0f m %s" % [measure, noun]
+
+
+func _graded(measure: float, noun: String, section: Dictionary) -> String:
+	var grade := Readback.measure(section, "grade")
+	if is_nan(grade):
+		return _sized(measure, noun)
+	return "%s at %.0f%%" % [_sized(measure, noun), grade]
+
+
+func _banked(measure: float, noun: String, section: Dictionary) -> String:
+	var bank := Readback.measure(section, "bank")
+	if is_nan(bank):
+		return _sized(measure, noun)
+	return "%s banked at %.0f deg" % [_sized(measure, noun), bank]
+
+
 func _before(a: Dictionary, b: Dictionary) -> bool:
 	if int(a["rank"]) != int(b["rank"]):
 		return int(a["rank"]) < int(b["rank"])
-	return float(a["measure"]) > float(b["measure"])
+	# An unmeasured piece sorts last rather than unpredictably: every
+	# comparison against NAN is false, which is not an ordering.
+	var am := float(a["measure"])
+	var bm := float(b["measure"])
+	if is_nan(am):
+		am = -1.0
+	if is_nan(bm):
+		bm = -1.0
+	return am > bm
 
 
 func readback_short(_parameters: Dictionary) -> String:

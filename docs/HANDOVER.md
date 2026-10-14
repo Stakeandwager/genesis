@@ -13,11 +13,12 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: 028, the other half of 027 - the eight
-  CAPABILITIES in the AI's prompt read against the code. One was wider than
-  the code in two ways and was repeated in `RefusalCheck`, and the circuit
-  turned out to be the one world in Genesis whose refusals named no limit,
-  which the prompt claims as a fact about the game.
+- Last commit at the time of writing: 029, the question nobody had asked of
+  any field in Genesis - what a validator does with a value that is not a
+  number. `DungeonModule` was approving rooms 0 m across with `ok: true` and
+  an empty error list, and all three world readbacks were returning the empty
+  string. 35 suites passed before the fix and 35 passed after. See 029 below
+  and TRAPS 20.
 - Godot 4.7.1, Compatibility renderer. The owner's machine is an Intel HD 3000
   through ANGLE: no WebGL2, so **the web build cannot be viewed there**.
 
@@ -76,14 +77,16 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-37 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **35 suites**, and since 024 every one of them runs —
+38 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **36 suites**, and since 024 every one of them runs —
 nothing is skipped as broken. `--all` adds the two slow racing suites.
 
-Last full run (028, Godot 4.7.1 on Linux, headless, in a cloud container):
+Last full run (029, Godot 4.7.1 on Linux, headless, in a cloud container):
 **suites with something to look at: 0**, both without `--all` and with it,
-with `capability_test` new and passing (165 assertions). Not run on the
-owner's Windows machine.
+with `request_types_test` new and passing (267 assertions, of which 36 fail
+against the code as it stood before 029 and 231 are guards — the split is
+written into the suite's header, per TRAPS 6). Not run on the owner's Windows
+machine.
 
 ## What Genesis is
 
@@ -188,6 +191,23 @@ verified, and what remains uncertain.
   AI refused six requests out of seven and **five of the refusals contained a
   false statement about what Genesis can do.** See TRAPS 11 and 12.
 
+- **A green suite had never been asked what happens to a value that is not a
+  number**, and the answer was different in each file. Found and fixed in
+  029: `DungeonModule.validate` returned `ok: true` with an empty error list
+  for a room whose width was `null`, `{}` or `[20, 20]`, and built it 0 m
+  across; a door pair holding an object made `validate` return `{}` with no
+  `ok` key at all, which `game_controller` indexes directly; and all three
+  world readbacks returned the empty string. 35 suites passed before and 35
+  after. The faults were not found by the owner — they were found by asking
+  one question of every validator at once rather than of one file. See
+  TRAPS 20.
+
+  **What that says about the other eight:** this one was reachable from
+  ordinary model output and had been reachable for the project's whole life,
+  and the reason no suite saw it is that a person writing a test for a width
+  writes a width. There is no reason to think it is the last of its kind, and
+  the cheap way to find the next is to pick a question that has only ever been
+  asked of one file and ask it of all of them.
 - **The capability statement in the prompt is hand-written prose and can go
   stale.** `tests/log_023_test.gd` asserts that each thing it claims points at
   a function that still exists (`NpcGoals.delivery_line`,
@@ -571,6 +591,114 @@ change is that a circuit's refusals now say what the limit is.
 - `sweep_test` still reports that no legal command reaches
   `FAILED_UNWALKABLE`, unchanged and still TRAPS 6's own example.
 
+## 029 — what a validator does with a value that is not a number
+
+**Objective.** HANDOVER named the next assistant task as the readback audit,
+and two smaller ones, the first being that `SectionValidator`'s `_forbid`,
+`missing` and `must be a number` messages name a field but not what a legal
+value would be. Starting on that one — the smallest, and the leftover of 028 —
+meant reading every refusal in every validator against the rule 028 set. That
+read found something else, in the same place, that is not about wording.
+
+**What was wrong.** `DungeonModule._side()` was the only numeric reader in
+Genesis that never asked `typeof()` before converting. Every number in a
+request arrives through `JSON.parse`, and `float()` has no constructor for
+`null`, an object or a list: it throws, and the throw abandons the rest of the
+function. Measured, before the fix:
+
+| request | what `validate` returned |
+| --- | --- |
+| room width `null`, `{}` or `[20, 20]` | **`ok: true`, `errors: []`**, room 0 m across |
+| a door pair holding `{}` or `null` | **`{}`** — no `ok`, no `errors` |
+| room width `"10"` | accepted as 10 m |
+| room width `"ten"` | refused as *"width is 0 m"* — a number nobody typed |
+
+And all three world readbacks — dungeon, farm, circuit — returned **the empty
+string** for the first three, because they read raw request numbers the same
+way. A player who mistyped one section of a circuit was told nothing about any
+of it.
+
+The first row is this project's central claim failing in the quietest way
+available: not a validator that was wrong, a validator that called a spec
+sound without having read it. The second is worse in a different direction,
+because `game_controller` indexes `check["ok"]` directly.
+
+**Why no suite saw it.** Every suite hands its validators numbers, because the
+person writing a test for a width writes a width. 35 suites passed before and
+35 after. `SectionValidator`, `FarmModule`, `CarTool` and `BootsTool` all check
+`typeof()` and always did — and so does `_things_said()`, two hundred lines
+down `dungeon_module.gd`. So this is TRAPS 18 one layer deeper: not a file that
+missed the project's conventions, a function that missed its own file's.
+
+**Implementation.** `Readback.as_number()` and `Readback.measure()` are now the
+one place that decides whether a value out of a request is a number —
+`readback.gd` is a leaf everything already depends on. `_side()` and the door
+reader use them and refuse rather than clamp (the old `clampf` was inert only
+because an error happened to be appended beside it). All three readbacks use
+them, and a measurement that is not a number is **left out** rather than
+printed as 0: `Readback.size_of()` returns `""`, and a circuit says "a
+straight" where it would have said "a 0 m straight". A string is no longer a
+number anywhere, which is a change — the other four validators already refused
+`"10"`.
+
+**Evidence.** Godot 4.7.1 (4.7.1.stable.official.a13da4feb) headless, Linux,
+in a cloud container. Baseline before the change: 35 suites, 0 with something
+to look at, with `--all` as well. After: **36 suites, 0 with something to look
+at, with `--all` as well**, `drive_test` and `session_test` included.
+
+`tests/request_types_test.gd` is new and passes **267 assertions**: all six
+values that are not numbers (`null`, `{}`, `[1, 2]`, `true`, `"ten"`, `"10"`)
+put through every numeric field of all five validators, with the field lists
+read out of the code — section shapes built from the bounds constants, tool
+fields taken from `defaults()` — so a field added later is probed without the
+suite being edited (TRAPS 13). Each refusal is checked for an `ok` key, a
+false verdict and the field's name, because a thrown conversion returns a
+dictionary that no assertion about `errors` would notice. No readback may be
+empty, and **no readback may state a digit the request did not contain**,
+which is how "a 0 by 10 m barn" is caught without testing a word of the
+wording. The sound case is asserted too — a suite proving things are refused
+would pass if everything were refused.
+
+Run against the pre-fix code the new suite fails **36 times**: 16 the dungeon's
+own refusals, 12 a circuit's readback, 6 a farm's, 3 a dungeon's. The scripts
+were then restored and `cmp` used to confirm all four files came back
+byte-identical.
+
+**NOT VERIFIED.** No model has produced any of these inputs in this session —
+a headless harness has no key and no model, so what is tested is what the code
+does with JSON of each shape, not how often a model writes it. `null` for an
+unknown field is the one worth the owner watching for; the others are
+inferences about model output, not observations. No player has seen the new
+sentences: *"a dungeon of two rooms joined by a door, entered through a vault"*
+reads correctly to me and the judgement about whether a missing size reads as
+deliberate or as a bug is the owner's. Nothing ran on Windows; `run_tests.bat`
+was not edited and not executed. No module, builder, solver or ledger logic
+was touched beyond the readers named above, and `sweep_test` still reports
+that no legal command reaches `FAILED_UNWALKABLE`.
+
+**A claim in this file was wrong, and is corrected rather than quietly
+edited.** Under "Next action", 028 wrote: *"A refusal is now actionable in
+every validator but one place."* That is not true. Reading all five against
+the rule turned up the same shape in four of them:
+
+- `CarTool` and `BootsTool` both say bare *"`power` must be a number"* with
+  no range, though the range is in scope on that very line.
+- `FarmModule` says *"zone 1 (barn): missing 'width'"* and *"zone 1 has no
+  type"* with no range and no list of types — while its *unknown* type error
+  does list them.
+- `SectionValidator` says *"section 1: unknown type 'x'"* naming none of the
+  ten, and `_forbid` says *"'bank' is not a straight setting"* without saying
+  what a straight's settings are.
+- `DungeonModule`'s own missing/not-a-number messages now name the bound,
+  because 029 was rewriting those lines anyway.
+
+So the wording task is larger than 028 recorded and is still open; it is
+restated under "Next action". The fact that a sentence in this file overstated
+how finished something was, one commit after TRAPS 15 and 17 were written about
+exactly that, is worth more than the wording itself.
+
+---
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -602,6 +730,17 @@ things Genesis does. The requests that would show it:
   Worth one glance to confirm it reads as well in the editor as it does in a
   test, since that sentence is the whole point of the change.
 
+029 adds one more, and it is a single line:
+
+- *"a dungeon with a hall 12 m across and a vault"* — then, separately, a
+  request the model is likely to answer with a missing measurement. What
+  changed is what Genesis says when a measurement does not arrive as a
+  number: the readback now names the room **without a size** ("entered
+  through a vault") instead of returning an empty line, and the refusal says
+  *"room 1: width must be a number, 4 to 40 m"*. Whether a missing size reads
+  as deliberate or as a bug is a judgement a test cannot make, and it is the
+  only part of 029 that a person has to look at.
+
 And one worth watching rather than typing: 028 narrowed the physics capability
 so the model stops promising a measured braking experiment. If a request like
 023's two-car brief now comes back refused **with the right reason** — one set
@@ -609,21 +748,41 @@ of equipment at a time, and no measured stop — that is the narrowing working.
 If it still comes back claiming Genesis has no physics, that is the old 023
 fault and `RefusalCheck` should be catching it.
 
-**Smallest useful assistant task next.** 028 finished the claims in the
-prompt: limitations (027) and capabilities (028) are now both asserted as
-facts. The next member of the same class is the **readback**, which is the
-layer the owner's sessions have found most of the real faults in — four of the
-five in 022 were a readback describing something other than the request. What
-has never been asked of it systematically is the 028 question: for each thing
-a readback says, is the sentence as wide as the thing it describes? That needs
-no decision from the owner and no live key.
+**Smallest useful assistant task next.** Still the **readback**, which 028
+named and 029 did not do: it is the layer the owner's sessions have found most
+of the real faults in — four of the five in 022 were a readback describing
+something other than the request. The 028 question has never been asked of it
+systematically: for each thing a readback says, is the sentence as wide as the
+thing it describes? 029 only hardened how readbacks READ numbers; it did not
+audit what they SAY. Needs no decision from the owner and no live key.
 
 Two smaller ones, either of which is a single session:
 
-- **A refusal is now actionable in every validator but one place.** The
-  `_forbid`, `missing` and `must be a number` messages in
-  `SectionValidator` name the field but not what a legal value would be. Lower
-  value than the bounds were, and the same shape.
+- **A refusal that names no legal value — four validators, not one.** 028
+  recorded this as "every validator but one place"; that was wrong and 029
+  corrected it (see the list at the end of the 029 section above). `CarTool`
+  and `BootsTool` say bare *"must be a number"* with the range in scope on
+  the same line; `FarmModule` says *"missing 'width'"* and *"has no type"*
+  naming neither a range nor the types; `SectionValidator`'s unknown-type and
+  `_forbid` messages name neither the ten types nor the fields a section has.
+  The rule is 028's and already written: a refusal has two jobs, and these do
+  one. Lower value than the bounds were, and the same shape — but do the
+  whole list this time (TRAPS 11).
+- **Ask one more question of every file at once.** 029's finding came from
+  asking "what if this is not a number" of all five validators rather than
+  one, and it had been true for the project's whole life. Candidates in the
+  same shape, cheap to run: what does each validator do with a field given
+  **twice**, or with a deeply nested object, or with a string where a *name*
+  rather than a number is expected?
+
+  **`inf` was the obvious next one and it is already sound - checked in 029,
+  so nobody need check it again.** `JSON.parse('{"w": 1e400}')` returns
+  `inf`, which IS a float, so every `typeof()` check in Genesis passes it
+  through - but every bound then refuses it, because `inf` is greater than
+  any upper limit. A dungeon answers *"room 1: width is inf m, and must be 4
+  to 40 m"*: the sentence is ugly and the refusal is correct. A JSON `NaN`
+  literal is rejected by the parser outright, and a float `NAN` that reaches
+  a validator is refused as "must be a number", which is what it is.
 - Worth a look while it is cheap: `sweep_test` still reports that no legal
   command reaches `FAILED_UNWALKABLE`, which is TRAPS 6's own example and has
   been true since 005.

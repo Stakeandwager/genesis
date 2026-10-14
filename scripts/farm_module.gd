@@ -441,8 +441,12 @@ func readback(parameters: Dictionary) -> String:
 		var type := str(zone.get("type", "")).to_lower()
 		if type == "":
 			continue
-		var width := float(zone.get("width", 0.0))
-		var depth := float(zone.get("depth", 0.0))
+		# Read through the one function that decides what a number is: a
+		# width of null, {} or [20, 20] threw here and the throw returned
+		# this readback as the empty string - the layer whose only job is to
+		# say what was asked saying nothing at all.
+		var width := Readback.measure(zone, "width")
+		var depth := Readback.measure(zone, "depth")
 		var name := type
 		if type == "crop":
 			var crop := str(zone.get("crop", "")).to_lower()
@@ -457,7 +461,9 @@ func readback(parameters: Dictionary) -> String:
 	for key in order:
 		var g: Dictionary = groups[key]
 		var size := Readback.size_of(float(g["width"]), float(g["depth"]))
-		var described := "%s %s" % [size, str(g["name"])] if size != "0 m" else str(g["name"])
+		# "" is a side that was not a number, "0 m" one that was zero. Both
+		# are described without a size rather than with a made-up one.
+		var described := str(g["name"]) if size == "" or size == "0 m" else "%s %s" % [size, str(g["name"])]
 		parts.append(Readback.count_of(int(g["count"]), described))
 
 	if parts.is_empty():

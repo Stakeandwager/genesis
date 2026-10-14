@@ -148,8 +148,17 @@ func validate(parameters: Dictionary) -> Dictionary:
 		if typeof(pair) != TYPE_ARRAY or (pair as Array).size() != 2:
 			errors.append("door %d must be a pair of room numbers, for example [1, 2]" % n)
 			continue
-		var a := int(float((pair as Array)[0]))
-		var b := int(float((pair as Array)[1]))
+		# Read through the same door as every other number out of a request.
+		# An object or a null in a door pair used to throw here, and the throw
+		# abandoned validate() mid-way: it returned {} - no "ok", no "errors" -
+		# and game_controller reads check["ok"] directly.
+		var raw_a := Readback.as_number((pair as Array)[0])
+		var raw_b := Readback.as_number((pair as Array)[1])
+		if is_nan(raw_a) or is_nan(raw_b):
+			errors.append("door %d must be a pair of room numbers, for example [1, 2]" % n)
+			continue
+		var a := int(raw_a)
+		var b := int(raw_b)
 		if a < 1 or a > rooms.size() or b < 1 or b > rooms.size():
 			errors.append("door %d: [%d, %d] names a room that does not exist (rooms are 1 to %d)" % [n, a, b, rooms.size()])
 			continue
@@ -238,14 +247,32 @@ static func _room_names(rooms: Array) -> Array:
 	return out
 
 
+# --- the one numeric reader in Genesis that did not check its type ---
+#
+# SectionValidator._number, FarmModule._number and the two tools' _bounded all
+# ask typeof() before converting. This asked nothing, and float() on a value
+# out of JSON throws for null, an object and a list. The throw abandoned the
+# rest of validate(), so no error was ever appended and `ok` came back TRUE
+# for a room 0 m across: the validator approving a spec it had not read. The
+# type check two hundred lines down this same file, in _things_said(), is the
+# convention this function missed - a file does not inherit a project's rules
+# by sitting in its folder (trap 18), and neither does a function.
+#
+# It refuses rather than clamping now, in both senses: NAN goes back instead
+# of a clamped value, and nothing is accepted on the strength of it. The old
+# clampf() was inert only because an error was appended beside it, which is a
+# guarantee held by two lines agreeing rather than by one.
 func _side(room: Dictionary, field: String, n: int, errors: Array) -> float:
 	if not room.has(field):
-		errors.append("room %d: no %s" % [n, field])
-		return MIN_SIDE
-	var value := float(room[field])
+		errors.append("room %d: no %s, and it must be %.0f to %.0f m" % [n, field, MIN_SIDE, MAX_SIDE])
+		return NAN
+	var value := Readback.measure(room, field)
+	if is_nan(value):
+		errors.append("room %d: %s must be a number, %.0f to %.0f m" % [n, field, MIN_SIDE, MAX_SIDE])
+		return NAN
 	if value < MIN_SIDE or value > MAX_SIDE:
 		errors.append("room %d: %s is %.0f m, and must be %.0f to %.0f m" % [n, field, value, MIN_SIDE, MAX_SIDE])
-		return clampf(value, MIN_SIDE, MAX_SIDE)
+		return NAN
 	return value
 
 
@@ -1242,7 +1269,14 @@ func readback(parameters: Dictionary) -> String:
 		# The AI names rooms with underscores, as the format asks. A player
 		# reading the line should see "great hall", not "great_hall".
 		names.append(str(room.get("name", "a room")).replace("_", " "))
-		sizes.append(maxf(float(room.get("width", 0.0)), float(room.get("depth", 0.0))))
+		# A side that is not a number leaves the room unmeasured rather than
+		# 0 m, and an unmeasured entrance is described without a size below.
+		# EITHER side, not both: size_of() draws the line in the same place
+		# for a farm's zones, and a room reported as "6 m" because its depth
+		# happened to read is a measurement standing in for one that did not.
+		var w := Readback.measure(room, "width")
+		var dp := Readback.measure(room, "depth")
+		sizes.append(NAN if is_nan(w) or is_nan(dp) else maxf(w, dp))
 
 	var doors: Array = raw_doors if typeof(raw_doors) == TYPE_ARRAY else []
 	var degree := {}
@@ -1252,8 +1286,12 @@ func readback(parameters: Dictionary) -> String:
 	for pair in doors:
 		if typeof(pair) != TYPE_ARRAY or (pair as Array).size() != 2:
 			continue
-		var a := int(float((pair as Array)[0])) - 1
-		var b := int(float((pair as Array)[1])) - 1
+		var raw_a := Readback.as_number((pair as Array)[0])
+		var raw_b := Readback.as_number((pair as Array)[1])
+		if is_nan(raw_a) or is_nan(raw_b):
+			continue
+		var a := int(raw_a) - 1
+		var b := int(raw_b) - 1
 		if a < 0 or b < 0 or a >= rooms.size() or b >= rooms.size() or a == b:
 			continue
 		degree[a] = int(degree[a]) + 1
@@ -1265,8 +1303,11 @@ func readback(parameters: Dictionary) -> String:
 
 	var entrance := str(names[0])
 	var entrance_size := float(sizes[0])
+	# NAN means the room had no side that was a number. Said without a size
+	# rather than with an invented one; the refusal names the field.
+	var sized := not is_nan(entrance_size) and entrance_size > 0.0
 	var entered := ", entered through %s" % (
-		"a %.0f m %s" % [entrance_size, entrance] if entrance_size > 0.0 else Readback.article(entrance))
+		"a %.0f m %s" % [entrance_size, entrance] if sized else Readback.article(entrance))
 
 	var hub := 0
 	for i in rooms.size():

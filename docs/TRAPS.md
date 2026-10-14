@@ -618,6 +618,79 @@ Not changed in 028, deliberately. Recorded so the next session does not
 
 ---
 
+## 20. The validator that approved what it never read
+
+**Signature:** `validate()` returns `ok: true` and an empty error list for a
+room 0 metres across, and 35 green suites agree with it.
+
+**Cause:** every number in a request arrives through `JSON.parse`, so it can
+be any type JSON has. `"width": null`, `"width": {}` and `"width": [20, 20]`
+are ordinary output from a model - null for a field it has nothing to say
+about, an object or a list for one whose shape it misread - and
+`CommandParser` passes `parameters` through without looking inside.
+
+GDScript's `float()` has **no constructor** for those three. It does not
+return a wrong number. It THROWS, and a throw inside a function abandons the
+rest of that function and leaves the caller holding whatever its variable was
+initialised to. So the damage never looks like a bad measurement:
+
+```
+DungeonModule.validate, room width null/{}/[]   ok=TRUE, errors=[], width 0.0
+DungeonModule.validate, a door pair holding {}  {} - no "ok" key at all
+DungeonModule / FarmModule / RacingModule
+  .readback on any of those three               "" - the empty string
+```
+
+The first is this project's central claim failing in the quietest possible
+way: not a validator that was wrong, a validator that reported a spec sound
+without having read it. The second is worse in a different direction -
+`game_controller` indexes `check["ok"]` directly, so there is no verdict to
+read. The third is trap 8 from the other end: the readback exists so a player
+can catch Genesis building the wrong thing correctly, and it said nothing at
+all.
+
+`DungeonModule._side()` was the only numeric reader in Genesis that did not
+ask `typeof()` first. `SectionValidator._number`, `FarmModule._number` and
+both tools' `_bounded` all did - and so did `_things_said()`, **two hundred
+lines down the same file**. So this is trap 18's shape one layer deeper: not
+a file that missed the project's conventions, a FUNCTION that missed its own
+file's.
+
+It also made that one validator disagree with the other four about what a
+number is. `"10"` was accepted as 10 m; `"ten"` was refused as *"width is 0 m"*
+- a measurement the player never typed, which is trap 8 again, inside a
+refusal.
+
+**Why nothing saw it:** every suite hands its validators numbers, because the
+person writing a test for a width writes a width. Thirty-five suites passed
+before the fix and thirty-five passed after. The question had never been asked
+of any field in Genesis, and the answer was not uniform - which is exactly the
+kind of fault that is invisible one file at a time and obvious when the whole
+class is asked at once.
+
+**Do:**
+
+- A value out of a request is read through **one function that checks its
+  type** - `Readback.as_number()` / `Readback.measure()` - in the validator
+  and in the readback alike. `float()` is never called on something that came
+  from JSON.
+- A string is not a number, even one that parses. `float("10")` is 10 and
+  `float("ten")` is 0, so a reader that takes the first silently takes the
+  second as a request for nothing.
+- Probe the whole class, not the field that was found wanting (trap 11).
+  `tests/request_types_test.gd` puts all six non-numbers through every
+  numeric field of all five validators, reading the field lists out of the
+  code so a field added later is probed without the suite being edited.
+- Ask of a refusal test not only "was it refused" but **"is there an `ok` in
+  the answer at all"**. A thrown conversion returns a dictionary with no
+  verdict in it, which no assertion about `errors` will ever notice.
+- When a readback cannot read a measurement, it leaves the measurement out
+  and keeps the thing. Never 0.
+
+Fixed in 029.
+
+---
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
 > A fluent sentence is not evidence that anything was understood.
@@ -625,3 +698,4 @@ Not changed in 028, deliberately. Recorded so the next session does not
 > A skipped test is a claim too, and goes unchecked the longest.
 > So is a limitation, and that one gets written into the documents.
 > So is a capability, and that one gets promised to a player.
+> And a number in a request is a claim that it is one.
