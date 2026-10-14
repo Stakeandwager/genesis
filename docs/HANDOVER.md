@@ -20,13 +20,51 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## How the two of us work
 
-**OWNER.** The owner tests; the assistant builds. The assistant implements,
-runs the headless suite and pushes. The owner pulls, runs it in the Godot
-editor on real hardware with a live API key, and reports what happened.
+**OWNER, 2026-10-14: the owner is the EDITOR.** The assistant writes; the
+owner edits. That is a sharper word than "tester" and it was chosen
+deliberately, so it is worth being exact about what it means here:
 
-This split exists because of evidence, not preference: the owner's machine has
-found faults the assistant's 29 suites did not, three times in one day, and
-the assistant cannot reach that machine.
+- **The assistant drafts.** It implements, runs the headless suite, writes the
+  docs, and pushes — on its own initiative, every two hours, without being
+  asked (see "Work that happens unattended").
+- **The owner rules.** He runs it in the Godot editor on real hardware with a
+  live API key, and what he reports is the agenda. His logs outrank the
+  assistant's judgement about what matters: 022, 023 and 025 were all his
+  sessions setting the next piece of work, not the assistant's planning.
+- **An editor cuts.** He is the one who decides what is true, what stays, what
+  gets dropped, and what Genesis is for. Anything that would change
+  architecture, cost or product direction is his, and the assistant writes it
+  into "Human decision needed" rather than deciding it.
+- **A draft is not a release.** Nothing the assistant pushes is finished work
+  until it has been through the editor on real hardware. Every commit says
+  what was verified and what was not, so he never has to guess which he is
+  reading.
+
+This split exists because of evidence, not courtesy. The owner's machine has
+found **eight faults** the assistant's suites did not, including two the
+assistant introduced in the same session it was fixing others, and a false
+claim about Genesis that had been sitting in these documents for releases and
+had been copied into the AI's prompt. The assistant cannot reach that machine,
+and a suite written by the same hand as the code inherits its assumptions.
+
+## Work that happens unattended
+
+**OWNER, 2026-10-14: wanted, and wanted tight.** A scheduled task, "Genesis
+build loop", fires **every two hours at :23** and starts a fresh session with
+no memory of any other. Everything it needs is in this repository, which is
+the reason these documents are kept the way they are: they are the only
+continuity the project has.
+
+Its standing instruction is to read first (`git log`, PROTOCOL, this file,
+TRAPS), then to work in this order of priority: an unaddressed finding from
+one of the owner's sessions, then finishing something already started, then
+the smallest useful thing on the roadmap.
+
+**It is told to make no commit when there is nothing honestly worth doing**,
+and to write down what it considered instead. A thin commit every two hours is
+how a repository fills with motion and no progress, and inventing work for a
+project whose thesis is *"never confuse an instruction with an
+accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
@@ -359,11 +397,17 @@ category rules. Ordinary accounts do the same job for nothing.
      owner reads it, which is why this section matters more under a schedule
      than it did in conversation.
 
-   **The assistant's proposal, for the owner to accept or refuse:** an
-   unattended run should prefer work whose evidence it can actually produce —
-   tests, harness, documentation, dead code, stale assertions, the kind of
-   thing 024 was — and should leave anything whose only real test is a human
-   at the editor for a session where the owner is present. Not because that
-   work matters less, but because an unattended run would have to claim it
-   verified something it cannot reach, and that is the one thing this protocol
-   exists to prevent.
+   **OWNER, 2026-10-14: settled, and tightened.** Work should happen while he
+   is away, and the loop now fires every two hours rather than nightly. He is
+   the editor; the loop drafts. See "How the two of us work" and "Work that
+   happens unattended" above.
+
+   The assistant's proposal within that, which the owner has not ruled on
+   separately and which the loop currently follows: an unattended run should
+   prefer work whose evidence it can actually produce — tests, harness,
+   documentation, dead code, stale assertions, the kind of thing 024 was — and
+   should be most careful with anything whose only real test is a human at the
+   editor. Not because that work matters less, but because an unattended run
+   would otherwise have to claim it verified something it cannot reach, and
+   that is the one thing this protocol exists to prevent. The commit message
+   is where that line is held: what was verified, and what was not.
