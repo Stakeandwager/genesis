@@ -38,6 +38,7 @@ back to its real name in a scratch project, never into this project.
 | walk_physics_test.gd | Walking is a force on a mass: top speed lands where `push / (mass * drag)` says, a half-pressed stick settles at half of it, and letting go coasts (009) | `--fixed-fps 120 -s res://tests/walk_physics_test.gd` |
 | behaviour_test.gd | The third layer: do the boots **do** what the readback promised? Top speed against the stated figure, stopping distance from a controlled speed, and a refused spec leaving the equipped item alone (012) | `--fixed-fps 120 -s res://tests/behaviour_test.gd` |
 | silence_test.gd | A player who answers nothing scores nothing, where the old arithmetic scored them 100% (012) | `-s res://tests/silence_test.gd` |
+| ledger_audit_test.gd | Reads the ledger back **off disk** after the fact and audits it: every order resolved once, the carrier's account apart from the verdict, and the last claim about each object checked against the world (Verified Living World, condition 5) | `--fixed-fps 120 -s res://tests/ledger_audit_test.gd` |
 | things_said_test.gd | The readback names what is IN the dungeon, so a dungeon with a lamp does not read back like one without (016) | `-s res://tests/things_said_test.gd` |
 | false_delivery_test.gd | NPC-DELIVERY-001: six adversarial challenges trying to make Genesis report a delivery it has not earned. Acceptance is **zero false successes** (015) | `--fixed-fps 120 -s res://tests/false_delivery_test.gd` |
 | carry_test.gd | One complete errand across all four layers: a thing on the whitelist, built as a body, fetched and carried, and delivery answered by reading the THING'S position out of the scene (015) | `--fixed-fps 120 -s res://tests/carry_test.gd` |
@@ -200,6 +201,42 @@ The readback now names each thing and the room it is in, and says nothing when
 there is nothing - so silence means "there is nothing", which is true. The
 prompt also now says a thing the player names must appear in `things`, in the
 room they said.
+
+## Auditing the ledger, rather than the code
+
+Every other test here asks whether the code did the right thing.
+`ledger_audit_test.gd` asks a different question - **does the ledger say what
+happened?** - and answers it the way an outsider would have to: by reading the
+records back off disk after the run and checking them.
+
+It separates two things that are easy to blur:
+
+**Structure** - can the record be audited at all, on its own? Every order
+resolved exactly once, no outcome pointing at an order that is not there, what
+was carried and where it started written down, the carrier's account kept
+apart from the verdict, and enough in each outcome to read it without the game
+running.
+
+**Agreement** - does the last claim match the world as it stands? Only the
+LAST claim about each object can be checked, because the world has moved on
+since the earlier ones. Saying which claims an audit can and cannot settle is
+part of the audit.
+
+```
+red_key:  ledger says DELIVERED (vault),      world says vault
+blue_key: ledger says NOT_DELIVERED (entrance), world says entrance
+carrier said "stopped walking" against DELIVERED
+carrier said "stopped walking" against NOT_DELIVERED
+```
+
+The two carrier lines are the point: the same words from the carrier, two
+opposite verdicts from the world. Nothing in the ledger reads one as the
+other.
+
+Its first run read zero records, because the test guessed the session's id
+from its name - and a session's id is its name AND the moment it started. The
+fix was to read the id rather than assume it, which is the rule the whole
+project runs on, applied to a test.
 
 ## NPC-DELIVERY-001
 
