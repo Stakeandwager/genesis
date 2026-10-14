@@ -25,6 +25,9 @@ signal revision_requested(feedback: String, record: Dictionary)
 # 004: a tool spec was accepted. The car picks this up so a change applies
 # to the car already on the track, not only to the next one built.
 signal equipped(tool_name: String, spec: Dictionary)
+# 014: a character has somewhere to go. Main owns the body; the controller
+# owns the record and decides, afterwards, whether it got there.
+signal ordered(goal: Dictionary, marks: Array, holder: Node3D)
 
 var track_builder: TrackBuilder
 var opponent_builder: OpponentBuilder
@@ -39,6 +42,12 @@ var drivable: Dictionary = {}
 # because its module reports one, never because the controller knows what a
 # dungeon is.
 var standable: Dictionary = {}
+
+# 014: the order waiting on an answer, and where the character was last seen.
+# Only one at a time: a new order replaces the old one, because a player who
+# says "no, the other room" means now.
+var pending_order: Dictionary = {}
+var npc_at := Vector3.INF
 # While a plan is running, each step keeps what the earlier steps built.
 var plan_running := false
 var plan_bounds_min := Vector2(INF, INF)
@@ -136,6 +145,8 @@ func execute(command: String, parameters: Dictionary) -> void:
 			_spawn_opponents(parameters)
 		"EQUIP":
 			_equip(parameters)
+		"ORDER":
+			_order(parameters)
 		"PLAN":
 			_execute_plan(parameters)
 		"CLEAR_WORLD":
@@ -157,6 +168,107 @@ func execute(command: String, parameters: Dictionary) -> void:
 # The same shape as building a world: validate, record, apply, say what
 # happened. A spec outside the limits is refused with its reasons, exactly
 # as an unclosable circuit is, and the player keeps the tool they had.
+# --- 014: sending a character somewhere ---
+# The same shape as equipping: validate against a whitelist, record, hand the
+# work to something that can do it, say what was asked for. The difference is
+# the last line of the record, which cannot be written yet.
+#
+# Every command before this one finished inside the frame that accepted it. A
+# world was built or refused; a tool was equipped or refused. An order is the
+# first thing Genesis accepts without knowing how it ends, so its record is
+# written PENDING and a second record resolves it later - the same arrangement
+# the understanding layer uses, where a later record judges an earlier one and
+# never edits it.
+func _order(parameters: Dictionary) -> void:
+	var record := {
+		"time": Time.get_datetime_string_from_system(),
+		"request": current_request,
+		"raw_command": current_raw,
+		"source": current_source,
+		"experiment": current_experiment,
+		"readback": current_readback,
+		"understanding": "UNKNOWN",
+		"id": current_record_id if current_record_id != "" else TrackLog.next_id(),
+		"command": "ORDER",
+		"proposed_goal": parameters,
+	}
+
+	var rooms: Array = standable.get("rooms", []) if has_standable() else []
+	var checked := NpcGoals.validate(parameters, rooms)
+	if not bool(checked["ok"]):
+		_finish_failed(record, "FAILED_SCHEMA", checked["errors"])
+		return
+
+	var goal: Dictionary = checked["goal"]
+	var module := WorldRegistry.find(str(standable.get("command", "")))
+	if module == null:
+		_finish_failed(record, "FAILED_SCENE", ["there is nobody to order about here"])
+		return
+
+	var layout: Dictionary = standable.get("layout", {})
+	var from_room := 0
+	if is_instance_valid(standable["node"]) and npc_at != Vector3.INF:
+		var local: Vector3 = (standable["node"] as Node3D).to_local(npc_at)
+		var found := module.room_of(layout, Vector2(local.x, local.z))
+		if found >= 0:
+			from_room = found
+
+	var marks := module.route(layout, from_room, int(goal["room"]))
+	if marks.is_empty() and from_room != int(goal["room"]):
+		# A refusal, not a failure to try: 005 already measured which doorways
+		# a body can pass, and there is no way through to this one.
+		_finish_failed(record, "FAILED_UNWALKABLE", [
+			NpcGoals.outcome_line("NO_ROUTE", str(goal["room_name"]), 0.0, 0.0)])
+		return
+
+	record["goal"] = goal
+	record["result"] = "VALID"
+	record["construction"] = "BUILT"
+	record["category"] = ""
+	record["reasons"] = []
+	record["metrics"] = {}
+	record["outcome"] = "PENDING"
+	pending_order = {"id": str(record["id"]), "room": int(goal["room"]),
+		"room_name": str(goal["room_name"])}
+	TrackLog.append(record)
+	track_measured.emit(record)
+	ordered.emit(goal, marks, standable["node"])
+	log_message.emit(NpcGoals.sent_line(parameters))
+
+
+# What actually happened, measured rather than reported. The character says
+# where it stopped; the module that owns the geometry says whether that is the
+# room it was sent to. There is no path by which a character reports its own
+# success.
+func finish_order(at: Vector3, seconds: float, travelled: float, why: String) -> void:
+	if pending_order.is_empty() or not has_standable():
+		return
+	var module := WorldRegistry.find(str(standable.get("command", "")))
+	var layout: Dictionary = standable.get("layout", {})
+	var outcome := "GAVE_UP" if why == "gave up" else "BLOCKED"
+	if module != null and is_instance_valid(standable["node"]):
+		var local: Vector3 = (standable["node"] as Node3D).to_local(at)
+		if module.room_of(layout, Vector2(local.x, local.z)) == int(pending_order["room"]):
+			outcome = "ARRIVED"
+
+	var resolved := {
+		"type": "outcome",
+		"time": Time.get_datetime_string_from_system(),
+		"about": str(pending_order["id"]),
+		"outcome": outcome,
+		"why": why,
+		"room": int(pending_order["room"]),
+		"room_name": str(pending_order["room_name"]),
+		"at": [snappedf(at.x, 0.1), snappedf(at.z, 0.1)],
+		"seconds": snappedf(seconds, 0.1),
+		"travelled": snappedf(travelled, 0.1),
+	}
+	TrackLog.append(resolved)
+	log_message.emit(NpcGoals.outcome_line(
+		outcome, str(pending_order["room_name"]), travelled, seconds))
+	pending_order = {}
+
+
 func _equip(parameters: Dictionary) -> void:
 	var record := {
 		"time": Time.get_datetime_string_from_system(),
@@ -629,6 +741,8 @@ func _build_world(module: WorldModule, parameters: Dictionary, layout: Dictionar
 func _clear_world_node() -> void:
 	drivable = {}
 	standable = {}
+	pending_order = {}
+	npc_at = Vector3.INF
 	if world_node == null:
 		return
 	for child in world_node.get_children():

@@ -139,13 +139,31 @@ static func _understanding(readbacks: Array, judged: Dictionary) -> Dictionary:
 			disputes.append([str(r.get("request", "")), str(r.get("readback", ""))])
 
 	var judged_count := readbacks.size() - int(counts["UNKNOWN"])
-	var accepted := int(counts["CONFIRMED"]) + int(counts["ACCEPTED_BY_USE"]) + int(counts["ACCEPTED_BY_SILENCE"])
 	var disputed := int(counts["DISPUTED"])
+
+	# --- 012: silence is an observation, not a verdict ---
+	# ACCEPTED_BY_SILENCE used to be added to the accepted total and so landed
+	# in both halves of the fraction. A player who typed six requests and
+	# never once answered a readback scored 100% understood - a perfect mark
+	# awarded for saying nothing. The label said "weak" while the arithmetic
+	# said "yes".
+	#
+	# Moving on is a thing a player DID, and it is still counted and still
+	# reported, under its own heading. It is simply not evidence about whether
+	# they were understood. People who were misread usually say so, but
+	# usually is not evidence, and a number that quietly turns absence into
+	# agreement is the exact failure this layer exists to prevent.
+	#
+	# The honest consequence is uncomfortable and is left to stand: a session
+	# where nobody answered anything now reports that nothing bears on
+	# understanding, rather than reporting that everything was understood.
+	var accepted := int(counts["CONFIRMED"]) + int(counts["ACCEPTED_BY_USE"])
+	var moved_on := int(counts["ACCEPTED_BY_SILENCE"])
 
 	# A deliberate change of mind says nothing about whether the first
 	# reading was right, so it is not in the denominator at all. Counting it
 	# would measure how often people change their minds and call the result
-	# comprehension.
+	# comprehension. Silence is now excluded for the same reason.
 	var bearing := accepted + int(counts["CORRECTED"]) + disputed
 
 	# Every "no" that did not say WHY could be either. Rather than guess,
@@ -159,6 +177,7 @@ static func _understanding(readbacks: Array, judged: Dictionary) -> Dictionary:
 		"counts": counts,
 		"judged": judged_count,
 		"accepted": accepted,
+		"moved_on": moved_on,
 		"bearing": bearing,
 		"rate_best": best,
 		"rate_worst": worst,
@@ -198,10 +217,11 @@ static func describe(name: String, s: Dictionary) -> String:
 		var c: Dictionary = u["counts"]
 		lines.append("")
 		lines.append("Understanding: %d readbacks, %d with evidence." % [int(u["readbacks"]), int(u["judged"])])
-		lines.append("  for:     confirmed %d (strong), accepted by use %d (medium), accepted by silence %d (weak)" % [
-			int(c["CONFIRMED"]), int(c["ACCEPTED_BY_USE"]), int(c["ACCEPTED_BY_SILENCE"])])
+		lines.append("  for:     confirmed %d (strong), accepted by use %d (medium)" % [
+			int(c["CONFIRMED"]), int(c["ACCEPTED_BY_USE"])])
 		lines.append("  against: said Genesis misread them %d (strong)" % int(c["CORRECTED"]))
 		lines.append("  either:  said no without saying why %d (strong, unattributable)" % int(c["DISPUTED"]))
+		lines.append("  moved on without answering %d  (observed, not evidence, not counted)" % int(c["ACCEPTED_BY_SILENCE"]))
 		lines.append("  changed their mind %d  (says nothing about understanding, not counted)" % int(c["REVISED"]))
 		lines.append("  no evidence %d" % int(c["UNKNOWN"]))
 		if float(u["rate_worst"]) < 0.0:

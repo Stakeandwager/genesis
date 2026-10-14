@@ -34,6 +34,9 @@ var driving := false
 # anything knowing about cars.
 var walker: Walker
 var exploring := false
+# 014: the dungeon's one character. It appears the first time somebody is
+# ordered somewhere, rather than standing about in every dungeon ever built.
+var npc: Npc
 var history_log: RichTextLabel
 var metrics_log: RichTextLabel
 
@@ -75,6 +78,7 @@ func _ready() -> void:
 	controller.track_measured.connect(_on_track_measured)
 	controller.revision_requested.connect(_on_revision_requested)
 	controller.equipped.connect(_on_equipped)
+	controller.ordered.connect(_on_ordered)
 
 	experiment = ExperimentRunner.new()
 	add_child(experiment)
@@ -579,6 +583,33 @@ func _delete_world(request: String) -> void:
 
 # 004: a new spec reaches the car already on the track, so "give it more
 # grip" changes the car you are sitting in rather than the next one.
+# --- 014: the character ---
+# Main gives the order a body and nothing else. It does not decide whether the
+# body arrived; it reports where the body stopped and the controller measures
+# that against the geometry.
+func _on_ordered(_goal: Dictionary, marks: Array, holder: Node3D) -> void:
+	if npc == null:
+		npc = Npc.new()
+		npc.name = "Npc"
+		add_child(npc)
+		npc.stopped_walking.connect(_on_npc_stopped)
+		var start: Vector3 = holder.to_global(controller.standable["entrance"])
+		npc.place_at(start, 0.0)
+	npc.visible = true
+	var world_marks: Array = []
+	for p in marks:
+		var point: Vector2 = p
+		var local := Vector3(point.x, 0.0, point.y)
+		var there := holder.to_global(local)
+		world_marks.append(Vector2(there.x, there.z))
+	npc.follow(world_marks)
+
+
+func _on_npc_stopped(why: String, at: Vector3, seconds: float, travelled: float) -> void:
+	controller.npc_at = at
+	controller.finish_order(at, seconds, travelled, why)
+
+
 func _on_equipped(tool_name: String, spec: Dictionary) -> void:
 	if tool_name == "car" and car != null:
 		car.equip(spec)
@@ -677,6 +708,8 @@ func _stop_driving() -> void:
 
 
 func _process(_delta: float) -> void:
+	if npc != null and npc.state == Npc.GOING:
+		controller.npc_at = npc.global_position
 	if exploring and walker != null:
 		status_label.text = "Walking   %.1f of %.1f m/s   (W and S walk, A and D turn, Shift run, R back to the entrance)" % [
 			walker.speed_mps(), walker.top_speed()]

@@ -54,6 +54,7 @@ var push := 240.0                  # newtons the legs apply, about 3 m/s/s
 var run_push := 430.0              # holding shift
 var drag := 0.67                   # how fast speed bleeds away, per second
 var turn_push := 24.0              # the same arrangement for turning
+var brake := 400.0                 # newtons the legs apply to stop
 var colour := Color(0.42, 0.30, 0.20)
 
 # Not part of any spec: how turning settles. The same for every body, because
@@ -166,6 +167,19 @@ func _physics_process(delta: float) -> void:
 	var drive := Vector3(along.x, 0.0, along.z).normalized() * (effort * forward / mass)
 	var flat := Vector3(velocity.x, 0.0, velocity.z)
 	flat += (drive - flat * drag) * delta
+
+	# --- 013: stopping is a force, not more drag ---
+	# Drag alone meant a 140 kg body stopped in exactly the same distance as
+	# an 80 kg one, because velocity * drag has no mass in it. The legs apply
+	# a braking FORCE, so deceleration is brake / mass and weight finally
+	# tells. It also means asking to stop sharply no longer costs top speed:
+	# the two were one number doing two jobs.
+	#
+	# Clamped so a frame of braking cannot push the body backwards.
+	if absf(forward) < 0.05:
+		var speed := flat.length()
+		if speed > 0.0:
+			flat -= flat / speed * minf(brake / mass * delta, speed)
 	velocity.x = flat.x
 	velocity.z = flat.z
 
@@ -187,6 +201,7 @@ func equip(spec: Dictionary) -> void:
 	mass = float(spec.get("weight", mass))
 	drag = float(spec.get("footing", drag))
 	turn_push = float(spec.get("turning", turn_push))
+	brake = float(spec.get("brake", brake))
 	var named := str(spec.get("colour", ""))
 	if BootsTool.COLOURS.has(named):
 		colour = BootsTool.COLOURS[named]
@@ -206,7 +221,17 @@ func _repaint() -> void:
 # What this body settles at, from its own numbers. The same arithmetic
 # BootsTool bounds, read from the one place that owns it.
 func top_speed() -> float:
-	return BootsTool.top_speed({"push": push, "weight": mass, "footing": drag})
+	return BootsTool.top_speed(_spec())
+
+
+# How far this body should take to stop from a given speed, by its own
+# numbers. The prediction and the body it predicts read the same values.
+func stopping_distance(from_speed: float) -> float:
+	return BootsTool.stopping_distance(_spec(), from_speed)
+
+
+func _spec() -> Dictionary:
+	return {"push": push, "weight": mass, "footing": drag, "brake": brake}
 
 
 func speed_mps() -> float:

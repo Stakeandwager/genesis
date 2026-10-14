@@ -738,6 +738,79 @@ func extent(layout: Dictionary) -> Vector2:
 	return (ground[1] as Vector2) - (ground[0] as Vector2)
 
 
+# --- 014: a way through, for something that has to walk it ---
+#
+# Routing is over the door graph, not a navigation mesh, and over the doors
+# walkable() says a body can PHYSICALLY pass - so a route can never be planned
+# through a doorway 005 already proved is sealed. The measurement built then
+# is the thing a character plans with now.
+#
+# Waypoints come back in this node's own coordinates: the corridor legs
+# between each pair of rooms, then the centre of the room being entered.
+func route(layout: Dictionary, from_room: int, to_room: int) -> Array:
+	var rooms: Array = layout["rooms"]
+	if from_room < 0 or to_room < 0 or from_room >= rooms.size() or to_room >= rooms.size():
+		return []
+	var rects := _rects(layout)
+	if from_room == to_room:
+		var here: Rect2 = rects[to_room]
+		return [here.position + here.size * 0.5]
+
+	var walk: Dictionary = walkable(layout)
+	var sealed := {}
+	for d in (walk["blocked_doors"] as Array):
+		var b: Vector2i = d
+		sealed[Vector2i(mini(b.x, b.y), maxi(b.x, b.y))] = true
+
+	var near := {}
+	for i in rooms.size():
+		near[i] = []
+	for door in layout["doors"]:
+		var e: Vector2i = door
+		if sealed.has(Vector2i(mini(e.x, e.y), maxi(e.x, e.y))):
+			continue
+		near[e.x].append(e.y)
+		near[e.y].append(e.x)
+
+	var came := {from_room: -1}
+	var queue := [from_room]
+	while not queue.is_empty():
+		var at: int = queue.pop_front()
+		if at == to_room:
+			break
+		for n in near[at]:
+			if not came.has(n):
+				came[n] = at
+				queue.append(n)
+	if not came.has(to_room):
+		return []
+
+	var order: Array = []
+	var step := to_room
+	while step != -1:
+		order.push_front(step)
+		step = int(came[step])
+
+	var marks: Array = []
+	for i in range(1, order.size()):
+		for p in _corridor_path(layout, int(order[i - 1]), int(order[i])):
+			marks.append(p)
+		var rect: Rect2 = rects[int(order[i])]
+		marks.append(rect.position + rect.size * 0.5)
+	return marks
+
+
+# Which room a point is standing in, counting from 0, or -1 for none. This is
+# how arrival is decided, and it is decided HERE, by the thing that owns the
+# geometry, rather than by the character that was sent.
+func room_of(layout: Dictionary, point: Vector2) -> int:
+	var rects := _rects(layout)
+	for i in rects.size():
+		if (rects[i] as Rect2).has_point(point):
+			return i
+	return -1
+
+
 func build(root: Node3D, layout: Dictionary) -> Dictionary:
 	var rooms: Array = layout["rooms"]
 	var rects := _rects(layout)
@@ -783,6 +856,12 @@ func build(root: Node3D, layout: Dictionary) -> Dictionary:
 		"door_count": (layout["doors"] as Array).size(),
 		"standable": {
 			"node": root,
+			# 014: what a character needs in order to be sent anywhere. The
+			# layout travels with the surface so routing and arrival are
+			# answered by this module, not worked out again elsewhere.
+			"layout": layout,
+			"rooms": rooms,
+			"command": command(),
 			"entrance": Vector3(
 				entrance.position.x + entrance.size.x * 0.5,
 				ROOM_HEIGHT + 1.0,

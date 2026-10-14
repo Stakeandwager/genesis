@@ -21,6 +21,7 @@ const DEFAULT_PUSH := 240.0          # newtons; 009's PUSH
 const DEFAULT_WEIGHT := 80.0         # kg; 009's MASS
 const DEFAULT_FOOTING := 0.67        # drag per second; 009's DRAG
 const DEFAULT_TURNING := 24.0        # 009's TURN_PUSH
+const DEFAULT_BRAKE := 400.0         # newtons the legs can apply to stop
 
 # --- limits are a pair of 64-bit floats, not a Vector2 ---
 # CarTool writes its limits as Vector2, whose components are 32-bit. That is
@@ -35,6 +36,7 @@ const PUSH := [120.0, 600.0]
 const WEIGHT := [50.0, 140.0]
 const FOOTING := [0.40, 1.50]
 const TURNING := [12.0, 40.0]
+const BRAKE := [150.0, 1200.0]
 
 # --- the bound that is not on a field ---
 # Every field above can be inside its limits while the three together are
@@ -75,6 +77,7 @@ push: %.0f to %.0f newtons, how hard the legs push off (ordinary is %.0f)
 weight: %.0f to %.0f kg, how heavy the body is (ordinary is %.0f)
 footing: %.2f to %.2f, how quickly speed bleeds away - high stops sharply, low slides on (ordinary is %.2f)
 turning: %.0f to %.0f, how quickly the body turns (ordinary is %.0f)
+brake: %.0f to %.0f newtons, how hard the legs can stop you (ordinary is %.0f). This does NOT change top speed: someone who wants to "stop on a sixpence" wants brake raised and nothing else.
 colour: one of %s. nickname: a few words the player chose.
 Top speed is push divided by weight times footing, and must come to %.0f to %.0f metres a second. A spec where every field is legal but the three together are faster or slower than that is refused.
 Every field may be left out and keeps its ordinary value. Change only what the player asked about: someone who wants "boots that stop on a sixpence" wants footing raised and nothing else.
@@ -83,6 +86,7 @@ colour and nickname change nothing about how the player moves.""" % [
 		WEIGHT[0], WEIGHT[1], DEFAULT_WEIGHT,
 		FOOTING[0], FOOTING[1], DEFAULT_FOOTING,
 		TURNING[0], TURNING[1], DEFAULT_TURNING,
+		BRAKE[0], BRAKE[1], DEFAULT_BRAKE,
 		", ".join(COLOURS.keys()),
 		TOP_SPEED[0], TOP_SPEED[1]]
 
@@ -93,6 +97,7 @@ func defaults() -> Dictionary:
 		"weight": DEFAULT_WEIGHT,
 		"footing": DEFAULT_FOOTING,
 		"turning": DEFAULT_TURNING,
+		"brake": DEFAULT_BRAKE,
 		"colour": "brown",
 		"nickname": "",
 	}
@@ -108,6 +113,44 @@ static func top_speed(spec: Dictionary) -> float:
 	if weight <= 0.0 or footing <= 0.0:
 		return 0.0
 	return push / (weight * footing)
+
+
+# --- 013: what this spec SHOULD do, worked out before anything moves ---
+#
+# The model is named, because a prediction without one is arithmetic about
+# nothing. A body slowing with no input is losing speed two ways at once:
+#
+#     dv/dt = -(b + k*v)        b = brake / weight,  k = footing
+#
+# a constant braking force the legs apply, and drag that grows with speed.
+# Solving it gives the distance exactly:
+#
+#     d = v/k - (b / k^2) * ln(1 + k*v / b)
+#
+# As drag goes to nothing this becomes d = v^2 / (2*b), the schoolbook
+# constant-deceleration formula - which is the special case, not the model.
+#
+# This lives here rather than in a test for the reason around_of() and
+# _wall_rects() exist: the thing that predicts and the thing that acts must
+# read from one place, or the test measures a promise nobody made.
+static func stopping_distance(spec: Dictionary, from_speed: float) -> float:
+	var b := braking(spec)
+	var k := float(spec.get("footing", DEFAULT_FOOTING))
+	if from_speed <= 0.0 or b <= 0.0:
+		return 0.0
+	if k <= 0.0:
+		return from_speed * from_speed / (2.0 * b)
+	return from_speed / k - (b / (k * k)) * log(1.0 + k * from_speed / b)
+
+
+# How hard this spec slows down, in metres a second per second. Mass is here
+# and not in the drag term, which is the whole point: the legs apply a force,
+# so a heavier body takes longer to stop.
+static func braking(spec: Dictionary) -> float:
+	var weight := float(spec.get("weight", DEFAULT_WEIGHT))
+	if weight <= 0.0:
+		return 0.0
+	return float(spec.get("brake", DEFAULT_BRAKE)) / weight
 
 
 func validate(parameters: Dictionary) -> Dictionary:
@@ -126,6 +169,7 @@ func validate(parameters: Dictionary) -> Dictionary:
 	spec["weight"] = _bounded(asked, "weight", WEIGHT, DEFAULT_WEIGHT, errors)
 	spec["footing"] = _bounded(asked, "footing", FOOTING, DEFAULT_FOOTING, errors)
 	spec["turning"] = _bounded(asked, "turning", TURNING, DEFAULT_TURNING, errors)
+	spec["brake"] = _bounded(asked, "brake", BRAKE, DEFAULT_BRAKE, errors)
 
 	if asked.has("colour"):
 		var colour := str(asked["colour"]).to_lower().strip_edges()
@@ -200,6 +244,8 @@ func readback(spec: Dictionary) -> String:
 		"stop sharply", "slide on after you stop pushing"))
 	parts.append(_compare(float(spec.get("turning", DEFAULT_TURNING)), DEFAULT_TURNING, TURNING,
 		"turn on the spot", "come round slowly"))
+	parts.append(_compare(float(spec.get("brake", DEFAULT_BRAKE)), DEFAULT_BRAKE, BRAKE,
+		"pull you up short", "take a while to pull up"))
 
 	var said := PackedStringArray()
 	for p in parts:
@@ -239,4 +285,6 @@ func _compare(value: float, ordinary: float, limits: Array, more: String, less: 
 
 
 func summary(spec: Dictionary) -> String:
-	return "Boots on. %.1f m/s at a walk." % top_speed(spec)
+	var walk := top_speed(spec)
+	return "Boots on. %.1f m/s at a walk, stopping in %.2f m from there." % [
+		walk, stopping_distance(spec, walk)]

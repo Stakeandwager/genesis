@@ -67,6 +67,8 @@ static func readback(command: String, parameters: Dictionary) -> String:
 			return "to clear everything away"
 		"EQUIP":
 			return ToolRegistry.readback(parameters)
+		"ORDER":
+			return NpcGoals.readback(parameters)
 		"PLAN":
 			return _plan_readback(parameters)
 	var module := find(command)

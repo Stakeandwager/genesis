@@ -104,12 +104,28 @@ func measure(_layout: Dictionary) -> Dictionary:
 # start_heading in its own coordinates (CircuitBuilder does). The controller
 # converts them to world space for driving and racing.
 #
+# 014: a world that can be walked may also answer two questions about getting
+# about in it, and a world that cannot leaves them alone:
+#   route(layout, from_room, to_room) -> waypoints in the node's own
+#     coordinates, or [] when there is no way through.
+#   room_of(layout, point) -> which room a point stands in, or -1.
+# Arrival is decided with room_of, by the module that owns the geometry, never
+# by the character that was sent.
+#
 # 008: a world a body can walk in reports "standable": {"node": N,
 # "entrance": where a body starts in N's own coordinates, "heading": radians}.
 # The controller converts it the same way, so a world moved by a plan is
 # entered where it stands. A world may report both, one, or neither.
 func build(_root: Node3D, _layout: Dictionary) -> Dictionary:
 	return {"bounds_min": Vector2.ZERO, "bounds_max": Vector2.ZERO}
+
+
+func route(_layout: Dictionary, _from_room: int, _to_room: int) -> Array:
+	return []
+
+
+func room_of(_layout: Dictionary, _point: Vector2) -> int:
+	return -1
 
 
 # What the player is told once the world is built.

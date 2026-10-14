@@ -13,6 +13,10 @@ const CORE_COMMANDS := [
 	# a spec for a tool that is not registered is refused like any other
 	# word the game does not have.
 	"EQUIP",
+	# 014: sending a character somewhere. Which goals exist comes from
+	# NpcGoals, so a goal that is not whitelisted is refused like any other
+	# word the game does not have.
+	"ORDER",
 ]
 
 

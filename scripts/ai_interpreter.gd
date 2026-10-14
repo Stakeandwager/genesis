@@ -39,7 +39,7 @@ const TEMPERATURE := 1.0
 # a world can build is unchanged, so designs are still comparable with 002H.
 # 004-tools-1 adds EQUIP and the tools the registry describes. Worlds are
 # unchanged, so world designs stay comparable with 003.
-const PROMPT_VERSION := "004-tools-1"
+const PROMPT_VERSION := "014-orders-1"
 # Which wording of the closure feedback a revised track was given.
 # feedback-2 adds Godot's test of whether ANY straight lengths could close the layout.
 const REVISION_VERSION := "002C-closure-feedback-2"
@@ -55,6 +55,7 @@ Return ONLY the JSON: no explanations, no markdown, no code fences. Never return
 COMMANDS YOU MAY USE
 PLAN - build several things in one request
 EQUIP - give the player a tool made to their description, listed under TOOLS YOU CAN GIVE at the end
+ORDER - send the dungeon's character somewhere, listed under ORDERS YOU CAN GIVE at the end
 CLEAR_WORLD - remove everything, with parameters {}
 UNSUPPORTED - for a request this game cannot build
 One command for each kind of world, listed under WORLDS YOU CAN BUILD at the end of these instructions. Those are the only worlds that exist. Never invent a command, a type or a field that is not listed there: anything else is refused before it reaches the game.
@@ -67,6 +68,8 @@ To build one world around another, give the later step "around": N, where N is t
 For a request this game cannot build, return:
 {"command": "UNSUPPORTED", "parameters": {"understood": "what the player is asking for", "reason": "short explanation of why this game cannot build it"}}
 UNDERSTOOD is what they want, as a short phrase that completes "you want ...", in your own words rather than theirs. Say it even when you cannot build it: being told the right thing is impossible is different from being told the wrong thing is.
+
+An ORDER is not a world and not a tool: it asks a character already in the world to do something. "build a dungeon" is a world. "send him to the vault" is an order. An order can only be given about a dungeon that is already standing.
 
 A world is a place; a tool is what the player works it with. "a farm with a big barn" is a world. "a tractor that pulls harder" is a tool. A request for both is a PLAN whose steps are the world and the EQUIP.
 
@@ -178,7 +181,8 @@ func _send(contents: Array) -> void:
 	# always knows exactly what the game can build, and nothing more.
 	var instructions := SYSTEM_PROMPT \
 		+ "\nWORLDS YOU CAN BUILD\n" + WorldRegistry.prompt_sections() \
-		+ "\n\nTOOLS YOU CAN GIVE\n" + ToolRegistry.prompt_sections()
+		+ "\n\nTOOLS YOU CAN GIVE\n" + ToolRegistry.prompt_sections() \
+		+ "\n\nORDERS YOU CAN GIVE\n" + NpcGoals.prompt_section()
 
 	var body := {
 		"system_instruction": {
