@@ -17,6 +17,16 @@ that the owner has not ruled on.** Do not promote one to the other.
 - Godot 4.7.1, Compatibility renderer. The owner's machine is an Intel HD 3000
   through ANGLE: no WebGL2, so **the web build cannot be viewed there**.
 
+## How the two of us work
+
+**OWNER.** The owner tests; the assistant builds. The assistant implements,
+runs the headless suite and pushes. The owner pulls, runs it in the Godot
+editor on real hardware with a live API key, and reports what happened.
+
+This split exists because of evidence, not preference: the owner's machine has
+found faults the assistant's 29 suites did not, three times in one day, and
+the assistant cannot reach that machine.
+
 ## Run the tests first
 
 ```
@@ -112,10 +122,16 @@ hardware the assistant lacks.
    The protocol asks for a record of what the AI contributed and what the human
    accepted, which the current arrangement gives accurately. The owner has not
    ruled on which they want.
-2. **Whether scripts may be pushed before the owner has run them.** The
-   protocol permits pushing tested work; the assistant cannot test on the
-   owner's hardware, and that hardware has repeatedly found what the suite did
-   not. Current practice: scripts wait, docs and tests do not.
+2. ~~Whether scripts may be pushed before the owner has run them.~~
+   **OWNER, 2026-10-14: settled.** The owner's job is testing. The assistant
+   builds, tests headlessly and pushes - scripts included. The owner pulls,
+   runs it on real hardware with a real API key, and reports what happened.
+   Hand-pasting files is not testing; it was the owner acting as a file
+   transfer protocol.
+
+   In exchange, **every commit states what was verified and what was not**, so
+   the owner never has to guess whether a change has been near real hardware.
+   The standing caveat stands: a green suite is necessary and not sufficient.
 3. **Whether work should happen while the owner is away.** The assistant does
    not run on its own — nothing happens between messages. Autonomy would
    require a scheduled task, which does not exist.
