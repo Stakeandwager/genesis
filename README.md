@@ -62,7 +62,7 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      Windows
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      Linux
 ```
 
-32 suites, run against the scripts beside them, so what is tested is what is
+33 suites, run against the scripts beside them, so what is tested is what is
 committed. `--all` adds the slow racing suites.
 
 Among them: six adversarial challenges that try to make the ledger report a

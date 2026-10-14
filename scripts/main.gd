@@ -74,6 +74,7 @@ func _ready() -> void:
 	add_child(interpreter)
 	interpreter.interpretation_ready.connect(_on_interpretation_ready)
 	interpreter.interpretation_failed.connect(_on_interpretation_failed)
+	interpreter.retrying.connect(_on_ai_retrying)
 
 	controller.track_measured.connect(_on_track_measured)
 	controller.revision_requested.connect(_on_revision_requested)
@@ -205,6 +206,13 @@ func _handle_request(raw_request: String, experiment_context: Dictionary = {}) -
 
 func _on_interpretation_ready(json_text: String) -> void:
 	revising = false
+	# 026: how many attempts this answer cost goes in beside the answer. An
+	# answer that took three tries is a different observation from one that
+	# took one, and a rising number is the only warning Genesis gets that the
+	# model it depends on is struggling.
+	var attempts := interpreter.attempts_of_last()
+	if attempts > 1:
+		pending_source["attempts"] = attempts
 	_execute_json(json_text)
 
 
@@ -213,7 +221,18 @@ func _on_interpretation_failed(reason: String) -> void:
 	status_label.text = reason
 	print("AI FAILED: ", reason)
 	_record(pending_request, reason, "error")
-	TrackLog.event("ai_unavailable", {"request": pending_request, "reason": reason})
+	TrackLog.event("ai_unavailable", {
+		"request": pending_request,
+		"reason": reason,
+		"attempts": interpreter.attempts_of_last(),
+	})
+
+
+# 026: a retry, said out loud. A silent four-second pause reads as a hang, and
+# a player who thinks Genesis has hung starts pressing things.
+func _on_ai_retrying(attempt: int, of: int, why: String, waiting: float) -> void:
+	status_label.text = "The AI is busy. Trying again (%d of %d) in %.0fs..." % [attempt, of, ceilf(waiting)]
+	_record(pending_request, "The AI was busy (%s). Attempt %d of %d." % [why, attempt, of], "unsupported")
 
 
 func _on_controller_log(text: String) -> void:

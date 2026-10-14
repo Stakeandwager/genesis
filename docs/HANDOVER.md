@@ -73,8 +73,8 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-34 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **32 suites**, and since 024 every one of them runs —
+35 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **33 suites**, and since 024 every one of them runs —
 nothing is skipped as broken. `--all` adds the two slow racing suites.
 
 Last full run (025, Godot 4.7.1 on Linux, headless, in a cloud container):
@@ -359,6 +359,68 @@ against. It answers the *identity* leg of ownership at the highest possible
 price: harder than an email login, less reliable, and it makes the LLC a
 biometric data controller under BIPA, the Texas statute and GDPR special
 category rules. Ordinary accounts do the same job for nothing.
+
+## Which model interprets — owner's question, 2026-10-14
+
+**OWNER:** *"the si behid the thing as i gemini .. why cant we use some other
+self . the 503 request is terrible"*
+
+**The 503 itself is fixed, or at least fought, in 026.** Gemini's 503 means
+*"this model is overloaded right now"*. Genesis made exactly **one** attempt
+and reported the AI as unavailable, which is a transient condition stated as a
+verdict — the same mistake as every entry in TRAPS. It now retries 429 and
+5xx three times over about four seconds with jittered backoff, says so on
+screen while it waits, and records the attempt count beside the answer. It
+does **not** retry 400/401/403/404, because those will be wrong on the fourth
+attempt too and three copies of the same error is worse than one.
+
+Try that before changing provider. Three attempts over four seconds catches
+most of what a single overloaded minute throws at you.
+
+**Can another model be used? Yes, and the architecture is already built for
+it.** The AI's only output is a string, which must still pass the command
+whitelist, the validators, the feasibility gate and everything else. Nothing
+downstream knows or cares which model produced it. That seam is real and has
+been since Prototype 001.
+
+What it would actually cost, honestly:
+
+1. **A request/response adapter per provider.** Gemini's body is
+   `system_instruction` / `contents` / `generationConfig` and its answer is
+   `candidates[0].content.parts`. Every other provider differs. Perhaps 60
+   lines each, in `ai_interpreter.gd`, behind the `where_to()` seam that
+   already exists.
+2. **Gemini 3's thought signatures.** The revision path returns the model's
+   own `parts` so the signature comes back with them. That is Gemini-specific
+   and would need an equivalent, or disabling, per provider.
+3. **A second key, on Netlify only.** `netlify/functions/interpret.js`
+   forwards three fields to one model on purpose — "a function that forwards
+   whatever it is handed is an open relay with somebody's card behind it".
+   A second provider means a second function or an explicit switch, plus a
+   second key in the site's environment. Never in the repository.
+4. **The ledger splits, and this is the one that matters here.** Every record
+   carries `model` and `prompt_version` so that designs stay comparable —
+   that is why `PROMPT_VERSION` exists at all. Interpretation measured under
+   two different models is two populations, not one. The fields are already
+   recorded, so the split is *visible*, but any before-and-after comparison
+   across a model change is not a comparison.
+
+**HUMAN DECISION, three options:**
+
+- **(a) Keep Gemini with the retry.** Costs nothing, already built. Worth one
+  session of testing before anything else is considered.
+- **(b) Add a fallback.** Try Gemini; on repeated 5xx, send the same request
+  to a second provider and record which one answered. Best reliability, needs
+  a second key and an adapter, and the ledger must be read per model from then
+  on.
+- **(c) Switch outright.** Simplest code, loses the comparability of
+  everything measured so far, and trades a known model's quirks for an unknown
+  one's.
+
+Also worth the owner knowing: the model is `gemini-3.1-flash-lite`, the
+smallest and cheapest tier. A heavier model would likely be both more reliable
+and better at interpretation, at more cost per request. That is a cost
+decision, so it is his and not the assistant's.
 
 ## Human decision needed
 

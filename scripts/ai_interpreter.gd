@@ -131,6 +131,11 @@ var last_model_parts: Array = []
 var last_answer_text: String = ""
 # The exact text of the last request sent, so a revision repeats it.
 var last_prompt_text: String = ""
+# 026: the last request body, so a transient failure can repeat it exactly,
+# and which attempt we are on.
+var last_body: Dictionary = {}
+var attempt: int = 0
+var retries_used: int = 0
 
 
 func _ready() -> void:
@@ -249,16 +254,94 @@ func _send(contents: Array) -> void:
 		}
 	}
 
+	# 026: kept so a transient failure can send the same request again without
+	# rebuilding it. The retry must be the IDENTICAL request, or what comes
+	# back is an answer to a different question and the ledger records a
+	# comparison that was never made.
+	last_body = body
+	attempt = 1
+	_post()
+
+
+# One attempt. Separated from _send so a retry repeats the request exactly.
+func _post() -> void:
 	var headers := ["Content-Type: application/json"]
 	if not on_web():
 		headers.append("x-goog-api-key: " + api_key)
 
 	busy = true
-	var error := http.request(where_to(), headers, HTTPClient.METHOD_POST, JSON.stringify(body))
+	var error := http.request(where_to(), headers, HTTPClient.METHOD_POST, JSON.stringify(last_body))
 
 	if error != OK:
 		busy = false
 		interpretation_failed.emit("Could not send the request. (error %d)" % error)
+
+
+# --- 026: a busy model is not a refusal ---
+#
+# 503 from Gemini means "the model is overloaded right now". Genesis used to
+# fail on the first one, having made exactly one attempt, and told the player
+# the AI was unavailable. That is a transient condition reported as a verdict,
+# which is the same mistake as every other entry in docs/TRAPS.md - a claim
+# made on evidence that does not support it.
+#
+# WHICH FAILURES ARE WORTH REPEATING, AND WHICH ARE NOT
+# This distinction is the whole of the design. Repeating a request that will
+# always fail wastes the player's time and buries the real cause under three
+# attempts of the same error.
+#   503 overloaded, 429 too many requests, 500/502/504 upstream - the same
+#       request may well work in a second, so it is sent again.
+#   400 bad request, 401/403 bad or missing key, 404 wrong model - the request
+#       or the configuration is wrong, and will be wrong on the fourth attempt
+#       too. Reported at once, with the reason.
+# A network failure that never reached Google is retried as well: a dropped
+# connection says nothing about the request.
+const WORTH_RETRYING := [429, 500, 502, 503, 504]
+
+# Three attempts, not more. The player is sitting in front of a text box
+# waiting for a world; a fourth attempt is a minute of silence that a person
+# reads as "broken" anyway.
+const MAX_ATTEMPTS := 3
+
+# Doubling, with a little jitter, because a model that is overloaded now is
+# overloaded for everyone and a fixed delay syncs every client in the world
+# onto the same second.
+const FIRST_WAIT := 1.2
+const JITTER := 0.4
+
+# Told to whoever is listening, so a retry shows up in the log and in the
+# record rather than looking like a long pause.
+signal retrying(attempt: int, of: int, why: String, waiting: float)
+
+
+# Whether this failure is being retried. Emits the signal, waits, re-sends.
+func _try_again(why: String) -> bool:
+	if attempt >= MAX_ATTEMPTS or last_body.is_empty():
+		return false
+	attempt += 1
+	var waiting := FIRST_WAIT * pow(2.0, float(attempt - 2)) + randf() * JITTER
+	retries_used += 1
+	retrying.emit(attempt, MAX_ATTEMPTS, why, waiting)
+	print("AI busy (%s). Attempt %d of %d in %.1fs." % [why, attempt, MAX_ATTEMPTS, waiting])
+	# The same request, resent when a timer says so.
+	#
+	# A timer that CALLS BACK rather than one that is awaited: `await` here
+	# would make this function a coroutine, and then every caller of it has to
+	# be one too, all the way up through the signal handler. The first version
+	# did that and would not compile - which is the useful kind of failure,
+	# because the alternative is a handler that silently returns a half-made
+	# answer to whatever called it.
+	var wait := get_tree().create_timer(waiting)
+	wait.timeout.connect(_post, CONNECT_ONE_SHOT)
+	return true
+
+
+# How many extra attempts the last answer cost. Goes into the record beside
+# the answer, because an answer that took three attempts is a different
+# observation from one that took one, and a rising number is the only warning
+# Genesis gets that the model it depends on is struggling.
+func attempts_of_last() -> int:
+	return attempt
 
 
 # --- internal ---
@@ -286,6 +369,8 @@ func _on_request_completed(result: int, response_code: int, _headers: PackedStri
 
 	# The request never reached Google at all.
 	if result != HTTPRequest.RESULT_SUCCESS:
+		if _try_again("could not reach the AI"):
+			return
 		interpretation_failed.emit("Could not reach the AI. Check your internet connection.")
 		print("Network result code: ", result)
 		return
@@ -294,6 +379,8 @@ func _on_request_completed(result: int, response_code: int, _headers: PackedStri
 
 	if response_code != 200:
 		print("AI error body: ", raw)
+		if WORTH_RETRYING.has(response_code) and _try_again("HTTP %d" % response_code):
+			return
 		interpretation_failed.emit(_friendly_http_error(response_code))
 		return
 
@@ -340,9 +427,13 @@ func _on_request_completed(result: int, response_code: int, _headers: PackedStri
 func _friendly_http_error(code: int) -> String:
 	match code:
 		429:
-			return "The AI is getting too many requests. Wait a minute and try again. (HTTP 429)"
+			return "The AI is getting too many requests. Genesis tried %d times already; wait a minute. (HTTP 429)" % MAX_ATTEMPTS
 		500, 502, 503, 504:
-			return "The AI service is busy right now. Try again in a moment. (HTTP %d)" % code
+			# 026: by the time a player reads this, Genesis has already tried
+			# MAX_ATTEMPTS times over several seconds. Saying "try again in a
+			# moment" without saying that invites them to do by hand what has
+			# just been done for them, three times.
+			return "The AI service is busy. Genesis tried %d times over a few seconds and it was busy every time. Worth another go in a minute. (HTTP %d)" % [MAX_ATTEMPTS, code]
 		400:
 			return "The AI did not accept the request format. (HTTP 400)"
 		401, 403:
