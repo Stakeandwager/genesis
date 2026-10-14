@@ -24,8 +24,10 @@ for %%f in (tests\*.gd) do (
   set SKIP=
   set ARGS=
 
-  REM Hangs with no output at all. Kept named so nobody rediscovers it.
-  echo !NAME! | findstr /c:"report_test" >nul && set SKIP=known broken
+  REM Nothing is skipped as broken. report_test was, from 014 to 024, on the
+  REM strength of "hangs with no output at all". It threw a script error on a
+  REM key 012 deleted, and a script error in a SceneTree aborts _initialize
+  REM before quit(), so it ran on until it was killed. See TRAPS 13.
 
   REM Not suites: replay needs REPLAY_LOG and REPLAY_OUT set, and prompt_test
   REM prints the AI's prompt for a human to read rather than a verdict.

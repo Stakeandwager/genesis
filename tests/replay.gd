@@ -25,7 +25,21 @@ func _initialize() -> void:
 	controller.revision_requested.connect(func(fb, rec): feedbacks.append({"feedback": fb, "category": rec.get("category", "")}))
 
 	var originals: Array = []
-	var f := FileAccess.open(log_in, FileAccess.READ)
+	# REPLAY_LOG unset, or naming a file that is not there, used to reach
+	# f.eof_reached() on a null and throw - and a script error in a SceneTree
+	# aborts _initialize before quit(), so this tool hung until the harness's
+	# 600 s timeout instead of failing. Same fault as report_test's; see
+	# TRAPS 13. Say what is missing and leave.
+	var f := FileAccess.open(log_in, FileAccess.READ) if log_in != "" else null
+	if f == null:
+		push_error("replay.gd needs REPLAY_LOG to name a readable record file"
+			+ (" (REPLAY_LOG is unset)" if log_in == "" else " (cannot open '%s')" % log_in))
+		quit(1)
+		return
+	if out_path == "":
+		push_error("replay.gd needs REPLAY_OUT to name where to write")
+		quit(1)
+		return
 	while not f.eof_reached():
 		var line := f.get_line().strip_edges()
 		if line == "":

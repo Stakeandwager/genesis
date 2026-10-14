@@ -260,7 +260,57 @@ refusing for want of being told.
 
 ---
 
+## 13. A suite skipped as broken, and never read again
+
+**Signature:** a suite sits on the runner's `BROKEN` list with a one-line
+cause that nobody has checked. The line says it "hangs with no output at all".
+Run it by hand and it hangs, which seems to confirm it.
+
+**Cause:** two faults wearing each other as a disguise.
+
+`report_test` asserted `u["rate"]`. **012 deleted `rate`** and replaced it with
+a range, `rate_best` and `rate_worst`, when it took silence out of the
+understanding score. The assertion threw.
+
+And **a script error in a `SceneTree` aborts `_initialize` before `quit()`**,
+so the process never exits. The harness waited its full 600 s and was killed.
+That is the "hang": not a loop, an unreached `quit()`. The error itself was on
+**stderr, after a screenful of correct output on stdout**, so a glance at the
+tail of a killed run shows nothing — and the runner reported a killed suite as
+`no result`, which named neither the timeout nor the error.
+
+The suite was correct about four of its five assertions the whole time. The
+fifth demanded `rate == 0.75`, which is **exactly the arithmetic 012 exists to
+abolish**: confirmed 1 + accepted-by-use 1 + accepted-by-silence 1, over
+judged 4. A player who answered nothing scored full marks for saying nothing.
+So the suite was not broken. It was **stale against a rule the code had
+deliberately changed**, and skipping it hid both the staleness and the fact
+that `session_report.gd` had no running test for ten releases.
+
+**Do:**
+
+- A suite that cannot run is a **claim about the code**, and gets checked like
+  a refusal does. Before adding anything to `BROKEN`, run it alone, keep
+  stdout and stderr apart, and read the error. One minute, against ten
+  releases of no coverage.
+- Never diagnose from a killed run's tail. `timeout` kills at the limit and
+  the useful line is usually above it, often on the other stream.
+- In a `SceneTree` test, **a missing key must be a FAIL line, not a crash**.
+  Read with `get()` and a sentinel and count the failure. A crash costs the
+  whole timeout and tells the next person nothing.
+- When a rule changes, the tests that assert the old number are part of the
+  change. 012 changed the score and left an assertion demanding the number it
+  had just abolished.
+
+Fixed in 024. `BROKEN` is now empty, the runner prints the actual error and
+says `TIMED OUT` rather than `no result`, and `replay.gd` — the other script
+that crashed into this same unreached `quit()` — exits 1 naming the
+environment variable it wants.
+
+---
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
 > A fluent sentence is not evidence that anything was understood.
 > A refusal is a claim, and gets checked like one.
+> A skipped test is a claim too, and goes unchecked the longest.

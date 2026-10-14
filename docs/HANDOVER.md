@@ -13,8 +13,8 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: 022, the five faults from the owner's
-  editor session.
+- Last commit at the time of writing: 024, the suite that was skipped as
+  broken for ten releases and was only stale.
 - Godot 4.7.1, Compatibility renderer. The owner's machine is an Intel HD 3000
   through ANGLE: no WebGL2, so **the web build cannot be viewed there**.
 
@@ -35,10 +35,13 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-32 suites in `tests/`, run against the scripts beside them. `--all` adds the
-slow racing suites. Last full run: **suites with something to look at: 0**.
-`report_test` is skipped as known broken; `replay` and `prompt_test` are tools,
-not suites.
+33 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **31 suites**, and since 024 every one of them runs —
+nothing is skipped as broken. `--all` adds the two slow racing suites.
+
+Last full run (024, Godot 4.7.1 on Linux, headless, in a cloud container):
+**suites with something to look at: 0**, both without `--all` (31 s) and with
+it (70 s). Not run on the owner's Windows machine.
 
 ## What Genesis is
 
@@ -146,18 +149,124 @@ verified, and what remains uncertain.
   condition, no stealth. `docs/harness/README.md` lists what THE IMPOSSIBLE
   HEIST would still need.
 - Worlds are untextured boxes. No art.
-- `report_test.gd` hangs with no output; pre-existing, cause unknown.
+- ~~`report_test.gd` hangs with no output; pre-existing, cause unknown.~~
+  **Fixed in 024, and it was never a hang.** It threw a script error on
+  `u["rate"]`, a key 012 deleted when it took silence out of the understanding
+  score, and a script error in a `SceneTree` aborts `_initialize` before
+  `quit()`, so the process ran until the harness killed it at 600 s. Four of
+  its five assertions had been right the whole time; the fifth demanded
+  `rate == 0.75`, which is the exact arithmetic 012 was written to abolish.
+  The suite was stale, not broken, and skipping it meant
+  `scripts/session_report.gd` had **no running test for ten releases**. See
+  TRAPS 13.
 - Prediction and measurement of stopping distance differ by a consistent 5%,
   which is the discrete integration, not the physics. Recorded rather than
   hidden behind the tolerance that passes it.
 
+## 024 — the suite that was skipped as broken, and was only stale
+
+**Objective.** Pick up the one thing the repository said was broken and
+nobody had read: `report_test`, on the runner's `BROKEN` list since 014 with
+the note "hangs with no output at all; cause unknown".
+
+**Starting state.** Branch `prototype-002a` at 713571a (023). Baseline run,
+Godot 4.7.1 headless: suites with something to look at: 0, with `report_test`
+skipped — matching what this handover already said.
+
+**What it actually was.** Not a hang. The suite's last assertion read
+`u["rate"]`, and **012 deleted `rate`**, replacing the single score with the
+range `rate_best`/`rate_worst` when it took silence out of the denominator. The
+missing key threw, and a script error in a `SceneTree` aborts `_initialize`
+before `quit()` — so the process never exited and the harness killed it at
+600 s. The error was on stderr, after a screenful of correct output on stdout,
+and the runner reported a killed suite as `no result`. Each of those three
+things hid the next one.
+
+The stale assertion is worth naming: it demanded `rate == 0.75`, which is
+(confirmed 1 + accepted-by-use 1 + **accepted-by-silence 1**) / judged 4 — the
+precise arithmetic 012 exists to abolish, in which a player who answers
+nothing scores full marks for saying nothing. Four of the suite's five
+assertions were right all along. It was **stale against a rule the code had
+deliberately changed**, not broken, and skipping it left
+`scripts/session_report.gd` with no running test for ten releases.
+
+**Implementation.** `scripts/` is untouched; no product behaviour changed.
+
+- `tests/report_test.gd` rewritten against the current API: `accepted`,
+  `bearing`, `moved_on`, `rate_best`, `rate_worst`. Assertions read keys with
+  `get()` and a sentinel, so a key that disappears later is a FAIL line and a
+  clean exit rather than another ten-minute hang.
+- It now **guards 012's rule instead of merely asserting a number**: it
+  summarises the same session twice, with and without the record that was
+  accepted by silence, and fails if removing it moves either the denominator
+  or the score. It also fails outright if `rate_best` is ever 0.75 again.
+- `run_tests.sh`: `BROKEN` is empty. A script error is reported with its file
+  and line instead of the bare words `SCRIPT ERROR`, and a suite killed by
+  `timeout` now reports `TIMED OUT`, never `no result`.
+- `run_tests.bat`: the same unskip, so the fix reaches the owner's machine.
+- `tests/replay.gd`: the other script that crashed into an unreached `quit()`
+  — `FileAccess.open` returning null on an unset `REPLAY_LOG` — now exits 1
+  naming the variable it wants. 0.4 s instead of 600 s. TRAPS 11 says writing
+  the general lesson down is not the same as applying it, so the second known
+  instance is fixed in the same commit as the first.
+- `docs/TRAPS.md`: trap 13.
+
+**Evidence — what was actually run.** Godot 4.7.1 (`4.7.1.stable.official.a13da4feb`),
+Linux, headless, in a cloud container:
+
+- Baseline before the change: 0 suites with something to look at,
+  `report_test` skipped.
+- After: 0 suites with something to look at, `report_test` **runs and passes**,
+  in 0.18 s. The full output is identical to the baseline on every other line.
+- `--all`, including the two slow racing suites: 0 suites with something to
+  look at.
+- `report_test` verified both with and without `--fixed-fps 120`, because the
+  Linux runner passes it and the Windows runner does not.
+- **The new checks were proved able to fail** (TRAPS 6): silence was put back
+  into `accepted` and `bearing` in `session_report.gd`, and the suite failed
+  with 6 named failures including the differential check. The file was then
+  restored and `git diff` confirms it is byte-identical.
+- `replay.gd` verified both ways: exits 1 with its message when `REPLAY_LOG`
+  is unset, and still completes normally (`REPLAY DONE groups=1`, output file
+  written) when it is set.
+
+**What the tests did NOT prove.**
+
+- Nothing here ran on the owner's Windows machine. `run_tests.bat` was edited
+  and **has not been executed** — there is no Windows host in this session.
+  The change to it is the removal of one `findstr` skip line; the risk is low
+  and it is not zero.
+- A green suite remains necessary and not sufficient. This commit does not
+  change that, and it slightly sharpens the point: the suite that was green
+  for ten releases was green partly because one of its members was not
+  running.
+- `session_report.gd` is now covered, but only over one synthetic session
+  carrying one record of each kind. It is not evidence about real sessions.
+- No product behaviour was touched, so there is nothing new for the owner to
+  find in the editor from this commit.
+
 ## Next action
 
-The proxy is built (020). The next step belongs to the owner and takes a
-minute: set `GEMINI_API_KEY` in the Netlify site's environment variables, and
-set `NETLIFY_AUTH_TOKEN` and `NETLIFY_SITE_ID` as GitHub secrets so a push
+**Still the owner's, and still a minute's work.** The proxy is built (020):
+set `GEMINI_API_KEY` in the Netlify site's environment variables, and set
+`NETLIFY_AUTH_TOKEN` and `NETLIFY_SITE_ID` as GitHub secrets so a push
 deploys. After that, a stranger with the link can type a sentence and get a
-world, which is the first time that has ever been true.
+world, which is the first time that has ever been true. Nothing the assistant
+can do moves this: the key must not be in the repository.
+
+**Smallest useful assistant task next.** 024 found a test that had gone stale
+against a rule the code changed under it. That is a class, not an instance,
+and the obvious next member is the one this handover already flags: the
+capability statement in the AI prompt is hand-written prose, and
+`tests/log_023_test.gd` can only catch a claim that has *stopped* being true,
+never one that was never quite true. Reading the prompt's claims against what
+the functions actually do — one claim at a time, with the test tightened where
+a claim turns out to be looser than the code — is a session's work and needs
+no decision from the owner.
+
+Worth a look while it is cheap: `sweep_test` still reports that no legal
+command reaches `FAILED_UNWALKABLE`, which is TRAPS 6's own example and has
+been true since 005.
 
 ## A likeness from a photo (021 and beyond)
 
@@ -215,6 +324,31 @@ category rules. Ordinary accounts do the same job for nothing.
    In exchange, **every commit states what was verified and what was not**, so
    the owner never has to guess whether a change has been near real hardware.
    The standing caveat stands: a green suite is necessary and not sufficient.
-3. **Whether work should happen while the owner is away.** The assistant does
+3. ~~Whether work should happen while the owner is away. The assistant does
    not run on its own — nothing happens between messages. Autonomy would
-   require a scheduled task, which does not exist.
+   require a scheduled task, which does not exist.~~
+   **Out of date as of 2026-10-14: it exists.** 024 was committed by a
+   scheduled run, with nobody watching, from a cloud container. So the factual
+   claim in that item is now wrong and is struck rather than quietly edited.
+
+   What that run can and cannot do, stated plainly because it bears on how
+   much the commits below are worth:
+
+   - It has the repository, Godot 4.7.1 for Linux and the headless suite. It
+     can read, build, test, commit and push.
+   - It has **no access to the owner's machine** — no Windows host, no Godot
+     editor, no live API key, no GPU. So it cannot run `run_tests.bat`, cannot
+     see a readback as a player sees it, and cannot produce the kind of
+     evidence that has found eight of the real faults in this project.
+   - It cannot ask the owner anything. A question has to wait here until the
+     owner reads it, which is why this section matters more under a schedule
+     than it did in conversation.
+
+   **The assistant's proposal, for the owner to accept or refuse:** an
+   unattended run should prefer work whose evidence it can actually produce —
+   tests, harness, documentation, dead code, stale assertions, the kind of
+   thing 024 was — and should leave anything whose only real test is a human
+   at the editor for a session where the owner is present. Not because that
+   work matters less, but because an unattended run would have to claim it
+   verified something it cannot reach, and that is the one thing this protocol
+   exists to prevent.

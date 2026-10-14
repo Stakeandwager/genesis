@@ -20,11 +20,17 @@ cd "$(dirname "$0")"
 TIMED="carry_test false_delivery_test ledger_audit_test order_test explore_test walker_test walk_physics_test behaviour_test physics_test interference_test repeat_test drive_test session_test report_test"
 # Suites that take minutes, not seconds: several full races apiece.
 SLOW="drive_test session_test"
-# Known broken, kept so nobody rediscovers it: hangs with no output at all.
-BROKEN="report_test"
+# Known broken. Empty since 024: report_test was here from 014, recorded as
+# "hangs with no output at all, cause unknown". It never hung. It threw a
+# script error on a key that 012 deleted, and a script error in a SceneTree
+# aborts _initialize before quit(), so the process ran until the timeout below
+# killed it. See TRAPS 13 before adding anything to this list: a suite that
+# sits here unread goes stale against the code it is supposed to measure.
+BROKEN=""
 # Not suites. replay.gd is a tool that needs REPLAY_LOG and REPLAY_OUT set and
-# fails without them; prompt_test prints the AI's prompt for a human to read
-# and has no verdict to give. Neither failing here would mean anything.
+# exits 1 naming the missing one; prompt_test prints the AI's prompt for a
+# human to read and has no verdict to give. Neither failing here would mean
+# anything.
 NOT_A_SUITE="replay prompt_test"
 
 "$GODOT" --headless --import >/dev/null 2>&1
@@ -45,8 +51,17 @@ for f in tests/*.gd; do
   case " $TIMED " in *" $name "*) args="--fixed-fps 120" ;; esac
 
   out=$(timeout 600 "$GODOT" --headless $args --script "$f" 2>&1)
+  rc=$?
   if echo "$out" | grep -qE "SCRIPT ERROR|Parse Error"; then
-    line="SCRIPT ERROR"
+    # Say which error and where. Reported as a bare "SCRIPT ERROR" for ten
+    # releases, this cost report_test its place on the BROKEN list: the error
+    # names the file and line, and reading it would have taken a minute.
+    line="SCRIPT ERROR: $(echo "$out" | grep -E "SCRIPT ERROR|Parse Error" | head -1 | sed 's/^[[:space:]]*//')"
+  elif [ "$rc" -eq 124 ]; then
+    # timeout killed it. A suite whose quit() is never reached looks exactly
+    # like a hang, and calling that "no result" is what made TRAPS 13 a
+    # mystery instead of a one-minute read. Never report it as no result.
+    line="TIMED OUT after 600s (quit() never reached? run it alone and read stderr)"
   else
     line=$(echo "$out" | grep -E "failures=|bad=|VERDICT" | tail -1)
   fi
