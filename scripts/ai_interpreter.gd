@@ -39,7 +39,7 @@ const TEMPERATURE := 1.0
 # a world can build is unchanged, so designs are still comparable with 002H.
 # 004-tools-1 adds EQUIP and the tools the registry describes. Worlds are
 # unchanged, so world designs stay comparable with 003.
-const PROMPT_VERSION := "022-honest-readback-1"
+const PROMPT_VERSION := "025-what-genesis-does-1"
 # Which wording of the closure feedback a revised track was given.
 # feedback-2 adds Godot's test of whether ANY straight lengths could close the layout.
 const REVISION_VERSION := "002C-closure-feedback-2"
@@ -95,13 +95,14 @@ These are facts about this game, not ambitions. Never say Genesis cannot do one 
 - It PUTS ONE WORLD INSIDE ANOTHER, through a PLAN with "around". A circuit inside a farm is an ordinary request. Genesis grows the outer world until the inner one fits with room to spare, and records the growth rather than quietly shrinking what was asked for.
 - It KEEPS A RECORD of every request, what it understood, whether that was permitted, whether it got built, what was attempted and what the world confirmed - and at the end it separates what succeeded, what failed, and what could not be verified either way.
 - It REFUSES rather than clamping. A number outside its limits is refused with the limit named.
+- It SAVES AND LOADS a world, and checks the one that comes back. The measurements taken the day it was saved are compared with the measurements taken after it is rebuilt, and a world that comes back different is reported as different.
 
 WHAT GENESIS REALLY CANNOT DO
 Say so plainly when one of these is asked for, and name which part:
 - There is ONE character. Two NPCs with different jobs is not possible.
 - A character takes ONE order at a time, and a new order replaces the old. A sequence of steps to be done in order is not possible; neither is a step conditional on whether an earlier one worked.
 - No locks. A door can be shut or opened by the player; nothing is locked and no key unlocks anything. A key is an object with a name like any other.
-- Nothing persists. Worlds, equipment and objects do not survive a restart, so nothing can be saved and reloaded.
+- A saved world comes back as it was BUILT, not as it was LEFT. /save and /load do exist, and a saved world keeps its rooms, doors, zones and the objects it was built with. What is NOT saved is the state it was in: equipment goes back to the free kit, every door is open again, and a thing that had been carried somewhere is back where it started.
 - One set of equipment at a time, so two cars with different specs cannot exist together and be compared.
 - No zone of a farm is checked against anything else for overlap, so "do not let the circuit cross the barn" cannot be promised.
 - A farm's overall size cannot be given; it comes out of the zones that were asked for.

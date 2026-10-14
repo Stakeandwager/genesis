@@ -588,6 +588,29 @@ func record_rejection(category: String, reason: String) -> void:
 	track_measured.emit(record)
 
 
+# --- 025: what a load was checked against ---
+#
+# Its own record, pointing at the world by name, in the same shape the
+# understanding and delivery layers use: evidence is added to the ledger, never
+# written back over the thing it judges. The build's own record stands exactly
+# as it was, and this says whether the world that came out of it is the one
+# that went in.
+func record_load_check(world_name: String, verdict: Dictionary) -> void:
+	var record := {
+		"type": "load_check",
+		"time": Time.get_datetime_string_from_system(),
+		"id": TrackLog.next_id(),
+		"about": str(last_build.get("command", "")),
+		"world": world_name,
+		"outcome": str(verdict.get("outcome", "")),
+		"differences": verdict.get("differences", []),
+		"not_measured": verdict.get("not_measured", []),
+		"said": str(verdict.get("said", "")),
+	}
+	TrackLog.append(record)
+	track_measured.emit(record)
+
+
 # --- corrections ---
 
 # One correction, only for AI designs, only for a first attempt, and only

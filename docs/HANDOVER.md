@@ -35,13 +35,13 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-33 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **31 suites**, and since 024 every one of them runs —
+34 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **32 suites**, and since 024 every one of them runs —
 nothing is skipped as broken. `--all` adds the two slow racing suites.
 
-Last full run (024, Godot 4.7.1 on Linux, headless, in a cloud container):
-**suites with something to look at: 0**, both without `--all` (31 s) and with
-it (70 s). Not run on the owner's Windows machine.
+Last full run (025, Godot 4.7.1 on Linux, headless, in a cloud container):
+**suites with something to look at: 0**. Not run on the owner's Windows
+machine.
 
 ## What Genesis is
 
@@ -143,8 +143,23 @@ verified, and what remains uncertain.
   `WorldRegistry.around_of`, `TrackLog.next_id`), so a capability cannot be
   deleted while the prompt still promises it. That is partial: it cannot catch
   a claim that was never quite true, only one that has stopped being true.
-- No persistence of any kind: equipment, worlds and objects do not survive a
-  restart, so nothing can be owned.
+- **Persistence is partial, and this entry said "none of any kind" for
+  releases while `/save` and `/load` were sitting in `main.gd`.** 023 copied
+  the claim into the AI's capability list, so Genesis was telling players it
+  could not save. 025 corrected all three places. What is actually true:
+  - A world's **description** is saved and loaded — rooms, doors, zones, and
+    the objects it was built with. The file is a few hundred bytes, goes back
+    through the validator on the way in, and a world rebuilt tomorrow uses
+    tomorrow's builder.
+  - The **state it was left in** is not saved. Equipment goes back to the free
+    kit, every door is open again, and a thing that had been carried somewhere
+    is back where it started. So nothing can be *owned* yet — that part of the
+    old claim stands.
+  - Since 025 a load is **verified**: the measurements recorded the day it was
+    saved are compared with the measurements taken after it is rebuilt, and
+    the outcome is RESTORED, DIFFERENT (naming which measurement moved and
+    both numbers) or INCONCLUSIVE. Every outcome, the good one included, says
+    what was not saved.
 - No guard that perceives anything, no locks, no countdown, no escape
   condition, no stealth. `docs/harness/README.md` lists what THE IMPOSSIBLE
   HEIST would still need.

@@ -139,6 +139,16 @@ func _refusals_that_understate() -> void:
 	_check(not RefusalCheck.quarrel_with(muddled).is_empty(),
 		"caught: the contradiction test refused by denying verification")
 
+	# 025: and the one the PROMPT was telling it to say. This was in the
+	# honest list above until /save was looked at properly.
+	for persistence_lie in [
+		"nothing persists, so a world cannot be saved and reloaded",
+		"the game does not support saving or persistence of any kind",
+		"worlds cannot be saved, so the state cannot be reloaded after a restart",
+	]:
+		_check(not RefusalCheck.quarrel_with(persistence_lie).is_empty(),
+			"caught: '%s'" % persistence_lie)
+
 
 # --- and the refusals that were right stay unchallenged ---
 #
@@ -147,7 +157,14 @@ func _refusals_that_understate() -> void:
 func _refusals_that_are_honest() -> void:
 	var honest := [
 		"there is one character in a dungeon, so a farmer and a courier cannot both exist",
-		"nothing persists, so a world cannot be saved and reloaded",
+		# 025: "nothing persists, so a world cannot be saved and reloaded" was
+		# in this list, as an example of an HONEST refusal. It was false when
+		# it was written here, and it was in the prompt as well. /save and
+		# /load have existed for releases. It has moved to the lies below,
+		# where it belongs; what is honest is the narrower statement two lines
+		# down about the STATE not being kept.
+		"the state a world was left in is not saved, so a door that was shut comes back open",
+		"equipment is not kept with a saved world, so the boots go back to the free pair",
 		"no door is locked and no key unlocks anything",
 		"a character takes one order at a time, so a sequence of steps in order is not possible",
 		"one set of equipment exists at a time, so two cars cannot be compared side by side",
@@ -228,5 +245,15 @@ func _what_the_refusals_denied_still_exists() -> void:
 	_check(prompt.contains("WHAT GENESIS REALLY CANNOT DO"), "and what it really cannot")
 	for must_say in ["VERIFIES", "PHYSICS", "ROUTES", "INSIDE ANOTHER", "RECORD"]:
 		_check(prompt.contains(must_say), "the prompt states: %s" % must_say)
-	for must_admit in ["ONE character", "ONE order at a time", "No locks", "Nothing persists"]:
+	for must_admit in ["ONE character", "ONE order at a time", "No locks"]:
 		_check(prompt.contains(must_admit), "the prompt admits: %s" % must_admit)
+
+	# 025: this list used to include "Nothing persists", so the suite was
+	# guarding the false claim rather than catching it. A green suite agreeing
+	# with the code is not evidence about the world; it is evidence that both
+	# were written by the same hand, which is the standing caveat in HANDOVER
+	# arriving in the most literal possible form.
+	_check(not prompt.contains("Nothing persists"),
+		"and no longer claims nothing persists, which /save and /load have disproved for releases")
+	_check(prompt.contains("as it was BUILT, not as it was LEFT"),
+		"it says what a saved world really brings back instead")

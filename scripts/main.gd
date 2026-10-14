@@ -571,6 +571,21 @@ func _load_world(request: String) -> void:
 	controller.current_attempt = {}
 	controller.execute(command, world["parameters"])
 
+	# 025: and then the part that was missing. The save file recorded what
+	# Genesis measured the day this world was built; the world has just been
+	# measured again. Loading is the only build whose right answer was written
+	# down in advance, and nothing was reading it. See LoadCheck.
+	var recorded = world.get("metrics", {})
+	var built: Dictionary = controller.last_build
+	if typeof(recorded) == TYPE_DICTIONARY and not built.is_empty() \
+			and str(built.get("command", "")).to_upper() == command:
+		var verdict := LoadCheck.compare(recorded, built.get("metrics", {}))
+		print("LOAD %s: %s" % [str(verdict["outcome"]), str(verdict["said"])])
+		status_label.text = str(verdict["said"])
+		_record(request, "%s\n%s" % [str(verdict["outcome"]), str(verdict["said"])],
+			"ok" if str(verdict["outcome"]) != "DIFFERENT" else "error")
+		controller.record_load_check(str(world.get("name", name)), verdict)
+
 
 func _list_worlds() -> void:
 	var names := WorldStore.list_worlds()

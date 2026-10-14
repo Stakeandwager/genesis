@@ -309,8 +309,46 @@ environment variable it wants.
 
 ---
 
+## 14. A limitation nobody rechecked, then taught to the AI
+
+**Signature:** Genesis tells a player it cannot do something that has worked
+for releases, and the sentence can be traced back to a document.
+
+**Cause:** `HANDOVER.md` said *"No persistence of any kind: equipment, worlds
+and objects do not survive a restart"*. `/save` and `/load` were in `main.gd`
+the whole time, saving a world's description through the validator. The line
+was written when it was true and never rechecked.
+
+023 then copied it into the AI's capability list as *"Nothing persists …
+nothing can be saved and reloaded"* — in the same commit that built
+`RefusalCheck` to catch the AI making exactly that kind of false claim. The
+checker could not catch it, because the prompt was the thing telling the lie.
+
+And `log_023_test` asserted the prompt contained those words, so **the suite
+was guarding the false claim rather than finding it.** That is the standing
+caveat in HANDOVER — *the tests are written by the same hand as the code and
+inherit its assumptions* — arriving in the most literal form available.
+
+**Do:**
+
+- A limitation is a claim about Genesis, like a refusal and like a skipped
+  test. Before writing one into the prompt, `grep` for the feature it denies.
+  One search would have found `WorldStore`.
+- When a limitation goes into the prompt, the test asserts the **capability
+  it describes**, not the words. "The prompt says nothing persists" tests
+  nothing; "`/save` then `/load` returns the same measurements" tests the
+  claim.
+- State limits at the width they are actually true. *"A world comes back as it
+  was built, not as it was left"* is both honest and more useful than either
+  "nothing persists" or "worlds persist".
+
+Fixed in 025, in all three places: the prompt, `HANDOVER.md` and the README.
+
+---
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
 > A fluent sentence is not evidence that anything was understood.
 > A refusal is a claim, and gets checked like one.
 > A skipped test is a claim too, and goes unchecked the longest.
+> So is a limitation, and that one gets written into the documents.

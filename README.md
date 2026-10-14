@@ -79,12 +79,19 @@ that refused six requests out of seven got five of the reasons wrong about
 Genesis's own abilities. A false refusal is the mirror of a false success, so
 now it gets contradicted (`refusal_check.gd`).
 
+So is a load. A save file records what Genesis measured the day a world was
+built; loading rebuilds it and measures again, and nothing used to compare the
+two. Now a world that comes back different is reported as different, with the
+measurement named and both numbers (`load_check.gd`).
+
 ## What is not true yet
 
 - **No stranger has ever used it.** Every session so far is the owner's.
 - The worlds are untextured boxes. There is no art.
-- Nothing persists: equipment, worlds and objects do not survive a restart, so
-  nothing can be owned.
+- A world can be saved and loaded, and the load is checked against the
+  measurements taken the day it was saved. But only the *description* is kept:
+  equipment, shut doors and anything that had been carried do not come back,
+  so nothing can be owned yet.
 - No guard perceives anything, no locks, no countdown, no escape.
 - The web build has no AI until an API key is set on the host.
 

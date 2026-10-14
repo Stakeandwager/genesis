@@ -129,6 +129,22 @@ const CAPABILITIES := [
 		"but": "Genesis does route. A character finds its way room to room through doors that are actually passable, and a door shut while it is walking is handled.",
 	},
 	{
+		# 025. This entry exists because of a claim the PROMPT made, not one
+		# the AI invented: "Nothing persists ... so nothing can be saved and
+		# reloaded" was written into the capability list in 023 and was false
+		# when it was written. /save and /load have existed for releases. The
+		# commit that built a checker for false capability denials shipped
+		# one. What is true is narrower and is now said instead: a world comes
+		# back as it was BUILT, not as it was LEFT.
+		"name": "saving and loading a world",
+		"words": [
+			"persist", "persists", "persistence", "saved and reloaded",
+			"save a world", "saving", "cannot be saved", "reload",
+		],
+		"denials": ["nothing persists"],
+		"but": "Genesis does save and load a world, and checks the one that comes back against the measurements taken the day it was saved. What it does not keep is the STATE it was left in - equipment, shut doors, and where things had been carried to.",
+	},
+	{
 		"name": "one world inside another",
 		"words": [
 			"inside a farm", "inside another world", "nest", "nested",
