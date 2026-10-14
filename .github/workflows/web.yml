@@ -11,6 +11,10 @@
 # -> Actions:
 #   NETLIFY_AUTH_TOKEN   a personal access token from Netlify
 #   NETLIFY_SITE_ID      the site's API ID, on its Site configuration page
+#
+# And one set on the NETLIFY SITE itself, never here and never in the
+# repository: GEMINI_API_KEY, which netlify/functions/interpret.js reads. The
+# build carries no key; the function holds it.
 
 name: web build
 
@@ -56,6 +60,7 @@ jobs:
         uses: nwtgck/actions-netlify@v3.0
         with:
           publish-dir: ./build
+          functions-dir: ./netlify/functions
           production-deploy: false
           deploy-message: ${{ github.event.head_commit.message }}
           github-token: ${{ secrets.GITHUB_TOKEN }}

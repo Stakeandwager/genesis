@@ -1,0 +1,11 @@
+# Netlify settings for the Genesis web build.
+#
+# The site is the folder the CI job exports into, and the one function holds
+# the API key so the browser never sees it. See netlify/functions/interpret.js.
+#
+# GEMINI_API_KEY is set in the Netlify site's environment variables, never in
+# this file and never in the repository.
+
+[build]
+  publish = "build"
+  functions = "netlify/functions"

@@ -90,10 +90,14 @@ verified, and what remains uncertain.
 
 - **Nothing has been tested by anybody but the owner.** No stranger has used
   Genesis. The external-usability claim is entirely unmeasured.
-- **The web build ships with no API key**, so a visitor gets raw JSON and no
-  natural language — the thesis itself is unavailable to a stranger. A proxy
-  function holding the key server-side is unbuilt. ASSISTANT PROPOSAL: build it
-  before any stranger test.
+- **The web build still has no AI until the key is set on Netlify.** The proxy
+  is built (`netlify/functions/interpret.js`, 020) and the browser asks it
+  instead of Google, but it reads `GEMINI_API_KEY` from the Netlify site's
+  environment and nobody has set one. Until that is done a visitor gets raw
+  JSON only. Setting it is the owner's, on the Netlify site, never in the
+  repository. **Not verified end to end**: the function is JavaScript and
+  cannot be run by the Godot harness, so what is tested is what it is written
+  to do, not a round trip through a live browser.
 - **The assistant's test suite is written by the same hand as the code** and
   inherits its assumptions. It has missed three real faults that the owner's
   editor found in one day. Treat a green suite as necessary, never sufficient.
@@ -110,10 +114,11 @@ verified, and what remains uncertain.
 
 ## Next action
 
-ASSISTANT PROPOSAL, not yet accepted: the API-key proxy for the web build,
-because it is the only thing standing between the current build and a stranger
-being able to use Genesis the way it is meant to be used, and it needs no
-hardware the assistant lacks.
+The proxy is built (020). The next step belongs to the owner and takes a
+minute: set `GEMINI_API_KEY` in the Netlify site's environment variables, and
+set `NETLIFY_AUTH_TOKEN` and `NETLIFY_SITE_ID` as GitHub secrets so a push
+deploys. After that, a stranger with the link can type a sentence and get a
+world, which is the first time that has ever been true.
 
 ## Human decision needed
 

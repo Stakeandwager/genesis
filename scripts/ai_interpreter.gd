@@ -48,6 +48,26 @@ const EDIT_VERSION := "002E-edit-1"
 
 const ENDPOINT := "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent"
 
+# --- 020: on the web, the key is not here ---
+# Anything under res:// is packed into index.pck, which anyone can download
+# and read, so a web build that carried api_key.txt would be publishing the
+# key. The browser asks a function on the same origin instead, and that
+# function - which nobody can read - adds the key and asks Google.
+#
+# The desktop build is untouched: it reads api_key.txt and talks to Google
+# directly, as it always has.
+const PROXY_PATH := "/api/interpret"
+
+
+static func on_web() -> bool:
+	return OS.has_feature("web")
+
+
+# Where the request actually goes, and what it carries. One function, so the
+# two builds cannot disagree about which is which.
+static func where_to() -> String:
+	return PROXY_PATH if on_web() else ENDPOINT
+
 const SYSTEM_PROMPT := """You turn a player's request into exactly ONE command for Genesis, a game that builds worlds in Godot.
 
 Return ONLY the JSON: no explanations, no markdown, no code fences. Never return a list of commands. If the request has several steps, return the single command for the final result; a new world replaces whatever was there before, whichever kind it was.
@@ -96,8 +116,13 @@ func _ready() -> void:
 	_load_key()
 
 
+# 020: on the web the key is the server's, so the AI is available if the
+# function is - which cannot be known until a request is made. Saying "no AI"
+# in a browser that has one would hide the whole point of the game; a function
+# that is missing or unconfigured answers with Genesis's ordinary AI FAILED
+# message instead, which is the honest place for that news.
 func is_available() -> bool:
-	return api_key != ""
+	return true if on_web() else api_key != ""
 
 
 # The settings behind every AI-made track, stored in the experiment record.
@@ -200,13 +225,12 @@ func _send(contents: Array) -> void:
 		}
 	}
 
-	var headers := [
-		"Content-Type: application/json",
-		"x-goog-api-key: " + api_key,
-	]
+	var headers := ["Content-Type: application/json"]
+	if not on_web():
+		headers.append("x-goog-api-key: " + api_key)
 
 	busy = true
-	var error := http.request(ENDPOINT, headers, HTTPClient.METHOD_POST, JSON.stringify(body))
+	var error := http.request(where_to(), headers, HTTPClient.METHOD_POST, JSON.stringify(body))
 
 	if error != OK:
 		busy = false
@@ -216,6 +240,10 @@ func _send(contents: Array) -> void:
 # --- internal ---
 
 func _load_key() -> void:
+	# 020: a web build has no key by design, and says so rather than warning
+	# about a file that is deliberately absent.
+	if on_web():
+		return
 	if not FileAccess.file_exists(KEY_PATH):
 		push_warning("api_key.txt not found at " + KEY_PATH)
 		return
