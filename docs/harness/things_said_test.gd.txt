@@ -30,6 +30,30 @@ func _initialize() -> void:
 		if not ok:
 			bad += 1
 
+	# 019: a room may be NAMED here, which is what the AI reached for first
+	# and what every test had missed by always using a number.
+	var by_name: Dictionary = m.validate({"rooms": [
+		{"name": "store", "width": 10, "depth": 10},
+		{"name": "vault", "width": 10, "depth": 10}],
+		"doors": [[1, 2]], "things": [{"name": "lamp", "in": "store"}]})
+	var named_ok: bool = bool(by_name["ok"]) and int((by_name["content"]["things"] as Array)[0]["in"]) == 0
+	print(("PASS  " if named_ok else "FAIL  ") + "a thing may name the room it is in: " + str(by_name["errors"]))
+	if not named_ok:
+		bad += 1
+	var named_said: String = m.readback({"rooms": rooms, "doors": [[1, 2]],
+		"things": [{"name": "lamp", "in": "store"}]})
+	var named_line: bool = named_said.ends_with(", with a lamp in the store")
+	print(("PASS  " if named_line else "FAIL  ") + named_said)
+	if not named_line:
+		bad += 1
+
+	var nowhere: Dictionary = m.validate({"rooms": rooms, "doors": [[1, 2]],
+		"things": [{"name": "lamp", "in": "kitchen"}]})
+	var refused: bool = not bool(nowhere["ok"]) and str(nowhere["errors"][0]).contains("store")
+	print(("PASS  " if refused else "FAIL  ") + "a room that is not there is refused, naming the ones that are")
+	if not refused:
+		bad += 1
+
 	# The two differ, which is the whole point.
 	var without: String = m.readback({"rooms": rooms, "doors": [[1, 2]]})
 	var with_one: String = m.readback({"rooms": rooms, "doors": [[1, 2]],

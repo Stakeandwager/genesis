@@ -204,6 +204,32 @@ there is nothing - so silence means "there is nothing", which is true. The
 prompt also now says a thing the player names must appear in `things`, in the
 room they said.
 
+## 019: the test data was biased toward the implementation
+
+In the editor, the AI finally included the lamp and wrote:
+
+```
+"things": [{"name": "lamp", "in": "store"}]
+```
+
+Refused: `thing 1: 'lamp' is in room 0, and this dungeon has rooms 1 to 2`.
+The validator took a NUMBER. The AI had reached for the room's NAME - entirely
+reasonably, since names are how rooms are addressed in an order, in a carry
+and in a door.
+
+Every test of things had used `"in": 2`. Not one had used a name, because the
+tests were written by the same hand as the validator and inherited its
+assumptions. A suite written against your own implementation tests that the
+implementation is itself, which is why the editor keeps finding things the
+suite does not.
+
+The readback had the same hole from the same cause: it printed "with a lamp"
+and silently dropped the room, which is precisely the half-silence 016 existed
+to remove.
+
+Both now accept a name or a number, and `things_said_test.gd` covers the name,
+the name in the readback, and a room that does not exist.
+
 ## 018: a world that can be interfered with
 
 Until now the world could not change once an errand began, so nothing could
