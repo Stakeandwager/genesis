@@ -13,7 +13,8 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: `8f97f5c`.
+- Last commit at the time of writing: 022, the five faults from the owner's
+  editor session.
 - Godot 4.7.1, Compatibility renderer. The owner's machine is an Intel HD 3000
   through ANGLE: no WebGL2, so **the web build cannot be viewed there**.
 
@@ -34,7 +35,7 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-29 suites in `tests/`, run against the scripts beside them. `--all` adds the
+31 suites in `tests/`, run against the scripts beside them. `--all` adds the
 slow racing suites. Last full run: **suites with something to look at: 0**.
 `report_test` is skipped as known broken; `replay` and `prompt_test` are tools,
 not suites.
@@ -99,8 +100,21 @@ verified, and what remains uncertain.
   cannot be run by the Godot harness, so what is tested is what it is written
   to do, not a round trip through a live browser.
 - **The assistant's test suite is written by the same hand as the code** and
-  inherits its assumptions. It has missed three real faults that the owner's
-  editor found in one day. Treat a green suite as necessary, never sufficient.
+  inherits its assumptions. It has now missed **eight** real faults that the
+  owner's editor found, five of them in a single session (022). Treat a green
+  suite as necessary, never sufficient.
+
+  The five are worth stating together, because they are one pattern. None was
+  a crash. Everything in that session RAN — a key was fetched, carried and
+  verified from its own position. What came out wrong were **sentences**: a
+  readback describing the defaults instead of the request, two `REVISED`
+  verdicts invented from the word "actually", a plan readback that could not
+  describe half of what it had just built, "the room 2", and a refusal that
+  named no fixable fault. Four of the five were a layer whose only job is to
+  describe the request describing something else instead. A suite written
+  against the implementation cannot see those, because the implementation is
+  where the wrong sentence comes from. `tests/log_022_test.gd` is written
+  against the owner's log instead, quoting it.
 - No persistence of any kind: equipment, worlds and objects do not survive a
   restart, so nothing can be owned.
 - No guard that perceives anything, no locks, no countdown, no escape

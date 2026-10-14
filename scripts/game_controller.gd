@@ -512,11 +512,21 @@ func _equip(parameters: Dictionary) -> void:
 		"proposed_spec": parameters.get("spec", {}),
 	}
 
-	var tool := ToolRegistry.find(str(parameters.get("tool", "")))
+	var asked_tool := str(parameters.get("tool", "")).strip_edges()
+	var tool := ToolRegistry.find(asked_tool)
 	if tool == null:
-		_finish_failed(record, "FAILED_SCHEMA", [
-			"this game has no tool called '%s' (it has %s)" % [
-				str(parameters.get("tool", "")), ", ".join(ToolRegistry.names())]])
+		# 022: a missing field and a wrong name are two different faults and
+		# used to read as one. Asked for boots that stop inside a metre, the
+		# AI sent a spec with no "tool" at all, and the refusal said the game
+		# has no tool called '' - which is true, and tells nobody what to fix.
+		# A refusal is only worth having if it names the thing that was wrong.
+		var kinds := ", ".join(ToolRegistry.names())
+		var why := ""
+		if asked_tool == "":
+			why = "an EQUIP has to say which tool it is for (this game has %s)" % kinds
+		else:
+			why = "this game has no tool called '%s' (it has %s)" % [asked_tool, kinds]
+		_finish_failed(record, "FAILED_SCHEMA", [why])
 		return
 
 	var checked := tool.validate(parameters)

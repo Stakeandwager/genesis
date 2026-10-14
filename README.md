@@ -62,14 +62,16 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      Windows
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      Linux
 ```
 
-30 suites, run against the scripts beside them, so what is tested is what is
+31 suites, run against the scripts beside them, so what is tested is what is
 committed. `--all` adds the slow racing suites.
 
 Among them: six adversarial challenges that try to make the ledger report a
 delivery it has not earned (`false_delivery_test.gd`, zero false successes), a
 test that reads the ledger back off disk and audits it against the world
-(`ledger_audit_test.gd`), and one that asserts something **cannot** happen
-(`sweep_test.gd`).
+(`ledger_audit_test.gd`), one that asserts something **cannot** happen
+(`sweep_test.gd`), and one written entirely from a play session's log rather
+than from the code, quoting the sentences that came out wrong
+(`log_022_test.gd`).
 
 ## What is not true yet
 

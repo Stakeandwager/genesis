@@ -89,12 +89,27 @@ static func readback(command: String, parameters: Dictionary) -> String:
 # out. With no "around" anywhere the worlds are unrelated, and the line says
 # "side by side" - which is exactly the case a player must be able to catch,
 # because the build will succeed either way.
+# --- 022: a plan is not always two worlds ---
+#
+# This used to describe every step as a thing in space and finish with "one
+# inside the other" or "side by side". Since 014 a plan can hold an ORDER,
+# and a dungeon plus an errand came out as "a dungeon of five rooms and an
+# order, side by side" - which is not a relationship an order can be in, and
+# said nothing whatever about WHICH errand. A readback that cannot describe
+# half the request cannot catch a dropped clause in it.
+#
+# So the steps are now sorted into the two kinds they actually are. Worlds are
+# places and keep their spatial line, which is still the thing a player must
+# be able to catch, because the build succeeds either way. Everything else is
+# something DONE once the places exist, so it is said after them, in its own
+# words, with "then".
 static func _plan_readback(parameters: Dictionary) -> String:
 	var raw = parameters.get("steps", null)
 	if typeof(raw) != TYPE_ARRAY or (raw as Array).is_empty():
 		return ""
 
-	var parts := PackedStringArray()
+	var places := PackedStringArray()
+	var doings := PackedStringArray()
 	var related := false
 	for entry in (raw as Array):
 		if typeof(entry) != TYPE_DICTIONARY:
@@ -103,17 +118,47 @@ static func _plan_readback(parameters: Dictionary) -> String:
 		var step_command := str(step.get("command", "")).to_upper()
 		var step_parameters: Dictionary = step.get("parameters", {})
 		var module := find(step_command)
-		parts.append(module.readback_short(step_parameters) if module else Readback.article(step_command.to_lower()))
-		# The same reading the builder uses, so the line cannot promise a
-		# relationship the placement will not deliver.
-		if around_of(step) >= 1:
-			related = true
+		if module != null:
+			places.append(module.readback_short(step_parameters))
+			# The same reading the builder uses, so the line cannot promise a
+			# relationship the placement will not deliver.
+			if around_of(step) >= 1:
+				related = true
+		else:
+			doings.append(_doing(step_command, step_parameters))
 
-	if parts.is_empty():
-		return ""
-	if parts.size() == 1:
-		return parts[0]
-	return Readback.join_list(parts) + (", one inside the other" if related else ", side by side")
+	var said := ""
+	if places.size() == 1:
+		said = places[0]
+	elif places.size() > 1:
+		said = Readback.join_list(places) + (
+			", one inside the other" if related else ", side by side")
+
+	if doings.is_empty():
+		return said
+	var done := Readback.join_list(doings)
+	return done if said == "" else "%s, then %s" % [said, done]
+
+
+# A step that is not a world, said in the words that step's own readback uses,
+# so a plan describes an order exactly as well as an order does on its own.
+# One reading: these all come from the same functions the single-command
+# readback calls, and nothing is phrased twice.
+static func _doing(command: String, parameters: Dictionary) -> String:
+	match command:
+		"ORDER":
+			var asked := NpcGoals.readback(parameters)
+			return "an order %s" % asked if asked != "" else "an order"
+		"EQUIP":
+			var kit := ToolRegistry.readback(parameters)
+			return kit if kit != "" else "a tool"
+		"SHUT":
+			return NpcGoals.door_readback(parameters, true)
+		"OPEN":
+			return NpcGoals.door_readback(parameters, false)
+		"CLEAR_WORLD":
+			return "to clear everything away"
+	return Readback.article(command.to_lower())
 
 
 # Everything the AI needs to know about the worlds it can ask for.

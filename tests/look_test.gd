@@ -16,8 +16,20 @@ func _check(ok: bool, what: String) -> void:
 
 func _initialize() -> void:
 	var look := LookTool.new()
-	var photo := "res://testface.png"
-	var real := ProjectSettings.globalize_path(photo)
+	# 022: this used to expect res://testface.png to be lying about. It was -
+	# on the machine where 021 was written, where it had been made by hand and
+	# never committed. On a clean checkout the "a real picture is accepted"
+	# assertion failed for the whole of 021's life, including on the owner's
+	# machine, and said "there is no file at ..." as though the tool were at
+	# fault. A suite that needs a file it does not make is not a suite; it is a
+	# suite plus somebody's desk. So it makes its own picture now, and deletes
+	# it afterwards.
+	var real := _make_a_picture()
+	if real == "":
+		_check(false, "could not write a test picture to disk")
+		print("LOOK TEST failures=%d" % bad)
+		quit(1)
+		return
 
 	_check(ToolRegistry.names().has("look"), "look is in the registry")
 	_check(ToolRegistry.free_kit().size() == 3, "the free kit now has three tools")
@@ -80,5 +92,26 @@ func _initialize() -> void:
 		"a picture that has vanished leaves a plain head, not a crash")
 	w2.free()
 
+	_clean_up(real)
 	print("LOOK TEST failures=%d" % bad)
 	quit(bad)
+
+
+# A picture of nothing in particular, 600 across so the cap at MAX_SIDE is
+# really exercised, and taller than it is wide so the centre-square crop is
+# too. Written beside the project rather than into it: res:// is read-only in
+# an exported build and this must work the same way everywhere.
+func _make_a_picture() -> String:
+	var image := Image.create(600, 800, false, Image.FORMAT_RGB8)
+	for y in 800:
+		for x in 600:
+			image.set_pixel(x, y, Color(float(x) / 600.0, float(y) / 800.0, 0.5))
+	var path := "user://test_face_fixture.png"
+	if image.save_png(path) != OK:
+		return ""
+	return ProjectSettings.globalize_path(path)
+
+
+func _clean_up(path: String) -> void:
+	if path != "" and FileAccess.file_exists(path):
+		DirAccess.remove_absolute(path)

@@ -35,6 +35,7 @@ ORDER carry - have the character fetch a thing and take it somewhere
 THING is the name of something in the dungeon that is standing now. The character goes to it, picks it up, and takes it to ROOM. An order to carry says what the player wants carried; it does not say the thing will get there.
 
 ROOM is the name of a room in the dungeon that is standing now, or its number counting from 1. Only rooms that exist may be named.
+If the player's own words match the name of a room that exists, use that name exactly. A dungeon whose rooms are called large_hall, room_1, room_2, room_3 has a room called room_3, so "room 3" means room_3 - not the third room in the list. Counting from 1 is only for a player who says "the third room" and no name fits.
 There is one character. Ordering it somewhere while it is already going somewhere replaces the old order.
 This is only for a dungeon. There is nobody to order about in any other world.
 An order says where the player wants the character to go. It does not say that the character will get there."""
@@ -207,9 +208,20 @@ static func door_line(door: Dictionary, closed: bool, changed: bool) -> String:
 
 # A room in a sentence. "the vault" reads well; "the room 3" does not, because
 # the name already says what it is.
+#
+# 022: the test was "begins with room ", which only ever worked for rooms the
+# AI happened to call room_N. Asked to make a dungeon more interesting it
+# called them chamber_1..4, and the line came out "the chamber 3". The thing
+# that makes an article wrong is the NUMBER on the end, not the word in front
+# of it: a numbered name is a label, and labels take no article.
 static func _place(label: String) -> String:
-	var said := label.replace("_", " ")
-	return said if said.begins_with("room ") else "the " + said
+	var said := label.replace("_", " ").strip_edges()
+	if said == "":
+		return "somewhere"
+	var words := said.split(" ", false)
+	if words.size() > 1 and str(words[words.size() - 1]).is_valid_int():
+		return said
+	return "the " + said
 
 
 # What is being attempted, said once the order is accepted. Phrased as an
@@ -228,7 +240,6 @@ static func sent_line(parameters: Dictionary) -> String:
 # than from anything the carrier says.
 static func delivery_line(outcome: String, thing: String, room_name: String, actually: String) -> String:
 	var what := thing.replace("_", " ")
-	var where := room_name.replace("_", " ")
 	match outcome:
 		"DELIVERED":
 			return "The %s is in %s." % [what, _place(room_name)]
@@ -243,15 +254,20 @@ static func delivery_line(outcome: String, thing: String, room_name: String, act
 	return "Nothing happened."
 
 
+# 022: this said "the room 2" in all four branches, because it put "the" in
+# by hand instead of asking _place. delivery_line had already been fixed the
+# same way once (019); the lesson that did not take was that the article
+# belongs in ONE function, not in every sentence that needs it. There is now
+# no other way to name a room in this file.
 static func outcome_line(outcome: String, room_name: String, metres: float, seconds: float) -> String:
-	var where := room_name.replace("_", " ")
+	var where := _place(room_name)
 	match outcome:
 		"ARRIVED":
-			return "Got to the %s. %.0f m in %.0f seconds." % [where, metres, seconds]
+			return "Got to %s. %.0f m in %.0f seconds." % [where, metres, seconds]
 		"BLOCKED":
-			return "Could not get to the %s: stopped making progress after %.0f m." % [where, metres]
+			return "Could not get to %s: stopped making progress after %.0f m." % [where, metres]
 		"GAVE_UP":
-			return "Gave up on the %s after %.0f seconds and %.0f m." % [where, seconds, metres]
+			return "Gave up on %s after %.0f seconds and %.0f m." % [where, seconds, metres]
 		"NO_ROUTE":
-			return "There is no way through to the %s." % where
+			return "There is no way through to %s." % where
 	return "Nothing happened."

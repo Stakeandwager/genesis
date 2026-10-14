@@ -65,8 +65,33 @@ const MISREAD := ["not what i meant", "not what i said", "you misunderstood",
 	"you got it wrong", "you misread", "i never said"]
 
 # Said they want something else now. These attribute the change to them.
-const REVISE := ["actually", "instead", "on second thought", "id rather",
+#
+# These mean a revision wherever they appear in the sentence: "make it a row
+# instead", "I'd rather have a row", "forget that".
+const REVISE := ["instead", "on second thought", "id rather",
 	"i would rather", "changed my mind", "lets try", "let us try", "forget that"]
+
+# --- 022: markers that only mean a revision in one position ---
+#
+# "actually" is two different words. At the front of a clause it announces a
+# change of mind - "actually, make it a row". Anywhere else it is an ordinary
+# intensifier, and in a tester's hands it is a very common one: "confirm
+# delivery only if the key itself is ACTUALLY in room 3", "test whether they
+# ACTUALLY do it". Both of those were scored REVISED, which is this layer
+# manufacturing evidence out of a word - the exact failure it exists to
+# prevent. A verdict invented from nothing is worse than no verdict, because
+# the report counts it.
+#
+# So these count only where they begin a clause, and only in the FIRST
+# sentence, which is where somebody announcing a change of mind puts it. A
+# marker in the fourth sentence of a long new request is prose.
+const REVISE_OPENERS := ["actually", "no actually", "scratch that", "on reflection"]
+
+# Where one clause ends and the next begins. Judged on the raw input, before
+# punctuation is stripped, because position is the whole of the distinction
+# being drawn and stripping commas destroys it.
+const CLAUSE_BREAKS := [",", ";", " - ", " but ", " and "]
+const SENTENCE_BREAKS := [".", "!", "?", "\n"]
 
 # Words that carry no intent, dropped before two requests are compared.
 const NOISE := ["a", "an", "the", "me", "my", "i", "it", "to", "for", "of",
@@ -107,12 +132,18 @@ static func judge(input: String, previous_request: String, was_built: bool) -> D
 
 	# Said in so many words that they want something else now. This is not
 	# evidence about the first reading at all.
-	# Matched anywhere in the sentence, not only at the start: "no, actually
-	# I changed my mind" is a change of mind that happens to begin with a
-	# refusal, and the commas are already stripped by now.
 	for phrase in REVISE:
 		if text.begins_with(phrase) or text.contains(" " + phrase):
 			return _verdict("REVISED", "SAID_REVISED", "none", false)
+
+	# 022: and the positional ones, which need the raw input to see position.
+	# "no, actually I changed my mind" is a change of mind that happens to
+	# begin with a refusal, so every clause of the first sentence is checked,
+	# not only the first.
+	for clause in _opening_clauses(input):
+		for phrase in REVISE_OPENERS:
+			if clause == phrase or clause.begins_with(phrase + " "):
+				return _verdict("REVISED", "SAID_REVISED", "none", false)
 
 	# "No, in a row" rejects what they were shown without saying why. The
 	# rejection is real; which of the two it is cannot be known from this.
@@ -193,6 +224,24 @@ static func reply(verdict: Dictionary) -> String:
 		"REVISED":
 			return "Changing it."
 	return ""
+
+
+# The clauses of the FIRST sentence only, flattened the same way _plain
+# flattens everything else so the phrase lists need no second spelling.
+static func _opening_clauses(input: String) -> Array:
+	var first := input.strip_edges()
+	for mark in SENTENCE_BREAKS:
+		var at := first.find(mark)
+		if at > 0:
+			first = first.substr(0, at)
+	for mark in CLAUSE_BREAKS:
+		first = first.replace(mark, "|")
+	var out: Array = []
+	for piece in first.split("|", false):
+		var said := _plain(str(piece))
+		if said != "":
+			out.append(said)
+	return out
 
 
 static func _plain(text: String) -> String:

@@ -132,5 +132,81 @@ and write the test that answers it. `docs/harness/sweep_test.gd.txt` is the
 pattern. A check that cannot fail is a guard against future change — worth
 keeping, worth labelling, not worth counting as a measurement.
 
+---
+
+## 7. A test that needs a file it does not make
+
+**Signature:** a suite passes on the machine it was written on and fails
+everywhere else, with an error that blames the code.
+
+**Cause:** `look_test` asked for `res://testface.png`. That picture existed on
+the machine where 021 was written, made by hand, and was never committed. On a
+clean checkout the assertion failed for 021's entire life and reported *"there
+is no file at ..."* — which reads exactly like a fault in `LookTool`, because
+it is the message `LookTool` is supposed to produce.
+
+**Do:** a suite makes every artefact it needs and removes it afterwards. If a
+test needs a picture, it writes a picture. The question to ask of any new test
+is not "does it pass" but "does it pass on a machine that has never seen this
+project".
+
+---
+
+## 8. The readback described the defaults instead of the request
+
+**Signature:** a refused request is said back as something the player never
+mentioned, and the sentence is perfectly fluent.
+
+**Cause:** `ToolRegistry.readback` fell back to `tool.defaults()` whenever the
+spec was invalid. Asked for a face from a file that was not there, Genesis
+said **"a plain tan head"** — true of the defaults, and a flat untruth about
+the request. 011 and 016 were the same fault in different clothes: a readback
+that is silent about, or wrong about, part of the request cannot catch a
+dropped clause, which is the only thing it is for.
+
+**Do:** a readback is built from what was ASKED, laid over the defaults, and
+never from the defaults alone. Describing a request is not accepting it; the
+refusal still follows and nothing is built from what was said back.
+
+---
+
+## 9. A verdict manufactured from a common word
+
+**Signature:** the understanding layer scores verdicts nobody gave it, and
+they go into the report as evidence.
+
+**Cause:** `REVISE` matched `"actually"` anywhere in the input. Two of eight
+requests in one session were scored `REVISED` for *"confirm delivery only if
+the key itself is **actually** in room 3"* and *"test whether they
+**actually** do it"*. Neither is a revision; neither mentions the readback it
+was scored against. A tester uses that word constantly, which is why the
+fault appeared the first time a tester used Genesis properly.
+
+**Do:** a word that is a marker in one position and prose in another is only a
+marker in that position. `REVISE_OPENERS` counts only at the start of a clause
+of the first sentence, and position is judged on the raw input, because
+stripping the commas destroys the only thing being measured. An invented
+verdict is worse than no verdict: the report counts it.
+
+---
+
+## 10. The article put in by hand, again
+
+**Signature:** "Got to **the room 2**." "Fetching the red key to **the chamber
+3**."
+
+**Cause:** 019 moved the article into `_place()` and fixed the carry path.
+`outcome_line` kept its own `"the %s"` and said "the room 2" again a release
+later. And `_place()` only knew names beginning `"room "`, so when the AI
+called the rooms `chamber_1..4` the one correct function was wrong too.
+
+**Do:** when a phrasing rule moves into one function, delete every other way
+of saying it in the same file, in the same commit. And write the rule about
+the thing that makes it true — a **numbered** name takes no article — not
+about the one example in front of you.
+
+---
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
+> A fluent sentence is not evidence that anything was understood.
