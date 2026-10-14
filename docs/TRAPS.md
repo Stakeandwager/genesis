@@ -207,6 +207,60 @@ about the one example in front of you.
 
 ---
 
+## 11. Fixing the instance instead of the class
+
+**Signature:** the same fault reappears in the next session, in a different
+word, and the commit that fixed the first one has a comment explaining the
+general rule.
+
+**Cause:** 022 found that `"actually"` was being read as a change of mind in
+the middle of a sentence, put it behind a position test, and left the other
+eight markers matching anywhere in the input — on the reasoning that those
+were unambiguous. The very next session scored two more false `REVISED`
+verdicts on *"record the revised intention **instead**"* and *"explain which
+part is unsupported **instead** of pretending it passed"*. The same fault, one
+word along. TRAPS 9 was written in that same commit and says, in so many
+words, not to do this.
+
+**Do:** when a fault is found in one member of a list, the fix is to the list.
+Ask what the correct rule is for every member, state it, and apply it to all
+of them — then look for the members where the rule needs a second form
+(`"actually"` must start a clause; `"instead"` is clause-*final*, so it needs
+to be matched anywhere in the sentence but never as `"instead of"`). Writing
+down the general lesson is not the same as applying it.
+
+---
+
+## 12. The command with no validator
+
+**Signature:** the AI's sentence appears on the player's screen word for word,
+and it is false about Genesis.
+
+**Cause:** every command goes through a wall — a world through its module, a
+tool through its bounds, an order through the rooms that exist, a plan through
+whether the outer world can hold the inner one. `UNSUPPORTED` went through
+nothing. In one session that printed *"this game does not include a physics
+engine"*, *"only supports static world generation without ... history
+tracking"*, and *"cannot provide runtime inspection or verification of
+world-state attributes"* — to the owner, unchallenged, about a project whose
+entire purpose is measurement, a ledger, and verification from the world.
+
+A refusal is a **claim about Genesis**. A false success says something happened
+that did not; a false refusal says something is impossible that is not. Both
+are the system lying about itself, and the second was far cheaper to produce,
+because nothing was looking.
+
+**Do:** `RefusalCheck` reads a refusal's reason and tells the player when it
+denies something Genesis demonstrably does. It does not overturn the refusal,
+and no rate counts it — that restraint is deliberate, because this is phrase
+matching and traps 9 and 11 are two consecutive sessions of phrase matching
+producing confident nonsense. The deeper fix is upstream: the prompt now
+states what Genesis does and what it really cannot do, because the model was
+refusing for want of being told.
+
+---
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
 > A fluent sentence is not evidence that anything was understood.
+> A refusal is a claim, and gets checked like one.

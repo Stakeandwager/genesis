@@ -272,7 +272,17 @@ func _execute_json(json_text: String) -> void:
 		_show_readback()
 		status_label.text = "I don't know how to do that yet."
 		print("UNSUPPORTED: ", parsed["error"])
-		_record(pending_request, "Not supported yet: " + str(parsed["error"]) + "\n" + SUPPORTED_HELP, "unsupported")
+		# 023: a refusal is a claim about Genesis, and it was the only claim
+		# nothing checked. If it denies something Genesis demonstrably does,
+		# the player is told so under it. The refusal is not overturned - see
+		# RefusalCheck for why that restraint is deliberate.
+		var quarrels := RefusalCheck.quarrel_with(str(parsed["error"]))
+		var note := RefusalCheck.note(quarrels)
+		if note != "":
+			print("REFUSAL UNDERSTATES: ", note)
+		_record(pending_request, "Not supported yet: " + str(parsed["error"])
+			+ ("\n" + note if note != "" else "") + "\n" + SUPPORTED_HELP, "unsupported")
+		controller.refusal_quarrels = quarrels
 		controller.record_rejection("UNSUPPORTED", str(parsed["error"]))
 		return
 

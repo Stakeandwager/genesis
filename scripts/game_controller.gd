@@ -88,6 +88,10 @@ var current_readback := ""
 # record exists so that the readback shown to the player can be pointed at
 # by evidence that only arrives later - a "yes", a correction, a drive.
 var current_record_id := ""
+# 023: where a refusal denied something Genesis does, if it did. Set before
+# record_rejection and cleared by it, so it belongs to one refusal and cannot
+# leak onto the next.
+var refusal_quarrels: Array = []
 
 # --- 004: what the player is equipped with ---
 # Every tool starts at its free default, so a player who never asks for
@@ -571,6 +575,13 @@ func record_rejection(category: String, reason: String) -> void:
 		"category": category,
 		"reasons": [reason],
 	}
+	# 023: when a refusal denies something Genesis does, the disagreement goes
+	# in the record beside the refusal. It is kept as evidence, not as a score:
+	# nothing counts it, and the refusal still stands in the ledger exactly as
+	# the AI gave it.
+	if not refusal_quarrels.is_empty():
+		record["refusal_understates"] = refusal_quarrels.duplicate(true)
+		refusal_quarrels = []
 	if current_attempt.has("revision_of"):
 		record["revision_of"] = current_attempt["revision_of"]
 	TrackLog.append(record)

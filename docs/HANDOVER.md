@@ -35,7 +35,7 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-31 suites in `tests/`, run against the scripts beside them. `--all` adds the
+32 suites in `tests/`, run against the scripts beside them. `--all` adds the
 slow racing suites. Last full run: **suites with something to look at: 0**.
 `report_test` is skipped as known broken; `replay` and `prompt_test` are tools,
 not suites.
@@ -86,6 +86,15 @@ verified, and what remains uncertain.
   character reports its own success.
 - **"Cannot tell" means cannot tell.** `INCONCLUSIVE` is only for a thing that
   is not in the world; a thing in the wrong place is a known failure.
+- **A refusal is a claim about Genesis, and gets checked like one.** 023.
+  `UNSUPPORTED` was the only command with no validator, and in one session it
+  printed three false statements about Genesis's own abilities straight to the
+  owner. A false refusal is the mirror of a false success: both are the system
+  lying about itself, and the refusal was the cheaper lie because nothing was
+  looking. `RefusalCheck` now contradicts a refusal that denies something
+  Genesis does — **in a note, never by overturning it, and counted in no
+  rate**, because the check is phrase matching and phrase matching is what
+  produced traps 9 and 11.
 
 ## Limitations — unverified or absent
 
@@ -115,6 +124,22 @@ verified, and what remains uncertain.
   against the implementation cannot see those, because the implementation is
   where the wrong sentence comes from. `tests/log_022_test.gd` is written
   against the owner's log instead, quoting it.
+
+  **023 added two more, from the next session, and one of them was mine from
+  an hour earlier.** 022 fixed `"actually"` and left the other eight revision
+  markers matching anywhere in the input, so `"instead"` did exactly the same
+  thing twice in the next session — the instance fixed, the class left alone,
+  in the same commit whose own notes said not to. The second was larger: the
+  AI refused six requests out of seven and **five of the refusals contained a
+  false statement about what Genesis can do.** See TRAPS 11 and 12.
+
+- **The capability statement in the prompt is hand-written prose and can go
+  stale.** `tests/log_023_test.gd` asserts that each thing it claims points at
+  a function that still exists (`NpcGoals.delivery_line`,
+  `BootsTool.stopping_distance`, `DungeonModule.is_shut`,
+  `WorldRegistry.around_of`, `TrackLog.next_id`), so a capability cannot be
+  deleted while the prompt still promises it. That is partial: it cannot catch
+  a claim that was never quite true, only one that has stopped being true.
 - No persistence of any kind: equipment, worlds and objects do not survive a
   restart, so nothing can be owned.
 - No guard that perceives anything, no locks, no countdown, no escape

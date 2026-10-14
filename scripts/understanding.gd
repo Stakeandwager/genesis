@@ -64,34 +64,65 @@ const MISREAD := ["not what i meant", "not what i said", "you misunderstood",
 	"i didnt say", "i did not say", "thats not what i", "that is not what i",
 	"you got it wrong", "you misread", "i never said"]
 
-# Said they want something else now. These attribute the change to them.
+# --- 023: a revision is announced, not mentioned ---
 #
-# These mean a revision wherever they appear in the sentence: "make it a row
-# instead", "I'd rather have a row", "forget that".
-const REVISE := ["instead", "on second thought", "id rather",
-	"i would rather", "changed my mind", "lets try", "let us try", "forget that"]
+# These used to be matched anywhere in the input, and that is wrong twice over.
+#
+# 022 found the first half: "actually" is two different words. At the front of
+# a clause it announces a change of mind - "actually, make it a row". Anywhere
+# else it is an ordinary intensifier, and in a tester's hands a very common
+# one: "confirm delivery only if the key itself is ACTUALLY in room 3". Two of
+# eight requests in that session were scored REVISED on the strength of it.
+#
+# 022 then fixed "actually" and left the rest of the list alone, reasoning
+# that the others were unambiguous. The very next session proved otherwise, in
+# the same way, twice: "record the revised intention INSTEAD", "explain which
+# part of the test is unsupported INSTEAD of pretending it passed". Fixing the
+# instance and not the class, in the same commit that wrote down "do not fix
+# the instance" - see TRAPS 9 and 11.
+#
+# So position now governs ALL of them, and the rule is one rule: a revision is
+# ANNOUNCED. Somebody changing their mind says so at the start - first
+# sentence, start of a clause. A marker in the fifth sentence of a 120-word
+# brief is prose about the marker's ordinary meaning.
+#
+# WHAT THIS GIVES UP, ON PURPOSE
+# "Make it bigger. Actually, make it a row." is now missed, because the
+# announcement is in the second sentence. A miss costs a weak
+# ACCEPTED_BY_SILENCE, which is excluded from the understanding score anyway.
+# A false REVISED costs a verdict the player never gave, inside the report.
+# Those two are not the same size, so the rule errs towards the cheap failure.
+# There are two kinds of marker and they need different tests, which is the
+# part 022 got wrong by merging them.
+#
+# OPENERS announce. They come at the START of a clause and the rest of the
+# clause is the new request: "actually, make it a row", "scratch that, build a
+# farm". Mid-clause the same words are ordinary English - "does the door
+# ACTUALLY shut" is a question, not a change of mind - so position inside the
+# clause is what separates the two.
+const REVISE_OPENERS := ["actually", "no actually", "scratch that",
+	"on reflection", "on second thought", "forget that", "forget it",
+	"lets try", "let us try"]
 
-# --- 022: markers that only mean a revision in one position ---
-#
-# "actually" is two different words. At the front of a clause it announces a
-# change of mind - "actually, make it a row". Anywhere else it is an ordinary
-# intensifier, and in a tester's hands it is a very common one: "confirm
-# delivery only if the key itself is ACTUALLY in room 3", "test whether they
-# ACTUALLY do it". Both of those were scored REVISED, which is this layer
-# manufacturing evidence out of a word - the exact failure it exists to
-# prevent. A verdict invented from nothing is worse than no verdict, because
-# the report counts it.
-#
-# So these count only where they begin a clause, and only in the FIRST
-# sentence, which is where somebody announcing a change of mind puts it. A
-# marker in the fourth sentence of a long new request is prose.
-const REVISE_OPENERS := ["actually", "no actually", "scratch that", "on reflection"]
+# THE REST carry the revision in themselves, wherever they sit in the clause,
+# because they are about the speaker's own mind rather than the sentence they
+# introduce: "make it a row INSTEAD", "I'd RATHER have one big hall", "no,
+# actually I've CHANGED MY MIND". These are matched anywhere in the first
+# sentence - but only the first.
+const REVISE := ["instead", "id rather", "i would rather",
+	"ive changed my mind", "i have changed my mind", "changed my mind"]
 
-# Where one clause ends and the next begins. Judged on the raw input, before
-# punctuation is stripped, because position is the whole of the distinction
-# being drawn and stripping commas destroys it.
-const CLAUSE_BREAKS := [",", ";", " - ", " but ", " and "]
+# "instead OF something" is a preposition - "report that limitation instead of
+# pretending it passed" - and carries no revision at all. Bare "instead" at
+# the end of a clause does: "make it a row instead". Same word, two jobs, and
+# only one of them is a marker.
+const NOT_A_MARKER := ["instead of"]
+
+# Where the first sentence ends, and where one clause gives way to the next.
+# Both are read from the RAW input, before punctuation is stripped, because
+# the punctuation is the only thing that says where either boundary is.
 const SENTENCE_BREAKS := [".", "!", "?", "\n"]
+const CLAUSE_BREAKS := [",", ";", ":", " - ", " but ", " and "]
 
 # Words that carry no intent, dropped before two requests are compared.
 const NOISE := ["a", "an", "the", "me", "my", "i", "it", "to", "for", "of",
@@ -131,19 +162,11 @@ static func judge(input: String, previous_request: String, was_built: bool) -> D
 			return _verdict("CORRECTED", "SAID_MISREAD", "strong", false)
 
 	# Said in so many words that they want something else now. This is not
-	# evidence about the first reading at all.
-	for phrase in REVISE:
-		if text.begins_with(phrase) or text.contains(" " + phrase):
-			return _verdict("REVISED", "SAID_REVISED", "none", false)
-
-	# 022: and the positional ones, which need the raw input to see position.
-	# "no, actually I changed my mind" is a change of mind that happens to
-	# begin with a refusal, so every clause of the first sentence is checked,
-	# not only the first.
-	for clause in _opening_clauses(input):
-		for phrase in REVISE_OPENERS:
-			if clause == phrase or clause.begins_with(phrase + " "):
-				return _verdict("REVISED", "SAID_REVISED", "none", false)
+	# evidence about the first reading at all. 023: judged on the FIRST
+	# SENTENCE only, and on whole words, because that is where an announcement
+	# lives and anywhere else the same words are prose.
+	if _announces_a_revision(input):
+		return _verdict("REVISED", "SAID_REVISED", "none", false)
 
 	# "No, in a row" rejects what they were shown without saying why. The
 	# rejection is real; which of the two it is cannot be known from this.
@@ -226,22 +249,59 @@ static func reply(verdict: Dictionary) -> String:
 	return ""
 
 
-# The clauses of the FIRST sentence only, flattened the same way _plain
-# flattens everything else so the phrase lists need no second spelling.
-static func _opening_clauses(input: String) -> Array:
-	var first := input.strip_edges()
-	for mark in SENTENCE_BREAKS:
-		var at := first.find(mark)
-		if at > 0:
-			first = first.substr(0, at)
+# Whether the opening of this input announces a change of mind.
+#
+# Everything is judged on the FIRST SENTENCE, which is the gate 022 was
+# missing: it put "actually" behind a position test and left the rest of the
+# list matching the whole input, so the next session scored two more false
+# verdicts on "record the revised intention INSTEAD" and "explain which part
+# is unsupported INSTEAD of pretending it passed", both in the fifth sentence
+# of a specification brief.
+#
+# Inside that sentence the two lists get the two tests they need: an opener
+# must start a clause, the rest may sit anywhere. Both match whole phrases
+# only, so "instead" inside a longer word is not a marker, and "instead of"
+# is struck out first because it is a preposition.
+static func _announces_a_revision(input: String) -> bool:
+	var opening := _first_sentence(input)
+	for clause in _clauses(opening):
+		for phrase in REVISE_OPENERS:
+			if clause == phrase or clause.begins_with(phrase + " "):
+				return true
+
+	var said := _plain(opening)
+	for dead in NOT_A_MARKER:
+		said = said.replace(dead, " ")
+	var padded := " %s " % said
+	for phrase in REVISE:
+		if padded.contains(" %s " % phrase):
+			return true
+	return false
+
+
+# The clauses of one sentence, flattened the same way _plain flattens
+# everything else so the phrase lists need no second spelling.
+static func _clauses(sentence: String) -> Array:
+	var said := sentence
 	for mark in CLAUSE_BREAKS:
-		first = first.replace(mark, "|")
+		said = said.replace(mark, "|")
 	var out: Array = []
-	for piece in first.split("|", false):
-		var said := _plain(str(piece))
-		if said != "":
-			out.append(said)
+	for piece in said.split("|", false):
+		var clause := _plain(str(piece))
+		if clause != "":
+			out.append(clause)
 	return out
+
+
+# Everything up to the first full stop, question mark, exclamation or newline.
+# An input with no stop at all is one sentence, however long it is.
+static func _first_sentence(input: String) -> String:
+	var said := input.strip_edges()
+	for mark in SENTENCE_BREAKS:
+		var at := said.find(mark)
+		if at > 0:
+			said = said.substr(0, at)
+	return said
 
 
 static func _plain(text: String) -> String:
