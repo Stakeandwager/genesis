@@ -98,7 +98,18 @@ const CAPABILITIES := [
 			"measure", "measurement", "measured", "model the",
 		],
 		"denials": ["static world generation"],
-		"but": "Genesis does measure what it builds, and moves bodies with forces on a mass against drag. It predicts a stopping distance from the numbers and then measures the real one.",
+		# 028: this sentence carried the same over-wide claim as the prompt
+		# did - "and then measures the real one". Nothing in the game does
+		# that; tests/behaviour_test.gd does, and a player cannot reach it.
+		# A checker written to catch Genesis overstating its limits was
+		# overstating its capabilities, which is TRAPS 14 in the other
+		# direction and the same lesson: a rebuttal is a claim about Genesis.
+		#
+		# The last clause is here because this note cannot tell the two apart
+		# by phrase matching, and should not try: a refusal that denies the
+		# MEASURED stop is correct, so the player is told which half was
+		# understated and which half the refusal got right.
+		"but": "Genesis does measure what it builds, and moves bodies with forces on a mass against drag. A boots spec is given a predicted stopping distance from its own numbers before anything moves. What no command does is measure a real stop and report it beside the prediction - a refusal about THAT part is right.",
 	},
 	{
 		"name": "verification from the world",

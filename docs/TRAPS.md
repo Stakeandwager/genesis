@@ -450,9 +450,178 @@ Fixed in 027, with the multi-sentence cases in `tests/limits_test.gd`.
 
 ---
 
+## 17. A capability stated wider than the code, and the checker agreeing
+
+**Signature:** the function the claim names is right there and still works, so
+every existence test passes. The sentence around the function promises more
+than the function does, and nothing is wrong with any single word of it.
+
+**Cause:** trap 15 in the mirror. Two of the seven LIMITATIONS were too wide,
+which made Genesis refuse things it can do. One of the eight CAPABILITIES was
+too wide, which is the more expensive direction: it makes Genesis **accept**
+and promise what it cannot do, and the model does the promising.
+
+*"Genesis predicts a stopping distance from the numbers and then measures the
+real one, and reports both."* Three claims. The first is true, and a player is
+told the prediction when the boots go on. The second is true only of
+`tests/behaviour_test.gd`, which measures a real stop against that very
+prediction and which **a player cannot reach** - nothing in the game does it.
+And the sentence puts *"a car and boots"* in front of all of it, while only
+BOOTS have a `stopping_distance()` at all; a car has bounded braking and
+nothing that turns it into a distance.
+
+The owner's 023 session asked for exactly this, for two CARS: *"measure their
+stopping distances ... compare the measured results with predictions from the
+model."* With the old wording the model was being told Genesis does that.
+
+**And `RefusalCheck` carried the same sentence.** Its rebuttal for
+"measurement and physics" said *"It predicts a stopping distance from the
+numbers and then measures the real one"* - so a player who correctly refused
+to believe in the measured stop would have been told, by the file built to
+catch Genesis understating itself, that they were understating it. A checker
+is not outside the claims it checks. That is trap 14 exactly, one layer up:
+in 023 the prompt told the lie the checker could not catch, and here the
+checker told it too.
+
+**Do:**
+
+- An existence test is not a width test. "The function the claim names still
+  exists" catches a capability that has been **deleted** and nothing else.
+  Ask instead: *what would a player get if they asked for precisely this
+  sentence?* For the measured stop the answer was "nothing", and for a car's
+  stopping distance it was "nothing at all".
+- Count the claims in the sentence, not the sentences. That one had three and
+  was testing as one.
+- When a capability is narrowed, narrow every rebuttal that repeats it, in the
+  same commit. `RefusalCheck.CAPABILITIES` is a second copy of the prompt's
+  claims and goes stale the same way (trap 11).
+- An **absence** is a capability claim and is the kind nobody checks. Where a
+  claim rests on something not existing, assert that too: `tests/capability_test.gd`
+  fails if a car ever grows a `stopping_distance`, because at that moment the
+  prompt would be understating Genesis.
+
+Narrowed in 028, in both places, with the facts asserted in
+`tests/capability_test.gd`.
+
+---
+
+## 18. A refusal that names no limit, and 34 green suites that never asked
+
+**Signature:** out-of-range specs are refused, every validator test passes,
+and a player who asked for a 2 km straight is told *"section 1 (straight):
+length out of range"* and has no idea what to type instead.
+
+**Cause:** `SectionValidator` refused eleven different bounds and named none
+of them. Every other validator in Genesis names its limit, in the same shape,
+and the prompt states it as a fact about the game: *"It REFUSES rather than
+clamping. A number outside its limits is refused with the limit named."*
+
+```
+CarTool         power is 5000, and a car's power must be 400 to 1800
+BootsTool       push is 5000, and boots' push must be 120 to 600
+FarmModule      zone 1 (barn): width 500 m is outside 5-60 m
+DungeonModule   room 1: width is 500 m, and must be 4 to 40 m
+SectionValidator   length out of range
+```
+
+The limits lived in a single range test and the sentence was written out by
+hand at every call site, so **the one function that knew the bound was the one
+function that never said it** - the thing that acts and the thing that
+describes reading from different places, which is the fault `around_of()` was
+written to settle.
+
+Why no test saw it: `tool_test` and `boots_test` ask whether a bad number is
+**refused**. Only one assertion in the whole suite asked what the player was
+**told**, for one field of one tool. A refusal has two jobs - stop the build,
+and tell the player what would be allowed - and the suite was testing one of
+them. The circuit is a third of the worlds Genesis builds.
+
+It is also worth knowing WHY that file and no other. Its header reads
+*"Prototype 002B - Universal Track Geometry & Vertical Axis (user's build)"*.
+It arrived from another prototype and never picked up the conventions of the
+one it landed in. **A file does not inherit a project's rules by being moved
+into its folder**, and nothing in a green suite will tell you which file
+missed them.
+
+**And a refusal must name a limit that is real.** A chicane's offset is bounded
+by twice its radius, and the check ran even when the radius had just been
+refused: a radius of -145 produced *"offset is 5 m, and must be ... at most
+twice the radius, which is -290 m here"*. `BootsTool` already states the rule
+this breaks - a spec already being refused for a bad number does not also need
+telling what that number would have done.
+
+**Do:**
+
+- Ask of every refusal not "was it refused" but "could the player act on
+  what they were told". Assert the limit is in the message, and read the
+  bound from the constant rather than typing it into the test, or the
+  assertion goes stale the day the limit moves (trap 13).
+- Test the claim across the whole class. The sentence in the prompt is about
+  every bounded number in Genesis, so `tests/capability_test.gd` probes every
+  bound in all five validators, above and below, not the one that was found
+  wanting (trap 11).
+- Never compute a bound from a number you have already refused.
+- When a file comes in from elsewhere, read it against the conventions of the
+  project it has joined. Nobody else will.
+
+Fixed in 028.
+
+---
+
+## 19. A gap between two files that is deliberate and says so nowhere
+
+**Signature:** the validator accepts ten things and the prompt offers four.
+It reads exactly like a stale prompt, and the fix looks obvious, free and
+overdue.
+
+**Cause:** `SectionValidator.SECTION_TYPES` has ten members. The prompt says
+*"SECTION TYPES (only these four, with exactly these fields)"* and names
+straight, corner, hairpin and chicane. The other six - uphill, downhill,
+crest, dip, banked_corner, loop_segment - validate, measure, close and build,
+each with its own colour in `circuit_builder.gd` and its own geometry in
+`track_geometry.gd`. A vertical circuit of two uphills and two downhills
+closes and measures: climb 20.0 m, descent 20.0 m, height closure error 0.0.
+
+So the obvious reading is that the prompt is behind the code, and the obvious
+fix is to tell the model about the other six.
+
+**It is not behind the code. It is holding a line, and the reason is in a
+third file.** `docs/GENESIS_BRIEF.md`, under "Known rough edges":
+
+- *Banked corners act as ramps and throw cars over the barrier: about 23
+  opponent recoveries per race on a banked square.*
+- *Loops are built but untested with a car.*
+- *The separation check is flat, so a loop passing over itself reads as a
+  crash.*
+- *The solver does not check that a track returns to its starting height.*
+
+Those are precisely the six. "Only these four" is the one thing standing
+between a player's sentence and a known car-launching defect, and exposing
+them would have been a regression dressed as a documentation fix - with a
+green suite, because `drive_test` drives the types the prompt does not offer.
+
+**Do:**
+
+- Before closing a gap between two files, find out whether it is a gap or a
+  wall. The question is not "which file is out of date" but "what happens to a
+  player if I make them agree".
+- A deliberate restriction needs its reason written where the restriction is.
+  Trap 16 was a rule described in the comments and scoped to nothing; this is
+  a rule enforced in one file and explained in another, three directories
+  away, which is the same fault from the other end.
+- A capability that works is not a capability that is ready. Validated,
+  measured and built is three of four; the fourth is whether it behaves, and
+  for these six the brief says it does not.
+
+Not changed in 028, deliberately. Recorded so the next session does not
+"fix" it.
+
+---
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
 > A fluent sentence is not evidence that anything was understood.
 > A refusal is a claim, and gets checked like one.
 > A skipped test is a claim too, and goes unchecked the longest.
 > So is a limitation, and that one gets written into the documents.
+> So is a capability, and that one gets promised to a player.

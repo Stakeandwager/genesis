@@ -13,10 +13,11 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: 027, the seven limitations in the AI's
-  prompt read against the code - two of them were wider than the fact behind
-  them - and a restraint in `RefusalCheck` that its own comments described and
-  nothing enforced.
+- Last commit at the time of writing: 028, the other half of 027 - the eight
+  CAPABILITIES in the AI's prompt read against the code. One was wider than
+  the code in two ways and was repeated in `RefusalCheck`, and the circuit
+  turned out to be the one world in Genesis whose refusals named no limit,
+  which the prompt claims as a fact about the game.
 - Godot 4.7.1, Compatibility renderer. The owner's machine is an Intel HD 3000
   through ANGLE: no WebGL2, so **the web build cannot be viewed there**.
 
@@ -75,13 +76,14 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-36 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **34 suites**, and since 024 every one of them runs —
+37 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **35 suites**, and since 024 every one of them runs —
 nothing is skipped as broken. `--all` adds the two slow racing suites.
 
-Last full run (027, Godot 4.7.1 on Linux, headless, in a cloud container):
-**suites with something to look at: 0**, both without `--all` and with it.
-Not run on the owner's Windows machine.
+Last full run (028, Godot 4.7.1 on Linux, headless, in a cloud container):
+**suites with something to look at: 0**, both without `--all` and with it,
+with `capability_test` new and passing (165 assertions). Not run on the
+owner's Windows machine.
 
 ## What Genesis is
 
@@ -117,12 +119,19 @@ verified, and what remains uncertain.
 - **One reading.** Anything that both acts and describes must read from the
   same function, or the two diverge and the description becomes a lie.
   `WorldRegistry.around_of()`, `DungeonModule._wall_rects()`,
-  `DungeonModule.is_shut()`, `BootsTool.top_speed()`, and since 027
+  `DungeonModule.is_shut()`, `BootsTool.top_speed()`, since 027
   `RefusalCheck.sentences_of()` — the same rule applied to punctuation, after
   two functions disagreed about what a sentence was and one of them won
-  silently (TRAPS 16).
-- **Refuse, never clamp.** A spec outside its limits is refused with the limit
-  named. `BootsTool` also refuses a combination whose fields are each legal.
+  silently (TRAPS 16) — and since 028 `SectionValidator._range_error()`, the
+  same rule applied to the words of a refusal, after the one function that
+  knew a bound turned out to be the one function that never said it
+  (TRAPS 18).
+- **Refuse, never clamp — and name the limit.** A spec outside its limits is
+  refused with the limit named, in every validator, because a refusal has two
+  jobs: stop the build, and tell the player what would be allowed. `BootsTool`
+  also refuses a combination whose fields are each legal. Since 028 the
+  circuit does it too, and a bound is never computed from a number that has
+  already been refused.
 - **A readback must not be silent about part of the request**, or it cannot
   catch a dropped clause, which is the only thing it is for.
 - **Silence is not agreement.** `ACCEPTED_BY_SILENCE` is recorded and excluded
@@ -191,10 +200,14 @@ verified, and what remains uncertain.
   capabilities**, which were the claims with no test behind them at all. All
   seven are now asserted as facts about the code in `tests/limits_test.gd`,
   never as words in the prompt. Two were stated wider than the fact behind
-  them and are narrowed; see 027 below and TRAPS 15. What is still unaudited
-  by this route is the **capability** half at its width — each one points at a
-  live function, but nothing asks whether the function does as much as the
-  sentence promises.
+  them and are narrowed; see 027 below and TRAPS 15.
+
+  **028 closed the capability half**, which this entry used to name as the
+  outstanding gap. All eight are read against the functions behind them in
+  `tests/capability_test.gd`, at the width the prompt states them. One was
+  wider than the code in two ways and the same sentence was in `RefusalCheck`
+  as well; the circuit's refusals named no limit at all, which is a different
+  claim in the same list. See 028 below and TRAPS 17 and 18.
 - **Persistence is partial, and this entry said "none of any kind" for
   releases while `/save` and `/load` were sitting in `main.gd`.** 023 copied
   the claim into the AI's capability list, so Genesis was telling players it
@@ -229,6 +242,13 @@ verified, and what remains uncertain.
 - Prediction and measurement of stopping distance differ by a consistent 5%,
   which is the discrete integration, not the physics. Recorded rather than
   hidden behind the tolerance that passes it.
+- **That comparison happens in the suite, not in the game, and until 028 the
+  prompt said otherwise.** `tests/behaviour_test.gd` measures a real stop
+  against `BootsTool.stopping_distance`; nothing a player can reach does. The
+  only stopping distance a player is ever shown is the predicted one, when the
+  boots go on. And a **car** has bounded braking but no predicted stopping
+  distance at all. Both halves are now asserted, including the absences, so
+  the prompt cannot drift back; see TRAPS 17.
 
 ## 024 — the suite that was skipped as broken, and was only stale
 
@@ -428,6 +448,129 @@ was touched in a module, a validator, a builder or the ledger.
   existence of the functions it names, not for whether each does as much as
   its sentence promises. That is the obvious next member of this class.
 
+## 028 — the capabilities, read against the code
+
+**Objective.** The task this file named: 027 read the seven **limitations**
+against the code and asserted each as a fact; the eight **capabilities** were
+still checked only for the existence of the functions they name. Read each one
+at the width the prompt states it, and tighten whichever end is wrong — the
+sentence, or the code.
+
+**Starting state.** Branch `prototype-002a` at 6454673 (027). Baseline run,
+Godot 4.7.1 headless: suites with something to look at: 0, 34 suites, both
+without `--all` and with it.
+
+**What the audit found.** Six of the eight are true at the width stated, and
+two were checked and are worth naming as verified rather than assumed: the
+four measurements the prompt names by name all come back as numbers
+(`corridor_length`, `deepest`, `total_length`, `minimum_separation`), and a
+container really is grown to hold what it is given and says so to the player.
+Two things were wrong, in opposite directions.
+
+**One: a capability stated wider than the code, in two places.** *"Genesis
+predicts a stopping distance from the numbers and then measures the real one,
+and reports both."* The prediction is real and a player is told it when the
+boots go on. The measurement against it is real too — and it lives in
+`tests/behaviour_test.gd`, which **a player cannot reach**. Nothing in the
+game measures a real stop. And the sentence says *"a car and boots"*, while
+only boots have a `stopping_distance()` at all; a car has bounded braking and
+nothing that turns it into a distance. The owner's 023 session asked for
+precisely this, for two cars: *"measure their stopping distances ... compare
+the measured results with predictions from the model."*
+
+`RefusalCheck` carried the same sentence in its rebuttal for "measurement and
+physics", so a player who correctly doubted the measured stop would have been
+told by Genesis that they were understating it. That is TRAPS 14 one layer up:
+in 023 the prompt told the lie the checker could not catch; here the checker
+told it too. Narrowing the prompt alone would have left it (TRAPS 11), so both
+are narrowed in this commit.
+
+**Two: the circuit was the one world whose refusals named no limit.** The same
+list of capabilities says *"It REFUSES rather than clamping. A number outside
+its limits is refused with the limit named."* Four validators do exactly that.
+`SectionValidator` said *"section 1 (straight): length out of range"* — eleven
+bounds, no limit named on any of them. The limits lived in a single range test
+and the sentence was written by hand at each call site, so the one function
+that knew the bound was the one that never said it.
+
+Nothing saw it because `tool_test` and `boots_test` ask whether a bad number
+is **refused**; exactly one assertion in 34 suites asked what the player was
+**told**, for one field of one tool. A refusal has two jobs and the suite was
+testing one. Worth knowing why that file and no other: its header reads
+*"Prototype 002B — Universal Track Geometry & Vertical Axis (user's build)"*.
+It came from another prototype and never picked up this one's conventions.
+
+**Implementation.**
+
+- `scripts/section_validator.gd`: `_range_error()` now owns both the decision
+  and the words, with `_bound()` and `_tidy()` beside it, and the eleven
+  hand-written messages are gone — the `around_of()` rule applied to a
+  refusal. A player now reads *"section 1 (straight): length is 5000 m, and
+  must be 20 to 1000 m"*. Signed angles say *"either direction"* because they
+  are bounded on size; **bank is not**, since its range starts at 0 and
+  reading it as a size would quietly admit a negative bank.
+- `scripts/section_validator.gd`: a chicane's offset bound is twice its
+  radius, and the check ran even when the radius had just been refused — a
+  radius of -145 produced *"at most twice the radius, which is -290 m here"*.
+  It now runs only when the radius is sound, which is the rule `BootsTool`
+  already states for the same reason.
+- `scripts/ai_interpreter.gd`: the physics capability narrowed to what a
+  player gets, and it names the two things Genesis does NOT do in the same
+  breath — the 027 pattern, because the true and false halves were a clause
+  apart.
+- `scripts/refusal_check.gd`: the same claim narrowed in the rebuttal. Its
+  last clause says which half of such a refusal is right, because phrase
+  matching cannot tell them apart and should not try.
+- `tests/capability_test.gd`, new: 165 assertions. Every bound in all five
+  validators probed above and below, with the refusal required to name both
+  limits — bounds read from the constants, never typed into the test, so they
+  cannot go stale (TRAPS 13). The four named measurements built and read. The
+  narrowed claim asserted as facts **including its absences**: the suite fails
+  if a car ever grows a `stopping_distance`, because at that moment the prompt
+  would be understating Genesis.
+- `docs/TRAPS.md`: traps 17, 18 and 19.
+
+No module, builder, ledger or solver was touched. The only product-visible
+change is that a circuit's refusals now say what the limit is.
+
+**Evidence — what was actually run.** Godot 4.7.1
+(`4.7.1.stable.official.a13da4feb`), Linux, headless, in a cloud container:
+
+- Baseline before: 0 suites with something to look at, 34 suites, with
+  `--all` as well.
+- After: 0 with something to look at, 35 suites, `capability_test` passing
+  with 165 assertions, with `--all` as well — `drive_test` and `session_test`,
+  the two slow racing suites that actually drive the circuit, both pass.
+- **The new checks were proved able to fail** (TRAPS 6), six ways, each
+  reverted and `cmp` used to confirm the files came back byte-identical: the
+  nameless refusal restored (20 failures); the over-wide prompt sentence
+  restored (2); the over-wide `RefusalCheck` rebuttal restored (2); the
+  chicane offset computed from a refused radius (1, quoting the -290 m); bank
+  read as a magnitude (2, including a negative bank being accepted); and the
+  limits rendered to three decimals so a player reads a different number (21).
+- **Two failures in the first run of the new suite were the test's fault, not
+  the code's**, and both are recorded in the suite where they happened. It
+  probed below a corner's minimum angle with a large negative number — which
+  is a legal left turn, because that bound is on size — and it read the wrong
+  error out of a list of two. A harness that calls the code broken is the
+  failure mode this project is least able to see, so the comments say so.
+
+**What the tests did NOT prove.**
+
+- **No model has seen the narrowed prompt.** The point of narrowing it is to
+  stop the model promising a braking experiment, and a headless harness has no
+  key and no model. What is tested is that the facts behind the sentence hold.
+- **No player has seen the new refusals.** They are better sentences by the
+  standard the other four validators set; whether a circuit refusal now reads
+  well in the editor is an observation only the owner can make.
+- The six section types the prompt withholds were investigated and
+  **deliberately left alone** — see TRAPS 19 and "Human decision needed" below.
+- Nothing ran on the owner's Windows machine. `run_tests.bat` was not edited
+  and not executed; the new suite is picked up by both runners from
+  `tests/*.gd` with no list to maintain.
+- `sweep_test` still reports that no legal command reaches
+  `FAILED_UNWALKABLE`, unchanged and still TRAPS 6's own example.
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -450,19 +593,40 @@ things Genesis does. The requests that would show it:
   which is already true of every farm, and which the old wording invited a
   refusal of.
 
-**Smallest useful assistant task next.** The same class, other half. 027 read
-the seven **limitations** against the code and asserted each as a fact. The
-**capabilities** are still checked only for the existence of the functions
-they name: `log_023_test` proves `BootsTool.stopping_distance` exists, not
-that Genesis "predicts a stopping distance from the numbers and then measures
-the real one, and reports both" — which is a wider sentence than the function
-on its own supports. Eight claims, one at a time, each asserted at the width
-the prompt states it or the prompt narrowed. That needs no decision from the
-owner.
+028 adds a third, and it is one line:
 
-Worth a look while it is cheap: `sweep_test` still reports that no legal
-command reaches `FAILED_UNWALKABLE`, which is TRAPS 6's own example and has
-been true since 005.
+- *"a circuit with a 2 km straight"* — any out-of-range circuit will do. The
+  refusal should now name the limit, the way a car's and a dungeon's always
+  have: *"section 1 (straight): length is 2000 m, and must be 20 to 1000 m"*.
+  Before 028 it said *"length out of range"* and left the player to guess.
+  Worth one glance to confirm it reads as well in the editor as it does in a
+  test, since that sentence is the whole point of the change.
+
+And one worth watching rather than typing: 028 narrowed the physics capability
+so the model stops promising a measured braking experiment. If a request like
+023's two-car brief now comes back refused **with the right reason** — one set
+of equipment at a time, and no measured stop — that is the narrowing working.
+If it still comes back claiming Genesis has no physics, that is the old 023
+fault and `RefusalCheck` should be catching it.
+
+**Smallest useful assistant task next.** 028 finished the claims in the
+prompt: limitations (027) and capabilities (028) are now both asserted as
+facts. The next member of the same class is the **readback**, which is the
+layer the owner's sessions have found most of the real faults in — four of the
+five in 022 were a readback describing something other than the request. What
+has never been asked of it systematically is the 028 question: for each thing
+a readback says, is the sentence as wide as the thing it describes? That needs
+no decision from the owner and no live key.
+
+Two smaller ones, either of which is a single session:
+
+- **A refusal is now actionable in every validator but one place.** The
+  `_forbid`, `missing` and `must be a number` messages in
+  `SectionValidator` name the field but not what a legal value would be. Lower
+  value than the bounds were, and the same shape.
+- Worth a look while it is cheap: `sweep_test` still reports that no legal
+  command reaches `FAILED_UNWALKABLE`, which is TRAPS 6's own example and has
+  been true since 005.
 
 ## A likeness from a photo (021 and beyond)
 
@@ -567,12 +731,46 @@ decision, so it is his and not the assistant's.
 
 ## Human decision needed
 
-1. **Commit authorship.** Commits since 2026-10-10 are authored by
+1. **The six section types the prompt withholds — the owner's call, and there
+   is no hurry.** Found and deliberately left alone in 028; the full account is
+   TRAPS 19. `SectionValidator` accepts ten section types. The prompt offers
+   **four** and says "only these four". The other six — uphill, downhill,
+   crest, dip, banked_corner, loop_segment — validate, measure, close and
+   build: a vertical circuit of two uphills and two downhills closes with a
+   height closure error of 0.0, and `circuit_builder.gd` has a colour for each
+   of them.
+
+   It reads exactly like a stale prompt. It is not. `docs/GENESIS_BRIEF.md`,
+   under "Known rough edges", says banked corners throw cars over the barrier
+   (~23 opponent recoveries a race), loops are built but untested with a car,
+   the separation check is flat so a loop over itself reads as a crash, and
+   the solver does not check that a track returns to its starting height.
+   Those are the same six. "Only these four" is the one thing between a
+   player's sentence and a known defect.
+
+   So this is not an assistant's fix: it is **what to do with a finished
+   vertical axis that nothing will drive safely yet**, which is product
+   direction and cost. The options, for the record:
+
+   - **(a) Leave it.** Costs nothing. The vertical axis stays unreachable.
+   - **(b) Fix the four rough edges first**, then open the types. Honest, and
+     the largest of them (banked corners as ramps) is a physics problem, not
+     a wording one.
+   - **(c) Open the ones that are sound**, if any are. The slopes are the
+     candidates — uphill, downhill, crest, dip — and the blocker named for
+     them is the solver not checking return-to-height, which is narrower than
+     a car being launched. Would need the owner to drive one first.
+
+   Whichever it is, the restriction needs its reason written where the
+   restriction is. Right now it is enforced in `racing_module.gd` and
+   explained three directories away.
+
+2. **Commit authorship.** Commits since 2026-10-10 are authored by
    "Claude Opus 5"; before that by the owner with the assistant as co-author.
    The protocol asks for a record of what the AI contributed and what the human
    accepted, which the current arrangement gives accurately. The owner has not
    ruled on which they want.
-2. ~~Whether scripts may be pushed before the owner has run them.~~
+3. ~~Whether scripts may be pushed before the owner has run them.~~
    **OWNER, 2026-10-14: settled.** The owner's job is testing. The assistant
    builds, tests headlessly and pushes - scripts included. The owner pulls,
    runs it on real hardware with a real API key, and reports what happened.
@@ -582,7 +780,7 @@ decision, so it is his and not the assistant's.
    In exchange, **every commit states what was verified and what was not**, so
    the owner never has to guess whether a change has been near real hardware.
    The standing caveat stands: a green suite is necessary and not sufficient.
-3. ~~Whether work should happen while the owner is away. The assistant does
+4. ~~Whether work should happen while the owner is away. The assistant does
    not run on its own — nothing happens between messages. Autonomy would
    require a scheduled task, which does not exist.~~
    **Out of date as of 2026-10-14: it exists.** 024 was committed by a
