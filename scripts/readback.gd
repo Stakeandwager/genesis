@@ -141,7 +141,7 @@ static func article(word: String) -> String:
 
 
 # "a, b and c" - the list separator people actually read.
-static func _join(parts: PackedStringArray) -> String:
+static func _join(parts: PackedStringArray, conjunction: String = "and") -> String:
 	if parts.is_empty():
 		return ""
 	if parts.size() == 1:
@@ -149,11 +149,19 @@ static func _join(parts: PackedStringArray) -> String:
 	var head: Array = []
 	for i in parts.size() - 1:
 		head.append(parts[i])
-	return ", ".join(head) + " and " + parts[parts.size() - 1]
+	return ", ".join(head) + " %s " % conjunction + parts[parts.size() - 1]
 
 
 static func join_list(parts: PackedStringArray) -> String:
 	return _join(parts)
+
+
+# "a, b or c" - the same list when the members are ALTERNATIVES rather than
+# things that are all present. 035 needed it because the AI's prompt names a
+# farm's crops that way, and the six names were typed out beside the six the
+# validator accepts instead of being read from them.
+static func join_or(parts: PackedStringArray) -> String:
+	return _join(parts, "or")
 
 
 # Long lists are cut short rather than printed in full: a readback nobody
@@ -242,14 +250,34 @@ static func as_json(value: Variant) -> String:
 # of those same examples and fails if the validator will not accept it.
 static func list_error(entry: Dictionary) -> String:
 	var key := str(entry.get("key", ""))
-	var one := str(entry.get("one", key))
+	var sample: Array = entry.get("sample", [])
+	var shown := "" if sample.is_empty() else ", for example %s" % as_json([sample[0]])
+	return "'%s' must be a list of %s%s" % [key, list_rule(entry), shown]
+
+
+# --- 035: the same bound, said to the model instead of to the player ---
+#
+# list_error() tells a PLAYER how many members a list may hold, after the
+# request was refused. This says the same thing to the MODEL, before it
+# writes one, and it exists because the two had drifted: the AI's prompt
+# said "Use 2 to 24 zones" while FarmModule.MIN_ZONES was 1 and had been
+# since 003, which lowered it so that "build a farm with a barn" would stop
+# being refused. The prompt then told the model not to send one. A bound
+# stated narrower than the truth costs a player the request the bound was
+# widened for - TRAPS 15's shape, in the prompt rather than in a limitation.
+#
+# So the sentence the model reads is now written from lists() too, by the
+# same branch the refusal uses, and a world that moves a bound moves what
+# the model is told along with what the player is refused. The wording is
+# deliberately the refusal's: "2 to 24 rooms", "up to 48 doors".
+static func list_rule(entry: Dictionary) -> String:
+	var one := str(entry.get("one", str(entry.get("key", "item"))))
 	var many := str(entry.get("many", ""))
 	var low := int(entry.get("low", 0))
 	var high := int(entry.get("high", 0))
-	var sample: Array = entry.get("sample", [])
-	var how_many := ("of up to %s" % plural(high, one, many)) if low <= 0 else ("of %d to %s" % [low, plural(high, one, many)])
-	var shown := "" if sample.is_empty() else ", for example %s" % as_json([sample[0]])
-	return "'%s' must be a list %s%s" % [key, how_many, shown]
+	if low <= 0:
+		return "up to %s" % plural(high, one, many)
+	return "%d to %s" % [low, plural(high, one, many)]
 
 
 # A member of one of those lists, refused on its own. The same example, from

@@ -39,7 +39,39 @@ const TEMPERATURE := 1.0
 # a world can build is unchanged, so designs are still comparable with 002H.
 # 004-tools-1 adds EQUIP and the tools the registry describes. Worlds are
 # unchanged, so world designs stay comparable with 003.
-const PROMPT_VERSION := "025-what-genesis-does-1"
+#
+# 035-bounds-from-the-code-1 is the first version string in this list that was
+# moved because a SUITE insisted on it rather than because somebody
+# remembered. See PROMPT_FINGERPRINT below for why that distinction had to be
+# built: this constant sat at 025 while the prompt changed underneath it
+# twice, in 027 and 028, so three different prompts were recorded under one
+# version and the ledger called them one population. 035 itself changes the
+# farm's zone bound, the circuit's section count and seven stated limits that
+# now read from their constants, so designs from here are not comparable with
+# 028-034 either - and now they say so.
+const PROMPT_VERSION := "035-bounds-from-the-code-1"
+
+# --- 035: the version cannot be left behind again ---
+#
+# MEASURED, not inferred, and it is the reason this constant exists. The
+# prompt-contributing strings were extracted at every commit from 025 to 034
+# and hashed: 025 and 026 share one prompt of 14470 characters, 027 brings a
+# second of 15030, and 028 a third of 15306 that stood until 035. All three
+# were recorded as "025-what-genesis-does-1".
+#
+# PROMPT_VERSION exists so that interpretation measured under one prompt is
+# not compared with interpretation measured under another - that is the whole
+# reason every ledger record carries it. A version that does not move when
+# the prompt moves is the same fault as a refusal that names no limit or a
+# limitation nobody rechecked: a claim about Genesis that nothing was
+# checking. Nothing could have caught it, because no test knew what the
+# prompt was supposed to be.
+#
+# This is the sha256 of assembled_prompt(). tests/prompt_bounds_test.gd fails
+# if they disagree, and says to move PROMPT_VERSION as well as this string.
+# It is a fingerprint, not an assertion about wording: it says only that the
+# prompt the model receives is the one this version names.
+const PROMPT_FINGERPRINT := "8b64f8ea42b4c6f711afc8aaba9cb98d9ebb22aa0f0146d6e1d8625306ff3505"
 # Which wording of the closure feedback a revised track was given.
 # feedback-2 adds Godot's test of whether ANY straight lengths could close the layout.
 const REVISION_VERSION := "002C-closure-feedback-2"

@@ -13,7 +13,23 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **034**, the question 033 left as the
+- Last commit at the time of writing: **035**, the task this file named next
+  — the farm prompt stating a bound the code does not have — asked of every
+  bound in the prompt rather than of the one sentence. Nine of eleven were
+  right. The farm's told the model to *"Use 2 to 24 zones"* while
+  `MIN_ZONES` has been 1 since 003 lowered it so that *"a farm with a barn"*
+  would stop being refused, so the prompt refused on Genesis's behalf a farm
+  Genesis accepts — in the model, before Genesis ever sees the request. And
+  a circuit's section count, 2 to 40, was **stated nowhere**, so a long
+  circuit could be refused by a limit the model was never told. Found while
+  answering this file's own question *"does `PROMPT_VERSION` move with it?"*:
+  it had not moved since 025, and **three different prompts had been
+  recorded under one version string** — 027 and 028 each changed what the
+  model is told and left the version behind, so every comparison across them
+  is not a comparison. 41 suites passed before and 42 after, `--all`
+  included; the new suite fails 4 times against the pre-035 prompt. See 035
+  below and TRAPS 28 and 29.
+- The commit before it: **034**, the question 033 left as the
   next assistant task, asked of the whole class rather than the four
   instances it named. Every refusal in Genesis about a FIELD names what a
   legal value would be; nothing had ever asked the same of the CONTAINER the
@@ -124,18 +140,19 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-43 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **41 suites**, and since 024 every one of them runs —
+44 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **42 suites**, and since 024 every one of them runs —
 nothing is skipped as broken. `--all` adds the two slow racing suites.
 
-Last full run (034, Godot 4.7.1 on Linux, headless, in a cloud container):
+Last full run (035, Godot 4.7.1 on Linux, headless, in a cloud container):
 **suites with something to look at: 0**, both without `--all` and with it,
-`drive_test` and `session_test` included. 034's new suite is
-`container_door_test` (30 failures against the pre-034 sentences) and
-`plan_said_test` gains a positive control (3 more). Not run on the owner's
-Windows machine. `run_tests.bat` needed no edit: `container_door_test`
-matches none of its `findstr` patterns, so it runs there without
-`--fixed-fps`, which is what it gets here too — checked rather than assumed
+`drive_test` and `session_test` included. 035's new suite is
+`prompt_bounds_test` (4 failures against the pre-035 prompt); 034's is
+`container_door_test` (30 failures against the pre-034 sentences). Not run on
+the owner's Windows machine. `run_tests.bat` needed no edit for either:
+neither name matches any of its `findstr` patterns — `prompt_bounds_test`
+does not contain the literal `prompt_test` — so both run there without
+`--fixed-fps`, which is what they get here too — checked rather than assumed
 (TRAPS 4).
 
 **Run `--all` before believing a green suite.** 033 introduced a fault that
@@ -1762,6 +1779,164 @@ in a cloud container.
 
 ---
 
+## 035 — a bound stated to the model, and a version that named three prompts
+
+**Objective.** HANDOVER named the next assistant task as one sentence: the
+farm prompt states *"Use 2 to 24 zones"* and `FarmModule.MIN_ZONES` is 1. It
+also said the question of whether `PROMPT_VERSION` moves with it was worth a
+minute's thought first. Both were done, in that order, and the second turned
+out to be the larger finding.
+
+**The bound, asked of the class rather than of the sentence (TRAPS 11).**
+Every numeric bound in `AIInterpreter.assembled_prompt()` was measured
+against the constant that enforces it, headless, by asking the validator
+rather than by reading the source:
+
+```
+farm zones         prompt "Use 2 to 24 zones"      validator accepts 1   WRONG
+circuit sections   prompt says nothing             validator 2 to 40     MISSING
+dungeon rooms      prompt "2 to 24 rooms"          validator 2 to 24     ok
+dungeon doors      prompt "at most 48 doors"       validator up to 48    ok
+dungeon things     prompt "At most 8."             validator up to 8     ok
+plan steps         prompt "Up to 4 steps."         MAX_PLAN_STEPS 4       ok
+room sides, zone sides, every section range, the solver's 20%,
+the road's 18 m                                                           ok
+```
+
+**The farm's is the one that costs a player a request**, and it costs it
+invisibly. 003 lowered `MIN_ZONES` to 1 because *"build a farm with a barn"*
+is about the most natural thing a first-time player can type, and 003 changed
+the minimum specifically so it would stop being refused. The prompt then told
+the model not to send one — so the refusal happens **in the model, before
+Genesis ever sees the request**, which is why no suite could have caught it:
+a refusal gets checked, and this is a request that is never made.
+
+**The circuit's is the one nothing had ever asked.** A section count of 2 to
+40 appeared in no sentence the model reads. A model asked for a long
+technical circuit could compose 41 sections and be refused by a limit it had
+never been told — trap 26's fault (a door that names nothing) at the one door
+that is not a refusal. The prompt now says *"Use 2 to 40 sections: at least 2
+straights and at least 2 corners or hairpins"*, which is the existing rule
+line with the count in front of it.
+
+**WHAT CHANGED.** Nothing Genesis builds, accepts or refuses. Every bound
+every validator enforces is the same number it was. What changed is what the
+model is **told**, in four lines, and where those sentences get their numbers:
+
+```
+- Use 2 to 24 zones.                     + Use 1 to 24 zones.
+- Use at least 2 straights and at        + Use 2 to 40 sections: at least 2
+  least 2 corners or hairpins.             straights and at least 2 corners
+                                           or hairpins.
+- ... may not be the name of a room.     + ... may not be the name of a room.
+  At most 8.                               At most 8 things.
+- Use 2 to 24 rooms and at most 48       + Use 2 to 24 rooms and up to 48
+  doors.                                   doors.
+```
+
+The assembled prompt goes from **15474 to 15497 characters** and those four
+lines are the whole difference — every other byte is identical, which is the
+evidence that the eleven generated bounds reproduce what was typed out by
+hand. `Readback.list_rule()` writes a declared list's bound for the model the
+way `list_error()` writes it for the player; both read `lists()`, and
+`list_error()` now calls `list_rule()` so there is one branch rather than two.
+The three world modules' prompt sections interpolate every bound from its
+constant, the way `boots_tool.gd` and `car_tool.gd` always have — which is
+why the tools had none of this fault.
+
+**And the version, which is the larger half.** The question *"does
+`PROMPT_VERSION` move?"* was answered by measuring what it had done so far:
+the prompt-contributing strings were extracted at every commit from 025 to
+034 and hashed.
+
+```
+025, 026                      14470 characters   025-what-genesis-does-1
+027 (limitations narrowed)    15030 characters   025-what-genesis-does-1
+028 (physics narrowed) .. 034 15306 characters   025-what-genesis-does-1
+```
+
+**Three prompts, one version string.** `PROMPT_VERSION` exists so that
+interpretation measured under one prompt is not compared with interpretation
+measured under another — that is why every ledger record carries it. 027 and
+028 were both *about* the prompt and both left it behind, so every
+before-and-after comparison across either is not a comparison. Nothing was
+checking it, because no test knew what the prompt was supposed to be.
+
+`AIInterpreter.PROMPT_FINGERPRINT` is now the sha256 of `assembled_prompt()`
+and `prompt_bounds_test` fails when they disagree, naming the new hash and
+saying to move `PROMPT_VERSION` as well. `PROMPT_VERSION` is now
+`035-bounds-from-the-code-1`. It is a fingerprint and not an assertion about
+wording: it says only that the prompt the model receives is the one the
+version names.
+
+**Evidence.** Godot 4.7.1 (4.7.1.stable.official.a13da4feb) headless, Linux,
+in a cloud container.
+
+- Baseline: 41 suites, **0 with something to look at**, with `--all`.
+- After: 42 suites, **0 without `--all` and 0 with it**, `drive_test` and
+  `session_test` included.
+- `prompt_bounds_test` run against the pre-035 prompt sections, with
+  `readback.gd` and `ai_interpreter.gd` left in place so it parses:
+  **fails 4 times** — the farm's stated minimum of 2 against a declared 1,
+  the circuit's count stated nowhere, the dungeon's `things` bound naming no
+  noun for its 8, and the fingerprint, which prints the old prompt's hash.
+  The three modules were then restored and `cmp` confirms every one
+  byte-identical to the version the suite passed against.
+- The prompt was dumped before and after and diffed: **four lines, 15474 to
+  15497 characters.** Measured, not reasoned.
+
+**What the new suite asserts, and what it does not.** Its strongest
+assertion is not about the prompt's words. For every list any world declares,
+it hands the validator `low - 1`, `low`, `high` and `high + 1` members and
+requires exactly the first and last to be refused **for their count** — so a
+declaration edited to match a wrong sentence fails as surely as a sentence
+that misstates a declaration. The chain is prompt ⇔ declaration ⇔ validator
+and all three links are measured. The prompt side is read with a regular
+expression over *"N to M members"* and *"at most N members"*, so no sentence
+is quoted and any of them may be rewritten. The lists are enumerated from
+`WorldRegistry.modules()`, so a world added later is covered without editing
+the suite.
+
+**Limitations — what this does NOT establish.**
+
+- **No model has read the new prompt.** A headless harness has no key and no
+  model. Whether telling the model a circuit's section count changes what it
+  composes, and whether a one-zone farm now actually gets built when asked
+  for, are the two things only the owner's editor session can show. They are
+  under Next action.
+- **Nothing about what Genesis accepts or refuses has moved.** No validator,
+  solver, builder, readback or ledger was touched. A one-zone farm validated
+  before 035 and validates after; what changed is that the model is no longer
+  told not to ask.
+- **The records already made cannot be fixed.** They are on the owner's
+  machine and 035 did not go near them. The character counts above are
+  recorded so that a reader can split them by hand: a record under
+  `025-what-genesis-does-1` was made under one of three prompts, and only the
+  commit date tells which.
+- **The `things` sentence previously named no noun**, and calling that a
+  fault is a judgement rather than a measurement. *"At most 8."* sits
+  directly after the `THING:` line, so a model almost certainly read it
+  correctly. It now says *"At most 8 things."* because a bound that names
+  what it counts is the rule everywhere else in the prompt — said plainly
+  because it is reasoning and not evidence.
+- **One number still stands for two constants.** The prompt says the solver
+  may move an angle and a straight's length *"by up to 20%"*, and those are
+  `MAX_ANGLE_ADJUSTMENT` and `MAX_LENGTH_ADJUSTMENT`, both 0.20. The suite
+  fails if they ever differ, at which point the sentence has to name them
+  separately rather than quietly describe one of them as both.
+- **Nothing ran on Windows.** `run_tests.bat` needed no edit — checked, not
+  assumed: `prompt_bounds_test` matches none of its `findstr` patterns, and
+  in particular does not contain the literal `prompt_test`, so it is not
+  skipped as a tool (TRAPS 4).
+- **The sweep covers numeric bounds and the two value lists nothing else
+  held** (a farm's zone types and its crops, now read from `ZONE_TYPES` and
+  `CROP_COLOURS`). The circuit's four offered types were already held by
+  `capability_test` and are not asserted twice. What is *not* swept is the
+  prompt's prose claims about mechanism — those are `capability_test`'s and
+  `limits_test`'s ground, and 027 and 028 did that reading.
+
+---
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -1898,9 +2073,32 @@ because what changed is a sentence and the suite can only prove it is true:
   sentence that should probably have been there all along. See "Human
   decision needed" 7.
 
-**Smallest useful assistant task next.** The ledger question (033) and the
-container-door question (034) are both **done**. Candidates, in the order
-the assistant would take them:
+035 adds a ninth, and this one is two sentences and a look at a report:
+
+- *"a farm with a barn"*, and nothing else. Before 035 the prompt told the
+  model to use 2 to 24 zones, so a one-zone farm was the model's to refuse
+  even though Genesis accepts one and 003 lowered the minimum so it would.
+  **The thing to watch is whether a single barn now gets built**, rather than
+  coming back as a farm with a barn and a yard the player never asked for, or
+  as `UNSUPPORTED`. If it still arrives with a second zone, the prompt wording
+  is not enough and the next move is an example rather than a bound.
+- *"a long technical circuit with lots of corners"* — anything that invites a
+  big section list. The prompt now states *"Use 2 to 40 sections"*, which it
+  never did. Whether that stops a 41-section proposal, or just makes the
+  circuits blander, is the judgement; a refusal that says *"a track needs 2 to
+  40 sections (got 41)"* was always there and was never announced.
+- And one worth knowing rather than typing, because it is about the ledger and
+  not the game: **`prompt_version` is no longer comparable across 027 and
+  028.** Records made from 025 to 034 all say `025-what-genesis-does-1` and
+  were made under three different prompts (14470, 15030 and 15306 characters;
+  the boundaries are commits 027 and 028). Any before-and-after reading across
+  those is not a before-and-after. From 035 the version moves whenever the
+  prompt does, because a suite now fails if it does not. Nothing was done to
+  the records themselves — they are on your machine and they are yours.
+
+**Smallest useful assistant task next.** The ledger question (033), the
+container-door question (034) and the prompt-bound question (035) are all
+**done**. Candidates, in the order the assistant would take them:
 
 - ~~**A refusal that names no legal value, at the one door 030 did not
   reach: the top-level list itself.**~~ **Done in 034**, and it was nine
@@ -1936,13 +2134,22 @@ the assistant would take them:
   family (the article and the plural put in by hand). Worth fixing in the
   same commit as the instance above, and worth asking of every
   `Readback`-less count in the validators rather than of that one.
-- **The farm prompt states a bound the code does not have**, below, unchanged
-  and still the narrow direction. Note the cost of leaving it: it is the one
-  candidate here that costs a player a request.
+- ~~**The farm prompt states a bound the code does not have.**~~ **Done in
+  035**, and like 034 it was wider than this entry said. Asked of every
+  bound in the prompt rather than of the farm's, one more was wrong by
+  omission: a circuit's section count, 2 to 40, was stated nowhere, so a
+  long circuit could be refused by a limit the model was never told. And the
+  "minute's thought" this file asked for first — does `PROMPT_VERSION` move?
+  — found that it had failed to move twice already, so three prompts were
+  recorded under one version. Left struck rather than deleted, because the
+  next reader should see that a question about one sentence was a question
+  about eleven and a version string. See 035 above and TRAPS 28 and 29. The
+  long entry below is the original, as 030 wrote it.
 - **Is every command reachable from the prompt? ASKED AND ANSWERED, so
   nobody need ask again.** Measured this session against the assembled
   prompt the model actually receives — `SYSTEM_PROMPT` plus the three
-  registries' sections, **15474 characters** (032's "7573 characters" is
+  registries' sections, **15474 characters at the time** (15497 since 035,
+  which changed four lines of it; 032's "7573 characters" is
   `SYSTEM_PROMPT` the constant on its own, which is what it measured; both
   numbers are right about different strings, and this one is the one the
   model sees). Every whitelisted command is named in it except
@@ -1958,8 +2165,10 @@ the assistant would take them:
 
 Two smaller ones, either of which is a single session:
 
-- **The farm prompt states a bound the code does not have, and it is the
-  narrow direction.** Found while reading the validators for 030 and
+- ~~**The farm prompt states a bound the code does not have, and it is the
+  narrow direction.**~~ **Done in 035.** The original, as 030 wrote it, kept
+  because the last paragraph of it is the question that turned out to matter
+  most: Found while reading the validators for 030 and
   **measured, not inferred**: `FarmModule.MIN_ZONES` is 1, and the prompt
   says *"Use 2 to 24 zones"*. A one-zone farm validates with an empty error
   list — `capability_test` has built one since 028. The comment on
@@ -1972,7 +2181,8 @@ Two smaller ones, either of which is a single session:
   prompt change and 030 deliberately left the prompt byte-identical; it wants
   its own commit, and the question of whether `PROMPT_VERSION` moves with it
   is worth a minute's thought first, since every record carries it and the
-  ledger compares designs by it.
+  ledger compares designs by it. *(035's answer: yes, and it should have
+  moved twice before — see TRAPS 29.)*
 - **Ask one more question of every file at once.** 029's finding came from
   asking "what if this is not a number" of all five validators rather than
   one, and it had been true for the project's whole life. Candidates in the
@@ -2077,7 +2287,11 @@ What it would actually cost, honestly:
    that is why `PROMPT_VERSION` exists at all. Interpretation measured under
    two different models is two populations, not one. The fields are already
    recorded, so the split is *visible*, but any before-and-after comparison
-   across a model change is not a comparison.
+   across a model change is not a comparison. **035 found that this is only
+   now true of `prompt_version`**: it had not moved since 025 and three
+   prompts were recorded under it, so the mechanism this paragraph relies on
+   was working for `model` and not for the prompt. A suite holds it from 035
+   on (TRAPS 29).
 
 **HUMAN DECISION, three options:**
 

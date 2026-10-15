@@ -1117,6 +1117,121 @@ that said `"at least 1 doors"` was one of the sentences being rewritten.
 
 ---
 
+## 28. The bound stated to the model, and typed out by hand
+
+**Signature:** the prompt tells the model to use *"2 to 24 zones"*. The
+validator accepts one, and has since the commit that lowered the minimum
+specifically so that one would stop being refused.
+
+**Cause.** `FarmModule.MIN_ZONES` was lowered from 2 to 1 in 003, because
+*"build a farm with a barn"* is about the most natural thing a first-time
+player can type. The sentence in the AI's prompt was written when the
+minimum was 2 and was never read again. From then on the prompt refused on
+Genesis's behalf a farm Genesis accepts — and that refusal is invisible,
+because it happens in the model, before Genesis ever sees the request.
+Nothing in the project could have caught it: a refusal is checked by the
+suite, and this is a request that is never made.
+
+This is **TRAPS 15's shape in the prompt rather than in a limitation**: a
+bound stated narrower than the truth, costing a player the request the
+bound was widened for. It is also **TRAPS 26 one door along**, and in the
+same file: `FarmModule.lists()` already declared `low: MIN_ZONES` so that
+the *refusal* could not state a limit the check does not enforce, and the
+comment above it says exactly that. Two functions below, the *prompt* typed
+the same bound out by hand.
+
+Asked of the class rather than of the sentence (trap 11), every numeric
+bound in `AIInterpreter.assembled_prompt()` was measured against the
+constant that enforces it. Nine agreed. One was wrong — the farm's. And one
+was **stated nowhere at all**: a circuit's section count, 2 to 40, appeared
+in no sentence the model reads, so a model asked for a long technical
+circuit could compose 41 sections and be refused by a limit it had never
+been told. That is trap 26's own fault — a door that names nothing — at the
+one door that is not a refusal.
+
+The three tool sections had none of this, and the reason is instructive:
+`boots_tool.gd` and `car_tool.gd` have always written their bounds with
+`%.0f` out of the constants, because a tool's limits were too many to keep
+in two places. The worlds' were few enough to type.
+
+**Do:**
+
+- **A bound stated to the MODEL is a claim about Genesis, like a refusal and
+  like a limitation.** It is the earliest claim Genesis makes and the only
+  one no player ever sees being made, so it is the one most worth reading
+  from the code rather than remembering. `Readback.list_rule()` says it to
+  the model; `Readback.list_error()` says the same bound to the player; both
+  read `lists()`.
+- **Ask it of every bound at once.** One sentence was wrong out of eleven,
+  and the eleventh was missing. Neither would have been found by reading the
+  one HANDOVER named.
+- **State the bound, do not only enforce it.** A limit the model is never
+  told is a refusal waiting to happen for a reason the player cannot act on.
+- The test reads the prompt with a regular expression — *"N to M members"*,
+  *"at most N members"* — and compares the numbers with the declaration, so
+  it does not care which sentence states the bound or how it is phrased. And
+  it hands the validator lists of `low - 1`, `low`, `high` and `high + 1`
+  members, so a declaration edited to match a wrong sentence fails too. The
+  chain is prompt ⇔ declaration ⇔ validator, and all three links are
+  measured.
+
+Found and fixed in 035. `tests/prompt_bounds_test.gd` fails 4 times against
+the pre-035 prompt.
+
+---
+
+## 29. The version that was supposed to tell designs apart
+
+**Signature:** `prompt_version` is `"025-what-genesis-does-1"` on records
+made under three different prompts.
+
+**Cause.** `PROMPT_VERSION` exists for one reason: interpretation measured
+under one prompt is not the same population as interpretation measured under
+another, so every ledger record carries the version it was made under and
+designs are only compared within one. It had moved nine times in the
+project's life, each time by hand, each time because whoever changed the
+prompt remembered.
+
+Measured in 035, by extracting the prompt-contributing strings at every
+commit from 025 to 034 and hashing them: **three prompts shared one version
+string.** 025 and 026 are one prompt of 14470 characters. 027 narrowed two
+limitations and made a second, 15030. 028 narrowed the physics capability
+and made a third, 15306, which stood until 035. Both of those commits were
+*about* the prompt — 027 and 028 are the two sessions that read every
+limitation against the code — and both left the version behind.
+
+So the field that exists to keep two populations apart was quietly calling
+three of them one, and every before-and-after comparison across 027 or 028
+is not a comparison. Nothing was checking it, because no test knew what the
+prompt was supposed to be.
+
+**Do:**
+
+- **A version string is a claim, and the thing it versions has to be
+  fingerprinted or the claim is just a memory.**
+  `AIInterpreter.PROMPT_FINGERPRINT` is the sha256 of
+  `assembled_prompt()`; `tests/prompt_bounds_test.gd` fails when they
+  disagree and the failure message names the new hash and says to move
+  `PROMPT_VERSION` as well. A prompt change now cannot ship under a stale
+  version.
+- A fingerprint is **not** an assertion about wording, and it is the one
+  place that distinction matters in the other direction: it asserts nothing
+  about what the prompt says, only that it is the one the version names. Any
+  sentence in it may be rewritten; the version moves when it is.
+- **The chore is the point.** Every future prompt edit now costs two lines,
+  one of which the failure message writes out. That is the price of a ledger
+  whose comparisons are real.
+- Nothing can be done about the records already made. They are the owner's
+  data on the owner's machine, and 035 did not touch them; HANDOVER records
+  which character count belongs to which commit range so a reader can split
+  them by hand.
+
+Found in 035, while answering the question HANDOVER asked before the farm
+fix: *does `PROMPT_VERSION` move with it?* It turned out the question had
+been asked twice before and answered no.
+
+---
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
 > A fluent sentence is not evidence that anything was understood.
@@ -1137,3 +1252,6 @@ that said `"at least 1 doors"` was one of the sentences being rewritten.
 > And a count is a claim about what it counted.
 > And a refusal that shows an example is promising that the example works.
 > And a plural written by hand is a count nobody read back at one.
+> And a bound stated to the model is the first claim Genesis makes and the
+> only one no player watches it make.
+> And a version that does not move has stopped telling anything apart.

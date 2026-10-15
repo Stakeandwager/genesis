@@ -79,16 +79,30 @@ func lists() -> Array:
 	}]
 
 
+# 035: every number in here is read from the constant that enforces it. The
+# zone count was typed out as "Use 2 to 24 zones" with MIN_ZONES at 1, so the
+# prompt refused on the game's behalf a farm the game accepts. See
+# Readback.list_rule().
 func prompt_section() -> String:
+	var others := []
+	for type in ZONE_TYPES:
+		if not type in BUILDINGS and type != "crop":
+			others.append(type)
 	return """CREATE_FARM - design a farm
 {"command": "CREATE_FARM", "parameters": {"intent": {"style": STYLE}, "zones": [ZONE, ZONE, ...]}}
 
 ZONE TYPES (only these, with exactly these fields)
-crop: {"type": "crop", "crop": NAME, "width": W, "depth": D} where NAME is corn, wheat, barley, soy, potatoes or vines
-pasture, orchard, pond, yard: {"type": TYPE, "width": W, "depth": D}
-barn, farmhouse, silo: {"type": TYPE, "width": W, "depth": D}
-Fields, water and yards are 20 to 300 metres a side. Buildings are 5 to 60 metres a side.
-Use 2 to 24 zones. Do not give positions: the game works out the layout, the fence and the lanes."""
+crop: {"type": "crop", "crop": NAME, "width": W, "depth": D} where NAME is %s
+%s: {"type": TYPE, "width": W, "depth": D}
+%s: {"type": TYPE, "width": W, "depth": D}
+Fields, water and yards are %.0f to %.0f metres a side. Buildings are %.0f to %.0f metres a side.
+Use %s. Do not give positions: the game works out the layout, the fence and the lanes.""" % [
+		Readback.join_or(PackedStringArray(CROP_COLOURS.keys())),
+		", ".join(others),
+		", ".join(BUILDINGS),
+		FIELD_SIDE.x, FIELD_SIDE.y, BUILDING_SIDE.x, BUILDING_SIDE.y,
+		Readback.list_rule(list_of("zones")),
+	]
 
 
 # --- what the AI proposed ---

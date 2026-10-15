@@ -53,24 +53,44 @@ func lists() -> Array:
 # Everything the AI needs to compose a closed circuit, and nothing about
 # style: what a style word does to the geometry is what the experiment
 # measures, so it is never described here.
+# 035: every bound in here is read from the SectionValidator constant that
+# enforces it, and the section COUNT is now stated at all. It was the one list
+# in Genesis whose size the model was never told: a circuit of 41 sections was
+# refused by a limit that appeared nowhere in the prompt, which is the shape of
+# the `doors` refusal 034 fixed one door down. See Readback.list_rule().
 func prompt_section() -> String:
 	return """CREATE_TRACK - design a closed racing circuit
 {"command": "CREATE_TRACK", "parameters": {"mode": "circuit", "intent": {"style": STYLE}, "sections": [SECTION, SECTION, ...]}}
 
 SECTION TYPES (only these four, with exactly these fields)
-straight: {"type": "straight", "length": L} where L is 20 to 1000 metres
-corner: {"type": "corner", "radius": R, "angle": A} where R is 15 to 300 metres and A is 10 to 120 degrees
-hairpin: {"type": "hairpin", "radius": R, "angle": A} where R is 10 to 60 metres and A is 120 to 200 degrees
-chicane: {"type": "chicane", "radius": R, "offset": O, "direction": "left" or "right"} where R is 15 to 150 metres and O is more than 0 and at most 2 x R
+straight: {"type": "straight", "length": L} where L is %.0f to %.0f metres
+corner: {"type": "corner", "radius": R, "angle": A} where R is %.0f to %.0f metres and A is %.0f to %.0f degrees
+hairpin: {"type": "hairpin", "radius": R, "angle": A} where R is %.0f to %.0f metres and A is %.0f to %.0f degrees
+chicane: {"type": "chicane", "radius": R, "offset": O, "direction": "left" or "right"} where R is %.0f to %.0f metres and O is more than 0 and at most 2 x R
 Angles are signed: positive turns right, negative turns left. Never give a corner, hairpin or chicane a length; it is calculated. A chicane steps the track sideways by O metres and returns to its original direction.
 
 RULES FOR A CLOSED CIRCUIT
 - Sections join end to end, in order, starting at the start line. After the last section the track must arrive back at the start line, facing the way it started.
 - Corner and hairpin angles must add up to exactly +360 (clockwise) or -360 (anticlockwise). Chicanes do not count.
 - Travel in opposite directions must balance. Every metre the track travels away from the start line must be matched by a metre travelled back towards it, and every metre to the right of the start line by a metre back to the left. Angles adding up to 360 is necessary but not enough on its own: a hairpin reverses the direction of travel, but by itself carries the track back only by its own width, twice its radius.
-- Use at least 2 straights and at least 2 corners or hairpins.
-- The game can adjust each angle and each straight length by up to 20% to close the loop, so plan where every section takes the track so that it very nearly closes by itself.
-- The road must never cross itself, and separate parts of the road must stay at least 18 metres apart."""
+- Use %s: at least 2 straights and at least 2 corners or hairpins.
+- The game can adjust each angle and each straight length by up to %.0f%% to close the loop, so plan where every section takes the track so that it very nearly closes by itself.
+- The road must never cross itself, and separate parts of the road must stay at least %.0f metres apart.""" % [
+		SectionValidator.STRAIGHT_LENGTH.x, SectionValidator.STRAIGHT_LENGTH.y,
+		SectionValidator.CORNER_RADIUS.x, SectionValidator.CORNER_RADIUS.y,
+		SectionValidator.CORNER_ANGLE.x, SectionValidator.CORNER_ANGLE.y,
+		SectionValidator.HAIRPIN_RADIUS.x, SectionValidator.HAIRPIN_RADIUS.y,
+		SectionValidator.HAIRPIN_ANGLE.x, SectionValidator.HAIRPIN_ANGLE.y,
+		SectionValidator.CHICANE_RADIUS.x, SectionValidator.CHICANE_RADIUS.y,
+		Readback.list_rule(SectionValidator.list_entry()),
+		# One number for two constants: the solver may move an angle and a
+		# straight's length by the same 20%. tests/prompt_bounds_test.gd fails
+		# if MAX_ANGLE_ADJUSTMENT and MAX_LENGTH_ADJUSTMENT ever differ, and
+		# then this sentence has to name them separately rather than quietly
+		# describe one of them as both.
+		ClosureSolver.MAX_ANGLE_ADJUSTMENT * 100.0,
+		SeparationCheck.MIN_SEPARATION,
+	]
 
 
 # The record fields racing has always written, in the same order. Racing

@@ -117,17 +117,25 @@ func lists() -> Array:
 	]
 
 
+# 035: every bound in here is read from the constant that enforces it, for the
+# reason FarmModule's was - a prompt that states a limit by hand states it
+# until somebody moves the limit. See Readback.list_rule().
 func prompt_section() -> String:
 	return """CREATE_DUNGEON - design a dungeon of rooms joined by doors
 {"command": "CREATE_DUNGEON", "parameters": {"intent": {"style": STYLE}, "rooms": [ROOM, ROOM, ...], "doors": [[A, B], ...], "things": [THING, ...]}}
 
-ROOM: {"name": NAME, "width": W, "depth": D} where NAME is a short lowercase label with underscores, and W and D are 4 to 40 metres
+ROOM: {"name": NAME, "width": W, "depth": D} where NAME is a short lowercase label with underscores, and W and D are %.0f to %.0f metres
 DOOR: [A, B] where A and B are room numbers, 1 for the first room in your list. A door joins two different rooms, and the same pair may only be joined once.
-THING: {"name": NAME, "in": R} - an object sitting in room R, which a character can pick up and carry. R is a room's name or its number counting from 1. NAME is a short lowercase label with underscores and may not be the name of a room. At most 8.
+THING: {"name": NAME, "in": R} - an object sitting in room R, which a character can pick up and carry. R is a room's name or its number counting from 1. NAME is a short lowercase label with underscores and may not be the name of a room. At most %s.
 If the player names something that is IN the dungeon - "a lamp in the store", "with a key in the entrance", "a chest somewhere" - it MUST appear in "things", in the room they said. A room is a place; a thing is an object inside one, and the two are never swapped. Leave "things" out only when the player asked for nothing to be in it.
-Use 2 to 24 rooms and at most 48 doors. Do not give positions: the game works out where every room goes and runs the corridors.
+Use %s and %s. Do not give positions: the game works out where every room goes and runs the corridors.
 Room 1 is the entrance, where the player comes in.
-Every room must be reachable from room 1 by following doors, or the design is refused. More doors than rooms is allowed and makes loops: ways round that come back."""
+Every room must be reachable from room 1 by following doors, or the design is refused. More doors than rooms is allowed and makes loops: ways round that come back.""" % [
+		MIN_SIDE, MAX_SIDE,
+		Readback.plural(MAX_THINGS, "thing"),
+		Readback.list_rule(list_of("rooms")),
+		Readback.list_rule(list_of("doors")),
+	]
 
 
 func record_fields(parameters: Dictionary, attempt: Dictionary) -> Dictionary:
