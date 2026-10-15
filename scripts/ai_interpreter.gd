@@ -59,7 +59,20 @@ const TEMPERATURE := 1.0
 # proposal made under 035-037 was made by a model that had been told the
 # wrong field and could not send the right one, so boots designs from here
 # are not comparable with those - which is what this string is for.
-const PROMPT_VERSION := "038-the-field-that-does-it-1"
+#
+# 039-the-arithmetic-it-really-does-1 is the third, and it is the same shape
+# one category along: not which field does the thing, but the ARITHMETIC
+# Genesis performs on the fields. The boots section said "Top speed is push
+# divided by weight times footing", written in 010 and never read again,
+# while top_speed() returns push / (weight * footing). Read by the convention
+# its own words follow the sentence gives a different number for every legal
+# spec and puts `footing` in the NUMERATOR - so it told the model that
+# raising footing goes faster, four lines below the bullet 038 wrote saying
+# it goes slower. TOP_SPEED is 2 to 12 m/s and a spec outside it is refused,
+# so a model obeying that sentence proposed specs Genesis refuses and
+# withheld specs it accepts. Boots designs from here are not comparable with
+# those made under 038.
+const PROMPT_VERSION := "039-the-arithmetic-it-really-does-1"
 
 # --- 035: the version cannot be left behind again ---
 #
@@ -81,7 +94,7 @@ const PROMPT_VERSION := "038-the-field-that-does-it-1"
 # if they disagree, and says to move PROMPT_VERSION as well as this string.
 # It is a fingerprint, not an assertion about wording: it says only that the
 # prompt the model receives is the one this version names.
-const PROMPT_FINGERPRINT := "2cac9c0b61abb2a09ec3e06477c1094954f8637f24a677b1f4063f36f68c082a"
+const PROMPT_FINGERPRINT := "c6c2b9555fa6283c1f4d379c925ba95a15db8000a2d8e3d7d26d4e9010c46e62"
 # Which wording of the closure feedback a revised track was given.
 # feedback-2 adds Godot's test of whether ANY straight lengths could close the layout.
 const REVISION_VERSION := "002C-closure-feedback-2"

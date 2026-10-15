@@ -110,7 +110,7 @@ footing: %.2f to %.2f, how quickly speed bleeds away - high stops sharply, low s
 turning: %.0f to %.0f, how quickly the body turns (ordinary is %.0f)
 brake: %.0f to %.0f newtons, how hard the legs can stop you (ordinary is %.0f). This does NOT change top speed, and it is also the shorter stop of the two: from %.2f m/s, brake at %.0f stops in %.2f m where footing at %.2f stops in %.2f m. Someone who wants to "stop on a sixpence" wants brake raised and nothing else.
 colour: one of %s. nickname: a few words the player chose.
-Top speed is push divided by weight times footing, and must come to %.0f to %.0f metres a second. A spec where every field is legal but the three together are faster or slower than that is refused.
+Top speed is push divided by (weight x footing): the ordinary %.0f N, %.0f kg and %.2f come to %.2f m/s. It must come to %.0f to %.0f metres a second, and a spec where every field is legal but the three together are faster or slower than that is refused.
 Every field may be left out and keeps its ordinary value. Change only what the player asked about: someone who wants "boots that turn on the spot" wants turning raised and nothing else.
 colour and nickname change nothing about how the player moves.""" % [
 		PUSH[0], PUSH[1], DEFAULT_PUSH,
@@ -122,6 +122,7 @@ colour and nickname change nothing about how the player moves.""" % [
 		walk, BRAKE[1], stopping_distance(sharp, walk),
 		FOOTING[1], stopping_distance(grippy, walk),
 		", ".join(COLOURS.keys()),
+		DEFAULT_PUSH, DEFAULT_WEIGHT, DEFAULT_FOOTING, walk,
 		TOP_SPEED[0], TOP_SPEED[1]]
 
 

@@ -1523,6 +1523,100 @@ rather than inferred from the field's name.
 
 ---
 
+## 33. The formula stated to the model, and the one Genesis actually does
+
+**Signature:** the AI's prompt states an arithmetic relation between fields
+the model sends — a formula, not a bound — and the function that computes it
+does different arithmetic. Every number either side is correct; only the
+sentence joining them is wrong.
+
+**Cause.** `boots_tool.gd`'s prompt section said:
+
+```
+Top speed is push divided by weight times footing
+```
+
+written in 010 and never read again. `BootsTool.top_speed()` returns
+
+```
+push / (weight * footing)
+```
+
+Read by the arithmetic convention its own words follow — left to right,
+division and multiplication of equal precedence — the sentence says
+`(push / weight) * footing`. Measured in 039 across the declared ranges, the
+two disagree for **every** legal spec:
+
+```
+push 240, weight  80, footing 0.67    sentence  2.01    top_speed()  4.48
+push 600, weight  50, footing 0.40    sentence  4.80    top_speed() 30.00
+push 600, weight 140, footing 0.40    sentence  1.71    top_speed() 10.71
+push 240, weight  80, footing 1.50    sentence  4.50    top_speed()  2.00
+```
+
+Worst gap 25.2 m/s. But the size of the gap is not the finding. **The
+sentence puts `footing` in the numerator**, so it tells the model that
+raising footing makes the player faster. Genesis does the opposite, and four
+lines above, in the same section, the footing bullet says so in numbers
+rendered from the same function: *"at 1.50 an ordinary body walks at 2.00 m/s
+rather than 4.48"*. 038 wrote that bullet and did not read this line — the
+same thing 013 did when it added `brake`, measured it, and left the sentence
+that 038 came back for (trap 32).
+
+**What it cost, and it costs in both directions.** `TOP_SPEED` is 2 to 12 m/s
+and *"a spec where every field is legal but the three together are faster or
+slower than that is refused"*. So a model doing the stated arithmetic
+proposes `push 600, weight 50, footing 0.40` believing it to be 4.80 m/s, and
+Genesis refuses it at 30.00; and declines `push 600, weight 140, footing
+0.40` believing it to be 1.71 m/s, which Genesis would have accepted at
+10.71. That is 035's farm bound — a prompt refusing on Genesis's behalf —
+arriving through arithmetic rather than through a stated limit.
+
+**Rules.**
+
+- **A formula stated to the model is a claim about Genesis, and it is checked
+  by DOING THE ARITHMETIC.** Not by reading the sentence and agreeing with
+  it: 037, 038 and this session all read that section and the first two did
+  not see it. `tests/formula_test.gd` reads the clause out of
+  `AIInterpreter.assembled_prompt()`, tokenises it, evaluates it for 27 specs
+  spanning the declared ranges and compares each with `top_speed()`. The
+  sentence may be rephrased freely and the suite stays green; it fails the
+  moment the words stop meaning what the code does.
+- **An order of operations is part of the claim.** A bound has one reading
+  (trap 28); a formula has as many as its punctuation allows. `a divided by b
+  times c` has no reading under which it means `a / (b * c)`, and the fix is
+  the bracket, not a better adverb. The sentence now reads *"push divided by
+  (weight x footing)"* — `x` for multiply, which this prompt already uses for
+  a chicane's `2 x R`.
+- **A formula carries a worked example rendered from the function**, as a
+  bound is rendered from its constant (trap 28) and a consequence from the
+  function that produces it (trap 32). The sentence now ends *"the ordinary
+  240 N, 80 kg and 0.67 come to 4.48 m/s"*, every number of it out of
+  `defaults()` and `top_speed()`, so a reader can check the arithmetic
+  against an answer the code supplied.
+- **A relation has a DIRECTION, and the direction is the half worth measuring
+  on its own.** A formula can be wrong in a way that still produces plausible
+  numbers; it cannot be wrong about which way a field pushes without the
+  monotonicity failing. The suite asserts, from `top_speed()` and from no
+  sentence at all, that more push is faster, more weight is slower and more
+  footing is slower — so a rewording that puts `footing` back in the
+  numerator fails here as well as in the evaluator.
+- **A sentence this cannot parse FAILS.** The failure mode of a sweep is
+  silence (trap 31), and an evaluator that shrugs at a clause it does not
+  understand is a sweep that reports all clear.
+- **Asked of the class, five of the six were right.** The chicane's
+  `O at most 2 x R`, its sideways step of exactly `O`, a hairpin carrying the
+  track back `2 x radius`, chicanes counting nothing toward the ±360, and
+  signed angles turning right and left are all true and are now all measured.
+  As in 035, where nine of eleven bounds were sound, the value of the session
+  is the one that was not — and the five that were are now held.
+
+Found and fixed in 039. `tests/formula_test.gd` fails **2 times** against the
+pre-039 prompt: once for the arithmetic across all 27 specs, once for the
+worked example that was not there.
+
+---
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
 > A fluent sentence is not evidence that anything was understood.
@@ -1555,3 +1649,5 @@ rather than inferred from the field's name.
 > And a sweep that comes back clear is a claim about the unit it counted.
 > And a sentence telling the model which field does the thing is a claim that
 > it does, and that it does nothing else, and both halves are measurements.
+> And a formula stated to the model is arithmetic Genesis claims to do, down
+> to the order it does it in, so it is checked by doing the arithmetic.

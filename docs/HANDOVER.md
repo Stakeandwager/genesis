@@ -13,7 +13,32 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **038**, the task this file named as
+- Last commit at the time of writing: **039**, the task this file named as
+  the next assistant task — *the procedural sentences, the one kind of prompt
+  claim with no door* — asked of the class rather than of the eight sentences
+  quoted here (TRAPS 11). The sharpest sub-class is the one that can be
+  settled by **doing the arithmetic**: a sentence stating a relation between
+  numbers the model sends and a number Genesis computes. There are **six** in
+  the assembled prompt and **five were right**. The sixth: *"Top speed is
+  push divided by weight times footing"*, written in 010 and never read
+  again, while `BootsTool.top_speed()` returns `push / (weight * footing)`.
+  Read by the convention its own words follow the sentence disagrees for
+  **every** legal spec — worst gap 25.2 m/s — and, which is the finding,
+  it puts `footing` in the NUMERATOR, so it told the model that raising
+  footing goes FASTER. Four lines above it the footing bullet says the
+  opposite in numbers rendered from the same function, and **038 wrote that
+  bullet without reading this line** — precisely what 013 did when it added
+  `brake` and left the sentence 038 came back for. It costs in both
+  directions, like 035's farm bound: `TOP_SPEED` is 2 to 12 m/s and a spec
+  outside it is refused, so a model obeying the sentence proposes
+  `push 600, weight 50, footing 0.40` believing it 4.80 m/s (Genesis: 30.00,
+  refused) and declines `push 600, weight 140, footing 0.40` believing it
+  1.71 m/s (Genesis: 10.71, legal). 45 suites passed before and 46 after,
+  `--all` included; the new suite fails **2 times** against the pre-039
+  prompt. The prompt moved, so `PROMPT_VERSION` is now
+  `039-the-arithmetic-it-really-does-1` and **boots designs are not
+  comparable across it**. See 039 below and TRAPS 33.
+- The commit before it: **038**, the task that file named as
   the next assistant task — *the boots prompt tells the model two different
   things about the same player sentence* — asked of the class rather than of
   those two sentences. The prompt makes **three** claims of the shape
@@ -210,27 +235,28 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-47 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **45 suites**, counted with `ls tests/*.gd` rather than
+48 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **46 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites.
 
-Last full run (038, Godot 4.7.1 on Linux — `4.7.1.stable.official.a13da4feb`
+Last full run (039, Godot 4.7.1 on Linux — `4.7.1.stable.official.a13da4feb`
 — headless, in a cloud container): **suites with something to look at: 0**,
 both without `--all` and with it, `drive_test` and `session_test` included.
-038's new suite is `claim_field_test` (9 failures against the pre-038 code);
+039's new suite is `formula_test` (2 failures against the pre-039 prompt);
+038's is `claim_field_test` (9 failures against the pre-038 code);
 037's is `intent_door_test` (39 failures against the pre-037 code); 036's is
 `command_schema_test` (28 failures against the pre-036 code); 035's is
 `prompt_bounds_test` (4 failures against the pre-035 prompt); 034's is
 `container_door_test` (30 failures against the pre-034 sentences). Not run on
 the owner's Windows machine. `run_tests.bat` needed no edit for any of the
-five: no name matches any of its `findstr` patterns — `prompt_bounds_test`
+six: no name matches any of its `findstr` patterns — `prompt_bounds_test`
 does not contain the literal `prompt_test`, `intent_door_test` contains none
-of the physics names, and `claim_field_test` matches nothing at all — so all
-five run there without `--fixed-fps`, which is what they get here too, and
-`command_schema_test`, `intent_door_test` and `claim_field_test` were each
-run both with it and without and pass either way — checked rather than
-assumed (TRAPS 4). `physics_test` gained 038's car measurement and is already
+of the physics names, and `claim_field_test` and `formula_test` match
+nothing at all — so all six run there without `--fixed-fps`, which is what
+they get here too, and `command_schema_test`, `intent_door_test`,
+`claim_field_test` and `formula_test` were each run both with it and without
+and pass either way — checked rather than assumed (TRAPS 4). `physics_test` gained 038's car measurement and is already
 on both the Linux `TIMED` list and the `.bat`'s `physics` pattern, so it
 keeps `--fixed-fps` on both.
 
@@ -2583,6 +2609,193 @@ none of its `findstr` patterns.
 
 TRAPS 32 records the fault, the rules, and the near miss inside the suite.
 
+## 039 — the arithmetic the prompt states, and the arithmetic Genesis does
+
+**Objective.** HANDOVER named the next assistant task as the one kind of
+prompt claim with no door: the PROCEDURAL sentence — a flat statement about
+what Genesis will do with a value the model sends — and quoted eight of them.
+Asked of the CLASS rather than of that list (TRAPS 11).
+
+### The class, and why the list of eight was not it
+
+The eight quoted sentences are procedural, and six of them were measured this
+session and are true (below). But the list was written by reading, and a list
+written by reading is a sweep whose unit nobody checked (TRAPS 31). Asked
+instead for the sub-class that can be **settled by doing the arithmetic** —
+a sentence stating a relation between numbers the model sends and a number
+Genesis computes — the assembled prompt holds **six**, found by sweeping it
+for arithmetic words rather than by remembering:
+
+```
+boots     Top speed is push divided by weight times footing          FALSE
+chicane   O is more than 0 and at most 2 x R                         true
+chicane   steps the track sideways by O metres, original direction   true
+hairpin   carries the track back only by ... twice its radius        true
+circuit   angles must add up to +/-360; chicanes do not count        true
+circuit   Angles are signed: positive turns right, negative left     true
+```
+
+Five of six, which is 035's proportion exactly — nine of eleven bounds were
+right there, and the session was worth having for the two that were not.
+
+### The one that was false, and why 038 walked past it
+
+`BootsTool.top_speed()` returns `push / (weight * footing)`. The sentence,
+read by the arithmetic convention its own words follow — left to right,
+division and multiplication of equal precedence — says
+`(push / weight) * footing`. There is no reading of *"a divided by b times
+c"* that gives `a / (b * c)`. Measured across the declared ranges, worst gap
+**25.2 m/s**:
+
+```
+push 240, weight  80, footing 0.67    sentence  2.01    top_speed()  4.48
+push 600, weight  50, footing 0.40    sentence  4.80    top_speed() 30.00
+push 600, weight 140, footing 0.40    sentence  1.71    top_speed() 10.71
+push 240, weight  80, footing 1.50    sentence  4.50    top_speed()  2.00
+```
+
+The size of the gap is not the finding. **The sentence puts `footing` in the
+numerator**, so it told the model that raising footing makes the player
+FASTER. Genesis does the opposite — and four lines above, in the same
+section, the footing bullet says so in numbers rendered from the same
+function: *"at 1.50 an ordinary body walks at 2.00 m/s rather than 4.48"*.
+**038 wrote that bullet and did not read this line.** That is exactly what
+013 did when it added `brake`, measured it, and left standing the sentence
+038 came back for thirty-three commits later (TRAPS 32). The sentence was
+written in 010 — the same commit as the one 038 fixed — and neither 037, 038
+nor the first reading of this session noticed it by reading. Only evaluating
+it did.
+
+### What it costs, in both directions
+
+`TOP_SPEED` is 2 to 12 m/s and *"a spec where every field is legal but the
+three together are faster or slower than that is refused"*. So a model doing
+the stated arithmetic:
+
+- proposes `push 600, weight 50, footing 0.40` believing it to be 4.80 m/s,
+  and Genesis refuses it at 30.00;
+- declines `push 600, weight 140, footing 0.40` believing it to be 1.71 m/s,
+  which Genesis would have accepted at 10.71.
+
+That is 035's farm bound — a prompt refusing on Genesis's behalf, in the
+model, before Genesis ever sees the request — arriving through arithmetic
+rather than through a stated limit.
+
+### What changed
+
+- The sentence now reads *"Top speed is push divided by (weight x footing):
+  the ordinary 240 N, 80 kg and 0.67 come to 4.48 m/s. It must come to 2 to
+  12 metres a second, and a spec where every field is legal but the three
+  together are faster or slower than that is refused."* The bracket is the
+  fix, not a better adverb; `x` for multiply is the notation this prompt
+  already uses for a chicane's `2 x R`. **Every number in the worked example
+  is rendered from `defaults()` and `top_speed()`**, never typed — TRAPS 28's
+  rule for a bound, applied to a formula.
+- `tests/formula_test.gd`, which is the door. It does not read the sentence
+  and agree with it: it **reads the clause out of
+  `AIInterpreter.assembled_prompt()`, tokenises it and evaluates it** for 27
+  specs spanning the declared ranges, comparing each against `top_speed()`.
+  The wording may change freely and the suite stays green; it fails the
+  moment the words stop meaning what the code does, and a clause it cannot
+  parse FAILS rather than passing.
+- `PROMPT_VERSION` is `039-the-arithmetic-it-really-does-1` and
+  `PROMPT_FINGERPRINT` is the sha256 of the new 15846-character prompt —
+  which `prompt_bounds_test` insisted on rather than anybody remembering.
+
+### What the suite asserts, and what it does not (TRAPS 6, TRAPS 14)
+
+- **FINDING.** The formula clause, evaluated, equals `top_speed()` for all 27
+  specs. Fails against the pre-039 prompt.
+- **FINDING.** The worked example the prompt states is the number the
+  function returns. Fails against the pre-039 prompt, which stated none.
+- **MEASUREMENT, not wording.** The DIRECTION, asserted from `top_speed()`
+  and from no sentence at all: more push is faster, more weight is slower,
+  more footing is slower. A formula can be wrong and still give plausible
+  numbers; it cannot be wrong about which way a field pushes without this
+  failing. A rewording that puts `footing` back in the numerator fails here
+  as well as in the evaluator.
+- **GUARDS, and labelled as such (TRAPS 6).** The other five arithmetic
+  claims all passed against the pre-039 code and pass now. They are kept
+  because they were never measured before and are the reason this session can
+  say *five of six were right* rather than *one was wrong*: the chicane's
+  `O at most 2 x R` at both ends and outside, its sideways step of exactly
+  `O` at three radii in both directions, a hairpin carrying the track back
+  `2 x radius`, a chicane counting nothing toward the ±360 (measured by
+  difference), signed angles turning right and left, and all three of corner,
+  hairpin and chicane refusing a `length` while calculating one.
+- The sweep **enumerates the tools from `ToolRegistry.tools()`** and looks
+  for a formula clause in each one's own section, so a tool that grows a
+  formula has a row and fails rather than passing unexamined, and the count
+  is asserted so a formula that is deleted or reworded past recognition is
+  caught too.
+
+### Evidence — what was actually run
+
+Godot 4.7.1 headless (`4.7.1.stable.official.a13da4feb`), Linux, in a cloud
+container.
+
+- **Baseline, before any change:** 45 suites, **0 with something to look at**.
+- **After:** 46 suites, **0 without `--all` and 0 with it**, `drive_test` and
+  `session_test` included.
+- `formula_test` **fails 2 times** against the pre-039 code, measured the way
+  035–038 measured their own: `boots_tool.gd` reverted to 038 with the suite
+  left in place. Worst gap 25.2 m/s.
+- `formula_test` was run **both with `--fixed-fps 120` and without**, and
+  passes either way. `run_tests.bat` needed no edit (TRAPS 4): the name
+  matches none of its `findstr` patterns, so it runs there without
+  `--fixed-fps` as it does here.
+- README said 45 suites and there are 46, counted with `ls` rather than
+  remembered.
+
+### Not verified
+
+- **NO MODEL HAS READ THE NEW PROMPT.** Every spec in the suite was typed by
+  hand; a headless harness has no key and no model. Whether a model actually
+  computed the old formula, and whether it computes the new one correctly, is
+  the half that matters most and only the owner's editor session can show it.
+  The same caveat 038 left is still unanswered, and this adds to it rather
+  than replacing it.
+- Nothing ran on Windows.
+- **`PROMPT_VERSION` moved, so boots designs are NOT comparable across this
+  commit**, and here that is load-bearing rather than bookkeeping: any
+  `EQUIP boots` proposal made under 038 came from a model told that raising
+  footing makes it faster.
+- **The suite measures the six ARITHMETIC claims and no others.** The other
+  procedural sentences HANDOVER quoted were measured this session by hand and
+  are true (next section), but only three of them — the two chicane claims
+  and the signed angles — have a row in a suite. The rest are still undoored.
+- The records on the owner's disk are his and 039 did not touch them.
+
+### Measured this session by hand, true, and NOT yet in any suite
+
+Read and measured headless while enumerating the class; recorded here so the
+next session does not re-measure them, and so it knows they are unguarded:
+
+- *"Room 1 is the entrance, where the player comes in."* `build()` takes
+  `rects[0]`, `_rects()` walks `layout["rooms"]` in the order the model sent
+  them, and nothing between `validate()` and `build()` reorders that list.
+- *"R is a room's name or its number counting from 1."* Measured: a thing
+  with `"in": 2` lands in the second room and one with `"in": "crypt"` in the
+  room of that name. All **four** sites that resolve a room this way —
+  `DungeonModule._room_index`, `DungeonModule._things_said`,
+  `NpcGoals.validate` and `NpcGoals.validate_door` — convert with `- 1` and
+  bound-check first, so none of them can reach a negative index (in GDScript
+  `array[-1]` is the LAST element, which is how an unchecked one would fail
+  silently). `WorldRegistry.around_problem()` holds the fifth, the plan's
+  `around`, since 036.
+- *"A door joins two different rooms, and the same pair may only be joined
+  once."* Both halves refused, each naming the door number.
+- *"The game can adjust each angle and each straight length by up to 20% to
+  close the loop."* Measured on four circuits: **every** straight and
+  **every** corner or hairpin moved in all four — `movable == moved` each
+  time — and no adjustment exceeded 20.00%.
+- *"a new world replaces whatever was there before, whichever kind it was."*
+  Measured over all nine ordered pairs of farm, circuit and dungeon: after
+  the second world, `world_node` holds one world's worth of children and
+  `drivable`/`standable` describe the second world only. A REFUSED world does
+  not clear anything — the clear lives in `_build_world`, which a refusal
+  never reaches.
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -2986,9 +3199,36 @@ Two smaller ones, either of which is a single session:
   ones are the finding. `prompt_bounds_test` already walks the prompt and
   already fails when `PROMPT_FINGERPRINT` does not move, so the second half
   is in place before the first is written.
-- **Every sentence in the prompt that states what Genesis DOES with a value,
-  asked the way 038 asked of the three it fixed — and this is the next
-  task.** 038's finding is that the prompt makes several kinds of claim and
+- ~~**Every sentence in the prompt that states what Genesis DOES with a
+  value, asked the way 038 asked of the three it fixed.**~~ **Done in 039**,
+  and the useful part is that the list of eight below was not the class. A
+  list written by READING is a sweep whose unit nobody checked (TRAPS 31),
+  and three sessions had read that section without seeing what was in it.
+  Asked instead for the sub-class that can be settled by DOING THE
+  ARITHMETIC, the prompt holds six such sentences and the one that was false
+  is not on the list below at all: *"Top speed is push divided by weight
+  times footing"*, while `top_speed()` returns `push / (weight * footing)`
+  — a sentence that puts `footing` on the wrong side of the division and so
+  told the model that raising it goes faster, four lines under the bullet
+  038 had just written saying it goes slower. Six of the eight below were
+  measured this session and are true; the three that are now in a suite are
+  marked. Left struck rather than deleted, because the next reader should
+  see that the eight quoted sentences were a reading and the finding was one
+  the reading missed. See 039 above and TRAPS 33.
+
+  **Still undoored of the eight below:** *"Never give a corner, hairpin or
+  chicane a length"* and the two chicane and signed-angle claims ARE now in
+  `formula_test`; *"Room 1 is the entrance"*, *"R is a room's name or its
+  number counting from 1"*, *"A door joins two different rooms, and the same
+  pair may only be joined once"*, *"The game can adjust each angle and each
+  straight length by up to 20%"* and *"a new world replaces whatever was
+  there before"* are measured by hand in 039's "Measured this session by
+  hand" and have no suite. That is the natural next assistant task: a door
+  for the five, built the way `formula_test` built one for the six —
+  enumerated from `WorldRegistry.modules()` and the prompt rather than
+  quoted, since a quoted list is what this entry got wrong.
+
+  The original entry, as 038 wrote it: *038's finding is that the prompt makes several kinds of claim and
   Genesis has now built a door for four of them: limitations (027),
   capabilities (028), bounds (035) and which-field-does-it (038). **The
   kind with no door left is the procedural one** — a flat statement about
@@ -3017,7 +3257,10 @@ Two smaller ones, either of which is a single session:
   034, 035, 036, 037 and 038 each found when the same question was asked of
   a whole list. **Do not assume any of them is false** — nine of eleven
   bounds were right in 035, and the value of that session was the two that
-  were not.
+  were not.* *(039's answer: none of the eight is false. Six were measured
+  and are true; the other two — "Never give a corner, hairpin or chicane a
+  length" and the 20% adjustment — are true as well. The false one was a
+  sentence this list did not contain.)*
 - **Two refusal examples show the model a style shape the prompt forbids.**
   Found by 037, still open, and **not** part of 038: measured this session,
   neither string is in the assembled prompt, so it does not move
@@ -3382,3 +3625,48 @@ decision, so it is his and not the assistant's.
    The assistant would take (b), because the prompt's claim should be true,
    and has not, because (c) is a real alternative and the choice between
    them is product direction.
+
+9. **The closure solver builds sections outside the bounds the prompt states
+   and the validator enforces.** Found in 039 while measuring *"The game can
+   adjust each angle and each straight length by up to 20% to close the
+   loop"*, which is TRUE as stated — every straight and every corner moved
+   in all four circuits measured, and nothing exceeded 20.00%. What the
+   measurement also showed, and what nobody had asked:
+
+   ```
+   corner at 120 deg (the stated maximum)  ->  136.2 deg built
+   corner at  10 deg (the stated minimum)  ->    8.0 deg built
+   straight at 1000 m (stated maximum)     ->   up to 1200 m reachable
+   ```
+
+   `SectionValidator` would refuse every one of those if the model had sent
+   it. The solver runs after validation and clamps only to +/-20%, never to
+   the type's own range. Beside it, an internal disagreement in the same
+   file: `ClosureSolver.length_reach()` — the analysis that answers *"could
+   any straight lengths close this layout?"* — clamps to `REACH_MIN_LENGTH`
+   20 and `REACH_MAX_LENGTH` 1000, the stated bounds, while `solve()` does
+   not. So the feasibility answer and the solution are computed under
+   different limits.
+
+   **Nothing is broken today that has been measured.** The 20% licence is
+   disclosed to the model, `/save` stores the PROPOSAL and re-solves on load
+   (so a saved circuit cannot be refused on the way back in), and the drift
+   is recorded — `max_angle_adjustment` and `max_length_adjustment` are in
+   every circuit's record. A player who asks for a 120 degree corner may get
+   136 degrees and is told a percentage, not the number.
+
+   The options, for the record:
+
+   - **(a) Leave it.** Costs nothing measured. The stated ranges stay a
+     bound on what the model may ASK for, not on what Genesis builds.
+   - **(b) Clamp each adjustment to the type's own range as well as to
+     20%.** Makes the stated bound true of the built track. It narrows what
+     the solver can reach, so some circuits that close today would be
+     refused — which is a change to what Genesis accepts.
+   - **(c) Leave the solver and make `length_reach()` agree with it**, so
+     the feasibility answer and the solution use the same limits. The
+     smallest change, and it fixes only the internal disagreement.
+
+   The assistant has not chosen: (b) changes what Genesis builds and (a)
+   versus (c) is a judgement about which of the two is the honest limit.
+   Measured, not inferred, in 039.
