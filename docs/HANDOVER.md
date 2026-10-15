@@ -13,7 +13,17 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: 032, the plan readback 031 did not
+- Last commit at the time of writing: **033**, the next question off the same
+  list 032 used, and a different kind of question: not what Genesis SAYS
+  about a command but whether the command is in the LEDGER afterwards. Four
+  of the eleven commands in `CommandParser.allowed_commands()` wrote no
+  record at all, and each one still produced an understanding record pointing
+  at an id no record carried. Found beside it: `SessionReport` counted every
+  valid record as a world, so a session of boots and doors reported three
+  worlds built and quoted a request for boots as the first one. 39 suites
+  passed before and 40 after, `--all` included; the two changed suites fail
+  10 times against the pre-033 code. See 033 below and TRAPS 25.
+- The commit before it: 032, the plan readback 031 did not
   reach - asked of every command the whitelist allows rather than every field
   of one, and it turned up something larger than a readback. Two of the eleven
   commands in `CommandParser.allowed_commands()` had **no readback at all**,
@@ -100,17 +110,21 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-41 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **39 suites**, and since 024 every one of them runs —
+42 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **40 suites**, and since 024 every one of them runs —
 nothing is skipped as broken. `--all` adds the two slow racing suites.
 
-Last full run (032, Godot 4.7.1 on Linux, headless, in a cloud container):
+Last full run (033, Godot 4.7.1 on Linux, headless, in a cloud container):
 **suites with something to look at: 0**, both without `--all` and with it,
-`drive_test` and `session_test` included. The two new suites are
-`plan_said_test` (8 of its assertions fail against the pre-032 code) and
-`stub_claims_test` (3 of 3 in its first group fail), with the finding/guard
-split written into each suite's header per TRAPS 6. Not run on the owner's
-Windows machine.
+`drive_test` and `session_test` included. 033's new suite is
+`ledger_said_test` (5 failures against the pre-033 code) and its new group in
+`report_test` gives 5 more, with the finding/guard split written into each
+header per TRAPS 6. Not run on the owner's Windows machine.
+
+**Run `--all` before believing a green suite.** 033 introduced a fault that
+the 38 fast suites all passed and `session_test` caught — see TRAPS 25's last
+paragraph. The two slow suites are the only ones that drive a whole scripted
+session, so they are the only ones that read the report's numbers back.
 
 ## What Genesis is
 
@@ -186,6 +200,17 @@ verified, and what remains uncertain.
   tie rather than the wording: if nothing was placed, the line must not
   contain the number asked for. This is the carrier-delivery rule above,
   applied to a function reporting on itself.
+- **Every command the whitelist admits leaves a record, and every count
+  names what it counts.** 033. Four of the eleven commands in
+  `CommandParser.allowed_commands()` wrote no ledger record at all — they
+  wrote a line to the player's log and nothing else — so the understanding
+  layer wrote records pointing at ids the ledger did not contain. A handler
+  that can return without appending a record has an exit the ledger cannot
+  see, and `tests/ledger_said_test.gd` enumerates the whitelist and fails if
+  one does. The other half of the same rule: which commands build a world is
+  read from `WorldRegistry.commands()` and never written out in
+  `session_report.gd`, because "worlds built" had been every valid record
+  since 002G — boots included. See 033 and TRAPS 25.
 - **Silence is not agreement.** `ACCEPTED_BY_SILENCE` is recorded and excluded
   from the understanding score.
 - **A carrier's claim is evidence of an attempt, not of delivery.** Delivery is
@@ -305,6 +330,36 @@ verified, and what remains uncertain.
   editor sessions specifically, and this one, like 029, 030 and 031, the
   assistant found by asking one question of a whole list. The claims are gone;
   the three stubs still do nothing, and that is the owner's.
+
+- **A green suite had never asked whether every command the whitelist allows
+  is RECORDED**, only whether every one is described. Found and fixed in 033:
+  four of the eleven wrote no ledger record at all — `MODIFY_TRACK`,
+  `SPAWN_OPPONENTS`, a sectionless `CREATE_TRACK` and `CLEAR_WORLD` — and
+  three further exits with them, including the two `has_drivable()` guards,
+  which are the half of those commands a player actually meets. 39 suites
+  passed before and 40 after. Each of the four still produced an
+  UNDERSTANDING record whose `about` named an id no record carried, so the
+  ledger held a reference to a record that was never written. See 033 and
+  TRAPS 25.
+
+  **And what was beside it, which is the part a person reads.**
+  `SessionReport` counted every record with `result == "VALID"` as a world
+  built. Four of the eleven commands are not worlds, so a session of one
+  `EQUIP`, one `SHUT` and one `ORDER`, with no world in it at all, reported
+  *"Worlds built: 3. Made another: yes"* and *"First world after 1 min 00 s,
+  from \"give me boots that stop in 2 m\""*. Measured, not inferred. That is
+  the report the owner reads after a player testing session and it had been
+  wrong since 002G. It is **not** added to the count of eight below: that
+  count is the owner's editor sessions, and this, like 029 to 032, the
+  assistant found by asking one question of a whole list.
+
+  **What that says about the method:** 032's refinement was to pick the list
+  that decides what Genesis can be asked for. 033's is that the same list
+  answers more than one question. `CommandParser.allowed_commands()` had been
+  asked "is it described?" and not "is it recorded?", and the second question
+  found a hole in the ledger — the artefact the whole project is for — that
+  37 green suites had sat around. The next questions to ask of that same
+  list are in "Smallest useful assistant task next".
 
 - **The capability statement in the prompt is hand-written prose and can go
   stale.** `tests/log_023_test.gd` asserts that each thing it claims points at
@@ -1281,6 +1336,169 @@ sat in the log for three weeks with 37 green suites around it. The next
 question of this kind should start by asking which list is **authoritative**,
 not which list is already in hand.
 
+## 033 — the four commands that left no record, and the count that called boots a world
+
+**Objective.** HANDOVER named the next assistant task as asking one more
+question of `CommandParser.allowed_commands()`, the list that decides what
+Genesis can be asked for, and named the question: **does every command record
+a ledger entry?** 032 had asked whether every command is *described*. This is
+a different layer: not what Genesis says about a request, but whether the
+request is in the ledger afterwards. The ledger is the artefact this project
+exists to produce, so a request that was accepted, acted on and left no trace
+in it is a hole in the product rather than in a convenience.
+
+**Starting state.** Branch `prototype-002a` at a633b8a (032). Baseline run,
+Godot 4.7.1 (`4.7.1.stable.official.a13da4feb`) headless, Linux, in a cloud
+container: **0 suites with something to look at**, 37 run and the two slow
+racing suites skipped — matching what this file already said.
+
+### FOUR OF ELEVEN WROTE NO RECORD, AND SEVEN EXITS IN ALL
+
+Measured, not inferred. Each command was sent as accepted JSON through
+`main._execute_json`, exactly the path a player's sentence takes, and the
+ledger was read back off disk afterwards:
+
+```
+  CREATE_DUNGEON / FARM / TRACK(sections)   record under the request's id
+  ORDER / SHUT / OPEN / EQUIP / PLAN        record under the request's id
+  MODIFY_TRACK                              NO RECORD
+  SPAWN_OPPONENTS                           NO RECORD
+  CREATE_TRACK without a sections list      NO RECORD
+  CLEAR_WORLD                               NO RECORD
+```
+
+A refused request was recorded; an *accepted* one on those four paths was
+not. Seven exits in all, because three of them are guards rather than
+builders — the two `has_drivable()` checks in `execute()` and
+`SPAWN_OPPONENTS`' "build a track first" — and those are the half of those
+commands a player actually meets, since `TrackBuilder.corner_nodes` is
+appended to nowhere in the repository (re-checked this session, not taken
+from 032) and so `has_track()` can never be true.
+
+**And what the hole did to the layer above it.** Every one of those four
+still showed a readback and still had an id minted for it, so the next
+request wrote an UNDERSTANDING record with `"about"` set to that id — and no
+record in the ledger carried it. Measured: three dangling references in one
+eleven-request run. The layer whose whole job is to judge whether Genesis
+understood a request was judging requests the ledger did not contain.
+
+### THE COUNT BESIDE IT, WHICH IS THE PART A PERSON READS
+
+`SessionReport.summarise` counted every record with `result == "VALID"` as a
+world built. Four of the eleven commands are not worlds. Measured, with
+records written by hand so that what was summarised is exactly what was
+shown:
+
+```
+  a session of one EQUIP, one SHUT and one ORDER - no world at all -
+    Worlds built: 3 (0 of them changes to the last world). Made another: yes.
+    First world after 1 min 00 s, from "give me boots that stop in 2 m".
+```
+
+Wrong since 002G, and it is the report the owner reads after a player testing
+session. It also meant the two halves of this commit could not be separated:
+giving `CLEAR_WORLD` a record without fixing the count would have made
+*taking a world away* read as building one.
+
+### WHAT CHANGED
+
+- **One reading of a record's own header.** The nine fields every record
+  opens with were written out in full in six places and 033 was about to add
+  four more. `GameController._new_record(command)` is now the one of them.
+- **`_finish_nothing(record, category, line)`**, beside `_finish_failed`.
+  The line the player reads and the reason in the record are the **same
+  string**, passed in by the function that produced it, so the two cannot
+  drift apart. Nothing is worded in that function. It is kept apart from
+  `_finish_failed` because that writes its own multi-line announcement, and
+  032 measured and wrote the three builders' sentences deliberately.
+- **Each of the seven exits now ends in exactly one place**, so there is one
+  record per request and no way out without one. The two guards moved out of
+  `execute()` and into their handlers for that reason: a refusal is a result.
+- `CLEAR_WORLD` records `construction: "CLEARED"`. Not `BUILT` — nothing was
+  built; a world was taken away, which is the whole job of the command.
+- Two new categories, `FAILED_NOTHING_BUILT` (the request was well formed and
+  the world was the right kind; there is no implementation behind the name)
+  and `FAILED_NO_HANDLER` (a guard, labelled as one: unreachable from any
+  legal input, because every whitelisted command has a case).
+- **`worlds_built` counts worlds**, read off `WorldRegistry.commands()` and
+  never written out in `session_report.gd`, so a world added later counts for
+  free. `seconds_to_first_world`, `first_world_request` and `made_another`
+  follow it. A `PLAN` is judged by the steps it actually built, which its own
+  record lists, so a plan of a dungeon and an errand is a world and a plan of
+  two orders is not. The requests that worked and were not worlds are not
+  discarded: they are reported as `done_otherwise`, on their own line.
+- **An id is minted where the request is made.** `/session NAME` and `/load`
+  set the controller's context but not its id, so their records were filed
+  under whatever the player asked for before them. Both now mint one.
+- **A record Genesis writes about its own housekeeping is not a player's
+  request.** `/session NAME` clears the world before the tester's first
+  sentence; that clear now leaves a record, and is counted as `by_genesis`
+  rather than as a request the tester never typed.
+
+### EVIDENCE — WHAT WAS ACTUALLY RUN
+
+Godot 4.7.1 (`4.7.1.stable.official.a13da4feb`), Linux, headless, in a cloud
+container.
+
+- Baseline before the change: **0** suites with something to look at (37 run);
+  with `--all`, **0** (39 run, `drive_test` and `session_test` included).
+- After: **0** without `--all` and **0** with it, 40 suites, nothing skipped
+  but the two tools.
+- **The new checks were proved able to fail** (TRAPS 6). The three changed
+  scripts were restored to a633b8a and the suites run against them:
+  `ledger_said_test` fails **5** times (the four commands plus the dangling
+  `about` references, which are reported as one failure naming all of them)
+  and `report_test`'s new group fails **5**. The scripts were then put back
+  and `cmp` confirms all three byte-identical to the versions the suite
+  passed against.
+- `ledger_said_test` drives the real `main.gd` and checks the Controller
+  lines: the dungeon, the order, both doors, the boots, the farm, the
+  circuit and the plan all **succeed**, so the success paths are what is
+  measured and not a run of refusals.
+
+**A fault this commit introduced, caught by a suite that is skipped by
+default.** Factoring the six record headers into one function is a pure
+extraction, and it broke every world record. `Dictionary.merge` does **not**
+overwrite a key that is already present, so with `"command"` set by the new
+header, `record.merge(module.record_fields(...))` silently stopped filling
+it and every world record went to disk with an empty command. All 38 fast
+suites passed. `session_test`, one of the two that only run with `--all`,
+caught it by counting three worlds as one. Fixed by passing
+`module.command()` in. Every other `.merge(` call in the repository was then
+checked for the same collision — four of them, none colliding. TRAPS 25.
+
+### WHAT THE TESTS DID NOT PROVE
+
+- **No model produced any of these requests.** A headless harness has no key
+  and no model, so what is measured is what the code does with JSON of each
+  shape.
+- **No player has read any of these records or any of these report lines.**
+  Whether *"Other requests that worked: 3"* is the right way to say what used
+  to be miscounted as worlds is a judgement a test cannot make, and the
+  request that shows it is under Next action.
+- **Nothing about what Genesis builds has changed.** No validator, solver,
+  readback, prompt or piece of physics was touched; `PROMPT_VERSION` and the
+  prompt are byte-identical. The three Prototype 001 stubs still do nothing,
+  and a sectionless `CREATE_TRACK` **still clears the world before
+  discovering it has nothing to build** — that is "Human decision needed" 2
+  and was deliberately left alone again. What is new is that the ledger now
+  says the world went.
+- **Ids are not unique, and that is measured rather than assumed.** A plan's
+  own record and the records of each of its steps all carry the plan's id,
+  because `_prepare_world` reuses `current_record_id`. Measured: a two-world
+  plan writes three records under one id. `ledger_said_test` therefore
+  asserts that an id **resolves**, which is the property the understanding
+  layer needs, and never that it is unique. Whether a plan's steps should
+  carry ids of their own, pointing at the plan, is a question for the owner
+  rather than a fault to fix quietly.
+- **The `has_drivable()` guard on `MODIFY_TRACK` is recorded but was not
+  reached in the suite's run** — the plan before it had replaced the circuit
+  with a farm. Both branches go through the same `_finish_nothing`, so what
+  is unproved is the branch and not the recording.
+- Nothing ran on Windows. `run_tests.bat` needed no edit: it matches
+  `ledger` as a substring, so the new suite already gets `--fixed-fps 120`
+  there. `run_tests.sh`'s `TIMED` list was updated by hand.
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -1380,21 +1598,69 @@ And one worth typing because it is a false claim a player could have hit:
 corners=4"**. It now says it built nothing — but it still clears first, so
 the world still goes. See "Human decision needed" 3.
 
-**Smallest useful assistant task next.** The plan readback this file named is
-**done** (032), and it found three Prototype 001 stubs on the way; what to do
-with those is the owner's, under "Human decision needed" 3. Candidates, in
-the order the assistant would take them:
+033 adds a seventh, and it is the only part of 033 a person has to judge,
+because it is a line in a report rather than a line in the game:
 
-- **Ask one more question of every file at once, off an authoritative list.**
-  Unchanged from 030 and still the cheapest way to find the next one, with
-  032's refinement: pick the list that decides what Genesis can be asked for,
-  not the list already in hand. `CommandParser.allowed_commands()` has now
-  been enumerated for readbacks (`plan_said_test`) and nothing else. The same
-  list has never been asked: does every command **record** a ledger entry? Is
-  every one reachable from the prompt, or are there more than the two 032
-  found that the model is never told about? Either is a single session.
+- Run a short `/session` — *"/session dave"*, then boots, then a door in a
+  dungeon, then `/session end` — and read the summary. Before 033 that
+  reported *"Worlds built: 2. Made another: yes"* and *"First world after
+  40 s"* quoting the request for boots. It now reports no world, and the two
+  requests that worked under **"Other requests that worked: 2"**. Whether
+  that line is worth having, or whether those requests should be named some
+  other way, is the judgement; the count itself is now measured and
+  `report_test` holds it either way. Also worth one glance: the session's
+  own housekeeping clear no longer shows up as a request the tester typed,
+  so the request count should match what was actually typed.
+
+**Smallest useful assistant task next.** The ledger question this file named
+is **done** (033), and so is the prompt-reachability half of it — see below.
+Candidates, in the order the assistant would take them:
+
+- **A refusal that names no legal value, at the one door 030 did not
+  reach: the top-level list itself.** Measured this session while writing
+  033's suite, headless, and not inferred. 030 made every *field* refusal
+  name its limits through all three doors. The *lists those fields live in*
+  were not touched, and all three worlds answer the same way:
+
+  ```
+  DungeonModule.validate({rooms: [...]})         "doors must be a list"
+  DungeonModule.validate({doors: []})            "rooms must be a list"
+  FarmModule.validate({})                        "zones must be a list"
+  RacingModule.validate({})                      "sections must be a list"
+  ```
+
+  Each is a first-return that names no legal value, gives no example and
+  says nothing about what a member looks like — next to field refusals that
+  say *"and it must be 5 to 60 m"*. `doors` is the sharp one: it is
+  **required**, with no default, so *"a dungeon with a hall and a vault"*
+  with no doors described is refused with four words. This is TRAPS 21's
+  shape one level up, it is the same four-validator sweep 030 ran, and the
+  limits are all in scope on the line that writes the sentence.
+
+  Found beside it, in the same reading: *"2 rooms need at least 1 doors to
+  all be reachable (got 0)"* — **"1 doors"**, which is TRAPS 10 and 23's
+  family (the article and the plural put in by hand). Worth fixing in the
+  same commit as the instance above, and worth asking of every
+  `Readback`-less count in the validators rather than of that one.
 - **The farm prompt states a bound the code does not have**, below, unchanged
-  and still the narrow direction.
+  and still the narrow direction. Note the cost of leaving it: it is the one
+  candidate here that costs a player a request.
+- **Is every command reachable from the prompt? ASKED AND ANSWERED, so
+  nobody need ask again.** Measured this session against the assembled
+  prompt the model actually receives — `SYSTEM_PROMPT` plus the three
+  registries' sections, **15474 characters** (032's "7573 characters" is
+  `SYSTEM_PROMPT` the constant on its own, which is what it measured; both
+  numbers are right about different strings, and this one is the one the
+  model sees). Every whitelisted command is named in it except
+  `MODIFY_TRACK` and `SPAWN_OPPONENTS`, which are named nowhere, and the
+  word "opponent" does not appear in the assembled prompt at all — so 032's
+  claim holds at the wider width too. There are **no** commands the model is
+  never told about beyond the two already known, and both are under "Human
+  decision needed" 2.
+- **Does every command have a validator?** The question 023 asked of
+  `UNSUPPORTED` alone, asked of the whole list. Not yet measured, and the
+  natural fourth question of `CommandParser.allowed_commands()` after
+  described (032), recorded (033) and reachable-from-the-prompt (033).
 
 Two smaller ones, either of which is a single session:
 
@@ -1595,6 +1861,11 @@ decision, so it is his and not the assistant's.
      built nothing. 032 fixed the report and left the behaviour, because
      changing it is a change to what Genesis does on a path that may be about
      to be deleted.
+   - **033 added the records and left that behaviour alone again.** All four
+     of these paths now write a ledger record saying what happened, which is
+     nothing, so a sectionless `CREATE_TRACK` taking the world away is at
+     least in the record. The `clear()` is still there and is still option
+     (b) below.
 
    The options, for the record:
 
@@ -1663,3 +1934,30 @@ decision, so it is his and not the assistant's.
    would otherwise have to claim it verified something it cannot reach, and
    that is the one thing this protocol exists to prevent. The commit message
    is where that line is held: what was verified, and what was not.
+
+6. **Should a plan's steps have ids of their own?** Measured in 033, not
+   inferred: a plan's own record and the records of each of its steps all
+   carry the **same** id, because `_prepare_world` reuses
+   `current_record_id`. A two-world plan writes three records under one id.
+
+   Nothing is broken by it today. `SessionReport._is_plan_step` tells the
+   steps apart by re-reading `raw_command`, and the understanding layer only
+   needs an id to **resolve**, which it does. But it means the ledger cannot
+   answer "which record is this evidence about?" by id alone when a plan is
+   involved, and an outside auditor — the thing `ledger_audit_test` is
+   written to imitate — would have to know that rule to read the file.
+
+   The options, for the record:
+
+   - **(a) Leave it.** Costs nothing now. The rule stays implicit, and
+     `_is_plan_step`'s string re-parse stays the only thing that knows it.
+   - **(b) Give each step its own id and a `step_of` field pointing at the
+     plan.** Makes the ledger self-describing and lets `_is_plan_step` read
+     a field instead of re-parsing JSON. It changes the shape of records
+     already on disk in the owner's `user://` log, which is why it is his.
+   - **(c) Keep one id and add an explicit `plan_step: N` field**, so the
+     relationship is stated rather than inferred, without changing what an
+     id means.
+
+   `ledger_said_test` deliberately asserts only that an id resolves, so it
+   stays green under all three.

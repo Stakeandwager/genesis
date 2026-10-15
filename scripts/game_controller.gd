@@ -144,19 +144,10 @@ func execute(command: String, parameters: Dictionary) -> void:
 	match command:
 		"CREATE_TRACK" when not parameters.has("sections"):
 			# The Prototype 001 ring. Composed circuits are a world module.
-			_clear_world_node()
-			_restore_view()
-			opponent_builder.clear()
-			log_message.emit(track_builder.build(parameters))
+			_build_prototype_ring(parameters)
 		"MODIFY_TRACK":
-			if has_drivable():
-				log_message.emit("MODIFY_TRACK failed: composed tracks are changed with MODIFY_SECTION, which comes in a later step")
-				return
 			_modify_track(parameters)
 		"SPAWN_OPPONENTS":
-			if has_drivable():
-				log_message.emit("SPAWN_OPPONENTS failed: opponents on composed tracks come in a later step")
-				return
 			_spawn_opponents(parameters)
 		"EQUIP":
 			_equip(parameters)
@@ -169,18 +160,47 @@ func execute(command: String, parameters: Dictionary) -> void:
 		"PLAN":
 			_execute_plan(parameters)
 		"CLEAR_WORLD":
-			last_build = {}
-			track_builder.clear()
-			opponent_builder.clear()
-			_clear_world_node()
-			_restore_view()
-			log_message.emit("CLEAR_WORLD")
+			_clear_world()
 		_:
 			var module := WorldRegistry.find(command)
 			if module:
 				_create_world(module, parameters)
 			else:
-				log_message.emit("No handler for: " + command)
+				# 033: unreachable from any legal input - CommandParser admits
+				# only the commands above plus WorldRegistry's, and every one
+				# of those has a case. It is a guard against a command added
+				# to CORE_COMMANDS without a handler, labelled as one rather
+				# than counted as a measurement (TRAPS 6). It records anyway,
+				# because the day it does fire is the day somebody needs to
+				# know it did.
+				_finish_nothing(_new_record(command), NO_HANDLER,
+					"No handler for: " + command)
+
+
+# --- 033: one reading of a record's own header ---
+# The nine fields every ledger record opens with were written out in full in
+# SIX places - _order, _set_door, _equip, _prepare_world, _execute_plan and
+# record_rejection - and 033 was about to add four more. They agreed, and
+# nothing was making them: TRAPS 16's shape, waiting for the release where
+# one of them grows a field and the others do not. The id is the one that
+# matters, because the understanding layer writes a later record pointing at
+# it, so a record that invents its own id is a record nothing can be tied to.
+#
+# "command" is passed rather than read, because record_rejection writes the
+# empty string on purpose (the AI's answer never became a command) and
+# _prepare_world lets the module name itself through record_fields().
+func _new_record(command: String) -> Dictionary:
+	return {
+		"time": Time.get_datetime_string_from_system(),
+		"request": current_request,
+		"raw_command": current_raw,
+		"source": current_source,
+		"experiment": current_experiment,
+		"readback": current_readback,
+		"understanding": "UNKNOWN",
+		"id": current_record_id if current_record_id != "" else TrackLog.next_id(),
+		"command": command,
+	}
 
 
 # --- 004: asking for a tool ---
@@ -199,18 +219,8 @@ func execute(command: String, parameters: Dictionary) -> void:
 # the understanding layer uses, where a later record judges an earlier one and
 # never edits it.
 func _order(parameters: Dictionary) -> void:
-	var record := {
-		"time": Time.get_datetime_string_from_system(),
-		"request": current_request,
-		"raw_command": current_raw,
-		"source": current_source,
-		"experiment": current_experiment,
-		"readback": current_readback,
-		"understanding": "UNKNOWN",
-		"id": current_record_id if current_record_id != "" else TrackLog.next_id(),
-		"command": "ORDER",
-		"proposed_goal": parameters,
-	}
+	var record := _new_record("ORDER")
+	record["proposed_goal"] = parameters
 
 	var rooms: Array = standable.get("rooms", []) if has_standable() else []
 	var things: Array = standable.get("things", []) if has_standable() else []
@@ -415,18 +425,8 @@ func finish_order(at: Vector3, seconds: float, travelled: float, why: String) ->
 # The world is rebuilt from the layout so the door is actually there, with
 # collision, rather than being true only in a list.
 func _set_door(parameters: Dictionary, closed: bool) -> void:
-	var record := {
-		"time": Time.get_datetime_string_from_system(),
-		"request": current_request,
-		"raw_command": current_raw,
-		"source": current_source,
-		"experiment": current_experiment,
-		"readback": current_readback,
-		"understanding": "UNKNOWN",
-		"id": current_record_id if current_record_id != "" else TrackLog.next_id(),
-		"command": "SHUT" if closed else "OPEN",
-		"proposed_door": parameters,
-	}
+	var record := _new_record("SHUT" if closed else "OPEN")
+	record["proposed_door"] = parameters
 
 	if not has_standable():
 		_finish_failed(record, "FAILED_SCENE", ["there are no doors here: build a dungeon first"])
@@ -502,19 +502,9 @@ func _thing_node(label: String) -> Node3D:
 
 
 func _equip(parameters: Dictionary) -> void:
-	var record := {
-		"time": Time.get_datetime_string_from_system(),
-		"request": current_request,
-		"raw_command": current_raw,
-		"source": current_source,
-		"experiment": current_experiment,
-		"readback": current_readback,
-		"understanding": "UNKNOWN",
-		"id": current_record_id if current_record_id != "" else TrackLog.next_id(),
-		"command": "EQUIP",
-		"tool": str(parameters.get("tool", "")),
-		"proposed_spec": parameters.get("spec", {}),
-	}
+	var record := _new_record("EQUIP")
+	record["tool"] = str(parameters.get("tool", ""))
+	record["proposed_spec"] = parameters.get("spec", {})
 
 	var asked_tool := str(parameters.get("tool", "")).strip_edges()
 	var tool := ToolRegistry.find(asked_tool)
@@ -559,22 +549,12 @@ func _equip(parameters: Dictionary) -> void:
 # result too, so it is logged and announced like any other attempt. Without
 # this, an experiment would wait forever for a result that never came.
 func record_rejection(category: String, reason: String) -> void:
-	var record := {
-		"time": Time.get_datetime_string_from_system(),
-		"request": current_request,
-		"raw_command": current_raw,
-		"source": current_source,
-		"experiment": current_experiment,
-		"readback": current_readback,
-		"understanding": "UNKNOWN",
-		"id": current_record_id if current_record_id != "" else TrackLog.next_id(),
-		"command": "",
-		"attempt": int(current_attempt.get("attempt", 1)),
-		"result": "FAILED",
-		"construction": "UNSUPPORTED" if category == "UNSUPPORTED" else "FAILED",
-		"category": category,
-		"reasons": [reason],
-	}
+	var record := _new_record("")
+	record["attempt"] = int(current_attempt.get("attempt", 1))
+	record["result"] = "FAILED"
+	record["construction"] = "UNSUPPORTED" if category == "UNSUPPORTED" else "FAILED"
+	record["category"] = category
+	record["reasons"] = [reason]
 	# 023: when a refusal denies something Genesis does, the disagreement goes
 	# in the record beside the refusal. It is kept as evidence, not as a score:
 	# nothing counts it, and the refusal still stands in the ledger exactly as
@@ -630,21 +610,21 @@ func _may_revise(record: Dictionary) -> bool:
 
 const MAX_PLAN_STEPS := 4
 
+# --- 033: two categories for the two ways a command can do nothing ---
+# NOTHING_BUILT is not FAILED_SCHEMA and not FAILED_SCENE. The request was
+# well formed and the world was the right kind; there is simply no
+# implementation behind the name. The three Prototype 001 paths are the only
+# ones that answer to it, and the day one of them is rebuilt or taken out of
+# the whitelist, nothing answers to it at all.
+const NOTHING_BUILT := "FAILED_NOTHING_BUILT"
+# A whitelisted command with no case in execute(). See the _ branch there.
+const NO_HANDLER := "FAILED_NO_HANDLER"
+
 
 func _execute_plan(parameters: Dictionary) -> void:
-	var record := {
-		"time": Time.get_datetime_string_from_system(),
-		"request": current_request,
-		"raw_command": current_raw,
-		"source": current_source,
-		"experiment": current_experiment,
-		"readback": current_readback,
-		"understanding": "UNKNOWN",
-		"id": current_record_id if current_record_id != "" else TrackLog.next_id(),
-		"command": "PLAN",
-		"world": "plan",
-		"intent": parameters.get("intent", {}),
-	}
+	var record := _new_record("PLAN")
+	record["world"] = "plan"
+	record["intent"] = parameters.get("intent", {})
 
 	var raw = parameters.get("steps", null)
 	if typeof(raw) != TYPE_ARRAY:
@@ -925,16 +905,14 @@ func _create_world(module: WorldModule, parameters: Dictionary) -> void:
 # Returns {"ok", "record", "layout"}. A failure writes its own record and
 # announces itself exactly as it always did.
 func _prepare_world(module: WorldModule, parameters: Dictionary) -> Dictionary:
-	var record := {
-		"time": Time.get_datetime_string_from_system(),
-		"request": current_request,
-		"raw_command": current_raw,
-		"source": current_source,
-		"experiment": current_experiment,
-		"readback": current_readback,
-		"understanding": "UNKNOWN",
-		"id": current_record_id if current_record_id != "" else TrackLog.next_id(),
-	}
+	# The module names itself. Dictionary.merge does NOT overwrite a key that
+	# is already there, so the command is passed IN rather than left to the
+	# merge below: opening the header with "" and expecting record_fields()
+	# to fill it left every world record with an empty command, which
+	# session_test caught by counting three worlds as one. record_fields()
+	# names the same command, so the merge is a no-op on that key and still
+	# adds "world" and the intent.
+	var record := _new_record(module.command())
 	record.merge(module.record_fields(parameters, current_attempt))
 
 	var check := module.validate(parameters)
@@ -1083,6 +1061,33 @@ func standable_surface() -> Dictionary:
 	}
 
 
+# --- 033: a command that did nothing, recorded as having done nothing ---
+# Four paths through execute() wrote to the player's log and nothing else, so
+# a request that was accepted and then did nothing left no trace in the one
+# place the project calls its evidence. The understanding layer still wrote a
+# record pointing back at the id those requests were given, so the ledger
+# carried a reference to a record that had never been written.
+#
+# The line the player reads and the reason in the record are the SAME string,
+# passed in once by the function that produced it, so the two cannot drift
+# apart - the rule WorldRegistry.around_of() exists for. Nothing here is
+# worded in this function.
+#
+# Kept apart from _finish_failed, which writes its own multi-line "X failed:
+# CATEGORY / - reason / no geometry built" announcement. The three Prototype
+# 001 builders already say exactly what happened in sentences 032 measured
+# and wrote, and this must not replace them.
+func _finish_nothing(record: Dictionary, category: String, line: String) -> void:
+	record["result"] = "FAILED"
+	record["construction"] = "FAILED"
+	record["category"] = category
+	record["reasons"] = [line]
+	record["metrics"] = {}
+	TrackLog.append(record)
+	track_measured.emit(record)
+	log_message.emit(line)
+
+
 func _finish_failed(record: Dictionary, category: String, reasons: Array) -> void:
 	record["result"] = "FAILED"
 	# 003: what actually happened in the game, kept apart from whether the
@@ -1144,21 +1149,88 @@ func _restore_view() -> void:
 
 
 # --- Prototype 001 paths ---
+#
+# --- 033: the three commands that left no record ---
+# 032 found that these three said they had built things they had not, and
+# fixed what they say. Asked the next question off the same list - does every
+# command the whitelist admits WRITE A RECORD? - all three, and CLEAR_WORLD
+# with them, turned out to write none at all. Measured headless: an accepted
+# MODIFY_TRACK left exactly one new record in the ledger, the understanding
+# record about it, pointing at an id no record carried.
+#
+# Each of them now ends in exactly one place, so there is one record per
+# request and no path out without one. The guards that used to sit in
+# execute() moved in here for that reason: a refusal is a result, and it was
+# the half of these commands a player was most likely to meet.
 
 func _modify_track(parameters: Dictionary) -> void:
+	var record := _new_record("MODIFY_TRACK")
+	record["proposed_change"] = parameters
+	if has_drivable():
+		_finish_nothing(record, "FAILED_SCENE",
+			"MODIFY_TRACK failed: composed tracks are changed with MODIFY_SECTION, which comes in a later step")
+		return
 	var corner: int = int(parameters.get("corner", 1))
 	var difficulty: String = str(parameters.get("difficulty", "medium"))
-	log_message.emit(track_builder.modify_corner(corner, difficulty))
+	# The builder's own sentence, which 032 tied to what it actually did, is
+	# both the player's line and the record's reason.
+	_finish_nothing(record, NOTHING_BUILT, track_builder.modify_corner(corner, difficulty))
 
 
 func _spawn_opponents(parameters: Dictionary) -> void:
+	var record := _new_record("SPAWN_OPPONENTS")
+	record["proposed_grid"] = parameters
+	if has_drivable():
+		_finish_nothing(record, "FAILED_SCENE",
+			"SPAWN_OPPONENTS failed: opponents on composed tracks come in a later step")
+		return
 	if not track_builder.has_track():
-		log_message.emit("SPAWN_OPPONENTS failed: build a track first")
+		# Always true: TrackBuilder.corner_nodes is appended to nowhere in the
+		# repository, so has_track() can never return true and this is the one
+		# answer SPAWN_OPPONENTS can give. Recorded as the measurement it is.
+		_finish_nothing(record, "FAILED_SCENE", "SPAWN_OPPONENTS failed: build a track first")
 		return
 
 	var count: int = int(parameters.get("count", 1))
-	log_message.emit(opponent_builder.spawn(
+	_finish_nothing(record, NOTHING_BUILT, opponent_builder.spawn(
 		count,
 		track_builder.get_start_position(),
 		track_builder.get_start_direction()
 	))
+
+
+# A sectionless CREATE_TRACK. Still clears the world before discovering it
+# has nothing to build, which is HANDOVER's "Human decision needed" 2 and
+# deliberately not changed here: 033 is about what the ledger says, and
+# taking the clear() out is a change to what Genesis DOES on a path the owner
+# may delete. What is new is that the ledger now says the world went.
+func _build_prototype_ring(parameters: Dictionary) -> void:
+	var record := _new_record("CREATE_TRACK")
+	record["proposed_ring"] = parameters
+	_clear_world_node()
+	_restore_view()
+	opponent_builder.clear()
+	_finish_nothing(record, NOTHING_BUILT, track_builder.build(parameters))
+
+
+# CLEAR_WORLD is the one command here that does exactly what it says.
+func _clear_world() -> void:
+	var record := _new_record("CLEAR_WORLD")
+	last_build = {}
+	track_builder.clear()
+	opponent_builder.clear()
+	_clear_world_node()
+	_restore_view()
+	record["result"] = "VALID"
+	# Not BUILT. Nothing was built: a world was taken away, which is the
+	# whole job of this command, so the construction layer says what it did
+	# rather than borrowing the word that means the opposite. Nothing counts
+	# CLEARED as a world - see SessionReport, which until 033 counted every
+	# valid record as one.
+	record["construction"] = "CLEARED"
+	record["category"] = ""
+	record["reasons"] = []
+	record["metrics"] = {}
+	TrackLog.append(record)
+	track_measured.emit(record)
+	log_message.emit("CLEAR_WORLD")

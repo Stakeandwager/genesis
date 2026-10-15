@@ -13,6 +13,12 @@ class_name SessionReport
 # - The steps inside a plan are not counted separately; the plan is.
 # - /load is counted as a load, not as a request.
 # - The AI being unavailable (busy, no connection) counts as a failed request.
+# - 033: "worlds built" counts WORLDS. Four of the eleven commands the
+#   whitelist admits are not worlds - EQUIP, ORDER, SHUT, OPEN - and until
+#   033 every valid record was counted as a world, so a session of boots and
+#   doors reported worlds it had never built and quoted a request for boots
+#   as the first one. Which commands are worlds is read off
+#   WorldRegistry.commands() and never written out here.
 
 static func summarise(records: Array) -> Dictionary:
 	var started := ""
@@ -23,6 +29,8 @@ static func summarise(records: Array) -> Dictionary:
 	var loads := 0
 	var failed: Array = []          # [request, why]
 	var cannot: Array = []          # [request, reason]
+	var done_otherwise: Array = []  # [request, command] - valid, and not a world
+	var by_genesis := 0             # records Genesis wrote about its own housekeeping
 	var first_world_time := ""
 	var first_world_request := ""
 	var drives := 0
@@ -70,18 +78,44 @@ static func summarise(records: Array) -> Dictionary:
 		if source == "saved":
 			loads += 1
 			continue
+		# --- 033: a record Genesis wrote about itself ---
+		# /session NAME clears the world before the tester's first sentence,
+		# so that nothing of the last tester's is left over. Since 033 that
+		# clear leaves a record, which is right - the world did go, and the
+		# ledger should say so - but it is NOT something the player asked
+		# for, and counting it would put a request in the tester's report
+		# that the tester never typed. Counted on its own axis instead.
+		# session_test caught this: it reported 8 requests for a script that
+		# made 7.
+		if source == "game_command":
+			by_genesis += 1
+			continue
 
 		requests += 1
 		if str(r.get("readback", "")) != "":
 			readbacks.append(r)
 		var request := str(r.get("request", ""))
 		if str(r.get("result", "")) == "VALID":
-			built += 1
-			if typeof(r.get("source", null)) == TYPE_DICTIONARY and r["source"].has("edit"):
-				edits += 1
-			if first_world_time == "":
-				first_world_time = time
-				first_world_request = request
+			# --- 033: a count that names worlds, counting worlds ---
+			# This used to be every valid record, so a player who equipped
+			# boots and shut a door read as "Worlds built: 2. Made another:
+			# yes", with "First world after 40 s" quoting a request for
+			# boots. Measured, not inferred: a session of one EQUIP, one
+			# SHUT and one ORDER and no world at all reported three worlds
+			# built and a first world. Four of the eleven commands the
+			# whitelist admits are not worlds at all.
+			if _builds_a_world(r):
+				built += 1
+				if typeof(r.get("source", null)) == TYPE_DICTIONARY and r["source"].has("edit"):
+					edits += 1
+				if first_world_time == "":
+					first_world_time = time
+					first_world_request = request
+			else:
+				# Still a request that worked, and still worth seeing. It is
+				# counted on its own axis rather than folded into a number
+				# whose name is about worlds.
+				done_otherwise.append([request, str(r.get("command", ""))])
 		elif str(r.get("category", "")) == "UNSUPPORTED":
 			var reasons: Array = r.get("reasons", [])
 			cannot.append([request, str(reasons[0]) if not reasons.is_empty() else ""])
@@ -99,6 +133,8 @@ static func summarise(records: Array) -> Dictionary:
 		"loads": loads,
 		"failed": failed,
 		"cannot_do": cannot,
+		"done_otherwise": done_otherwise,
+		"by_genesis": by_genesis,
 		"ai_unavailable": ai_down,
 		"seconds_to_first_world": _seconds_between(started, first_world_time) if first_world_time != "" else -1.0,
 		"first_world_request": first_world_request,
@@ -211,6 +247,12 @@ static func describe(name: String, s: Dictionary) -> String:
 	lines.append("Asked for things Genesis cannot do: %d%s" % [cannot.size(), ":" if not cannot.is_empty() else "."])
 	for c in cannot:
 		lines.append("  \"%s\" - %s" % [c[0], c[1]])
+	# 033: the requests that worked and were not worlds. They used to be
+	# inside "Worlds built", which is why that number was wrong.
+	var other: Array = s.get("done_otherwise", [])
+	lines.append("Other requests that worked: %d%s" % [other.size(), ":" if not other.is_empty() else "."])
+	for o in other:
+		lines.append("  \"%s\" - %s" % [o[0], o[1]])
 
 	var u: Dictionary = s.get("understanding", {})
 	if not u.is_empty():
@@ -245,6 +287,30 @@ static func describe(name: String, s: Dictionary) -> String:
 			for item in disputes:
 				lines.append("    \"%s\" -> read back as \"%s\"" % [item[0], item[1]])
 	return "\n".join(lines)
+
+
+# --- 033: which records are about building a world ---
+# Read off WorldRegistry.commands(), the one list that says which worlds
+# exist, so a world added later is counted for free and a command that is not
+# a world can never be counted as one. The four that are not: EQUIP, ORDER,
+# SHUT, OPEN - plus CLEAR_WORLD, MODIFY_TRACK and SPAWN_OPPONENTS, which
+# before 033 wrote no record at all and so could not be counted either way.
+#
+# A PLAN is judged by the steps it actually built, which its own record
+# lists: a plan of a dungeon and an errand built a world, a plan of one
+# order did not. The step records are excluded separately by _is_plan_step,
+# so the worlds inside a plan are counted once, through the plan.
+static func _builds_a_world(r: Dictionary) -> bool:
+	var command := str(r.get("command", ""))
+	var worlds := WorldRegistry.commands()
+	if worlds.has(command):
+		return true
+	if command != "PLAN":
+		return false
+	for step in (r.get("steps", []) as Array):
+		if worlds.has(str(step)):
+			return true
+	return false
 
 
 # A plan writes one record per step and then one for the plan itself, all

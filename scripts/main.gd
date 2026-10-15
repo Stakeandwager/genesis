@@ -520,6 +520,18 @@ func _session(request: String) -> void:
 	if driving:
 		_stop_driving()
 	pending_request = request
+	# 033: CLEAR_WORLD now writes a record, so it needs a request and an id of
+	# its own. Without these it would have carried the LAST request's text and
+	# the last request's id - a record about "/session dave" filed under the
+	# sentence before it. Every other way into the controller sets this block;
+	# these two were the ones that did not.
+	controller.current_request = request
+	controller.current_raw = JSON.stringify({"command": "CLEAR_WORLD", "parameters": {}})
+	controller.current_source = {"source": "game_command"}
+	controller.current_experiment = {}
+	controller.current_attempt = {}
+	controller.current_readback = ""
+	controller.current_record_id = TrackLog.next_id()
 	controller.execute("CLEAR_WORLD", {})
 	_build_startup_track()
 	var reply := "Session '%s' started. Everything from now on is logged under that name. Type /session end when they have finished." % name
@@ -588,6 +600,11 @@ func _load_world(request: String) -> void:
 	controller.current_source = pending_source
 	controller.current_experiment = {}
 	controller.current_attempt = {}
+	# 033: its own id, for the same reason. A loaded world used to be recorded
+	# under the id of whatever the player asked for before it, so two records
+	# claimed the same id and the understanding layer's "about" could point at
+	# either.
+	controller.current_record_id = TrackLog.next_id()
 	controller.execute(command, world["parameters"])
 
 	# 025: and then the part that was missing. The save file recorded what

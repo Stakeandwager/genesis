@@ -62,8 +62,13 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      Windows
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      Linux
 ```
 
-33 suites, run against the scripts beside them, so what is tested is what is
-committed. `--all` adds the slow racing suites.
+40 suites, run against the scripts beside them, so what is tested is what is
+committed. `--all` adds the two slow racing suites, and it is worth the wait:
+they are the only ones that drive a whole scripted session, and in 033 one of
+them caught a fault that all 38 fast suites passed. Nothing is skipped as
+broken. (This number had said 33 since the suite count passed it; it is
+counted rather than remembered — `ls tests/*.gd` less `replay` and
+`prompt_test`, which are tools and have no verdict to give.)
 
 Among them: six adversarial challenges that try to make the ledger report a
 delivery it has not earned (`false_delivery_test.gd`, zero false successes), a

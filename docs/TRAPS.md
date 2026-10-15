@@ -916,6 +916,81 @@ and is in HANDOVER under "Human decision needed".
 
 ---
 
+## 25. The command that did nothing, and the count that called it a world
+
+**Signature:** a request is accepted, something happens on screen, and the
+ledger has no record of it. Separately, a number in the session report is
+larger than the thing it names.
+
+**Cause.** Two faults, found by one question asked of one list, and they are
+the same fault at two layers: a line that describes something other than what
+happened.
+
+*The hole.* `CommandParser.allowed_commands()` admits eleven commands. 032
+asked whether each one is DESCRIBED. 033 asked whether each one is
+RECORDED, and four were not: `MODIFY_TRACK`, `SPAWN_OPPONENTS`, a
+sectionless `CREATE_TRACK`, and `CLEAR_WORLD`. All four wrote a line to the
+player's log and nothing to the ledger. Three more exits had the same
+problem — the two `has_drivable()` guards and `SPAWN_OPPONENTS`' "build a
+track first" — and those are the half of those commands a player actually
+meets. Measured headless: an accepted `MODIFY_TRACK` left exactly one new
+record, the UNDERSTANDING record about it, whose `about` field named an id
+that no record in the ledger carried. So the ledger held a reference to a
+record that had never been written, and the layer that exists to judge
+whether Genesis understood a request was judging a request the ledger did
+not contain.
+
+*The count.* `SessionReport` counted every record with `result == "VALID"` as
+a world built. Four of the eleven commands are not worlds — `EQUIP`, `ORDER`,
+`SHUT`, `OPEN` — so a session in which the player equipped boots, shut a
+door and sent the character on an errand, and built nothing at all, reported
+**"Worlds built: 3. Made another: yes"** and **"First world after 1 min 00 s,
+from \"give me boots that stop in 2 m\""**. Measured, not inferred. That is a
+report the owner reads after a player session, and it had been wrong since
+002G. Fixing the hole without fixing the count would have made it worse by
+three: `CLEAR_WORLD` taking a world AWAY would have been counted as building
+one.
+
+**Do:**
+
+- **A command's record is part of the command.** A handler that can return
+  without appending a record has an exit that the ledger cannot see.
+  `tests/ledger_said_test.gd` enumerates the whitelist, sends one accepted
+  request per command, and fails if no record carries the id that request was
+  given — so a command added later cannot be silent, and a command with no row
+  in the table is a FAIL and never a skip.
+- **A count names what it counts, off the list that defines it.** Which
+  commands build a world is read from `WorldRegistry.commands()`, never
+  written out in `session_report.gd`, so a world added later counts for free
+  and a command that is not a world can never be counted as one. The
+  assertions are enumerated from the same two registries, and they assert the
+  NUMBER and never the sentence: every word of `SessionReport.describe()` can
+  be rewritten and they stay green.
+- **An id is the only thing tying the ledger together, so make it where the
+  request is made.** Two paths into the controller — `/session NAME` and
+  `/load` — set the request's context but not its id, so their records would
+  have been filed under whatever the player asked for *before* them. Every
+  way in now mints its own.
+- **A record Genesis writes about its own housekeeping is not a player's
+  request.** `/session NAME` clears the world before the tester's first
+  sentence. That clear now leaves a record, which is right — the world did
+  go — but counting it put a request in the tester's report that the tester
+  never typed. It is counted on its own axis.
+
+**And the one that cost the most time, which was mine:** `Dictionary.merge`
+does **not** overwrite a key that is already present. Factoring six copies of
+a record's header into one function meant the header set `"command"` first,
+so `record.merge(module.record_fields(...))` silently stopped filling it and
+**every world record was written with an empty command**. The fast suite was
+green. `session_test` — one of the two slow suites, which only run with
+`--all` — caught it by counting three worlds as one. A pure extraction is not
+automatically safe, and the suite that catches it may be the one that is
+skipped by default.
+
+Found and fixed in 033.
+
+---
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
 > A fluent sentence is not evidence that anything was understood.
@@ -931,3 +1006,6 @@ and is in HANDOVER under "Human decision needed".
 > And a command nothing describes is a command nothing is checking.
 > And a function that keeps its success string after losing its body reports
 > a result it cannot have produced.
+> And a command that leaves no record has not been measured, however good
+> the line it printed.
+> And a count is a claim about what it counted.

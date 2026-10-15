@@ -92,8 +92,106 @@ func _initialize() -> void:
 		print("FAIL moved_on should be 0 without the silent record, was ", u2.get("moved_on", "?"))
 		bad += 1
 
+	bad += _world_counts()
+
 	print("REPORT TEST failures=%d" % bad)
 	quit(bad)
+
+
+# --- 033: a count called "worlds built" counting worlds ---
+#
+# FINDING. Until 033 every record with result VALID was counted as a world,
+# so a session in which the player equipped boots, shut a door and sent the
+# character on an errand - and built nothing at all - reported "Worlds built:
+# 3. Made another: yes" and "First world after 1 min 00 s" quoting the
+# request for boots. Measured, not inferred. The four commands in the
+# whitelist that are not worlds are EQUIP, ORDER, SHUT and OPEN, and since
+# 033 CLEAR_WORLD, MODIFY_TRACK and SPAWN_OPPONENTS write records too, which
+# would have made the same number three worse.
+#
+# The assertions are enumerated from WorldRegistry.commands() and
+# CommandParser.allowed_commands(), never from a list written here, so a
+# world added later is counted for free and a command added later is checked
+# for free. They assert the COUNT and not the sentence: every word of
+# SessionReport.describe() can be rewritten and this stays green (TRAPS 6).
+func _world_counts() -> int:
+	var bad := 0
+	var worlds: Array = WorldRegistry.commands()
+	var others: Array = []
+	for command in CommandParser.allowed_commands():
+		if not worlds.has(command) and command != "PLAN":
+			others.append(command)
+
+	# One valid record per command that is NOT a world, and no world at all.
+	var records: Array = [{"type": "session_event", "time": "2026-10-08T09:00:00", "event": "session_start"}]
+	for i in others.size():
+		records.append({
+			"time": "2026-10-08T09:0%d:00" % (i + 1), "id": "n%d" % i,
+			"request": "something that is not a world (%s)" % others[i],
+			"readback": "a line", "result": "VALID", "construction": "BUILT",
+			"command": others[i], "source": {"source": "ai"}, "metrics": {},
+		})
+	var s := SessionReport.summarise(records)
+	if int(s.get("worlds_built", -1)) != 0:
+		print("FAIL %d non-world commands counted as %s worlds built" % [
+			others.size(), s.get("worlds_built", "?")])
+		bad += 1
+	if float(s.get("seconds_to_first_world", 0.0)) >= 0.0:
+		print("FAIL a session with no world reports a first world after %s s, from \"%s\"" % [
+			s.get("seconds_to_first_world", "?"), s.get("first_world_request", "?")])
+		bad += 1
+	if bool(s.get("made_another", true)):
+		print("FAIL a session with no world says the player made another")
+		bad += 1
+	if int(s.get("requests", -1)) != others.size():
+		print("FAIL the requests themselves stopped being counted: %s of %d" % [
+			s.get("requests", "?"), others.size()])
+		bad += 1
+	# They are not discarded either: a request that worked is still reported.
+	var other_done: Array = s.get("done_otherwise", [])
+	if other_done.size() != others.size():
+		print("FAIL %d non-world requests that worked, %d reported" % [
+			others.size(), other_done.size()])
+		bad += 1
+
+	# And every world command IS counted, one record at a time, off the
+	# registry rather than off a list here.
+	for i in worlds.size():
+		var one: Array = [
+			{"type": "session_event", "time": "2026-10-08T09:00:00", "event": "session_start"},
+			{"time": "2026-10-08T09:01:00", "id": "w", "request": "a world", "readback": "a line",
+				"result": "VALID", "construction": "BUILT", "command": worlds[i],
+				"source": {"source": "ai"}, "metrics": {}},
+		]
+		var w := SessionReport.summarise(one)
+		if int(w.get("worlds_built", -1)) != 1:
+			print("FAIL %s is a world and was counted %s times" % [worlds[i], w.get("worlds_built", "?")])
+			bad += 1
+		if float(w.get("seconds_to_first_world", -1.0)) < 0.0:
+			print("FAIL %s built a world and no first world was reported" % worlds[i])
+			bad += 1
+
+	# A PLAN is judged by the steps it built, which is the only way to tell a
+	# plan that made a world from a plan that gave an order.
+	var plan_world: Array = [
+		{"type": "session_event", "time": "2026-10-08T09:00:00", "event": "session_start"},
+		{"time": "2026-10-08T09:01:00", "id": "p", "request": "a dungeon and an errand",
+			"readback": "a line", "result": "VALID", "construction": "BUILT", "command": "PLAN",
+			"steps": [str(worlds[0]), "ORDER"], "source": {"source": "ai"}, "metrics": {}},
+	]
+	if int(SessionReport.summarise(plan_world).get("worlds_built", -1)) != 1:
+		print("FAIL a plan that built a world was not counted as one")
+		bad += 1
+	var plan_order: Array = [
+		{"type": "session_event", "time": "2026-10-08T09:00:00", "event": "session_start"},
+		{"time": "2026-10-08T09:01:00", "id": "q", "request": "two errands", "readback": "a line",
+			"result": "VALID", "construction": "BUILT", "command": "PLAN",
+			"steps": ["ORDER", "ORDER"], "source": {"source": "ai"}, "metrics": {}},
+	]
+	if int(SessionReport.summarise(plan_order).get("worlds_built", -1)) != 0:
+		print("FAIL a plan of two orders was counted as a world")
+		bad += 1
+	return bad
 
 
 # A missing key is a failure with a name, never a crash: a crash here skips

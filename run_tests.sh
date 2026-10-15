@@ -17,7 +17,7 @@ ALL=${2:-}
 cd "$(dirname "$0")"
 
 # Suites that need physics stepped at a fixed rate.
-TIMED="carry_test false_delivery_test ledger_audit_test order_test explore_test walker_test walk_physics_test behaviour_test physics_test interference_test repeat_test drive_test session_test report_test"
+TIMED="carry_test false_delivery_test ledger_audit_test ledger_said_test order_test explore_test walker_test walk_physics_test behaviour_test physics_test interference_test repeat_test drive_test session_test report_test"
 # Suites that take minutes, not seconds: several full races apiece.
 SLOW="drive_test session_test"
 # Known broken. Empty since 024: report_test was here from 014, recorded as
