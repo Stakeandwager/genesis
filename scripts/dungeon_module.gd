@@ -351,7 +351,12 @@ func _side(room: Dictionary, field: String, n: int, errors: Array) -> float:
 		errors.append("room %d: %s must be a number, %.0f to %.0f m" % [n, field, MIN_SIDE, MAX_SIDE])
 		return NAN
 	if value < MIN_SIDE or value > MAX_SIDE:
-		errors.append("room %d: %s is %.0f m, and must be %.0f to %.0f m" % [n, field, value, MIN_SIDE, MAX_SIDE])
+		# 041: said through Readback.number_said() like the door pair and the
+		# thing's "in" two hundred lines above. %.0f said a width of 40.4 back
+		# as "40" - a number the request never carried, inside the range this
+		# same sentence says it is outside.
+		errors.append("room %d: %s is %s m, and must be %.0f to %.0f m" % [
+			n, field, Readback.number_said(value), MIN_SIDE, MAX_SIDE])
 		return NAN
 	return value
 

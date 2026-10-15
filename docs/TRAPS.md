@@ -1743,6 +1743,110 @@ plan that destroyed a world it could not replace. It fails **0 times** at
 `plan around`, which is the control member of the class and the reason the
 class was visible at all.
 
+
+---
+
+## 35. The rule was carried to five doors and there were thirteen
+
+**Signature:** a refusal names a value **inside** the range the same sentence
+says the value is outside. *"room 1: width is 40 m, and must be 4 to 40 m"*,
+for a width of 40.4. Every suite is green, including the one written
+specifically to assert that a refusal names its limit.
+
+**Cause:** 040 found that a reference by position was truncated in silence at
+four doors and refused at the fifth, and the rule it produced has five parts.
+The fifth is *"a number said back is said as the player wrote it"*, and it
+came with a function - `Readback.number_said()` - so that the five reference
+doors could not drift apart again.
+
+**There are thirteen doors in Genesis that say a request's number back, and
+040 reached five.** The other eight rendered the same number by hand, in
+three different styles, and all three ROUND:
+
+```
+dungeon_module    "%.0f" % value                    width 40.4   -> "40"
+farm_module       "%.0f" % value                    barn 60.4    -> "60"
+car_tool          "%.0f" % number                   grip 20.4    -> "20"
+section_validator _tidy(): whole %.0f, <10 %.2f,    length 1000.04 -> "1000.0"
+                  else %.1f                         angle 9.996  -> "10.00"
+boots_tool        _tidy(): <10 %.2f, else %.0f      footing 1.504 -> "1.50"
+                                                    push 599.5   -> "600"
+world_registry    String.num(number, 2)             around 1.5004 -> "1.5"
+```
+
+A rounded number is not merely untidy. Where the value sits just past a bound,
+the rounding lands it **on** the bound, and the refusal then states a number
+that satisfies the limit it is refusing. That is trap 18's fault with the
+limit present and correct: the player is told what the range is, shown a value
+inside it, and given nothing to act on. Reachable at **every one of the five
+validators**, measured headless against the pre-041 code.
+
+**And the one reading had the same fault at its own edge.** `number_said()`
+ended `String.num(number, 2)`, which rounds to two places, so 1.504 came back
+as `"1.50"` against a bound printed `"0.40 to 1.50"` - inside its own range,
+at the door the function was written for. So this is not only a fix that
+failed to reach its class; the fix was not sufficient where it was applied.
+Three of 040's five reference doors say a number wrongly in the pre-041 code
+*after* 040 fixed them.
+
+**Why no test saw it, which is the part worth keeping.**
+`tests/capability_test.gd` has asserted *"a number outside its limits is
+refused with the limit named"* for every bound in all five validators since
+028 - trap 11 done properly, the whole class enumerated off the constants.
+It probes `limits.y * 10.0 + 7.0` and a value far below the minimum. **Both
+probes are effectively whole numbers**, which every rounding style renders
+faithfully, so the check could not fail. Trap 6 moved one step back: not an
+assertion that cannot fail, but a correct assertion fed the one input that
+cannot make it fail. The class was enumerated, the doors were enumerated, the
+three entrances of trap 21 were enumerated - and the **values** were the axis
+nobody varied.
+
+**Do:**
+
+- **A fix is finished when its rule reaches every door the rule holds at, and
+  "every door" is enumerated, not recalled.** Trap 11 says fix the class, not
+  the instance. This is the question from the other end, and it is cheaper and
+  sharper: *where has this project already been right once, and did the rule
+  travel?* 040 wrote five parts of a rule and one of them had eight more
+  doors. Grep for the function the fix introduced and count its call sites
+  against the places the rule applies.
+- **A number out of a request is said through `Readback.number_said()`, and a
+  BOUND is not.** They are two different facts and they want two different
+  precisions: what the player sent, exactly, and what the limit is, at the
+  constant's own natural places. `boots_tool._tidy()` and
+  `section_validator._tidy()` survive for the bounds alone and say so in a
+  comment, because the same function doing both is how this fault was
+  possible.
+- **A said-back number is said FAITHFULLY, not to a fixed number of places.**
+  Any fixed precision can round a value onto a bound. `String.num(value, -1)`
+  says as many places as the number has; the whole-number branch keeps 0 as
+  `"0"`, which is what trap 34 asked for in the first place.
+- **A probe at the middle of a range tests a different thing from a probe at
+  its edge.** When a bound is involved, probe just past it - and once per
+  rounding style the code could be using, because the delta that exposes
+  `%.0f` is invisible to `%.2f`. `said_number_test` probes every bound at
+  0.4, 0.04 and 0.004 past it for that reason.
+- **`is_equal_approx` is not how a validator decides a bound.** Its tolerance
+  is relative, so it calls 1800.004 equal to 1800 while the validator refuses
+  it strictly. The first draft of `said_number_test` used it to guard against
+  probing a bound itself and reported four of its own probes as test bugs.
+  Decide out-of-range the way the code under test decides it.
+
+**Measured and deliberately NOT asserted, because it is the owner's.** A
+READBACK rounds a measurement to whole metres: rooms of 12.4 and 20.5 m read
+back *"entered through a 12 m hall, along with a 20 m vault"*, a barn of 30.4
+by 20.6 m as *"a 30 by 21 m barn"*. The world really is built at 12.4 m, so
+that sentence rounds a true fact rather than misquoting a request, which is
+why it is a different question from the refusals - and whether a readback
+should say *"a 12.4 m hall"* is a judgement about prose. It is in
+`said_number_test`'s header with its measurement and out of its assertions, as
+trap 14 requires, and it is HANDOVER's "Human decision needed" 11.
+
+Found and fixed in 041. `tests/said_number_test.gd` fails **146 times**
+against the pre-041 code: 139 at the eleven bounded fields of the five
+validators, 4 at `number_said()` itself, and **3 at the reference doors 040
+built the rule for**.
+
 ---
 
 > A successful build is not evidence of successful understanding.
@@ -1785,3 +1889,6 @@ class was visible at all.
 > standing, so the place the project was already right once is where to look
 > for the next fault of its kind.
 > And a refusal does not take the world away.
+> And a number said back is said as the player wrote it, at every door that
+> says one and not only the ones the session that wrote the rule was looking
+> at.

@@ -154,7 +154,11 @@ func validate(parameters: Dictionary) -> Dictionary:
 		for pair in [["width", width], ["depth", depth]]:
 			var value: float = pair[1]
 			if value < limits.x or value > limits.y:
-				errors.append("zone %d (%s): %s %.0f m is outside %.0f-%.0f m" % [n, type, pair[0], value, limits.x, limits.y])
+				# 041: the value is said exactly, the bounds at their own
+				# precision (TRAPS 28). %.0f said a barn 60.4 m wide back as
+				# "width 60 m is outside 5-60 m", which 60 is not.
+				errors.append("zone %d (%s): %s %s m is outside %.0f-%.0f m" % [
+					n, type, pair[0], Readback.number_said(value), limits.x, limits.y])
 				sized_ok = false
 		if not sized_ok:
 			continue

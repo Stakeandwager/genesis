@@ -241,8 +241,11 @@ static func validate(parameters: Dictionary) -> Dictionary:
 					# the number the limit came out to, not just the rule, or a
 					# player cannot tell what to type instead.
 					if offset <= 0.0 or offset > 2.0 * radius:
+						# 041: the offset is said as it was sent. Twice the radius is
+						# a bound, even though it is computed from a number the
+						# player supplied, so it keeps _tidy.
 						errors.append("section %d (chicane): offset is %s m, and must be more than 0 and at most twice the radius, which is %s m here" % [
-							n, _tidy(offset), _tidy(2.0 * radius)])
+							n, Readback.number_said(offset), _tidy(2.0 * radius)])
 						section_ok = false
 				if section_ok:
 					var theta := acos(1.0 - offset / (2.0 * radius))
@@ -375,8 +378,14 @@ static func _range_error(n: int, t: String, field: String, value: float,
 	var measured := absf(value) if magnitude else value
 	if measured >= limits.x and measured <= limits.y:
 		return ""
+	# 041: the value is the PLAYER'S number and is said exactly; _span renders
+	# the bounds from their constants at their own precision (TRAPS 28). _tidy
+	# said a length of 1000.04 back as "1000.0 m, and must be 20 to 1000 m",
+	# and an angle of 9.996 as "10.00 degrees, and must be 10 to 120" - the
+	# value named inside the range the same sentence refuses it for.
 	return "section %d (%s): %s is %s%s, and must be %s" % [
-		n, t, field, _tidy(value), unit, _span(limits, unit, magnitude)]
+		n, t, field, Readback.number_said(value), unit,
+		_span(limits, unit, magnitude)]
 
 
 # What a legal value for this bound would be, in the words a refusal uses.
@@ -405,8 +414,13 @@ static func _bound(errors: Array[String], n: int, t: String, field: String,
 	return false
 
 
-# A number as a player would read it: whole numbers with no decimal point,
-# fractions with enough places to be exact about what was asked for.
+# A BOUND as a player would read it: whole numbers with no decimal point,
+# fractions with enough places to be exact about the limit.
+#
+# 041: for limits, and for nothing else. The comment above used to say "what
+# was asked for", and that is exactly what this function must not be used
+# for: it rounds, so a value just past a limit came back AS the limit. A
+# number out of a request goes through Readback.number_said().
 static func _tidy(value: float) -> String:
 	if is_equal_approx(value, roundf(value)):
 		return "%.0f" % value

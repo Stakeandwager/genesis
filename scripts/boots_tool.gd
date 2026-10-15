@@ -226,9 +226,14 @@ func validate(parameters: Dictionary) -> Dictionary:
 	if errors.is_empty():
 		var reached := top_speed(spec)
 		if reached < float(TOP_SPEED[0]) or reached > float(TOP_SPEED[1]):
-			errors.append("those boots would carry you at %.1f m/s, and a body's top speed must be %.0f to %.0f (push %.0f, weight %.0f, footing %.2f)" % [
+			# 041: `reached` is Genesis's own arithmetic and is said to one
+			# place; the three fields in brackets are the PLAYER'S numbers and
+			# are said as they were sent. A push of 599.5 read back "push 600".
+			errors.append("those boots would carry you at %.1f m/s, and a body's top speed must be %.0f to %.0f (push %s, weight %s, footing %s)" % [
 				reached, TOP_SPEED[0], TOP_SPEED[1],
-				float(spec["push"]), float(spec["weight"]), float(spec["footing"])])
+				Readback.number_said(spec["push"]),
+				Readback.number_said(spec["weight"]),
+				Readback.number_said(spec["footing"])])
 
 	if not errors.is_empty():
 		return {"ok": false, "errors": errors, "spec": {}}
@@ -249,12 +254,22 @@ func _bounded(asked: Dictionary, key: String, limits: Array, fallback: float, er
 			key, _tidy(float(limits[0])), _tidy(float(limits[1]))])
 		return fallback
 	if number < float(limits[0]) or number > float(limits[1]):
+		# 041: the value said exactly, the bounds at their own precision. _tidy
+		# has no whole-number branch and rounds to two places under 10, so a
+		# footing of 1.504 came back as "footing is 1.50, and boots' footing
+		# must be 0.40 to 1.50" - the value named inside its own stated range.
 		errors.append("%s is %s, and boots' %s must be %s to %s" % [
-			key, _tidy(number), key, _tidy(float(limits[0])), _tidy(float(limits[1]))])
+			key, Readback.number_said(number), key,
+			_tidy(float(limits[0])), _tidy(float(limits[1]))])
 		return fallback
 	return number
 
 
+# A BOUND, at the precision the constant deserves: footing reads "0.40 to
+# 1.50" and push "120 to 600". 041: this is for limits and for nothing else.
+# A number out of a REQUEST goes through Readback.number_said(), which says
+# what was sent rather than rounding it. The two are different facts, and
+# this comment is here because one function was doing both of them.
 func _tidy(value: float) -> String:
 	return "%.2f" % value if absf(value) < 10.0 else "%.0f" % value
 

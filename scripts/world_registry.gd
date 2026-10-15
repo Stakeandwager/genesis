@@ -117,8 +117,11 @@ static func around_problem(step: Dictionary, index: int, _step_count: int) -> St
 	# position in a list" for all five, so the four that used to truncate and
 	# the one that refused cannot drift apart again (TRAPS 31's last rule).
 	if Readback.is_fraction(raw):
+		# 041: this clause was the one 040 held up as already right, and it was
+		# still saying the number back by hand - String.num(number, 2) rounds
+		# 1.504 to "1.50". Said through the same reading as the other four.
 		return "step %d: 'around' must be a whole step number (1 to %d), not %s" % [
-			index, highest, String.num(number, 2)]
+			index, highest, Readback.number_said(raw)]
 	if Readback.ordinal_index(raw, highest) < 0:
 		return "step %d: 'around' is %d, and it must be an earlier step (1 to %d)" % [
 			index, int(number), highest]

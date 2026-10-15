@@ -13,7 +13,34 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **040**, the task this file named as
+- Last commit at the time of writing: **041**, the question this file named as
+  the next assistant task — *040's finding asked of every other place a FIX
+  has already been written once*. Asked of TRAPS 34's own fifth rule — *"a
+  number said back is said as the player wrote it"* — the answer is **only
+  where the fault was found**. `Readback.number_said()` was written in 040 for
+  the five reference doors; **thirteen doors in Genesis say a request's number
+  back and 040 reached five.** The other eight rendered it by hand in three
+  styles and **all three round**, so where a value sits just past a bound the
+  rounding lands it ON the bound and the refusal names a value that satisfies
+  the limit it is refusing: *"room 1: width is 40 m, and must be 4 to 40 m"*
+  for a width of 40.4. Reachable at **all five validators**, measured
+  headless. **And the one reading had the fault at its own edge**:
+  `number_said()` ended `String.num(number, 2)`, so 1.504 came back `"1.50"`
+  against a bound printed `"1.50"` — three of 040's own five doors say a
+  number wrongly in the pre-041 code *after* 040 fixed them. The precision is
+  now faithful and a BOUND is deliberately not said this way (a bound is a
+  constant at its own precision, TRAPS 28). **Why no suite saw it**:
+  `capability_test` has enumerated every bound in all five validators since
+  028 and probes `limits.y * 10 + 7` — effectively whole numbers, which every
+  rounding style renders faithfully, so a correct assertion was fed the one
+  input that cannot make it fail (TRAPS 6, one step back from the assertion).
+  47 suites passed before and 48 after, `--all` included; the new suite fails
+  **146 times** against the pre-041 code. The prompt is byte-identical
+  (15846 chars, sha256 `c6c2b955...`), so `PROMPT_VERSION` did not move and
+  designs are comparable across this commit. New "Human decision needed" 11:
+  a READBACK rounds a measurement to whole metres, which is measured, left
+  out of the assertions and not fixed. See 041 below and TRAPS 35.
+- The commit before it: **040**, the task that file named as
   the next assistant task — *a door for the five procedural claims 039
   measured by hand*, built from the registry and the prompt rather than from
   the quoted five. Two of the five were members of larger classes and each
@@ -36,7 +63,7 @@ that the owner has not ruled on.** Do not promote one to the other.
   `plan around`**, the control member. The prompt is byte-identical, so
   `PROMPT_VERSION` did not move and designs are comparable across this
   commit. See 040 below and TRAPS 34.
-- The commit before it: **039**, the task that file named as
+- Before that: **039**, the task that file named as
   the next assistant task — *the procedural sentences, the one kind of prompt
   claim with no door* — asked of the class rather than of the eight sentences
   quoted here (TRAPS 11). The sharpest sub-class is the one that can be
@@ -258,15 +285,16 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-49 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **47 suites**, counted with `ls tests/*.gd` rather than
+50 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **48 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites.
 
-Last full run (040, Godot 4.7.1 on Linux — `4.7.1.stable.official.a13da4feb`
+Last full run (041, Godot 4.7.1 on Linux — `4.7.1.stable.official.a13da4feb`
 — headless, in a cloud container): **suites with something to look at: 0**,
 both without `--all` and with it, `drive_test` and `session_test` included.
-040's new suite is `procedure_test` (38 failures against the pre-040 code);
+041's new suite is `said_number_test` (146 failures against the pre-041 code,
+312 assertions); 040's is `procedure_test` (38 failures against the pre-040 code);
 039's is `formula_test` (2 failures against the pre-039 prompt);
 038's is `claim_field_test` (9 failures against the pre-038 code);
 037's is `intent_door_test` (39 failures against the pre-037 code); 036's is
@@ -274,12 +302,13 @@ both without `--all` and with it, `drive_test` and `session_test` included.
 `prompt_bounds_test` (4 failures against the pre-035 prompt); 034's is
 `container_door_test` (30 failures against the pre-034 sentences). Not run on
 the owner's Windows machine. `run_tests.bat` needed no edit for any of the
-seven: no name matches any of its `findstr` patterns — `prompt_bounds_test`
+eight: no name matches any of its `findstr` patterns — `prompt_bounds_test`
 does not contain the literal `prompt_test`, `intent_door_test` contains none
 of the physics names, and `claim_field_test`, `formula_test` and
-`procedure_test` match nothing at all — so all seven run there without
-`--fixed-fps`, which is what they get here too, and `command_schema_test`,
-`intent_door_test`, `claim_field_test`, `formula_test` and `procedure_test`
+`procedure_test` match nothing at all, and `said_number_test` contains none of
+them either — so all eight run there without `--fixed-fps`, which is what they
+get here too, and `command_schema_test`, `intent_door_test`,
+`claim_field_test`, `formula_test`, `procedure_test` and `said_number_test`
 were each run both with it and without and pass either way — checked rather
 than assumed (TRAPS 4). `physics_test` gained 038's car measurement and is already
 on both the Linux `TIMED` list and the `.bat`'s `physics` pattern, so it
@@ -3029,6 +3058,184 @@ container.
   three of 039's eight are in `formula_test`.
 - The records on the owner's disk are his and 040 did not touch them.
 
+## 041 — the rule was carried to five doors and there were thirteen
+
+**Objective.** The question this file named as the next assistant task:
+*040's finding asked of every other place a fix has already been written
+once.* 040's value was not a fault that reappeared in a new word — it was a
+CORRECT RULE, written out by 036 and never carried to the four other doors of
+its own class. TRAPS 11 has always said fix the class; nothing had asked the
+reverse, which is cheaper and sharper: **for every fix in TRAPS 1 to 34, is
+the rule it produced applied everywhere it holds, or only where the fault was
+found?** Enumerated from TRAPS's own entries, which is what 039 found this
+file's list of eight had not been.
+
+**Starting state.** Branch `prototype-002a` at 040. 47 suites, 0 with anything
+to look at, `--all` included — read by running them, not from this file.
+
+### The first rule asked, and the answer
+
+TRAPS 34 is one commit old and states five rules. Its fifth is *"a number said
+back is said as the player wrote it"*, and it came with a function so the five
+reference doors could not drift apart again. **Genesis has thirteen doors that
+say a request's number back. 040 reached five.** The other eight rendered the
+same number by hand, in three styles, and every style ROUNDS:
+
+```
+dungeon_module     "%.0f" % value                 width 40.4     -> "40"
+farm_module        "%.0f" % value                 barn 60.4      -> "60"
+car_tool           "%.0f" % number                grip 20.4      -> "20"
+section_validator  _tidy()                        length 1000.04 -> "1000.0"
+                                                  angle 9.996    -> "10.00"
+boots_tool         _tidy()                        footing 1.504  -> "1.50"
+                                                  push 599.5     -> "600"
+world_registry     String.num(number, 2)          around 1.5004  -> "1.5"
+```
+
+### What it cost, measured headless before anything was changed
+
+A rounded number is not untidy. Where a value sits just past a bound the
+rounding lands it **on** the bound, and the refusal then names a value that
+satisfies the limit it is refusing. **Reachable at every one of the five
+validators:**
+
+```
+room width 40.4    room 1: width is 40 m, and must be 4 to 40 m
+room width 3.6     room 1: width is 4 m, and must be 4 to 40 m
+barn width 60.4    zone 1 (barn): width 60 m is outside 5-60 m
+barn width 4.6     zone 1 (barn): width 5 m is outside 5-60 m
+length 1000.04     section 1 (straight): length is 1000.0 m, and must be 20 to 1000 m
+angle 9.996        section 1 (corner): angle is 10.00 degrees, and must be 10 to 120
+radius 300.04      section 1 (corner): radius is 300.0 m, and must be 15 to 300 m
+grip 20.4          grip is 20, and a car's grip must be 2 to 20
+grip 1.6           grip is 2, and a car's grip must be 2 to 20
+braking 30.4       braking is 30, and a car's braking must be 8 to 30
+power 1800.4       power is 1800, and a car's power must be 400 to 1800
+footing 1.504      footing is 1.50, and boots' footing must be 0.40 to 1.50
+push 600.4         push is 600, and boots' push must be 120 to 600
+weight 140.4       weight is 140, and boots' weight must be 50 to 140
+```
+
+That is TRAPS 18's fault with the limit present and correct: the player is
+told the range, shown a value inside it, and given nothing to act on. It is
+also what Genesis says of itself in the prompt — *"it REFUSES rather than
+clamping"* — denied in the sentence that does the refusing.
+
+### And the one reading had the fault at its own edge
+
+`number_said()` ended `String.num(number, 2)`, which rounds to two places. So
+1.504 came back as `"1.50"` against a bound printed `"0.40 to 1.50"`, at the
+door the function was written for. **Three of 040's five reference doors say a
+number wrongly in the pre-041 code, after 040 fixed them:** a door pair of
+`[1, 2.504]` read back *"[1, 2.5]"*, a thing `in: 1.504` read *"in room 1.5"*,
+and a plan step `around: 1.5004` read *"not 1.5"*. So this was not only a fix
+that failed to reach its class — the fix was not sufficient where it was
+applied, and the only reason 040's own suite is green is that its probes were
+whole numbers and 2.5.
+
+### Why no suite saw it, which is the part worth keeping
+
+`tests/capability_test.gd` has asserted *"a number outside its limits is
+refused with the limit named"* for every bound in all five validators since
+028 — TRAPS 11 done properly, the whole class enumerated off the constants,
+165 assertions. It probes `limits.y * 10.0 + 7.0` and a value far below the
+minimum. **Both probes are effectively whole numbers**, and every rounding
+style renders a whole number faithfully, so the check could not fail.
+
+TRAPS 6 one step back from where it is usually found: not an assertion that
+cannot fail, but a correct assertion fed the one input that cannot make it
+fail. The class was enumerated, the doors were enumerated, TRAPS 21's three
+entrances were enumerated — and the **values** were the axis nobody varied.
+
+### What changed
+
+`Readback.number_said()` is the one reading for all thirteen doors and its
+precision is now **faithful** (`String.num(number, -1)`), because any fixed
+precision can round a value onto a bound. The eight hand-written doors ask it.
+A **bound** is deliberately not said this way: a bound is a constant at its
+own natural precision (TRAPS 28), which is why boots keep *"0.40 to 1.50"*
+while the value between them is said exactly. `boots_tool._tidy()` and
+`section_validator._tidy()` survive for bounds alone and each carries a
+comment saying so, because one function doing both facts is how this was
+possible — and `section_validator._tidy()`'s old comment said *"exact about
+what was asked for"*, which is precisely what it must not be used for.
+
+Files: `readback.gd`, `dungeon_module.gd`, `farm_module.gd`, `car_tool.gd`,
+`boots_tool.gd`, `section_validator.gd`, `world_registry.gd`.
+
+### What the suite asserts, and what it does not (TRAPS 6, TRAPS 14)
+
+`tests/said_number_test.gd`, 312 assertions, under a second. It takes
+`capability_test`'s enumeration — every bound in all five validators, read
+from the constants and never typed in — and moves the probes to the **edge**,
+at 0.4, 0.04 and 0.004 past each bound, because the delta that exposes
+`"%.0f"` is invisible to `"%.2f"`. Of every refusal it asserts two facts and
+no wording:
+
+1. the sentence names the number that was **sent**, and
+2. that number, read back out of the sentence, is **still outside** the bound
+   the same sentence states.
+
+Every sentence in Genesis may be rewritten and both stay green. It also
+asserts `number_said()` as a **round trip** rather than as quoted strings, and
+carries a positive control for its own "is this number named" check (TRAPS
+26), which found that `"room 1:"` really does name the number 1 — the first
+control written was wrong, not the checker.
+
+**NOT asserted, deliberately.** A READBACK rounds a measurement to whole
+metres, and the world really is built at the asked-for size, so that sentence
+rounds a true fact rather than misquoting a request:
+
+```
+rooms 12.4 and 20.5 m   "entered through a 12 m hall, along with a 20 m vault"
+barn 30.4 by 20.6 m     "a farm with a 30 by 21 m barn"
+straights 200.4 m       "two 200 m straights and two 50 m corners, 90 deg right"
+```
+
+Whether a readback should say *"a 12.4 m hall"* is a judgement about prose and
+it is the owner's: "Human decision needed" 11. It is in the suite's header
+with its measurement and **out of its assertions**, because a suite that
+guards a fault is TRAPS 14 in its most literal form.
+
+### Evidence — what was actually run
+
+Godot 4.7.1 (`4.7.1.stable.official.a13da4feb`) headless, Linux, in a cloud
+container.
+
+- **Baseline, before any change:** 47 suites, **0 with something to look at**,
+  without `--all` and with it, `drive_test` and `session_test` included.
+- **After:** 48 suites, **0 with something to look at**, both ways.
+- `said_number_test` **fails 146 times against the pre-041 code**,
+  measured the way 035–040 measured their own: the seven changed scripts
+  reverted to 040 with the suite left in place. **139** are the eleven bounded
+  fields of the five validators, **4** are `number_said()` itself, and **3**
+  are the reference doors 040 built the rule for.
+- **The prompt did not move.** `assembled_prompt()` is 15846 characters and
+  sha256 `c6c2b9555fa6283c1f4d379c925ba95a15db8000a2d8e3d7d26d4e9010c46e62`,
+  matching the declared `PROMPT_FINGERPRINT`; `PROMPT_VERSION` is still
+  `039-the-arithmetic-it-really-does-1`. Checked by printing and comparing,
+  not by remembering. **So designs are comparable across this commit**, boots
+  included.
+- `run_tests.bat` needed no edit (TRAPS 4): `said_number_test` matches none of
+  its `findstr` patterns, so it runs there without `--fixed-fps` as it does
+  here, and it was run both ways and passes either.
+- README said 47 suites and there are 48, counted with `ls`.
+
+### Not verified
+
+- **No model has sent any of this.** Every value in the suite was typed by
+  hand; a headless harness has no key and no model. Whether a model writes a
+  fractional measurement just past a bound is what this harness cannot know —
+  which is why this is a class fix and not a fault report.
+- **Nothing ran on Windows**, and nothing ran in the editor. What was measured
+  is the string a validator returns, not what a person reads on screen.
+- The suite measures the bounded numeric fields of the five validators, the
+  chicane's computed offset limit, and three of 040's reference doors. It does
+  not measure every sentence in Genesis that contains a number.
+- The readback rounding above is **measured and not fixed**, and not asserted
+  either way.
+- The records on the owner's disk are his and 041 did not touch them.
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -3269,20 +3476,52 @@ question (036), the intent-door question (037), the which-field question
 (038), the arithmetic question (039) and the five build-it claims (040) are
 all **done**. Candidates, in the order the assistant would take them:
 
-- **THE NEXT ONE, named by 040: the question 040 answered at the reference
-  doors, asked of every other place a FIX has already been written once.**
-  040's finding was not a fault that reappeared in a new word — it was a
-  CORRECT RULE, written out in `WorldRegistry.around_problem()` by 036, that
-  never reached the four other doors of its own class. TRAPS 11 has always
-  said to fix the class rather than the instance; nothing had asked the
-  reverse question, which is cheaper and has a sharper answer: **for every
-  fix in TRAPS 1 to 34, is the rule it produced applied everywhere it
-  holds, or only where the fault was found?** Thirty-four traps, each with
-  a "Do" section stating a general rule, and at least one of them has
-  already turned out to be enforced in one place — so the expected answer
-  is not "all clear". Enumerate from TRAPS's own entries rather than from
-  memory, which is the mistake 039 caught in this file's list of eight.
-  **NOT MEASURED.**
+- **THE NEXT ONE: the audit 041 began, continued through the rest of TRAPS's
+  rules.** 041 asked the question this entry used to pose — *for every fix in
+  TRAPS 1 to 34, is the rule it produced applied everywhere it holds?* — and
+  it is the right question: asked of **one** rule it found eight unfixed
+  doors and a fault in the fix itself. **It asked one rule of the
+  thirty-four.** TRAPS 34's fifth, *"a number said back is said as the player
+  wrote it"*, chosen because it was the newest and so the least likely to
+  have travelled. The other rules have not been asked, and the method that
+  worked is cheap and repeatable: **take the rule, find the FUNCTION the fix
+  introduced, grep its call sites, and count them against the places the rule
+  holds.** Where the count differs, measure what the difference costs before
+  changing anything.
+
+  The rules with a function to count, which is where to start:
+
+  - **TRAPS 20 and 30 — `Readback.as_number()`**: *"a value from the AI is
+    converted through as_number(), never a bare int() or float()"*, and the
+    rule explicitly covers *"handlers and builders included"*. 036 fixed four
+    commands. `grep` finds bare `float()` and `int()` calls on request-derived
+    values in `closure_solver.gd` (`float(s["length"])`, `float(s["angle"])`,
+    `float(section.get("length", ...))`) — **all of them downstream of
+    validation, which is why they are candidates and not findings.** The
+    question is whether any reader of an **unchecked** value is still doing
+    its own conversion. **NOT MEASURED, and the two call sites spot-checked
+    this session were sound**: `DungeonModule.record_fields`'s
+    `int(attempt.get("attempt", 1))` reads `current_attempt`, which is
+    Genesis's own bookkeeping and never a request.
+  - **TRAPS 10 and 23 — `Readback.is_label()` and `article()`**: the fact that
+    a numbered name takes no article, found twice in two functions. Counted
+    against every place a name is rendered with an article in front of it.
+  - **TRAPS 27 — `Readback.plural()` and `count_of()`**: *"both now, so
+    neither is written out again."* 034 swept the validators and the dungeon's
+    measurements. The report, the session summary and the farm's panels were
+    not in that sweep.
+  - **TRAPS 24 — a count read from what was BUILT**: `stub_claims_test` holds
+    it for the three Prototype 001 stubs. Every other line that states a
+    count is the class.
+  - **TRAPS 25 — a command's record is part of the command**:
+    `ledger_said_test` enumerates the whitelist, so this one may well be
+    whole; worth confirming rather than assuming.
+
+  **Expect the answer to be "only where the fault was found" more than once**,
+  because that is what 041 found at the first rule it asked, and the rule it
+  asked was one commit old. Enumerate from TRAPS's own entries rather than
+  from this list, which is a reading and not the class (TRAPS 31, and the
+  mistake 039 caught in this file's list of eight).
 
 - ~~**A refusal that names no legal value, at the one door 030 did not
   reach: the top-level list itself.**~~ **Done in 034**, and it was nine
@@ -3970,3 +4209,30 @@ decision, so it is his and not the assistant's.
     The assistant has not chosen: all three change how a plan is built, which
     is architecture, and (a) is a judgement about how much a lost world costs
     a player. Measured, not inferred, in 040.
+
+11. **A readback rounds a measurement to whole metres, and it is prose rather
+    than a defect.** Measured headless in 041 and **not changed**, because
+    unlike the refusals 041 fixed it is not a misquote: the world really is
+    built at the size that was asked for, so the sentence rounds a true fact.
+
+    ```
+    rooms 12.4 and 20.5 m   "entered through a 12 m hall, along with a 20 m vault"
+    barn 30.4 by 20.6 m     "a farm with a 30 by 21 m barn"
+    straights 200.4 m       "two 200 m straights and two 50 m corners, 90 deg right"
+    ```
+
+    The strict reading of TRAPS 34's rule — *a number said back is said as the
+    player wrote it* — puts these in its class, and `Readback.number_said()`
+    would render them *"a 12.4 m hall"*, *"a 30.4 by 20.6 m barn"*. Against
+    that: a readback is the one sentence in Genesis whose job is to be read
+    aloud, every session that has touched one has been asked whether it reads
+    as help or as clutter, and three decimals across a six-section circuit is
+    the worst case. **The assistant has not chosen**, because it is a
+    judgement about prose and the owner is the editor.
+
+    If the answer is "say them exactly", the change is small and the rule is
+    already written: route the readbacks' measurements through
+    `number_said()`. If it is "keep the rounding", that is worth a line in
+    TRAPS 35 saying so, so the next audit does not re-open it. Either way the
+    assertion stays out of `said_number_test` until the owner says which,
+    because a suite that freezes an unmade decision is TRAPS 14.

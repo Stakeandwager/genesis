@@ -146,14 +146,31 @@ static func is_fraction(value: Variant) -> bool:
 # not "1.0": every number arrives from JSON.parse as a float, so a refusal
 # that prints the raw value tells a player they wrote a decimal they did not
 # write. TRAPS 10 and 23's family - a sentence stating something the request
-# never said - in the one place all five reference doors can share it.
+# never said.
+#
+# 041: THIS IS THE ONE READING FOR EVERY DOOR THAT SAYS A REQUEST'S NUMBER
+# BACK, not only the five reference doors 040 built it for. Eight other doors
+# rendered the same number by hand - five validators, the boots consequence
+# and this file's own `around` clause - and every one of them ROUNDED, which
+# is how a refusal came to name a value inside the range it said the value
+# was outside: "room 1: width is 40 m, and must be 4 to 40 m" for a width of
+# 40.4. A refusal a player cannot act on (TRAPS 18) out of a fix that was
+# written once and not carried to its class (TRAPS 11, 34).
+#
+# So the precision is FAITHFUL and not fixed. String.num(number, 2) was the
+# 040 reading and it rounds: 1.504 came back as "1.50" against a bound
+# printed "1.50". String.num(number, -1) says as many places as the number
+# has, so what comes back is what was sent and the sentence cannot contradict
+# itself. A BOUND is not said this way and must not be: a bound is a constant
+# rendered at its own natural precision (TRAPS 28), which is why "0.40 to
+# 1.50" keeps its places while the value between them is said exactly.
 static func number_said(value: Variant) -> String:
 	var number := as_number(value)
 	if is_nan(number):
 		return "nothing"
 	if number == floor(number) and absf(number) < 1.0e15:
 		return "%d" % int(number)
-	return String.num(number, 2)
+	return String.num(number, -1)
 
 
 # What a legal reference by number would be, as a clause a refusal ends with.

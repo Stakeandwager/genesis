@@ -133,7 +133,10 @@ func _bounded(asked: Dictionary, key: String, limits: Vector2, fallback: float, 
 		errors.append("%s must be a number, %.0f to %.0f" % [key, limits.x, limits.y])
 		return fallback
 	if number < limits.x or number > limits.y:
-		errors.append("%s is %.0f, and a car's %s must be %.0f to %.0f" % [key, number, key, limits.x, limits.y])
+		# 041: the number the player sent, said as they sent it. %.0f made a
+		# grip of 20.4 read "grip is 20, and a car's grip must be 2 to 20".
+		errors.append("%s is %s, and a car's %s must be %.0f to %.0f" % [
+			key, Readback.number_said(number), key, limits.x, limits.y])
 		return fallback
 	return number
 
