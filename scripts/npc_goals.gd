@@ -218,8 +218,11 @@ static func _place(label: String) -> String:
 	var said := label.replace("_", " ").strip_edges()
 	if said == "":
 		return "somewhere"
-	var words := said.split(" ", false)
-	if words.size() > 1 and str(words[words.size() - 1]).is_valid_int():
+	# The same question Readback.article() asks before it writes "a", and
+	# asked in the same place since 031, so the definite and the indefinite
+	# article cannot come to different answers about the same name. Having
+	# the rule in two files is how it was fixed in one of them twice.
+	if Readback.is_label(said):
 		return said
 	return "the " + said
 

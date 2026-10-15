@@ -1301,13 +1301,34 @@ func readback(parameters: Dictionary) -> String:
 	var opening := "a dungeon of %s joined by %s" % [
 		Readback.count_of(rooms.size(), "room"), Readback.count_of(counted, "door")]
 
-	var entrance := str(names[0])
-	var entrance_size := float(sizes[0])
-	# NAN means the room had no side that was a number. Said without a size
-	# rather than with an invented one; the refusal names the field.
-	var sized := not is_nan(entrance_size) and entrance_size > 0.0
-	var entered := ", entered through %s" % (
-		"a %.0f m %s" % [entrance_size, entrance] if sized else Readback.article(entrance))
+	var entered := ", entered through %s" % _room_said(str(names[0]), float(sizes[0]))
+
+	# --- 031: and the rooms that are not the entrance ---
+	#
+	# Until 031 this line named ONE room of however many were asked for. A
+	# dungeon of a hall and a vault and one of a hall and a crypt read back
+	# word for word the same, and so did one whose second room was 20 m and
+	# one whose second room was 33 m: measured, three fields of every room
+	# after the first went unsaid. The shape clause below names a second room
+	# only when one room happens to carry most of the doors, so in a chain -
+	# the commonest dungeon there is - nothing after the entrance was in the
+	# sentence at all.
+	#
+	# That is the rule in "A readback must not be silent about part of the
+	# request" with a whole clause missing, and it is the same fault 016
+	# found for the THINGS in a dungeon and 031 found for a corner's angle.
+	# One list, one rule, one commit (TRAPS 11).
+	#
+	# No order and no direction is claimed for them: a readback runs before
+	# anything is validated, so "beyond it" or "then" would be a statement
+	# about a layout nothing has solved and, for a proposal whose doors do
+	# not connect, would be false. They are enumerated and nothing more.
+	# Capped like every other list in Genesis, because a line nobody reads to
+	# the end cannot catch anything.
+	var rest := PackedStringArray()
+	for i in range(1, rooms.size()):
+		rest.append(_room_said(str(names[i]), float(sizes[i])))
+	var also := "" if rest.is_empty() else ", along with " + Readback.join_capped(rest)
 
 	var hub := 0
 	for i in rooms.size():
@@ -1324,17 +1345,38 @@ func readback(parameters: Dictionary) -> String:
 	elif hub_doors >= 3 and hub_doors * 2 >= counted:
 		# One room carries most of the doors: "four rooms off the hall".
 		var off := Readback.count_of(hub_doors, "room")
+		# A comma, like every other clause in this sentence. It used to run
+		# straight on from the entrance - "a 20 m great hall with four rooms
+		# off it" - and since 031 the rooms come between, so it would have
+		# read "...and a 10 m d with four rooms off it".
 		if hub == 0:
-			shape = " with %s off it" % off
+			shape = ", with %s off it" % off
 		else:
-			shape = " with %s off %s" % [off, str(names[hub])]
+			shape = ", with %s off %s" % [off, str(names[hub])]
 
 	var loops := counted - rooms.size() + 1
 	var round_again := ""
 	if loops > 0:
 		round_again = ", and %s back round" % Readback.count_of(loops, "way")
 
-	return opening + entered + shape + round_again + _things_said(parameters, names)
+	return opening + entered + also + shape + round_again + _things_said(parameters, names)
+
+
+# A room as a sentence says it: its size and its name, or its name alone when
+# no side of it arrived as a number.
+#
+# One reading, for the same reason around_of() and _wall_rects() are one: the
+# entrance and every other room are described by this one function, so the
+# two cannot drift into saying the same thing differently - which is exactly
+# how "the room 2" came back a release after it was fixed (TRAPS 10).
+#
+# A size that is not a number leaves the room unmeasured rather than 0 m. A
+# readback that states a number the player never gave is trap 8, and the
+# refusal is the thing that names the missing field.
+func _room_said(name: String, size: float) -> String:
+	if is_nan(size) or size <= 0.0:
+		return Readback.article(name)
+	return "a %.0f m %s" % [size, name]
 
 
 # --- 016: say what is IN it ---

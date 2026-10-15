@@ -754,6 +754,112 @@ assertions that fail against the pre-030 messages.
 
 ---
 
+## 22. The rule written in the comment above the code that broke it
+
+**Signature:** a readback describes a request fluently, in a sentence with no
+number missing, and two requests a player would never confuse come out of it
+word for word the same.
+
+**Cause:** `RacingModule.readback` grouped sections by their type and ONE
+measurement and said that one measurement. A corner's **angle** - the field
+that decides which way the track turns, and the field the prompt says must
+add up to +360 or -360 - was never said:
+
+```
+{"corner", radius 50, angle  90}   ->  "two 50 m corners"
+{"corner", radius 50, angle -120}  ->  "two 50 m corners"
+```
+
+Measured across all ten section types and both other readbacks, eleven
+fields were silent: a corner's, hairpin's, banked corner's and loop
+segment's angle; a chicane's radius and its direction; a crest's and a dip's
+grade; and the name, width and depth of **every room of a dungeon after the
+first**, which in a chain - the commonest dungeon there is - meant everything
+after the entrance.
+
+The comment directly above the match statement records a headless test
+catching exactly this for a banked corner's BANK, and says in so many words
+that *"a readback that silently drops a piece is the worst kind: not wrong,
+just absent, so the player has no way to see that it went missing"*. Bank was
+given a phrase. The other eight fields in the same statement were not. The
+general rule was written down, in that file, immediately above the code that
+went on breaking it - which is TRAPS 11 with the lesson already typed out.
+
+**The grouping made it worse than silence.** Keyed on one measurement, two
+sections that differed in any other field fell into one group, and the group
+took its name from the first of them. Two uphills at 8% and 14% read back as
+*"two 200 m uphills at 8%"*: not a field left out but a **sentence that is
+false of half the thing it describes**. Three of the twenty-six failing
+assertions were only reachable this way, and every probe that built ONE
+section of a type missed them.
+
+**Why no suite saw it:** 36 suites, and the ones that read a circuit's
+readback asserted that the numbers they had supplied appeared in it
+(`said.contains("250")`). Every one of those assertions passes on a sentence
+that drops a field, because the field it drops is not the one being looked
+for. No suite had ever asked whether two DIFFERENT requests produce two
+different sentences, which is the only property a readback actually has to
+have.
+
+**Do:**
+
+- Test a readback by DIFFERENCE, never by content. "The sentence contains
+  250" is satisfied by a sentence that says nothing else; "changing this
+  field changes the sentence" is the thing a readback is for. The second
+  also survives rephrasing, so the suite constrains the fact and not the
+  wording (TRAPS 6).
+- Enumerate the fields from the validator's own table, not by hand.
+  `tests/said_fields_test.gd` walks `SectionValidator.FIELDS` and each tool's
+  `defaults()`, so a type that grows a field grows a row on its own and the
+  suite fails until the sentence grows with it. A list kept by hand in a test
+  is a list that goes stale silently; this is TRAPS 21's "enumerate the
+  entrances" on a third axis - enumerate what the sentence must SAY.
+- Ask the question of TWO of the thing. A readback that groups says things
+  about groups, and a group's name can be false in a way no single instance
+  can show.
+- When a comment in the file states the general rule, read the code under it
+  against the rule before adding anything. The rule being written down is
+  not the rule being applied - TRAPS 11 says this about commits, and it is
+  just as true one line apart in the same function.
+
+Fixed in 031, in all ten section types and every room of a dungeon, with 26
+assertions that fail against the pre-031 readbacks and pass after.
+
+---
+
+## 23. The article rule applied to "the" and not to "a"
+
+**Signature:** the fault TRAPS 10 fixed, in a different file, in the other
+article, found while widening the sentence that contains it.
+
+**Cause:** 022 established that a numbered name is a label and takes no
+article, and put the rule in `NpcGoals._place()` - which writes **the**.
+Nothing ever asked it of **a**. `Readback.article()` writes the indefinite
+one, and `DungeonModule`'s readback puts it in front of a room's name and a
+thing's name, so the same model output that produced *"the chamber 3"* in an
+outcome line produced, measured on the pre-031 code:
+
+```
+entered through a room 1
+with a key 2 in the hall
+```
+
+One fact with two renderings, applied to one of them. `tests/log_022_test.gd`
+had seven assertions on this rule and all seven call `NpcGoals`.
+
+**Do:** when a rule is a fact about a WORD, put the fact in one function and
+let every rendering read it - `Readback.is_label()`, which `the` and `a` now
+both ask. And when a test owns a rule, check that its subjects are every
+place the rule holds and not every place the rule was first found: a suite
+named after the session that found a fault inherits that session's scope,
+the same way a test that quotes the prompt inherits the prompt's (TRAPS 21).
+
+Fixed in 031, in the same commit as trap 22, because widening the dungeon's
+sentence would otherwise have printed "a room 1" once per room instead of
+once per dungeon.
+
+---
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
 > A fluent sentence is not evidence that anything was understood.
@@ -764,3 +870,5 @@ assertions that fail against the pre-030 messages.
 > And a number in a request is a claim that it is one.
 > And a refusal that names no legal value is half a claim, at whichever
 > door the player came in by.
+> And a readback that says the same thing about two different requests has
+> described neither of them.

@@ -13,7 +13,17 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: 030, the refusal-wording list 029 left
+- Last commit at the time of writing: 031, the readback audit HANDOVER has
+  named as the next assistant task since 028. The question 028 asked of the
+  prompt's capabilities - is the sentence as wide as the thing it describes -
+  asked of every field of every readback, by DIFFERENCE rather than by
+  content. Eleven fields were silent, eight of them in a circuit (four types'
+  angle, a chicane's radius and direction, a crest's and a dip's grade) and
+  three in a dungeon (the name, width and depth of every room after the
+  first). 36 suites passed before and 37 after, `--all` included; the new
+  suite fails 26 times against the pre-031 readbacks. See 031 below and
+  TRAPS 22 and 23.
+- The commit before it: 030, the refusal-wording list 029 left
   open, done whole - and one thing in it that is not about wording. A bounded
   field can be refused three ways (out of range, not a number, missing) and
   028 and 029 had both looked at one of them. Twelve refusals in four of the
@@ -79,16 +89,16 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-38 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **36 suites**, and since 024 every one of them runs —
+39 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **37 suites**, and since 024 every one of them runs —
 nothing is skipped as broken. `--all` adds the two slow racing suites.
 
-Last full run (030, Godot 4.7.1 on Linux, headless, in a cloud container):
-**suites with something to look at: 0**, both without `--all` and with it.
-`capability_test` grew from 165 assertions to 529; 109 of the new ones fail
-against the pre-030 refusal messages and the rest are guards, with the split
-written into the suite's header per TRAPS 6. Not run on the owner's Windows
-machine.
+Last full run (031, Godot 4.7.1 on Linux, headless, in a cloud container):
+**suites with something to look at: 0**, both without `--all` and with it,
+`drive_test` and `session_test` included. The new suite is
+`said_fields_test`: 26 of its assertions fail against the pre-031 readbacks
+and the rest are guards, with the split written into the suite's header per
+TRAPS 6. Not run on the owner's Windows machine.
 
 ## What Genesis is
 
@@ -142,7 +152,14 @@ verified, and what remains uncertain.
   circuit does it too, and a bound is never computed from a number that has
   already been refused.
 - **A readback must not be silent about part of the request**, or it cannot
-  catch a dropped clause, which is the only thing it is for.
+  catch a dropped clause, which is the only thing it is for. Since 031 that
+  is a measured property and not an intention: a readback names every field
+  its validator accepts, and `tests/said_fields_test.gd` changes one field
+  at a time and fails if the sentence does not change. It enumerates the
+  fields out of `SectionValidator.FIELDS` and each tool's `defaults()`, so a
+  type that grows a field fails the suite until the sentence grows with it.
+  Eleven fields were silent when the question was first asked; see 031 and
+  TRAPS 22.
 - **Silence is not agreement.** `ACCEPTED_BY_SILENCE` is recorded and excluded
   from the understanding score.
 - **A carrier's claim is evidence of an attempt, not of delivery.** Delivery is
@@ -227,6 +244,22 @@ verified, and what remains uncertain.
   IN to the same check, not every file the check lives in. A rule about what a
   refusal must say is a rule about missing, wrong-type and out-of-range alike,
   and a test that quotes the prompt's sentence inherits the prompt's scope.
+- **A green suite had never asked whether two DIFFERENT requests read back
+  differently**, which is the only property a readback actually has to have.
+  Found and fixed in 031: eleven fields were silent, including a corner's
+  angle — the field that decides which way the track turns — and every room
+  of a dungeon after the first. 36 suites passed before and 37 after. The
+  suites that read a circuit's readback asserted that the numbers they had
+  supplied appeared in it, and every one of those assertions passes on a
+  sentence that drops a different field. See 031 below and TRAPS 22.
+
+  **What that says about the method:** 029 asked one question of every file,
+  030 asked every way in to one check, and this one asked what the sentence
+  must SAY — enumerated from the validator's own table rather than by hand.
+  Three of the twenty-six failures were reachable only by building TWO
+  sections of a type: a readback that groups says things about groups, and a
+  group keyed on one measurement took its name from the first member and was
+  false of the rest.
 - **The capability statement in the prompt is hand-written prose and can go
   stale.** `tests/log_023_test.gd` asserts that each thing it claims points at
   a function that still exists (`NpcGoals.delivery_line`,
@@ -875,6 +908,155 @@ there is no list to give, and an example is the most it could offer. Left alone.
 
 ---
 
+## 031 — the sentence that described two different circuits the same way
+
+**Objective.** The readback audit this file has named as the next assistant
+task since 028, and which 029 and 030 both left: *for each thing a readback
+says, is the sentence as wide as the thing it describes?* It is the layer
+the owner's sessions have found most of the real faults in — four of the
+five in 022 were a readback describing something other than the request.
+
+**Starting state.** Branch `prototype-002a` at bf2ea0c (030). Baseline,
+Godot 4.7.1 headless in a cloud container: 36 suites, **suites with
+something to look at: 0**, matching what this file already said.
+
+**What the question turned out to be.** Not "does the sentence mention this
+field" — that is a wording, and a test for it breaks when the line is
+rephrased and passes when a field is dropped. The property a readback
+actually has to have is a **difference**: change one field of the request
+and the sentence must change, or the readback cannot catch a dropped clause,
+which is the only thing it is for.
+
+Asked that way, of every field of every readback in Genesis, measured on the
+pre-031 code:
+
+```
+circuit   corner        angle       both read "a 50 m corner"
+circuit   hairpin       angle       both read "a 20 m hairpin"
+circuit   banked_corner angle       both read "... banked at 12 deg"
+circuit   loop_segment  angle       both read "a 30 m loop"
+circuit   chicane       radius      both read "a 12 m chicane"
+circuit   chicane       direction   both read "a 12 m chicane"
+circuit   crest         grade       both read "a 200 m crest"
+circuit   dip           grade       both read "a 200 m dip"
+dungeon   room 2+       name        the room was not in the sentence
+dungeon   room 2+       width       at all - only the entrance was
+dungeon   room 2+       depth
+```
+
+Eleven, and the farm, the car, the boots, the look tool and a dungeon's
+things were sound. A corner's angle is the field that decides which way the
+track turns and the one the prompt says must add up to +360 or -360; a
+player asking for two 90 deg right-handers and one asking for two 120 deg
+left-handers got the identical line. For a dungeon the readback named ONE
+room of however many were asked for, so in a chain — the commonest dungeon
+there is — everything after the entrance was absent.
+
+**The grouping made three of them worse than silence.** Sections were
+grouped by type and one measurement, and the group took its name from its
+first member, so two uphills at 8% and 14% read back as *"two 200 m uphills
+at 8%"* — not a field left out but a sentence **false of half the thing it
+describes**. Those three (an uphill's grade, a downhill's grade, a banked
+corner's bank) are said correctly for one section and lost for two, and no
+probe that builds one section of a type can see them.
+
+**Why no suite saw any of it.** 36 suites, and the ones that read a
+circuit's readback assert that the numbers they supplied appear in it —
+`said.contains("250")`. Every such assertion passes on a sentence that drops
+a *different* field. The rule was also written in English directly above the
+code that broke it: the comment on that match statement records a headless
+test catching the same fault for a banked corner's BANK and says *"a
+readback that silently drops a piece is the worst kind: not wrong, just
+absent"*. Bank was given a phrase; the other eight fields in the same
+statement were not. TRAPS 22.
+
+**Implementation.** No validator, builder, solver, ledger or physics was
+touched, and nothing about what is accepted or refused has changed.
+
+- `scripts/racing_module.gd`: a corner, hairpin, banked corner and loop
+  segment say their angle; a chicane says its radius and its direction; a
+  crest and a dip say their grade. The **group key is the whole sentence**
+  rather than the type and one number, so two pieces are one group only when
+  everything said about them is the same. An angle is signed and bounded on
+  its size — `SectionValidator` says "positive turns right, negative left" —
+  so the sign is said as the word it means: *"a 50 m corner, 90 deg right"*,
+  *"a 12 m chicane to the left, 40 m radius"*. A loop is the exception and
+  says *"over 180 deg"* with no direction, because `TrackGeometry.advance()`
+  gives a loop segment no yaw at all; its sign is kept, because `sin()` is
+  odd and a negative loop angle carries the track backwards.
+- `scripts/dungeon_module.gd`: every room is in the sentence, not only the
+  entrance — *"entered through a 12 m hall, along with a 20 m vault and a
+  16 m crypt"* — through one `_room_said()` that the entrance and the rest
+  both read, so the two cannot drift into describing a room differently
+  (which is how "the room 2" came back a release after it was fixed). No
+  order and no direction is claimed for them: the readback runs before
+  anything is validated, so "beyond it" or "then" would be a statement about
+  a layout nothing has solved. Capped at six like every other list. The hub
+  clause gains the comma the new clause in front of it needs.
+- `scripts/readback.gd` and `scripts/npc_goals.gd`: **TRAPS 23**, found by
+  widening the dungeon's sentence. 022 established that a numbered name is a
+  label and takes no article and put the rule in `NpcGoals._place()`, which
+  writes *the*. Nothing had asked it of *a*, and the pre-031 dungeon readback
+  said *"entered through a room 1"* and *"with a key 2 in the hall"* —
+  measured, not inferred. The fact now lives in `Readback.is_label()` and
+  both articles read it. Widening the sentence without this would have
+  printed the fault once per room instead of once per dungeon.
+- `tests/said_fields_test.gd` (new): the rule as a fact. For every type in
+  `SectionValidator.FIELDS`, every field of that type, every room of a
+  dungeon, every zone field of a farm and every key of each tool's
+  `defaults()`, it changes one field and fails if the sentence does not
+  change — and fails, rather than skipping, when a field has no second value
+  listed, so a type that grows a field cannot grow it silently. It asserts
+  nothing about wording, so every line in this commit can be rephrased and
+  the suite stays green.
+- `tests/log_022_test.gd`: the indefinite half of its own article rule.
+
+**Evidence.** Godot 4.7.1 (4.7.1.stable.official.a13da4feb) headless, Linux,
+in a cloud container.
+
+- Baseline before the change: 36 suites, **0 with something to look at**.
+- After: **37 suites, 0 with something to look at**, both without `--all`
+  and with it, `drive_test` and `session_test` included.
+- `said_fields_test` run against the **pre-031 scripts restored from
+  bf2ea0c**: **26 failures** — 19 in the circuit (the eight fields above,
+  each once for one section and once for two, plus the three only two
+  sections can show) and 7 in the dungeon. The scripts were then put back
+  and `cmp` confirmed all four byte-identical to the versions the suite
+  passed against.
+- That measurement is **stronger than 030's**, which could not run against
+  the old files because it read a constant the same commit introduced. This
+  suite reads only `SectionValidator.FIELDS` and each tool's `defaults()`,
+  both of which existed before 031, so it ran against the old code verbatim.
+
+**Limitations — what the tests did NOT prove.**
+
+- **No model produced any of these requests.** A headless harness has no key
+  and no model; what is measured is what the code says to JSON of each shape.
+- **No player has read any of these sentences**, which is the part a test
+  cannot do. They are longer than they were. Whether *"a closed circuit with
+  two 400 m straights, two 50 m corners, 120 deg left, a 20 m hairpin, 150
+  deg right and a 12 m chicane to the left, 40 m radius"* reads as help or
+  as noise is the owner's call; see Next action.
+- Nothing ran on Windows; `run_tests.bat` was not edited and not executed.
+- **The AI's prompt and `PROMPT_VERSION` are byte-identical.** A readback is
+  output, not instruction: nothing the model is told has moved.
+- The six withheld section types (TRAPS 19) now have fuller sentences too.
+  Nothing about which types are OFFERED has changed, and no refusal names
+  them.
+- `said_fields_test` is a guard for everything it covers outside the circuit
+  and the dungeon's rooms. The farm, the car, the boots, the look tool and a
+  dungeon's things have always passed it, and the suite's header says which
+  assertions were findings and which were guards (TRAPS 6).
+
+**One thing noticed and deliberately not fixed.** `Readback.join_capped()`
+writes *"a, b, c, d, e and f and 2 more"* — two "and"s, because it joins the
+six it shows and then appends the remainder. It is pre-existing, it is
+shared by the farm and the circuit as well, and it is a wording rather than
+a dropped field. 031 makes a capped dungeon list likelier to be seen, so it
+is recorded here rather than folded into a commit about something else.
+
+---
+
 ---
 
 ## Next action
@@ -940,14 +1122,40 @@ fault and `RefusalCheck` should be catching it.
   and if the owner ever opens the six withheld types, `OFFERED_TYPES` in
   `section_validator.gd` moves with the prompt or the suite fails.
 
-**Smallest useful assistant task next.** Still the **readback**, which 028
-named and neither 029 nor 030 did: it is the layer the owner's sessions have
-found most of the real faults in — four of the five in 022 were a readback
-describing something other than the request. The 028 question has never been
-asked of it systematically: for each thing a readback says, is the sentence as
-wide as the thing it describes? 029 hardened how readbacks READ numbers and
-030 did the refusals; neither audited what a readback SAYS. Needs no decision
-from the owner and no live key.
+031 adds a fifth, and it is the only part of 031 a person has to judge:
+
+- *"a circuit with two long straights and two 90 degree right-handers"*, and
+  then *"a dungeon with a hall, a vault and a crypt"*. Both read back longer
+  than they did. The circuit now says which way every corner turns and how
+  far — *"two 400 m straights and two 50 m corners, 90 deg right"* — and the
+  dungeon names every room rather than the entrance alone — *"entered through
+  a 12 m hall, along with a 20 m vault and a 16 m crypt"*. Before 031 the two
+  circuits in that first sentence and a circuit of two 120 deg LEFT-handers
+  read back identically, which is the fault; the question a test cannot
+  answer is whether the cure reads as help or as clutter. **The worst case to
+  look at is a varied circuit**, where every piece differs and the line
+  becomes a comma-heavy list: a six-piece one is in the 031 section above,
+  verbatim. If it reads as noise, the fix is shorter phrasing and NOT a
+  dropped field — `said_fields_test` will hold the line either way, because
+  it asserts that the sentences differ and never what they say.
+
+**Smallest useful assistant task next.** The readback audit 028 named is
+**done** (031). Two candidates, in the order the assistant would take them:
+
+- **The plan readback, which 031 did not reach.** `WorldRegistry` describes
+  each world in a plan through `readback_short()`, and racing's ignores its
+  parameters entirely: every circuit in every plan is *"a race circuit"*.
+  The farm has no `readback_short()` at all and falls back to
+  `WorldModule`'s, which is *"a farm"*. That is deliberate and documented —
+  a plan's meaning is mostly how its worlds are RELATED and a long line
+  buries the relationship — so this is not the same finding as 031 and must
+  not be fixed by pasting the long sentence in. The question worth asking,
+  and it is 031's question one layer up, is whether *"a dungeon of five
+  rooms and a race circuit, one inside the other"* can catch a dropped
+  clause at all, and what the shortest sentence that can is. 022 found a
+  real fault in exactly this line.
+- **Ask one more question of every file at once.** Unchanged from 030 and
+  still the cheapest way to find the next one; the candidates are below.
 
 Two smaller ones, either of which is a single session:
 
@@ -984,6 +1192,9 @@ Two smaller ones, either of which is a single session:
 - Worth a look while it is cheap: `sweep_test` still reports that no legal
   command reaches `FAILED_UNWALKABLE`, which is TRAPS 6's own example and has
   been true since 005.
+- Cheap and cosmetic, recorded by 031 and left alone by it:
+  `Readback.join_capped()` writes *"... e and f and 2 more"*, two "and"s in
+  one clause. Shared by the farm, the circuit and now a dungeon's rooms.
 
 ## A likeness from a photo (021 and beyond)
 

@@ -213,6 +213,38 @@ func _defect_2_articles() -> void:
 	var vault := NpcGoals.delivery_line("DELIVERED", "red_key", "vault", "")
 	_check(vault.contains("the vault"), "'the vault' still reads as the vault: '%s'" % vault)
 
+	# --- 031: and the INDEFINITE article, which was never asked ---
+	#
+	# The rule above was applied to "the" and left alone for "a". The
+	# dungeon's readback puts "a" in front of a room's name and a thing's
+	# name, so the same model output that produced "the chamber 3" here
+	# produced "a room 1" and "a key 2" there. One fact with two renderings,
+	# fixed in one of them - which is what 019 did, and what 022 found it
+	# had done. Both now read Readback.is_label().
+	var d := DungeonModule.new()
+	var unsized := d.readback({"rooms": [
+		{"name": "room_1", "width": null, "depth": null},
+		{"name": "chamber_2", "width": null, "depth": null}], "doors": [[1, 2]]})
+	print("      %s" % unsized)
+	_check(not unsized.contains("a room 1") and not unsized.contains("a chamber 2"),
+		"no article on a numbered room in a readback either: '%s'" % unsized)
+	_check(unsized.contains("room 1") and unsized.contains("chamber 2"),
+		"and both rooms are still named: '%s'" % unsized)
+
+	var things := d.readback({"rooms": [
+		{"name": "hall", "width": 12, "depth": 12},
+		{"name": "vault", "width": 12, "depth": 12}], "doors": [[1, 2]],
+		"things": [{"name": "key_2", "in": 1}, {"name": "red_key", "in": 2}]})
+	print("      %s" % things)
+	_check(not things.contains("a key 2"), "nor on a numbered thing: '%s'" % things)
+	_check(things.contains("a red key"), "and a thing with a name still takes one: '%s'" % things)
+
+	# The fact itself, so the two readers cannot be given different answers.
+	for label in ["room 2", "room_2", "chamber 3", "level 2"]:
+		_check(Readback.is_label(label), "'%s' is a label" % label)
+	for name in ["vault", "large hall", "red key", "2", ""]:
+		_check(not Readback.is_label(name), "'%s' is not a label" % name)
+
 
 # --- 1: EQUIP with no tool field ---
 #

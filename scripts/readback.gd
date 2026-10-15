@@ -106,9 +106,37 @@ static func measure(source: Dictionary, key: String) -> float:
 	return as_number(source[key])
 
 
+# --- one reading, applied to the article in front of a name (TRAPS 10) ---
+#
+# "Got to the room 2." "Fetching the red key to the chamber 3." A numbered
+# name is a LABEL, and a label takes no article. 019 found that, 022 found it
+# again a release later in a second function, and the rule it produced is
+# written about the thing that makes it true: the NUMBER on the end, not the
+# word in front of it.
+#
+# NpcGoals._place() has carried that rule since 022 for the DEFINITE article.
+# It was never asked of the indefinite one, and DungeonModule's readback puts
+# "a" in front of a room's name and a thing's name - so a dungeon whose rooms
+# the model called room_1..4 was read back as "entered through a room 1", and
+# a key called key_2 as "a key 2". One fact, two renderings, and only one of
+# them was being applied: TRAPS 10's own lesson, which is to delete every
+# other way of saying it in the same breath.
+#
+# So the fact lives here, in the leaf both files already read, and `the` and
+# `a` are two readers of it. An empty name is not a label; neither is a bare
+# number, which has no name in front of it to label.
+static func is_label(name: String) -> bool:
+	var words := name.replace("_", " ").strip_edges().split(" ", false)
+	if words.size() < 2:
+		return false
+	return str(words[words.size() - 1]).is_valid_int()
+
+
 static func article(word: String) -> String:
 	if word == "":
 		return ""
+	if is_label(word):
+		return word
 	return ("an " if word[0] in ["a", "e", "i", "o", "u"] else "a ") + word
 
 

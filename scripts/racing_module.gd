@@ -206,12 +206,41 @@ func summary(_metrics: Dictionary, report: Dictionary) -> String:
 		report["direction"], report["section_count"], report["total_length"]]
 
 
-# "a closed circuit with two 300 m straights, two 200 m straights and
-#  50 m corners"
+# "a closed circuit with two 400 m straights and two 50 m corners, 90 deg
+#  right"
 #
 # Straights are grouped by length and corners by radius, because that is how
 # a player describes a track: "two long straights", "tight corners". The
 # number of sections is not read out - nobody asks for eight sections.
+#
+# --- 031: and grouped by EVERY field, not only the one in front ---
+#
+# Until 031 the group key was the type and one measurement, and the sentence
+# said that one measurement. So a corner's ANGLE - the field that decides
+# which way the track turns and the field the prompt says must add up to
+# +360 or -360 - was never said at all, and two circuits a player would
+# never confuse read back word for word the same:
+#
+#   {"corner", radius 50, angle 90}    ->  "two 50 m corners"
+#   {"corner", radius 50, angle -120}  ->  "two 50 m corners"
+#
+# Measured, not inferred: eight of the ten section types carried a field the
+# sentence dropped - a corner, hairpin, banked corner and loop segment's
+# angle, a chicane's radius and its direction, and a crest and dip's grade.
+# The comment above this one records a headless test catching the same thing
+# for a banked corner's BANK, and bank alone was given a phrase. That is
+# TRAPS 11: the instance fixed, the class left standing, with the general
+# rule written down beside it.
+#
+# The rule, applied to all ten types and both doors of it: a readback names
+# every field its validator accepts, and two requests that differ in any one
+# of those fields do not read back the same. The second half is what
+# tests/said_fields_test.gd asserts, field by field out of
+# SectionValidator.FIELDS and DungeonModule's rooms, so a type that grows a
+# field fails the suite until the sentence grows with it. It asserts the
+# capability - that the two sentences DIFFER - and never the wording, so
+# rephrasing any line below keeps the suite green and dropping a field does
+# not (TRAPS 6, TRAPS 21).
 func readback(parameters: Dictionary) -> String:
 	var raw = parameters.get("sections", null)
 	if typeof(raw) != TYPE_ARRAY or (raw as Array).is_empty():
@@ -256,37 +285,40 @@ func readback(parameters: Dictionary) -> String:
 				measure = Readback.measure(section, "length")
 				singular = _sized(measure, "straight")
 				plural = _sized(measure, "straights")
-			"uphill", "downhill":
+			"uphill", "downhill", "crest", "dip":
+				# All four carry a grade. Only the first two said it, which
+				# is the same fault as the angle below, one line along.
 				measure = Readback.measure(section, "length")
 				singular = _graded(measure, type, section)
 				plural = _graded(measure, type + "s", section)
-			"crest", "dip":
-				measure = Readback.measure(section, "length")
-				singular = _sized(measure, type)
-				plural = _sized(measure, type + "s")
 			"corner", "hairpin":
 				measure = Readback.measure(section, "radius")
-				singular = _sized(measure, type)
-				plural = _sized(measure, type + "s")
+				singular = _sized(measure, type) + _turn(section)
+				plural = _sized(measure, type + "s") + _turn(section)
 			"banked_corner":
 				measure = Readback.measure(section, "radius")
 				singular = _banked(measure, "corner", section)
 				plural = _banked(measure, "corners", section)
 			"loop_segment":
 				measure = Readback.measure(section, "radius")
-				singular = _sized(measure, "loop")
-				plural = _sized(measure, "loops")
+				singular = _sized(measure, "loop") + _over(section)
+				plural = _sized(measure, "loops") + _over(section)
 			"chicane":
 				measure = Readback.measure(section, "offset")
-				singular = _sized(measure, "chicane")
-				plural = _sized(measure, "chicanes")
+				singular = _stepped(measure, "chicane", section)
+				plural = _stepped(measure, "chicanes", section)
 			_:
 				# A piece this readback has never heard of is named rather
 				# than dropped, so adding a section type can make the wording
 				# plain but can never make a piece disappear.
 				singular = type.replace("_", " ")
 				plural = singular + "s"
-		var key := "%s|%.0f" % [type, measure]
+		# The key is the whole sentence, not the type and one measurement.
+		# Keyed on one measurement, two corners of the same radius turning
+		# opposite ways became "two 50 m corners" - a group whose own name
+		# was false of half its members. Two pieces are the same piece only
+		# when every field the readback says about them is the same.
+		var key := "%s|%s" % [type, singular]
 		if not groups.has(key):
 			groups[key] = {"singular": singular, "plural": plural, "count": 0,
 				"rank": int(rank.get(type, 9)), "measure": measure}
@@ -323,11 +355,67 @@ func _graded(measure: float, noun: String, section: Dictionary) -> String:
 	return "%s at %.0f%%" % [_sized(measure, noun), grade]
 
 
+# --- 031: which way the corner goes ---
+#
+# The field that decides it, and the one the readback never said. An angle is
+# SIGNED and the validator bounds it on its size: "positive turns right,
+# negative left, and both are legal at the same magnitudes"
+# (SectionValidator._range_error). A player hears a direction, not a sign, so
+# the sign is said as the word it means and the number as its size.
+#
+# An angle that is not a number is left out rather than printed as 0 deg,
+# exactly as _sized() leaves out a length that did not arrive: a readback
+# that states a number the player never gave is trap 8, and the refusal names
+# the field. An angle of exactly 0 is refused by the bound - every angle
+# range in SectionValidator starts above 0 - but it can still be READ here,
+# because a readback describes what was asked and not what is legal, and 0
+# turns neither way.
+func _turn(section: Dictionary) -> String:
+	var angle := Readback.measure(section, "angle")
+	if is_nan(angle):
+		return ""
+	if is_zero_approx(angle):
+		return ", straight through"
+	return ", %.0f deg %s" % [absf(angle), "right" if angle > 0.0 else "left"]
+
+
+# A loop's angle, which is NOT a turn. TrackGeometry.advance() gives a loop
+# segment no yaw at all - it pitches up and over, keeping its heading - so
+# "right" and "left" would be a claim about this piece that the geometry does
+# not make. The sign is still kept, because it is still a difference the
+# player asked for: sin() is odd, so a negative loop angle carries the track
+# backwards rather than forwards.
+func _over(section: Dictionary) -> String:
+	var angle := Readback.measure(section, "angle")
+	if is_nan(angle):
+		return ""
+	return ", over %.0f deg" % angle
+
+
 func _banked(measure: float, noun: String, section: Dictionary) -> String:
 	var bank := Readback.measure(section, "bank")
+	var said := _sized(measure, noun) + _turn(section)
 	if is_nan(bank):
-		return _sized(measure, noun)
-	return "%s banked at %.0f deg" % [_sized(measure, noun), bank]
+		return said
+	return "%s, banked at %.0f deg" % [said, bank]
+
+
+# A chicane is the one piece whose size in the sentence is not its radius:
+# what a player asks for is how far it steps sideways, which is the offset.
+# So the radius has to be said in its own words or it is not said at all,
+# and until 031 it was not - a 20 m chicane on a 40 m radius and one on a
+# 150 m radius read back identically, though they are different corners
+# taken at different speeds. The direction went the same way, and that one
+# is left or right.
+func _stepped(measure: float, noun: String, section: Dictionary) -> String:
+	var said := _sized(measure, noun)
+	var direction := str(section.get("direction", "")).to_lower().strip_edges()
+	if direction == "left" or direction == "right":
+		said += " to the " + direction
+	var radius := Readback.measure(section, "radius")
+	if is_nan(radius):
+		return said
+	return "%s, %.0f m radius" % [said, radius]
 
 
 func _before(a: Dictionary, b: Dictionary) -> bool:
