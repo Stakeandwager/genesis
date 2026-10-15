@@ -121,6 +121,29 @@ A world is a place; a tool is what the player works it with. "a farm with a big 
 STYLE records how the player described what they asked for, as a short lowercase label with underscores, in the player's own terms. If they gave no description, use "unspecified". Interpret the player's description yourself when you design the world.
 """
 
+
+# --- 034: the prompt the model actually receives, in one place ---
+#
+# SYSTEM_PROMPT is the constant; what the model is sent is that plus the
+# three registries' sections. 033 measured the difference - 7573 characters
+# against 15474 - by rebuilding the concatenation in a scratch script,
+# because this was four lines inside ask() and nothing else could reach it.
+#
+# It is a function now so that a test can ask what the model is told without
+# writing its own copy of the answer. tests/container_door_test.gd needs it:
+# a refusal that names a legal value must not name one the prompt withholds,
+# which is how 034's first attempt came to offer MODIFY_TRACK - a Prototype
+# 001 stub that builds nothing and appears nowhere in this string - as the
+# example of what a plan step looks like.
+static func assembled_prompt() -> String:
+	# Every registered world module describes its own vocabulary, so the AI
+	# always knows exactly what the game can build, and nothing more.
+	return SYSTEM_PROMPT \
+		+ "\nWORLDS YOU CAN BUILD\n" + WorldRegistry.prompt_sections() \
+		+ "\n\nTOOLS YOU CAN GIVE\n" + ToolRegistry.prompt_sections() \
+		+ "\n\nORDERS YOU CAN GIVE\n" + NpcGoals.prompt_section()
+
+
 var http: HTTPRequest
 var api_key: String = ""
 var busy: bool = false
@@ -232,12 +255,7 @@ func _send(contents: Array) -> void:
 		interpretation_failed.emit("No API key found in api_key.txt.")
 		return
 
-	# Every registered world module describes its own vocabulary, so the AI
-	# always knows exactly what the game can build, and nothing more.
-	var instructions := SYSTEM_PROMPT \
-		+ "\nWORLDS YOU CAN BUILD\n" + WorldRegistry.prompt_sections() \
-		+ "\n\nTOOLS YOU CAN GIVE\n" + ToolRegistry.prompt_sections() \
-		+ "\n\nORDERS YOU CAN GIVE\n" + NpcGoals.prompt_section()
+	var instructions := assembled_prompt()
 
 	var body := {
 		"system_instruction": {

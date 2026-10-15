@@ -13,7 +13,21 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **033**, the next question off the same
+- Last commit at the time of writing: **034**, the question 033 left as the
+  next assistant task, asked of the whole class rather than the four
+  instances it named. Every refusal in Genesis about a FIELD names what a
+  legal value would be; nothing had ever asked the same of the CONTAINER the
+  fields arrive in, and **nine doors answered with four words** — five lists
+  in the world validators, a plan's `steps`, and `spec` in all three tools.
+  `doors` is required with no default, so a dungeon described without doors
+  was refused with four words naming nothing to fix. Found while fixing it:
+  the plural at one (`"at least 1 doors"`, `"this dungeon has 1 rooms"`), and
+  a fault the fix itself introduced — the plan's new example advertised
+  `MODIFY_TRACK`, a withheld stub, which is TRAPS 21's closing warning
+  arriving one door up. 40 suites passed before and 41 after, `--all`
+  included; the new suite fails 30 times against the old sentences. See 034
+  below and TRAPS 26 and 27.
+- The commit before it: **033**, the next question off the same
   list 032 used, and a different kind of question: not what Genesis SAYS
   about a command but whether the command is in the LEDGER afterwards. Four
   of the eleven commands in `CommandParser.allowed_commands()` wrote no
@@ -110,16 +124,19 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-42 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **40 suites**, and since 024 every one of them runs —
+43 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **41 suites**, and since 024 every one of them runs —
 nothing is skipped as broken. `--all` adds the two slow racing suites.
 
-Last full run (033, Godot 4.7.1 on Linux, headless, in a cloud container):
+Last full run (034, Godot 4.7.1 on Linux, headless, in a cloud container):
 **suites with something to look at: 0**, both without `--all` and with it,
-`drive_test` and `session_test` included. 033's new suite is
-`ledger_said_test` (5 failures against the pre-033 code) and its new group in
-`report_test` gives 5 more, with the finding/guard split written into each
-header per TRAPS 6. Not run on the owner's Windows machine.
+`drive_test` and `session_test` included. 034's new suite is
+`container_door_test` (30 failures against the pre-034 sentences) and
+`plan_said_test` gains a positive control (3 more). Not run on the owner's
+Windows machine. `run_tests.bat` needed no edit: `container_door_test`
+matches none of its `findstr` patterns, so it runs there without
+`--fixed-fps`, which is what it gets here too — checked rather than assumed
+(TRAPS 4).
 
 **Run `--all` before believing a green suite.** 033 introduced a fault that
 the 38 fast suites all passed and `session_test` caught — see TRAPS 25's last
@@ -211,6 +228,29 @@ verified, and what remains uncertain.
   read from `WorldRegistry.commands()` and never written out in
   `session_report.gd`, because "worlds built" had been every valid record
   since 002G — boots included. See 033 and TRAPS 25.
+- **A refusal names a legal value at every door, and the container is a
+  door.** 034. 028, 029 and 030 made every refusal about a FIELD name its
+  limits, through all three of its entrances. The CONTAINERS those fields
+  arrive in — five lists in the world validators, a plan's `steps`, `spec`
+  in all three tools — all answered with four words that named no count, no
+  shape and no example. Each list is now declared by the world that owns it
+  (`WorldModule.lists()`: key, member word, bounds, required, and a sample
+  that is a real legal list), the refusal is written from that declaration
+  by `Readback.list_error()`, and `tests/container_door_test.gd` builds a
+  request out of every sample and **fails unless the validator accepts it**.
+  So the example a player is shown is not a sentence that can go stale: it
+  is rendered from a value that is checked. The same suite asserts that no
+  example names a command the prompt withholds, after 034's own first
+  attempt offered `MODIFY_TRACK`. See 034 and TRAPS 26.
+- **A fact about a word lives in one function, at both ends of the noun.**
+  034. TRAPS 10 and 23 established this for the article in front of a name
+  and put it in `Readback.is_label()`. The plural on the end was still
+  written by hand in six sentences, and three of them were wrong at a count
+  of one — `"2 rooms need at least 1 doors"`, `"this dungeon has 1 rooms"`,
+  `"deepest room 1 doors in"`. `Readback.plural()` is the digit form and
+  `count_of()` the word form, and `container_door_test` sweeps every
+  sentence the suite produced for a count of one followed by a plural,
+  rather than quoting any of them. See TRAPS 27.
 - **Silence is not agreement.** `ACCEPTED_BY_SILENCE` is recorded and excluded
   from the understanding score.
 - **A carrier's claim is evidence of an attempt, not of delivery.** Delivery is
@@ -360,6 +400,35 @@ verified, and what remains uncertain.
   found a hole in the ledger — the artefact the whole project is for — that
   37 green suites had sat around. The next questions to ask of that same
   list are in "Smallest useful assistant task next".
+
+- **A green suite had never asked what a refusal says when the CONTAINER is
+  wrong**, only when a field inside it is. Found and fixed in 034: nine
+  doors — `rooms`, `doors`, `things`, `zones`, `sections`, a plan's `steps`
+  and `spec` in all three tools — named no count, no shape and no example,
+  while the field refusals one level in say *"and it must be 5 to 60 m"*.
+  40 suites passed before and 41 after. See 034 below and TRAPS 26.
+
+  **What that says about the method, and it is the fourth variation on it.**
+  029 asked one question of every file. 030 asked every way IN to one check.
+  031 asked what the sentence must SAY, enumerated from the validator's own
+  table. 032 and 033 asked two different questions of the one list that
+  decides what Genesis can be asked for. This one asked the same question at
+  a different DEPTH: `capability_test` had swept the limit-naming rule across
+  all five validators since 028 and could not have failed, because the rule
+  it owns is about a number and a list is not a number. The suite was right
+  and complete about the subject it had, and the subject was one level too
+  deep. A player who sees *"doors must be a list"* never reaches a field at
+  all.
+
+  **And 034 introduced one of its own, which is the part worth reading.**
+  The plan's new refusal needed an example step, and the obvious reading of
+  the whitelist produced `MODIFY_TRACK` — a stub that builds nothing and is
+  named nowhere in the prompt the model is sent. A refusal written to name a
+  legal value had named a **withheld** one, which is precisely what TRAPS
+  21's last paragraph warns about, one door above where it warned. It was
+  caught by generating the sentence and reading it rather than by reasoning
+  about the code, and the suite now asserts the rule: every command named in
+  an example appears in `AIInterpreter.assembled_prompt()`.
 
 - **The capability statement in the prompt is hand-written prose and can go
   stale.** `tests/log_023_test.gd` asserts that each thing it claims points at
@@ -1499,6 +1568,200 @@ checked for the same collision — four of them, none colliding. TRAPS 25.
   `ledger` as a substring, so the new suite already gets `--fixed-fps 120`
   there. `run_tests.sh`'s `TIMED` list was updated by hand.
 
+## 034 — the limits named at the field and not at the box it came in
+
+**Objective.** The task 033 left at the top of "Smallest useful assistant
+task next": a refusal that names no legal value at the one door 030 did not
+reach, the top-level list itself. Asked of the class rather than of the four
+instances HANDOVER named.
+
+**Starting state.** Branch `prototype-002a` at a8472f3 (033). Baseline run,
+Godot 4.7.1 (4.7.1.stable.official.a13da4feb) headless, Linux, cloud
+container: **suites with something to look at: 0**, with `--all`, 40 suites.
+
+**What it actually was: nine doors, not four.** HANDOVER named four. Grep
+found a fifth in the same function as two of them, and reading outwards
+found four more in two files nobody had connected to the question. All
+measured headless before anything was changed, each sentence generated and
+read rather than inferred from the source:
+
+```
+DungeonModule.validate({})                     "rooms must be a list"
+DungeonModule.validate({rooms:[r]})            "doors must be a list"
+DungeonModule.validate({..., things: 7})       "things must be a list"
+FarmModule.validate({})                        "zones must be a list"
+SectionValidator.validate({})                  "sections must be a list"
+GameController._execute_plan({})               "a plan needs a list of steps"
+CarTool.validate({spec: 5})                    "spec must be an object"
+BootsTool.validate({spec: 5})                  "spec must be an object"
+LookTool.validate({spec: 5})                   "spec must be an object"
+```
+
+Not one names a count, a shape or an example, next to field refusals one
+level in that say *"zone 1 (barn): missing 'width', and it must be 5 to 60
+m"*. Every bound was in scope on the line that wrote the sentence.
+
+Three of them are worth naming individually:
+
+- **`doors` is required with no default.** So *"a dungeon with a hall and a
+  vault"*, described by a model that said nothing about doors because the
+  player said nothing about doors, is refused with four words naming nothing
+  to fix.
+- **`spec must be an object` sat three lines above a refusal for an UNKNOWN
+  field that lists every legal one**, in the same function, in all three
+  tools. One function, two refusals, one of them helpful: TRAPS 11 inside a
+  single file.
+- **`things` was not on anyone's list** because it is the one optional list
+  in the project, so it does not refuse a request outright. It said the same
+  four words.
+
+**The seventh door, which was already right**, and is the house style the
+rest were brought up to: `NpcGoals.validate_door()` answers *"a door is named
+by the two rooms it joins, for example {"between": ["hall", "vault"]} (this
+dungeon has hall, vault)"*. The fix was not an invention.
+
+**Implementation.** No behaviour changed. Nothing about what Genesis builds,
+accepts or refuses is different — only what it says when it refuses.
+
+- `WorldModule.lists()`, overridden by the three worlds, declares every
+  top-level list a request may carry: the key, the word for one member, the
+  bounds, whether it is required, and a **sample that is a complete legal
+  list**. `list_of(key)` reads one entry.
+- `Readback.list_error()` writes the sentence from that declaration and
+  `Readback.member_error()` writes the one for a single bad member, so the
+  six list doors cannot drift apart — the rule `around_of()` and
+  `_range_error()` exist for.
+- `Readback.as_json()` renders the example from the declared VALUE rather
+  than having it typed out beside the code, so the sentence cannot promise a
+  shape the validator would reject.
+- `SectionValidator.list_entry()` is the circuit's declaration, and its
+  example type is read from `OFFERED_TYPES` with `FIELDS` supplying the
+  field name — the wall of TRAPS 19, at the door TRAPS 21 warned it could
+  leak through.
+- `GameController.plan_list()` and `plan_example_step()` do the same for the
+  sixth door, and are static so a test can read them without standing up a
+  scene.
+- `ToolModule.spec_error()` writes the tools' version from `defaults()`,
+  which is the one place that knows what a tool has and is already what the
+  unknown-field refusal reads. `BootsTool` overrides `has_phrase()` because
+  it is the one tool with a plural name.
+- `AIInterpreter.assembled_prompt()` is a pure extraction of four lines that
+  were inside `ask()`, so a test can ask what the model is actually told.
+  Measured at **15474 characters**, which is the number 033 arrived at from
+  a scratch script — the extraction is confirmed by agreeing with a
+  measurement taken before it existed.
+- `Readback.plural()` for the digit form of a count, applied to every
+  hand-written plural in the validators and in the dungeon's own
+  measurements.
+
+**What the doors say now**, measured, headless, every line generated and
+read:
+
+```
+'rooms' must be a list of 2 to 24 rooms, for example
+    [{"name": "hall", "width": 12, "depth": 12}]
+'doors' must be a list of up to 48 doors, for example [[1, 2]]
+'things' must be a list of up to 8 things, for example
+    [{"name": "lamp", "in": 1}]
+'zones' must be a list of 1 to 24 zones, for example
+    [{"type": "barn", "width": 20, "depth": 20}]
+'sections' must be a list of 2 to 40 sections, for example
+    [{"type": "straight", "length": 200}]
+'steps' must be a list of 1 to 4 steps, for example
+    [{"command": "CREATE_FARM", "parameters":
+      {"zones": [{"type": "barn", "width": 20, "depth": 20}]}}]
+room 2 must be an object, for example {"name": "hall", ...}
+door 1 must be a pair of room numbers, for example [1, 2]
+'spec' must be an object (a car has power, braking, steering, grip,
+    paint, nickname)
+'spec' must be an object (boots have push, weight, footing, turning,
+    brake, colour, nickname)
+'spec' must be an object (a look has face, skin)
+```
+
+**A FAULT THIS COMMIT INTRODUCED AND CAUGHT BY READING ITS OWN OUTPUT.** The
+plan's example step was first written as "the first whitelisted command that
+is not PLAN", which is the obvious reading and returns `MODIFY_TRACK` — a
+Prototype 001 stub that builds nothing, appears nowhere in the 15474-character
+prompt the model receives, and is item 2 under "Human decision needed". The
+refusal would have advertised a command Genesis deliberately withholds, in
+the one sentence nobody tests. That is TRAPS 21's closing warning arriving
+one door above where it was written. The example is now built from the first
+world module and its own declared samples, so it is a step that would
+actually build something, and `container_door_test` asserts that every
+command named in any example appears in the assembled prompt. TRAPS 26.
+
+**Found beside it: the plural at a count of one.** Measured, not inferred:
+
+```
+before   2 rooms need at least 1 doors to all be reachable (got 0)
+after    2 rooms need at least 1 door to all be reachable (got 0)
+before   this dungeon has 1 rooms, so there is no room 5
+after    this dungeon has 1 room, so there is no room 5
+```
+
+HANDOVER asked for this of "every `Readback`-less count in the validators".
+Asking it of the dungeon's measurements too found four more that can reach
+one — the busiest room's door count, `DEEPEST`, `PLACED`'s slot count, and
+the summary's door count. Two sentences in the same file already did it
+correctly by hand (`"%d loop%s"`), which is how the counts beside them came
+to do it wrong. All of them read `Readback.plural()` now. TRAPS 27.
+
+**Evidence.** Godot 4.7.1 (4.7.1.stable.official.a13da4feb) headless, Linux,
+in a cloud container.
+
+- Baseline: 40 suites, **0 with something to look at**, with `--all`.
+- After: 41 suites, **0 without `--all` and 0 with it**, `drive_test` and
+  `session_test` included. TRAPS 25's lesson applied: the `--all` run is the
+  one that catches an extraction fault, and this commit is mostly extraction.
+- The new suite run against the OLD sentences, with the declarations left in
+  place so it parses: `container_door_test` **fails 30 times**. The eight
+  changed scripts were then restored and `cmp` confirms every one
+  byte-identical to the version the suite passed against.
+- `plan_said_test`'s new positive control run the same way: **fails 3
+  times**. That control exists because the assertion beside it — "this
+  sentence did NOT appear" — went green against both the old wording and the
+  new, which is a check that stops checking the moment the sentence it
+  quotes changes. 034 watched it do exactly that and fixed it.
+
+**Limitations — what this does NOT establish.**
+
+- **No model produced any of these requests, and no player has read any of
+  these sentences.** A headless harness has no key and no model. Whether
+  *"'rooms' must be a list of 2 to 24 rooms, for example [{"name": "hall",
+  "width": 12, "depth": 12}]"* reads as help or as a wall of JSON is a
+  judgement a test cannot make, and it is the only part of 034 a person has
+  to look at. It is under Next action.
+- **Nothing about what Genesis builds, accepts or refuses has changed.** No
+  validator logic, solver, readback, physics or prompt text was touched;
+  `PROMPT_VERSION` is untouched and the assembled prompt measures the same
+  15474 characters as before the extraction. What changed is the wording of
+  eleven refusals and six counts.
+- **`doors` is still required with no default**, which is the thing that
+  makes its refusal the sharp one. 034 fixed what it SAYS and deliberately
+  did not change what it accepts: whether a dungeon with no doors described
+  should be refused at all, or should fall through to the reachability check
+  (*"2 rooms need at least 1 door to all be reachable (got 0)"*, which is a
+  better sentence still), is a question about what Genesis accepts rather
+  than about what it says. New "Human decision needed" 7.
+- **The examples are not claimed to be the best ones to show.** They are
+  claimed to be legal, and that claim is measured: the suite assembles a
+  request out of every declared sample and fails unless the validator
+  accepts it.
+- **Nothing ran on Windows.** `run_tests.bat` needed no edit — checked, not
+  assumed: `container_door_test` matches none of its `findstr` patterns, so
+  it runs there with the same arguments it gets here.
+- **The plural sweep covers the sentences this suite causes to be produced**,
+  which is most of the validators and the dungeon's measurements, and not
+  every string in the project. The two `"%d of %d rooms"` sites were fixed
+  anyway, on reasoning rather than measurement: `MIN_ROOMS` is 2 today so
+  they cannot be wrong, but `MIN_ZONES` was lowered from 2 to 1 in 003 for
+  exactly the reason `MIN_ROOMS` might be, and a plural that is correct
+  because of a bound in another file is a plural waiting to be wrong. Said
+  plainly because it is reasoning and not evidence.
+
+---
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -1612,13 +1875,44 @@ because it is a line in a report rather than a line in the game:
   own housekeeping clear no longer shows up as a request the tester typed,
   so the request count should match what was actually typed.
 
-**Smallest useful assistant task next.** The ledger question this file named
-is **done** (033), and so is the prompt-reachability half of it — see below.
-Candidates, in the order the assistant would take them:
+034 adds an eighth, and it is the only part of 034 a person has to judge,
+because what changed is a sentence and the suite can only prove it is true:
 
-- **A refusal that names no legal value, at the one door 030 did not
-  reach: the top-level list itself.** Measured this session while writing
-  033's suite, headless, and not inferred. 030 made every *field* refusal
+- *"a dungeon with a hall and a vault"*, and say nothing about doors. Before
+  034 that was refused with the four words *"doors must be a list"*. It now
+  says *"'doors' must be a list of up to 48 doors, for example [[1, 2]]"*.
+  Then *"a farm"* with nothing in it, and *"give me a car"* with something
+  that is not a spec, for the other two shapes. **The judgement is whether a
+  JSON example in a refusal reads as help or as a wall**, since the player
+  who meets this sentence is the one who has not got as far as a field. If
+  it reads as noise the fix is the phrasing or dropping the example, and
+  `container_door_test` holds the line either way: it asserts the example
+  parses to the value the module declared and that the validator accepts it,
+  never what the sentence says. Worth one glance at
+  *"'rooms' must be a list of 2 to 24 rooms, for example [{"name": "hall",
+  "width": 12, "depth": 12}]"* in particular — it is the longest of them.
+- And one line worth typing because it is what the four words used to hide:
+  ask for a dungeon and describe no doors. If the model now supplies
+  `"doors": []` having read the refusal, the reachability check answers
+  *"2 rooms need at least 1 door to all be reachable (got 0)"* — which is the
+  sentence that should probably have been there all along. See "Human
+  decision needed" 7.
+
+**Smallest useful assistant task next.** The ledger question (033) and the
+container-door question (034) are both **done**. Candidates, in the order
+the assistant would take them:
+
+- ~~**A refusal that names no legal value, at the one door 030 did not
+  reach: the top-level list itself.**~~ **Done in 034**, and it was nine
+  doors rather than the four listed here: `things` and the three tools'
+  `spec` were in the same class and not on the list. The plural beside it
+  (*"1 doors"*) is done too, swept across the validators and the dungeon's
+  measurements rather than fixed where it was found. Left here struck
+  rather than deleted, because the next reader should see that a list in
+  this file of four instances was a list of nine.
+
+  The original entry, as 033 wrote it: *Measured this session while writing
+  033's suite, headless, and not inferred.* 030 made every *field* refusal
   name its limits through all three doors. The *lists those fields live in*
   were not touched, and all three worlds answer the same way:
 
@@ -1961,3 +2255,33 @@ decision, so it is his and not the assistant's.
 
    `ledger_said_test` deliberately asserts only that an id resolves, so it
    stays green under all three.
+
+7. **Should `doors` be required, now that the refusal says what to supply?**
+   Raised by 034, which fixed what that door SAYS and deliberately did not
+   change what it accepts. Measured, not inferred: `DungeonModule.validate`
+   returns at the second line if `doors` is absent or is not a list, so a
+   dungeon described with rooms and no doors never reaches the reachability
+   check at the bottom of the same function.
+
+   That check is the better sentence. *"2 rooms need at least 1 door to all
+   be reachable (got 0)"* tells a player what is wrong with their dungeon;
+   *"'doors' must be a list of up to 48 doors, for example [[1, 2]]"* tells
+   them what is wrong with their JSON. The second is a large improvement on
+   the four words that were there, and it is still a sentence about the
+   format rather than about the world.
+
+   The options, for the record:
+
+   - **(a) Leave it.** `doors` stays required. Costs nothing; the refusal is
+     now actionable, which it was not before 034.
+   - **(b) Default `doors` to `[]`**, so a dungeon described without them
+     falls through to the reachability check and is refused for the reason
+     that actually matters. One line, and it changes which refusal a player
+     meets — which is why it is here and not in a commit.
+   - **(c) Default it to `[]` and have the dungeon JOIN the rooms itself**
+     when none are described. That is a change to what Genesis BUILDS from
+     a given request, not to what it says, and it is the owner's by a wider
+     margin than the other two.
+
+   The assistant would take (b) and has not, because it is a change to what
+   Genesis accepts.

@@ -991,6 +991,132 @@ Found and fixed in 033.
 
 ---
 
+## 26. The limits were named at the field and not at the box it came in
+
+**Signature:** every field refusal in the project names what a legal value
+would be — "and it must be 5 to 60 m" — and the refusal a player is far more
+likely to meet first says four words that name nothing: `"doors must be a
+list"`.
+
+**Cause.** 028 found refusals that named no limit and fixed them in
+`SectionValidator`. 029 widened that to four validators. 030 found the same
+fault had three *doors* — out of range, not a number, missing — and closed
+all three in all four (TRAPS 21). Every one of those is a refusal about a
+FIELD. Nothing had ever asked the same question about the CONTAINER the
+fields arrive in, and there were nine of them, all answering with four
+words:
+
+```
+'rooms' 'doors' 'things' 'zones' 'sections'   "<key> must be a list"
+a plan's 'steps'                              "a plan needs a list of steps"
+'spec', in all three tools                    "spec must be an object"
+```
+
+No count, no shape, no example. `doors` is the sharp one: it is **required,
+with no default**, so a dungeon described with no doors at all — which is
+what a model sends when the player did not mention doors — is refused with
+four words naming nothing to fix. And `spec must be an object` sat three
+lines above a refusal for an *unknown* field that lists every legal one, in
+the same function, in all three tools.
+
+**Why no test saw it:** `capability_test` has asserted the limit-naming rule
+across all five validators since 028, and `container_door_test` did not
+exist. The rule being tested was *"a number outside its limits is refused
+with the limit named"* — a rule about a number. A list is not a number, so
+the suite that owned the rule could not have failed, however many validators
+it swept. Trap 21 said: enumerate the ENTRANCES, not just the subjects.
+This is the entrance above the ones it enumerated, and the same reasoning
+reaches it — the player who gets this sentence has not got as far as a
+field.
+
+**And the fault the fix itself introduced, caught by measuring the output
+rather than reading the code.** The plan's new refusal needed an example of
+a step, and the obvious reading — the first whitelisted command that is not
+`PLAN` — produced:
+
+```
+'steps' must be a list of 1 to 4 steps, for example
+    [{"command": "MODIFY_TRACK", "parameters": {}}]
+```
+
+`MODIFY_TRACK` is a Prototype 001 stub that builds nothing, is named nowhere
+in the prompt the model is sent, and is item 2 under "Human decision needed".
+The refusal would have advertised a command Genesis deliberately withholds,
+in a sentence nobody tests — which is **exactly** the regression TRAPS 21's
+last paragraph warns about, arriving one door up from where it warned about
+it. It was caught by generating the string and reading it, not by reasoning
+about the code that produced it.
+
+**Do:**
+
+- When a rule is about what a refusal must SAY, the subjects are every door
+  a request can be turned away at, and a container is a door. Trap 11 says
+  fix the class; trap 21 says enumerate the entrances; this adds that the
+  entrances are not all at the same depth.
+- **An example in a refusal is a claim about what Genesis accepts, so render
+  it from a value and hand that value back to the validator.** Every example
+  Genesis now shows comes out of the module's own `lists()` declaration, and
+  `container_door_test` builds a request from those same values and fails
+  unless the validator accepts it. An example typed out beside the code is a
+  sentence that can go stale; one rendered from the value cannot.
+- **Before a refusal names a legal value, ask whether the set of legal
+  values is a wall** — trap 21's warning, which bit anyway. The question to
+  ask is not "is this value legal" but "is this value OFFERED": `MODIFY_TRACK`
+  is whitelisted and withheld at the same time. The suite now asserts that
+  every command named in an example appears in
+  `AIInterpreter.assembled_prompt()`, and that a circuit's example type comes
+  from `OFFERED_TYPES` and never `SECTION_TYPES`.
+- **A "this sentence did not appear" assertion passes for free the day the
+  sentence changes.** `plan_said_test` had one, and 034 watched it go green
+  against both the old wording and the new. Every such check needs a
+  positive control in the same loop: make the sentence appear first, from a
+  value that should produce it, and only then assert that it does not appear
+  for a value that should not.
+
+Found and fixed in 034.
+
+---
+
+## 27. The plural written out by hand, at the other end of the noun
+
+**Signature:** `"2 rooms need at least 1 doors to all be reachable"`.
+
+**Cause.** TRAPS 10 and 23 are the same fault at the front of the noun: an
+article put in by hand, found in `the`, fixed, then found again in `a`. The
+rule they produced is that **a fact about a word belongs in one function
+that every rendering reads** — `Readback.is_label()`. Nothing asked the
+same question about the end of the word, and six sentences in the
+validators and the dungeon's own measurements wrote the plural by hand.
+
+The reason it survived every suite is worth stating because it is not about
+plurals: **a person writing a test for a count writes two.** One is the
+boundary nobody reaches for, in the same way that a person writing a test
+for a width writes a width and never `null` (trap 20). Two sentences in the
+same file already did it correctly — `"%d loop%s" % [loops, "" if loops == 1
+else "s"]` — which is how the three counts beside them came to do it wrong:
+the rule was known, written out twice, and read from nowhere.
+
+**Do:**
+
+- `Readback.plural(n, singular)` for the digit form, `Readback.count_of()`
+  for the word form. Both now, so neither is written out again.
+- **Sweep the output, not the sentence.** `container_door_test` collects
+  every string the suite caused to be produced and fails on any `1 <word>s`.
+  A sentence added later is covered without editing the suite, and a
+  sentence reworded does not break it — the opposite of quoting the wording.
+- **Produce the count from a state the game can actually reach.** The first
+  sweep fabricated a one-room dungeon and flagged `"1 of 1 rooms"`.
+  `MIN_ROOMS` is 2, so that is a sentence Genesis cannot produce, and
+  asserting about it would have been guarding an assumption rather than
+  checking a fact (trap 6). The sweep uses two rooms joined by one door,
+  which is the smallest real dungeon and is where every count that can be
+  one is one.
+
+Found and fixed in 034, in the same commit as trap 26, because the sentence
+that said `"at least 1 doors"` was one of the sentences being rewritten.
+
+---
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
 > A fluent sentence is not evidence that anything was understood.
@@ -1009,3 +1135,5 @@ Found and fixed in 033.
 > And a command that leaves no record has not been measured, however good
 > the line it printed.
 > And a count is a claim about what it counted.
+> And a refusal that shows an example is promising that the example works.
+> And a plural written by hand is a count nobody read back at one.

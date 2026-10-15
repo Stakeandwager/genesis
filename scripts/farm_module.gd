@@ -67,6 +67,18 @@ func pieces() -> Array:
 	return ["zones", "zone"]
 
 
+# 034: the one list a farm carries, with what the refusal at its door needs.
+# The bounds are the constants above, so the sentence cannot state a limit
+# the size check does not enforce; the example is a barn because a barn is
+# the zone MIN_ZONES was lowered to 1 for.
+func lists() -> Array:
+	return [{
+		"key": "zones", "one": "zone", "many": "zones",
+		"low": MIN_ZONES, "high": MAX_ZONES, "required": true,
+		"sample": [{"type": "barn", "width": 20, "depth": 20}],
+	}]
+
+
 func prompt_section() -> String:
 	return """CREATE_FARM - design a farm
 {"command": "CREATE_FARM", "parameters": {"intent": {"style": STYLE}, "zones": [ZONE, ZONE, ...]}}
@@ -90,16 +102,16 @@ func validate(parameters: Dictionary) -> Dictionary:
 
 	var raw = parameters.get("zones", null)
 	if typeof(raw) != TYPE_ARRAY:
-		return {"ok": false, "errors": ["zones must be a list"], "content": {}}
+		return {"ok": false, "errors": [Readback.list_error(list_of("zones"))], "content": {}}
 
 	var zones: Array = raw
 	if zones.size() < MIN_ZONES or zones.size() > MAX_ZONES:
-		errors.append("a farm needs %d to %d zones (got %d)" % [MIN_ZONES, MAX_ZONES, zones.size()])
+		errors.append("a farm needs %d to %s (got %d)" % [MIN_ZONES, Readback.plural(MAX_ZONES, "zone"), zones.size()])
 
 	for i in zones.size():
 		var n := i + 1
 		if typeof(zones[i]) != TYPE_DICTIONARY:
-			errors.append("zone %d is not an object" % n)
+			errors.append(Readback.member_error(list_of("zones"), n))
 			continue
 
 		var zone: Dictionary = zones[i]

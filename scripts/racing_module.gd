@@ -43,6 +43,13 @@ func pieces() -> Array:
 	return ["sections", "section"]
 
 
+# 034: the one list a circuit carries, declared where the validator that
+# refuses it lives, so the bounds and the example cannot drift from the
+# checks that enforce them. See SectionValidator.list_entry().
+func lists() -> Array:
+	return [SectionValidator.list_entry()]
+
+
 # Everything the AI needs to compose a closed circuit, and nothing about
 # style: what a style word does to the geometry is what the experiment
 # measures, so it is never described here.

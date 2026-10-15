@@ -60,7 +60,7 @@ func validate(parameters: Dictionary) -> Dictionary:
 	var spec := defaults()
 	var given = parameters.get("spec", {})
 	if typeof(given) != TYPE_DICTIONARY:
-		return {"ok": false, "errors": ["spec must be an object"], "spec": {}}
+		return {"ok": false, "errors": [spec_error()], "spec": {}}
 
 	var asked: Dictionary = given
 	for key in asked:

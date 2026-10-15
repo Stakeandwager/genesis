@@ -201,14 +201,34 @@ func _every_world_in_a_plan() -> void:
 		# The key a world declares must be the key its own validator reads,
 		# or the count is taken off a field nothing builds from. Asserted by
 		# asking the validator: a list under this key is never answered with
-		# "<key> must be a list".
+		# the refusal that door gives.
+		#
+		# 034: that refusal used to be the literal "<key> must be a list" and
+		# is now built by Readback.list_error() from the world's own lists()
+		# entry. Read from there rather than rebuilt here, or this assertion
+		# goes quietly vacuous the next time the sentence changes - which is
+		# exactly what it would have done had 034 not come back to it.
+		var complaint := Readback.list_error(module.list_of(key))
 		var checked: Dictionary = module.validate(many)
-		var complaint := "%s must be a list" % key
 		var complained := false
 		for problem in checked.get("errors", []):
 			if str(problem) == complaint:
 				complained = true
 		_check(not complained, "%s reads its own \"%s\" as a list" % [module.command(), key])
+
+		# The positive control, and it is not decoration. The assertion above
+		# is "this sentence did NOT appear", which passes for free the day the
+		# sentence changes and nobody notices - and 034 caught it doing
+		# exactly that while changing it. So the same sentence is made to
+		# appear first, from a value that is not a list, and both halves have
+		# to hold for either to mean anything.
+		var recognised := false
+		for problem in (module.validate({key: 7}) as Dictionary).get("errors", []):
+			if str(problem) == complaint:
+				recognised = true
+		_check(recognised,
+			"%s refuses a non-list \"%s\" with the sentence the check above looks for" % [
+				module.command(), key])
 
 
 # n pieces of whatever this world is made of, each legal on its own. The

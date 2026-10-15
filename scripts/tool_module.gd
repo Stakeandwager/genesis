@@ -54,6 +54,30 @@ func defaults() -> Dictionary:
 	return {}
 
 
+# --- 034: the spec door, which is the list door in its object flavour ---
+#
+# All three tools refused a spec that was not an object with four words -
+# "spec must be an object" - naming none of the fields a spec may hold,
+# three lines above a refusal for an UNKNOWN field that lists every one of
+# them. One function, two refusals, one of them helpful: TRAPS 11 inside a
+# single file, and the same shape as the six list doors 034 fixed.
+#
+# Both now read defaults(), which is the one place that knows what a tool
+# has, so a field added to a tool appears in both sentences for free.
+# A tool says "a car has" or "boots have" about itself; only the plural
+# needs overriding.
+func has_phrase() -> String:
+	return "%s has" % Readback.article(name())
+
+
+func fields_line() -> String:
+	return "%s %s" % [has_phrase(), ", ".join(defaults().keys())]
+
+
+func spec_error() -> String:
+	return "'spec' must be an object (%s)" % fields_line()
+
+
 # The spec in plain English, for the readback. Built from the spec, never
 # from what the player typed, for the same reason a world's readback is.
 func readback(_spec: Dictionary) -> String:

@@ -621,6 +621,57 @@ const NOTHING_BUILT := "FAILED_NOTHING_BUILT"
 const NO_HANDLER := "FAILED_NO_HANDLER"
 
 
+# --- 034: the plan's own list door ---
+#
+# The sixth of the six, and the one outside the world modules: a plan is a
+# list of steps exactly as a dungeon is a list of rooms, and it was refused
+# the same way - "a plan needs a list of steps", naming no count and showing
+# no step. The bound is MAX_PLAN_STEPS, which was in scope four lines below
+# the sentence that did not name it.
+#
+# Declared as data rather than written into the message so that
+# container_door_test can read it without standing up a scene, and so the
+# example step's command is read from the whitelist that admits it instead
+# of being typed out beside it - a plan whose example named a command the
+# parser rejects would be the fault this commit is about, inverted.
+static func plan_list() -> Dictionary:
+	return {
+		"key": "steps", "one": "step", "many": "steps",
+		"low": 1, "high": MAX_PLAN_STEPS, "required": true,
+		"sample": [plan_example_step()],
+	}
+
+
+# --- a step a plan may legally carry, and why it is not the first one ---
+#
+# MEASURED, and it is the reason this function exists. The obvious reading -
+# the first whitelisted command that is not PLAN - returns MODIFY_TRACK,
+# which is a Prototype 001 stub that builds nothing, appears nowhere in the
+# prompt the model is sent, and is item 2 under "Human decision needed". A
+# refusal offering it as the example of a plan step would have advertised a
+# command the prompt deliberately withholds, in the sentence nobody tests -
+# which is precisely the regression TRAPS 21's last paragraph warns about,
+# arriving one door up. Measured, not reasoned about: the string was
+# generated and read before it was committed.
+#
+# So the example is a WORLD, built from that world's own lists() samples,
+# which makes it a step that would actually build something and ties it to
+# the declarations the rest of 034 reads. container_door_test asserts both:
+# that the command appears in AIInterpreter.assembled_prompt(), and that the
+# step validates.
+static func plan_example_step() -> Dictionary:
+	var modules := WorldRegistry.modules()
+	if modules.is_empty():
+		return {"command": "", "parameters": {}}
+	var module: WorldModule = modules[0]
+	var parameters := {}
+	for entry in module.lists():
+		var list: Dictionary = entry
+		if bool(list.get("required", false)):
+			parameters[str(list["key"])] = list.get("sample", [])
+	return {"command": module.command(), "parameters": parameters}
+
+
 func _execute_plan(parameters: Dictionary) -> void:
 	var record := _new_record("PLAN")
 	record["world"] = "plan"
@@ -628,12 +679,13 @@ func _execute_plan(parameters: Dictionary) -> void:
 
 	var raw = parameters.get("steps", null)
 	if typeof(raw) != TYPE_ARRAY:
-		_finish_failed(record, "FAILED_SCHEMA", ["a plan needs a list of steps"])
+		_finish_failed(record, "FAILED_SCHEMA", [Readback.list_error(plan_list())])
 		return
 
 	var steps: Array = raw
 	if steps.is_empty() or steps.size() > MAX_PLAN_STEPS:
-		_finish_failed(record, "FAILED_SCHEMA", ["a plan needs 1 to %d steps (got %d)" % [MAX_PLAN_STEPS, steps.size()]])
+		_finish_failed(record, "FAILED_SCHEMA", ["a plan needs 1 to %s (got %d)" % [
+			Readback.plural(MAX_PLAN_STEPS, "step"), steps.size()]])
 		return
 
 	# Check every step before doing any of them.
@@ -641,7 +693,7 @@ func _execute_plan(parameters: Dictionary) -> void:
 	for i in steps.size():
 		var n := i + 1
 		if typeof(steps[i]) != TYPE_DICTIONARY:
-			problems.append("step %d is not an object" % n)
+			problems.append(Readback.member_error(plan_list(), n))
 			continue
 		var step: Dictionary = steps[i]
 		var step_command := str(step.get("command", "")).to_upper()
@@ -751,7 +803,7 @@ func _execute_plan(parameters: Dictionary) -> void:
 	TrackLog.append(record)
 
 	var lines := PackedStringArray()
-	lines.append("Plan built in %d steps: %s" % [done.size(), ", ".join(done)])
+	lines.append("Plan built in %s: %s" % [Readback.plural(done.size(), "step"), ", ".join(done)])
 	for note in fitted:
 		var n: Dictionary = note
 		lines.append("%s grown to %.0f by %.0f m so the %s fits inside it" % [

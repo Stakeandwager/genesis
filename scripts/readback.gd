@@ -165,3 +165,104 @@ static func join_capped(parts: PackedStringArray) -> String:
 	for i in MAX_LISTED:
 		shown.append(parts[i])
 	return _join(shown) + " and %d more" % (parts.size() - MAX_LISTED)
+
+
+# --- 034: one reading, applied to a count and the noun after it ---
+#
+# "2 rooms need at least 1 doors to all be reachable (got 0)". The article
+# rule (TRAPS 10, 23) said a fact about a WORD belongs in one function that
+# every rendering reads; this is the same fact about the OTHER end of the
+# noun. Nothing had ever asked what these sentences say when a count is one,
+# because a person writing a test for a count writes two.
+#
+# count_of() above is the WORD form - "a door", "two doors" - which is what
+# a readback wants. This is the DIGIT form, which is what a refusal and a
+# measurement want, because "at least a door" is not a limit anybody can act
+# on. Both read the same plural, so a noun with an irregular one is given
+# once, here, at the call.
+static func plural(count: int, singular: String, many: String = "") -> String:
+	return "%d %s" % [count, singular if count == 1 else (many if many != "" else singular + "s")]
+
+
+# --- 034: a value out of a request, written back as the JSON it came as ---
+#
+# For the one job of showing a player an EXAMPLE of what a request should
+# look like. The example is rendered from the real value the validator
+# accepts, never typed out beside it, so the sentence cannot promise a shape
+# the validator refuses - which is the whole fault 034 is about, one level
+# up: a refusal that names no legal value is useless, and a refusal that
+# names an illegal one is worse.
+#
+# JSON.stringify would do this, except that it prints 12.0 for a width a
+# player would write as 12 and packs the separators, and this string is
+# read by a person mid-refusal. Integral floats print as integers; nothing
+# else about the value is changed.
+static func as_json(value: Variant) -> String:
+	match typeof(value):
+		TYPE_DICTIONARY:
+			var pairs := PackedStringArray()
+			for key in (value as Dictionary):
+				pairs.append("\"%s\": %s" % [str(key), as_json((value as Dictionary)[key])])
+			return "{" + ", ".join(pairs) + "}"
+		TYPE_ARRAY:
+			var items := PackedStringArray()
+			for item in (value as Array):
+				items.append(as_json(item))
+			return "[" + ", ".join(items) + "]"
+		TYPE_NIL:
+			return "null"
+		TYPE_BOOL:
+			return "true" if bool(value) else "false"
+		TYPE_INT:
+			return str(int(value))
+		TYPE_FLOAT:
+			var number := float(value)
+			if is_finite(number) and is_equal_approx(number, roundf(number)):
+				return str(int(roundf(number)))
+			return str(number)
+	return "\"%s\"" % str(value)
+
+
+# --- 034: the sentence every list door is refused with ---
+#
+# TRAPS 21 one level up. 030 made every FIELD refusal name its limits through
+# all three doors - out of range, not a number, missing. The LISTS those
+# fields live in were never asked, and all six answered with four words:
+# "rooms must be a list", "doors must be a list", "zones must be a list",
+# "sections must be a list", "things must be a list", "a plan needs a list of
+# steps". None names how many members are allowed, none shows what a member
+# is, and `doors` is required with no default - so a dungeon described with
+# no doors at all was refused with four words that name nothing to fix.
+#
+# Written here rather than in each validator for the reason _range_error()
+# and around_of() are: six copies of a sentence diverge, and the one that
+# diverges is the one nobody is reading. The bounds and the example come from
+# the module's own lists() declaration, so a list whose limits change takes
+# its refusal with it, and tests/container_door_test.gd builds a request out
+# of those same examples and fails if the validator will not accept it.
+static func list_error(entry: Dictionary) -> String:
+	var key := str(entry.get("key", ""))
+	var one := str(entry.get("one", key))
+	var many := str(entry.get("many", ""))
+	var low := int(entry.get("low", 0))
+	var high := int(entry.get("high", 0))
+	var sample: Array = entry.get("sample", [])
+	var how_many := ("of up to %s" % plural(high, one, many)) if low <= 0 else ("of %d to %s" % [low, plural(high, one, many)])
+	var shown := "" if sample.is_empty() else ", for example %s" % as_json([sample[0]])
+	return "'%s' must be a list %s%s" % [key, how_many, shown]
+
+
+# A member of one of those lists, refused on its own. The same example, from
+# the same declaration, because "room 2 must be an object" and "'rooms' must
+# be a list" are the same player not knowing the same thing. DungeonModule
+# showed the shape for a thing and not for a room, in one function, which is
+# TRAPS 11 inside a single file.
+static func member_error(entry: Dictionary, n: int) -> String:
+	var one := str(entry.get("one", "item"))
+	var sample: Array = entry.get("sample", [])
+	if sample.is_empty():
+		return "%s %d is not what this list holds" % [one, n]
+	var shape := str(entry.get("member", ""))
+	if shape == "":
+		shape = "a pair" if typeof(sample[0]) == TYPE_ARRAY else "an object"
+	return "%s %d must be %s, for example %s" % [one, n, shape, as_json(sample[0])]

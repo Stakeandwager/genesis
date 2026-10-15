@@ -68,7 +68,11 @@ static func validate(parameters: Dictionary, rooms: Array, things: Array = []) -
 	elif typeof(asked) == TYPE_INT or typeof(asked) == TYPE_FLOAT:
 		var number := int(asked)
 		if number < 1 or number > rooms.size():
-			errors.append("this dungeon has %d rooms, so there is no room %d" % [rooms.size(), number])
+			# 034: "this dungeon has 1 rooms". The same hand-written plural
+			# as DungeonModule's door count, in the file TRAPS 10 and 23
+			# both came out of.
+			errors.append("this dungeon has %s, so there is no room %d" % [
+				Readback.plural(rooms.size(), "room"), number])
 		else:
 			room = number - 1
 	else:

@@ -91,6 +91,11 @@ colour and nickname change nothing about how the player moves.""" % [
 		TOP_SPEED[0], TOP_SPEED[1]]
 
 
+# The only tool whose name is plural, so the only one that overrides this.
+func has_phrase() -> String:
+	return "boots have"
+
+
 func defaults() -> Dictionary:
 	return {
 		"push": DEFAULT_PUSH,
@@ -158,7 +163,7 @@ func validate(parameters: Dictionary) -> Dictionary:
 	var spec := defaults()
 	var given = parameters.get("spec", {})
 	if typeof(given) != TYPE_DICTIONARY:
-		return {"ok": false, "errors": ["spec must be an object"], "spec": {}}
+		return {"ok": false, "errors": [spec_error()], "spec": {}}
 
 	var asked: Dictionary = given
 	for key in asked:

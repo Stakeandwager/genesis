@@ -78,6 +78,37 @@ const LOOP_RADIUS := Vector2(10.0, 100.0)
 const LOOP_ANGLE := Vector2(90.0, 360.0)
 
 
+# --- 034: the list door, and why its example is read and not typed ---
+#
+# Every list in Genesis was refused with four words that name no legal value
+# - "sections must be a list" - next to field refusals that say "and it must
+# be 20 to 1000 m". TRAPS 21 one level up; see Readback.list_error().
+#
+# The example type is read from OFFERED_TYPES rather than written out, and
+# that is not tidiness. SECTION_TYPES holds ten types and the player is
+# offered four, deliberately, because the other six build and do not behave
+# (TRAPS 19, "Human decision needed" 1 in HANDOVER). The refusal that names
+# a legal value is exactly the sentence a withheld type would leak out of -
+# which is the regression TRAPS 21's last paragraph warns about, arriving at
+# the door above the one it warned about. So the example comes off the
+# OFFERED list, its field comes off FIELDS, and tests/container_door_test.gd
+# fails if the type shown is one the player is not offered.
+static func list_entry() -> Dictionary:
+	var offered := str(OFFERED_TYPES[0])
+	var first_field := str((FIELDS[offered] as Array)[0])
+	return {
+		"key": "sections", "one": "section", "many": "sections",
+		"low": MIN_SECTIONS, "high": MAX_SECTIONS, "required": true,
+		"sample": [_example(offered, first_field, 200), _example(offered, first_field, 300)],
+	}
+
+
+static func _example(type_name: String, field: String, value: int) -> Dictionary:
+	var member := {"type": type_name}
+	member[field] = value
+	return member
+
+
 static func validate(parameters: Dictionary) -> Dictionary:
 	var errors: Array[String] = []
 	var clean: Array = []
@@ -100,18 +131,18 @@ static func validate(parameters: Dictionary) -> Dictionary:
 
 	var raw = parameters.get("sections", null)
 	if typeof(raw) != TYPE_ARRAY:
-		errors.append("sections must be a list")
+		errors.append(Readback.list_error(list_entry()))
 		return _result(errors, clean, counts, net_turn, direction_change)
 
 	var sections: Array = raw
 	if sections.size() < MIN_SECTIONS or sections.size() > MAX_SECTIONS:
-		errors.append("a track needs %d to %d sections (got %d)" % [MIN_SECTIONS, MAX_SECTIONS, sections.size()])
+		errors.append("a track needs %d to %s (got %d)" % [MIN_SECTIONS, Readback.plural(MAX_SECTIONS, "section"), sections.size()])
 
 	for i in sections.size():
 		var n := i + 1
 		var s = sections[i]
 		if typeof(s) != TYPE_DICTIONARY:
-			errors.append("section %d is not an object" % n)
+			errors.append(Readback.member_error(list_entry(), n))
 			continue
 		var section: Dictionary = s
 		var t := str(section.get("type", ""))

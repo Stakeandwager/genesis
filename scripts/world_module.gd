@@ -214,6 +214,44 @@ func pieces() -> Array:
 	return []
 
 
+# --- 034: every top-level list a request for this world may carry ---
+#
+# pieces() above names the ONE list a world is built from. This names all of
+# them, with the four facts a refusal at the list door needs and never had:
+# the key, the word for one member, how many are allowed, and a member that
+# is actually legal.
+#
+# It exists because all six list doors in Genesis refused with four words -
+# "rooms must be a list" - naming no count, no shape and no example, next to
+# field refusals that say "and it must be 5 to 60 m". That is TRAPS 21 one
+# level up, and the limits were in scope on the line that wrote the sentence.
+#
+# Each entry:
+#   key       the key the validator reads
+#   one/many  the word for one member, and for several if it is irregular
+#   low/high  how many members are allowed; low 0 means the list may be empty
+#   required  whether a request with no such key at all is refused
+#   sample    a complete, legal list. Its first member is the example the
+#             refusal shows, rendered from the value itself rather than
+#             typed out beside it, so the sentence cannot offer a shape the
+#             validator would reject.
+#
+# tests/container_door_test.gd enumerates this through WorldRegistry and
+# builds a request out of every sample, so a bound that moves, an example
+# that goes stale, or a list a world forgets to declare all fail the suite.
+# A world that is not a list of pieces returns [].
+func lists() -> Array:
+	return []
+
+
+# The entry for one key, or {} if this world has no such list.
+func list_of(key: String) -> Dictionary:
+	for entry in lists():
+		if str((entry as Dictionary).get("key", "")) == key:
+			return entry
+	return {}
+
+
 # The same world in a few words, for a plan. A plan's meaning is mostly how
 # its worlds are related, and a line long enough to bury the relationship at
 # the end is a line nobody reads to the end of.

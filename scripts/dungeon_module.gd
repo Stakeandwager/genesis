@@ -79,6 +79,44 @@ func pieces() -> Array:
 	return ["rooms", "room"]
 
 
+# 034: the three lists a dungeon carries. Bounds from the constants above,
+# so a refusal cannot name a limit the size checks do not enforce.
+#
+# `doors` is the sharp one and its declaration says so: required, with no
+# default, so "a dungeon with a hall and a vault" described without doors is
+# refused - and until 034 it was refused with the four words "doors must be
+# a list", naming nothing a player could act on. Whether it SHOULD be
+# required is a question about what Genesis accepts rather than about what
+# it says, and 034 deliberately left it alone; see HANDOVER.
+#
+# The rooms sample has two members because MIN_ROOMS is 2, and they are
+# named differently because two rooms with one name is itself a refusal.
+# The doors sample joins them, so the three samples together make a dungeon
+# that actually validates - which is what container_door_test asserts.
+func lists() -> Array:
+	return [
+		{
+			"key": "rooms", "one": "room", "many": "rooms",
+			"low": MIN_ROOMS, "high": MAX_ROOMS, "required": true,
+			"sample": [
+				{"name": "hall", "width": 12, "depth": 12},
+				{"name": "vault", "width": 10, "depth": 10},
+			],
+		},
+		{
+			"key": "doors", "one": "door", "many": "doors",
+			"low": 0, "high": MAX_DOORS, "required": true,
+			"member": "a pair of room numbers",
+			"sample": [[1, 2]],
+		},
+		{
+			"key": "things", "one": "thing", "many": "things",
+			"low": 0, "high": MAX_THINGS, "required": false,
+			"sample": [{"name": "lamp", "in": 1}],
+		},
+	]
+
+
 func prompt_section() -> String:
 	return """CREATE_DUNGEON - design a dungeon of rooms joined by doors
 {"command": "CREATE_DUNGEON", "parameters": {"intent": {"style": STYLE}, "rooms": [ROOM, ROOM, ...], "doors": [[A, B], ...], "things": [THING, ...]}}
@@ -118,24 +156,24 @@ func validate(parameters: Dictionary) -> Dictionary:
 
 	var raw_rooms = parameters.get("rooms", null)
 	if typeof(raw_rooms) != TYPE_ARRAY:
-		return {"ok": false, "errors": ["rooms must be a list"], "content": {}}
+		return {"ok": false, "errors": [Readback.list_error(list_of("rooms"))], "content": {}}
 	var raw_doors = parameters.get("doors", null)
 	if typeof(raw_doors) != TYPE_ARRAY:
-		return {"ok": false, "errors": ["doors must be a list"], "content": {}}
+		return {"ok": false, "errors": [Readback.list_error(list_of("doors"))], "content": {}}
 
 	var rooms: Array = raw_rooms
 	var doors: Array = raw_doors
 	if rooms.size() < MIN_ROOMS or rooms.size() > MAX_ROOMS:
-		errors.append("a dungeon needs %d to %d rooms (got %d)" % [MIN_ROOMS, MAX_ROOMS, rooms.size()])
+		errors.append("a dungeon needs %d to %s (got %d)" % [MIN_ROOMS, Readback.plural(MAX_ROOMS, "room"), rooms.size()])
 	if doors.size() > MAX_DOORS:
-		errors.append("at most %d doors (got %d)" % [MAX_DOORS, doors.size()])
+		errors.append("at most %s (got %d)" % [Readback.plural(MAX_DOORS, "door"), doors.size()])
 
 	var clean_rooms: Array = []
 	var names := {}
 	for i in rooms.size():
 		var n := i + 1
 		if typeof(rooms[i]) != TYPE_DICTIONARY:
-			errors.append("room %d must be an object" % n)
+			errors.append(Readback.member_error(list_of("rooms"), n))
 			continue
 		var room: Dictionary = rooms[i]
 		var label := str(room.get("name", "")).strip_edges().to_lower()
@@ -154,7 +192,7 @@ func validate(parameters: Dictionary) -> Dictionary:
 		var n := i + 1
 		var pair = doors[i]
 		if typeof(pair) != TYPE_ARRAY or (pair as Array).size() != 2:
-			errors.append("door %d must be a pair of room numbers, for example [1, 2]" % n)
+			errors.append(Readback.member_error(list_of("doors"), n))
 			continue
 		# Read through the same door as every other number out of a request.
 		# An object or a null in a door pair used to throw here, and the throw
@@ -163,7 +201,7 @@ func validate(parameters: Dictionary) -> Dictionary:
 		var raw_a := Readback.as_number((pair as Array)[0])
 		var raw_b := Readback.as_number((pair as Array)[1])
 		if is_nan(raw_a) or is_nan(raw_b):
-			errors.append("door %d must be a pair of room numbers, for example [1, 2]" % n)
+			errors.append(Readback.member_error(list_of("doors"), n))
 			continue
 		var a := int(raw_a)
 		var b := int(raw_b)
@@ -187,16 +225,16 @@ func validate(parameters: Dictionary) -> Dictionary:
 	var clean_things: Array = []
 	var raw_things = parameters.get("things", [])
 	if typeof(raw_things) != TYPE_ARRAY:
-		errors.append("things must be a list")
+		errors.append(Readback.list_error(list_of("things")))
 		raw_things = []
 	var things: Array = raw_things
 	if things.size() > MAX_THINGS:
-		errors.append("at most %d things in a dungeon (got %d)" % [MAX_THINGS, things.size()])
+		errors.append("at most %s in a dungeon (got %d)" % [Readback.plural(MAX_THINGS, "thing"), things.size()])
 	var thing_names := {}
 	for i in things.size():
 		var n := i + 1
 		if typeof(things[i]) != TYPE_DICTIONARY:
-			errors.append("thing %d must be an object, for example {\"name\": \"lamp\", \"in\": 1}" % n)
+			errors.append(Readback.member_error(list_of("things"), n))
 			continue
 		var thing: Dictionary = things[i]
 		var label := str(thing.get("name", "")).strip_edges().to_lower().replace(" ", "_")
@@ -224,8 +262,13 @@ func validate(parameters: Dictionary) -> Dictionary:
 		clean_things.append({"name": label, "in": where})
 
 	if errors.is_empty() and clean_doors.size() < clean_rooms.size() - 1:
-		errors.append("%d rooms need at least %d doors to all be reachable (got %d)" % [
-			clean_rooms.size(), clean_rooms.size() - 1, clean_doors.size()])
+		# 034: "2 rooms need at least 1 doors" until this line read the
+		# plural off the count instead of writing it by hand. TRAPS 10 and
+		# 23's family, in a refusal rather than in a readback.
+		errors.append("%s need at least %s to all be reachable (got %d)" % [
+			Readback.plural(clean_rooms.size(), "room"),
+			Readback.plural(clean_rooms.size() - 1, "door"),
+			clean_doors.size()])
 
 	if not errors.is_empty():
 		return {"ok": false, "errors": errors, "content": {}}
@@ -462,16 +505,17 @@ func correction_feedback(result: Dictionary) -> String:
 	var lines := PackedStringArray()
 	lines.append("Godot tried to place your dungeon and could not fit every room.")
 	lines.append("")
-	lines.append("It placed %d of %d rooms. Each room goes in a square slot %.0f m across, next to the room it has a door from, and it may be moved up to %d slots away to find space." % [
-		int(placement["placed"]), int(placement["room_count"]), float(placement["pitch"]), MAX_RING])
+	lines.append("It placed %d of %s. Each room goes in a square slot %.0f m across, next to the room it has a door from, and it may be moved up to %s away to find space." % [
+		int(placement["placed"]), Readback.plural(int(placement["room_count"]), "room"),
+		float(placement["pitch"]), Readback.plural(MAX_RING, "slot")])
 	var failed: Array = placement["failed"]
 	var names := PackedStringArray()
 	for i in failed:
 		names.append("%s (room %d)" % [str(rooms[int(i)]["name"]), int(i) + 1])
 	lines.append("There was no slot left for %s." % ", ".join(names))
 	lines.append("")
-	lines.append("Your busiest room is %s (room %d), with %d doors. A room with many doors crowds every room around it." % [
-		str(rooms[busiest]["name"]), busiest + 1, int(door_count[busiest])])
+	lines.append("Your busiest room is %s (room %d), with %s. A room with many doors crowds every room around it." % [
+		str(rooms[busiest]["name"]), busiest + 1, Readback.plural(int(door_count[busiest]), "door")])
 	lines.append("The slot size comes from your largest room, %.0f m, so one big room makes every slot big." % (float(placement["pitch"]) - GAP))
 	lines.append("")
 	lines.append("Revise the design so it fits: spread the doors out so no one room carries most of them, or use fewer rooms. Keep everything else about your dungeon that you can. Return ONLY the complete JSON command, in the same format as before.")
@@ -1444,23 +1488,29 @@ func metric_lines(metrics: Dictionary, record: Dictionary) -> Array:
 			float(metrics["corridor_length"]), float(metrics["corridor_area"])]],
 		["LARGEST ROOM", "%s   %.0f m2" % [
 			str(metrics["largest_room"]), float(metrics["largest_room_area"])]],
-		["DEEPEST", "%s   %d doors from the entrance" % [
-			str(metrics["deepest_room"]), int(metrics["deepest"])]],
+		["DEEPEST", "%s   %s from the entrance" % [
+			str(metrics["deepest_room"]), Readback.plural(int(metrics["deepest"]), "door")]],
 		["DEAD ENDS", "%d" % int(metrics["dead_ends"])],
-		["WALKABLE", "%d of %d rooms reachable by a body %.1f m across" % [
-			int(metrics["walk_reached"]), int(metrics["room_count"]), BODY]],
-		["WAYS ROUND", "none, every room is on one path" if loops <= 0 else "%d loop%s" % [loops, "" if loops == 1 else "s"]],
+		["WALKABLE", "%d of %s reachable by a body %.1f m across" % [
+			int(metrics["walk_reached"]), Readback.plural(int(metrics["room_count"]), "room"), BODY]],
+		["WAYS ROUND", "none, every room is on one path" if loops <= 0 else Readback.plural(loops, "loop")],
 	]
 	if record.has("placement"):
 		var p: Dictionary = record["placement"]
-		lines.append(["PLACED", "%d of %d rooms, furthest %d slots from its neighbour" % [
-			int(p["placed"]), int(p["room_count"]), int(p["furthest_ring"])]])
+		lines.append(["PLACED", "%d of %s, furthest %s from its neighbour" % [
+			int(p["placed"]), Readback.plural(int(p["room_count"]), "room"),
+			Readback.plural(int(p["furthest_ring"]), "slot")]])
 	return lines
 
 
 func summary(metrics: Dictionary, _report: Dictionary) -> String:
 	var loops := int(metrics["loops"])
-	var ways := "one way round" if loops <= 0 else "%d way%s back round" % [loops, "" if loops == 1 else "s"]
-	return "CREATE_DUNGEON built %d rooms joined by %d doors, %s\n%.0f m of corridor, deepest room %d doors in\n(full measurements in the metrics panel)" % [
-		int(metrics["room_count"]), int(metrics["door_count"]), ways,
-		float(metrics["corridor_length"]), int(metrics["deepest"])]
+	# 034: "%d way%s" and "%d loop%s" above were the plural rule written out
+	# by hand, correctly, in two places - which is how the three counts
+	# beside them came to be written out by hand incorrectly. One reading.
+	var ways := "one way round" if loops <= 0 else "%s back round" % Readback.plural(loops, "way")
+	return "CREATE_DUNGEON built %s joined by %s, %s\n%.0f m of corridor, deepest room %s in\n(full measurements in the metrics panel)" % [
+		Readback.plural(int(metrics["room_count"]), "room"),
+		Readback.plural(int(metrics["door_count"]), "door"), ways,
+		float(metrics["corridor_length"]),
+		Readback.plural(int(metrics["deepest"]), "door")]
