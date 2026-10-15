@@ -49,7 +49,17 @@ const TEMPERATURE := 1.0
 # farm's zone bound, the circuit's section count and seven stated limits that
 # now read from their constants, so designs from here are not comparable with
 # 028-034 either - and now they say so.
-const PROMPT_VERSION := "035-bounds-from-the-code-1"
+#
+# 038-the-field-that-does-it-1 is the second one a suite insisted on, and the
+# first moved for a sentence that was FALSE rather than narrow. The boots
+# section told the model that "boots that stop on a sixpence" wants `footing`
+# raised; `footing` costs more than half the walking pace and stops longer
+# from the same speed than `brake` does. `brake`, the field that actually
+# does it, was missing from the skeleton the model copies. An EQUIP boots
+# proposal made under 035-037 was made by a model that had been told the
+# wrong field and could not send the right one, so boots designs from here
+# are not comparable with those - which is what this string is for.
+const PROMPT_VERSION := "038-the-field-that-does-it-1"
 
 # --- 035: the version cannot be left behind again ---
 #
@@ -71,7 +81,7 @@ const PROMPT_VERSION := "035-bounds-from-the-code-1"
 # if they disagree, and says to move PROMPT_VERSION as well as this string.
 # It is a fingerprint, not an assertion about wording: it says only that the
 # prompt the model receives is the one this version names.
-const PROMPT_FINGERPRINT := "8b64f8ea42b4c6f711afc8aaba9cb98d9ebb22aa0f0146d6e1d8625306ff3505"
+const PROMPT_FINGERPRINT := "2cac9c0b61abb2a09ec3e06477c1094954f8637f24a677b1f4063f36f68c082a"
 # Which wording of the closure feedback a revised track was given.
 # feedback-2 adds Godot's test of whether ANY straight lengths could close the layout.
 const REVISION_VERSION := "002C-closure-feedback-2"

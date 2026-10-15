@@ -69,24 +69,58 @@ func name() -> String:
 	return "boots"
 
 
+# --- 038: the field the prompt names is the field that does it ---
+#
+# Two faults, and the second is why the first survived.
+#
+# `brake` was ABSENT from the skeleton below while being described in the
+# bullets below it, so a model copying the skeleton - which is what a
+# skeleton is for - could not send the field the bullet told it to raise. It
+# was the only field in any of the three tools that defaults() declared and
+# a skeleton omitted, measured across ToolRegistry rather than read here.
+#
+# And the last line used to say: someone who wants "boots that stop on a
+# sixpence" wants FOOTING raised and nothing else. That was written in 010,
+# when it was true, because footing was then the only field that shortened a
+# stop. 013 added `brake` and MEASURED that brake does the same job for
+# nothing - behaviour_test's claim 5 has asserted exactly that, green, ever
+# since - and the sentence was never read again. So for 33 commits this
+# project held a measurement and a prompt that disagreed, and nothing
+# compared them, because a capability is asserted in the suite and a claim
+# is made in the prompt and the two had no door between them.
+#
+# THE NUMBERS BELOW ARE RENDERED FROM THE FUNCTIONS THAT ENFORCE THEM.
+# TRAPS 28's rule - a bound stated to the model is a claim about Genesis and
+# is read from the code, not remembered - applied to a CONSEQUENCE. Nothing
+# in this sentence can drift from top_speed() and stopping_distance(),
+# because nothing in it is typed.
 func prompt_section() -> String:
+	var ordinary := defaults()
+	var walk := top_speed(ordinary)
+	var sharp := ordinary.duplicate()
+	sharp["brake"] = BRAKE[1]
+	var grippy := ordinary.duplicate()
+	grippy["footing"] = FOOTING[1]
 	return """EQUIP boots - what the player walks a dungeon in
-{"command": "EQUIP", "parameters": {"tool": "boots", "intent": {"style": STYLE}, "spec": {"push": P, "weight": W, "footing": F, "turning": T, "colour": COLOUR, "nickname": NAME}}}
+{"command": "EQUIP", "parameters": {"tool": "boots", "intent": {"style": STYLE}, "spec": {"push": P, "weight": W, "footing": F, "turning": T, "brake": BK, "colour": COLOUR, "nickname": NAME}}}
 
 push: %.0f to %.0f newtons, how hard the legs push off (ordinary is %.0f)
 weight: %.0f to %.0f kg, how heavy the body is (ordinary is %.0f)
-footing: %.2f to %.2f, how quickly speed bleeds away - high stops sharply, low slides on (ordinary is %.2f)
+footing: %.2f to %.2f, how quickly speed bleeds away - high stops sharply, low slides on (ordinary is %.2f). It costs top speed as well: at %.2f an ordinary body walks at %.2f m/s rather than %.2f, so raise it only when the player asked to move more deliberately.
 turning: %.0f to %.0f, how quickly the body turns (ordinary is %.0f)
-brake: %.0f to %.0f newtons, how hard the legs can stop you (ordinary is %.0f). This does NOT change top speed: someone who wants to "stop on a sixpence" wants brake raised and nothing else.
+brake: %.0f to %.0f newtons, how hard the legs can stop you (ordinary is %.0f). This does NOT change top speed, and it is also the shorter stop of the two: from %.2f m/s, brake at %.0f stops in %.2f m where footing at %.2f stops in %.2f m. Someone who wants to "stop on a sixpence" wants brake raised and nothing else.
 colour: one of %s. nickname: a few words the player chose.
 Top speed is push divided by weight times footing, and must come to %.0f to %.0f metres a second. A spec where every field is legal but the three together are faster or slower than that is refused.
-Every field may be left out and keeps its ordinary value. Change only what the player asked about: someone who wants "boots that stop on a sixpence" wants footing raised and nothing else.
+Every field may be left out and keeps its ordinary value. Change only what the player asked about: someone who wants "boots that turn on the spot" wants turning raised and nothing else.
 colour and nickname change nothing about how the player moves.""" % [
 		PUSH[0], PUSH[1], DEFAULT_PUSH,
 		WEIGHT[0], WEIGHT[1], DEFAULT_WEIGHT,
 		FOOTING[0], FOOTING[1], DEFAULT_FOOTING,
+		FOOTING[1], top_speed(grippy), walk,
 		TURNING[0], TURNING[1], DEFAULT_TURNING,
 		BRAKE[0], BRAKE[1], DEFAULT_BRAKE,
+		walk, BRAKE[1], stopping_distance(sharp, walk),
+		FOOTING[1], stopping_distance(grippy, walk),
 		", ".join(COLOURS.keys()),
 		TOP_SPEED[0], TOP_SPEED[1]]
 
@@ -230,11 +264,20 @@ func _tidy(value: float) -> String:
 # differs from ordinary is mentioned.
 #
 # --- 011: the readback says what it costs ---
-# "give me boots that stop on a sixpence" became footing 1.2, which is right,
-# and the readback said "stop sharply", which was true and incomplete: raising
-# footing also drops the walk from 4.5 m/s to 2.5, because top speed is
-# push / (weight * footing) and footing does both jobs. The player asked for
-# one thing and got two, and was told about one.
+# "give me boots that stop on a sixpence" became footing 1.2, which was right
+# AT THE TIME and has been wrong since 013 - see the note on prompt_section()
+# above. 013 added `brake`, which shortens a stop for nothing; from the same
+# 4.48 m/s, brake at its maximum stops in 0.59 m where footing at its maximum
+# takes 1.09 m and costs more than half the walking pace. So footing is both
+# the dearer answer to that sentence and the worse one, and this comment said
+# it was right for 33 commits while behaviour_test's claim 5 measured the
+# opposite. A comment that records what was true once says WHEN (TRAPS 22).
+#
+# What 011 found is still exactly right about the readback: it said "stop
+# sharply", which was true and incomplete: raising footing also drops the
+# walk from 4.5 m/s to 2.5, because top speed is push / (weight * footing)
+# and footing does both jobs. The player asked for one thing and got two, and
+# was told about one.
 #
 # A readback that describes half of what Genesis is about to do is worse than
 # none: it teaches a player to trust a line that is not the whole truth. So

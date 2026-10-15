@@ -13,7 +13,34 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **037**, the question this file named
+- Last commit at the time of writing: **038**, the task this file named as
+  the next assistant task — *the boots prompt tells the model two different
+  things about the same player sentence* — asked of the class rather than of
+  those two sentences. The prompt makes **three** claims of the shape
+  *"someone who wants X wants FIELD changed and nothing else"*, one per tool
+  with fields worth choosing between, and it is a kind of claim nothing in
+  Genesis had ever checked: not a bound (035 holds those), not a refusal
+  (030), not a capability (028), not a limitation (027), but an instruction
+  that a named field is the one that DOES a named thing. One of the three was
+  **false**, and the sharp part is why it survived: the sentence was written
+  in 010 when `footing` was the only field that shortened a stop, 013 added
+  `brake` and **measured that brake does the same job for nothing** —
+  `behaviour_test`'s claim 5 has asserted exactly that, green, ever since —
+  and the sentence was never read again. **For 33 commits this repository
+  held a measurement and a prompt sentence that contradicted each other**,
+  because a capability is asserted in the suite and a claim is made in the
+  prompt and there was no door between them. Measured from ONE speed, which
+  037's own reading did not do: from 4.48 m/s, `brake` at 1200 stops in
+  0.59 m and `footing` at 1.50 stops in 1.09 m while costing more than half
+  the walking pace — so the field the prompt named is both the dearer answer
+  and the worse one. Beside it, `brake` was **absent from the boots JSON
+  skeleton** the model copies, the only field in Genesis that `defaults()`
+  declared and a skeleton omitted. 44 suites passed before and 45 after,
+  `--all` included; the new suite fails **9 times** against the pre-038 code.
+  The prompt moved, so `PROMPT_VERSION` is now
+  `038-the-field-that-does-it-1` and **boots designs are not comparable
+  across it**. See 038 below and TRAPS 32.
+- The commit before it: **037**, the question that file named
   as the next assistant task — *036's `offset` finding asked of every field
   rather than of the one it was found at*. Asked field by field the answer is
   **yes, all 44 of them**, and that answer is worthless: every field name the
@@ -183,24 +210,29 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-46 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **44 suites**, and since 024 every one of them runs —
-nothing is skipped as broken. `--all` adds the two slow racing suites.
+47 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **45 suites**, counted with `ls tests/*.gd` rather than
+remembered, and since 024 every one of them runs — nothing is skipped as
+broken. `--all` adds the two slow racing suites.
 
-Last full run (037, Godot 4.7.1 on Linux, headless, in a cloud container):
-**suites with something to look at: 0**, both without `--all` and with it,
-`drive_test` and `session_test` included. 037's new suite is
-`intent_door_test` (39 failures against the pre-037 code); 036's is
+Last full run (038, Godot 4.7.1 on Linux — `4.7.1.stable.official.a13da4feb`
+— headless, in a cloud container): **suites with something to look at: 0**,
+both without `--all` and with it, `drive_test` and `session_test` included.
+038's new suite is `claim_field_test` (9 failures against the pre-038 code);
+037's is `intent_door_test` (39 failures against the pre-037 code); 036's is
 `command_schema_test` (28 failures against the pre-036 code); 035's is
 `prompt_bounds_test` (4 failures against the pre-035 prompt); 034's is
 `container_door_test` (30 failures against the pre-034 sentences). Not run on
 the owner's Windows machine. `run_tests.bat` needed no edit for any of the
-four: no name matches any of its `findstr` patterns — `prompt_bounds_test`
-does not contain the literal `prompt_test`, and `intent_door_test` contains
-none of the physics names — so all four run there without `--fixed-fps`,
-which is what they get here too, and `command_schema_test` and
-`intent_door_test` were each run both with it and without and pass either
-way — checked rather than assumed (TRAPS 4).
+five: no name matches any of its `findstr` patterns — `prompt_bounds_test`
+does not contain the literal `prompt_test`, `intent_door_test` contains none
+of the physics names, and `claim_field_test` matches nothing at all — so all
+five run there without `--fixed-fps`, which is what they get here too, and
+`command_schema_test`, `intent_door_test` and `claim_field_test` were each
+run both with it and without and pass either way — checked rather than
+assumed (TRAPS 4). `physics_test` gained 038's car measurement and is already
+on both the Linux `TIMED` list and the `.bat`'s `physics` pattern, so it
+keeps `--fixed-fps` on both.
 
 **Run `--all` before believing a green suite.** 033 introduced a fault that
 the 38 fast suites all passed and `session_test` caught — see TRAPS 25's last
@@ -2351,6 +2383,206 @@ lives in one place and the examples are the callers' to choose.
 
 TRAPS 31 records the fault and the rule.
 
+## 038 — the field the prompt names is the field that does it
+
+**Objective.** The task this file named as the next assistant task: *the
+boots prompt tells the model two different things about the same player
+sentence*, asked of the class rather than of those two sentences, since
+*"every 'someone who wants X wants FIELD changed' sentence in the prompt
+names a field, and whether that field is the one that does X is a
+measurement"*.
+
+**Starting state.** Branch `prototype-002a`, commit 037. 44 suites, 0 with
+something to look at, `--all` included — measured before anything was
+changed, not remembered.
+
+### The class, enumerated rather than listed
+
+The assembled prompt makes **three** claims of this shape, found by reading
+it with a regular expression rather than by hand:
+
+```
+"a car that stops better"            -> braking  changed      car
+"stop on a sixpence"                 -> brake    raised       boots
+"boots that stop on a sixpence"      -> footing  raised       boots   FALSE
+```
+
+One per tool with fields worth choosing between; `look` has none, which is
+right, because nothing it carries changes what the player can do.
+
+**This is a kind of claim nothing in Genesis had ever checked.** 027 and 028
+read every limitation and capability against the code, 030 made every refusal
+name its limits, 035 made every bound read from its constant, 037 asked
+whether every field the prompt offers is read where it is sent. A sentence
+saying *which field does the thing* is none of those: it is the only claim in
+the prompt that tells the model what to **do** rather than what is allowed.
+
+### Why the false one survived, which is the finding
+
+The `footing` sentence was written in **010**, and it was **true then**:
+`footing` was the only field that shortened a stop. **013** added `brake`,
+measured it, and wrote `behaviour_test`'s claim 5 — *"stopping sharply no
+longer costs top speed"* — which asserts in so many words that `brake` does
+that job and `footing` charges for it. The sentence was never read again.
+
+So for **33 commits** this repository held a green measurement and a prompt
+sentence that contradicted each other, and nothing caught it, **because a
+capability is asserted in the suite and a claim is made in the prompt and
+there was no door between them**. 035 built that door for bounds — prompt ⇔
+declaration ⇔ validator. This is the same door one category along.
+
+### Measured from one speed, which is the part 037 got wrong
+
+With `BootsTool.top_speed()` and `BootsTool.stopping_distance()`, every stop
+from the **same** 4.48 m/s:
+
+```
+ordinary                 top 4.48 m/s   stops in 1.45 m
+brake raised to 1200     top 4.48 m/s   stops in 0.59 m
+footing raised to 1.50   top 2.00 m/s   stops in 1.09 m
+```
+
+The field the prompt named is **both the dearer answer and the worse one**:
+it costs more than half the walking pace and still stops nearly twice as far.
+037's table read each spec's stop *from its own top speed* — 0.29 m for
+footing against 0.59 m for brake — which makes footing look sharper and is
+not a comparison, because footing lowers the speed it is then measured from.
+**A stop is only comparable with another stop from the same speed.**
+
+### And the field the model could not send
+
+Swept across `ToolRegistry.tools()` rather than read at boots: `brake` was
+the **only** field in Genesis that `defaults()` declared and a prompt
+skeleton omitted. It was described in the bullets and absent from the JSON
+the model copies, so a model doing what the skeleton told it could not send
+the field the bullet told it to raise. Asked of the worlds too: every
+declared list is in its own skeleton, so the class has exactly one member.
+
+### What changed
+
+- **The skeleton carries `brake`.** One field, and the sweep above is why it
+  is one and not six.
+- **The `footing` bullet names what it costs**: *"It costs top speed as well:
+  at 1.50 an ordinary body walks at 2.00 m/s rather than 4.48, so raise it
+  only when the player asked to move more deliberately."* The readback has
+  said this to the player since 011; the model was never told.
+- **The `brake` bullet owns the stopping phrase and states the comparison**:
+  *"from 4.48 m/s, brake at 1200 stops in 0.59 m where footing at 1.50 stops
+  in 1.09 m"*.
+- **The `Change only what the player asked about` line names `turning`**, for
+  *"boots that turn on the spot"*, so no player phrase is claimed twice.
+  Measured: `turning` changes neither reading.
+- **Every number in those sentences is RENDERED from `top_speed()` and
+  `stopping_distance()`**, never typed. TRAPS 28's rule — a bound stated to
+  the model is read from the code, not remembered — applied to a consequence,
+  since a sentence about what a field costs is as much a claim as a sentence
+  about what it may be.
+- **The comment above `BootsTool.readback()` says WHEN it was right.** It
+  said *"became footing 1.2, which is right"*, written in 011 and left
+  standing through the commit that made it wrong; a reader following it would
+  have put the fault back (TRAPS 22).
+- `PROMPT_VERSION` is `038-the-field-that-does-it-1` and
+  `PROMPT_FINGERPRINT` is the sha256 of the new 15792-character prompt.
+
+### Evidence
+
+**Godot 4.7.1 (`4.7.1.stable.official.a13da4feb`) headless, Linux, in a cloud
+container.** Baseline 44 suites, 0 with something to look at, `--all`
+included. After: **45 suites, 0 without `--all` and 0 with it**, `drive_test`
+and `session_test` included.
+
+`claim_field_test` **fails 9 times against the pre-038 code**, measured the
+way 035, 036 and 037 measured their own — the two changed scripts reverted to
+037 with the suite left in place — and each failure names a different half of
+the fault:
+
+```
+1  'brake' is a field and the skeleton offers it
+2  "stop on a sixpence" and "boots that stop on a sixpence" name the same field
+   (both directions, because the check is symmetric)
+1  "stop on a sixpence": 'brake' is in the boots skeleton
+1  "boots that stop on a sixpence" promises nothing else, and 'footing' at 1.5
+   changes 2 of the 2 things boots measure (walking pace, stopping distance)
+4  the boots section states "<each rendered consequence>"
+```
+
+**The car's claim is now measured too, by driving one.** It is the one of the
+three `claim_field_test` cannot answer: `BootsTool` predicts a stop in closed
+form, but a car's stop happens in the physics. `physics_test` gained three
+cars, the same five seconds of throttle, then everything the brake has:
+
+```
+ordinary      ran 112.9 m to 22.95 m/s, then stopped in 42.90 m
+hard brakes   ran 112.9 m to 22.95 m/s, then stopped in 28.42 m
+soft brakes   ran 112.9 m to 22.95 m/s, then stopped in 74.74 m
+```
+
+Both halves of *"and nothing else"*: the stops order with the field, and the
+run to speed is identical to **0.000 m** across all three. That claim was
+true, and is now measured rather than inferred from the field's name — which
+is all `braking` ever was, a name, and `footing` read just as plausibly.
+
+`claim_field_test` was also run **with** `--fixed-fps 120` and without, and
+passes either way (TRAPS 4). `run_tests.bat` needed no edit: the name matches
+none of its `findstr` patterns.
+
+### What the suite asserts, and what it does not
+
+- It **enumerates** the claims from `AIInterpreter.assembled_prompt()` and
+  the tools from `ToolRegistry.tools()`, so a fourth sentence of this shape,
+  or a tool added later, is covered without editing the file — and a sentence
+  whose field is not a field of its own tool **fails rather than passing
+  unexamined**.
+- The measured assertion needs no semantics about what the player's phrase
+  means: a claim that says *"and nothing else"* must name a field that, taken
+  to the end of the range the prompt itself states, moves **at most one** of
+  the readings its tool can take.
+- It asserts nothing about wording. Every phrase may be rewritten. A field
+  that genuinely does two things may be described honestly — it simply may
+  not be described as doing one.
+- It picked up, for free, the chain 035 left: **every `LOW to HIGH` bound the
+  prompt states for a TOOL's field is accepted by that tool's validator at
+  both ends.** 035 measured this for the worlds and skipped the tools because
+  the tools render their bounds from their constants, which they do, and
+  which says nothing about whether the constants are legal.
+- **The trap it walked into while being written, recorded because it is the
+  same trap it exists to hold:** the sweep's regex was case-sensitive, so it
+  found **two** of the three claims and reported all clear, because one of
+  them begins a sentence and so begins *"Someone"*. That is TRAPS 31 — a
+  sweep is a claim about the unit it counted — inside the suite written to
+  hold TRAPS 31. `prompt_bounds_test` carries a comment saying the same thing
+  about *"At most 8 things"*. **The failure mode of a sweep is silence.**
+
+### Not verified
+
+- **NO MODEL HAS READ THE NEW PROMPT.** Every spec in `claim_field_test` was
+  typed by hand; a headless harness has no key and no model. Whether telling
+  the model that `footing` costs top speed actually stops it choosing
+  `footing` for *"boots that stop on a sixpence"* is the half that matters
+  most, and only the owner's editor session can show it. **If a model still
+  sends `footing`, the wording is not enough and the next move is an example
+  rather than a sentence** — which is what 035 said about the farm's zone
+  bound and is still unanswered.
+- Nothing ran on Windows.
+- **`PROMPT_VERSION` moved, so boots designs are not comparable across
+  this commit** — and in this case the version string is load-bearing rather
+  than bookkeeping: an `EQUIP boots` proposal made under 035–037 came from a
+  model that had been told the wrong field and could not send the right one.
+  Records already on the owner's disk are his and 038 did not touch them.
+- **One judgement, labelled as one.** That the generic line should name
+  `turning` rather than restating `brake` is a choice about the prompt, not a
+  measurement. The reason is that two sentences owning one player phrase is
+  the fault being fixed, and the project's own rule is that a sentence lives
+  in one place; `turning` is measured to cost nothing, so the example is
+  true, but a different example would have been equally true.
+- `boots_test`, `tool_test`, `behaviour_test`, `limits_test`,
+  `capability_test`, `prompt_bounds_test`, `ledger_said_test` and
+  `session_test` all pass unchanged, so the new skeleton field and the moved
+  version were checked against every existing reader rather than assumed
+  harmless.
+
+TRAPS 32 records the fault, the rules, and the near miss inside the suite.
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -2560,6 +2792,31 @@ because what changed is a sentence and the suite can only prove it is true:
   dropping the field. `intent_door_test` holds the line either way: it
   asserts the field is NAMED, never what the sentence says.
 
+038 adds a twelfth, and it is one sentence typed twice and one look at the
+line that comes back:
+
+- **Ask for boots that stop on a sixpence** — those words, or *"boots that
+  stop dead"*, anything that makes the model choose between `brake` and
+  `footing`. Until 038 the prompt told it, in the last line of the boots
+  section, that this wants **`footing`** raised — and `footing` costs more
+  than half the walking pace and still stops nearly twice as far from the
+  same speed as `brake` does. It also could not have sent `brake` if it had
+  wanted to: the field was missing from the JSON skeleton it copies. The
+  readback should now come back as boots that *"pull you up short"* with
+  **no** *"though they only walk at 2.0 m/s"* on the end of it. **If it still
+  arrives with `footing` raised and the walk halved, the wording is not
+  enough and the next move is an example in the prompt rather than a
+  sentence** — the same answer 035 is still waiting for about the farm's one
+  zone.
+- And one worth knowing rather than typing: **`prompt_version` is
+  `038-the-field-that-does-it-1` from here**, and for boots this one is not
+  bookkeeping. Every `EQUIP boots` record in your ledger under
+  `035-bounds-from-the-code-1` was proposed by a model that had been told the
+  wrong field for a short stop and could not send the right one, so a
+  before-and-after of boots designs across this commit is a comparison of two
+  different populations — which is exactly what the version string is for.
+  The records are yours and 038 did not touch them.
+
 **Smallest useful assistant task next.** The ledger question (033), the
 container-door question (034), the prompt-bound question (035) and the
 validator question (036) are all **done**. Candidates, in the order the
@@ -2679,15 +2936,32 @@ Two smaller ones, either of which is a single session:
   of the comparison exist. Expect the answer to be wider than `offset` — that
   is what 034, 035 and 036 each found when the same question was asked of a
   whole list.*
-- **The boots prompt tells the model two different things about the same
-  player sentence, and this is the next task.** Found while measuring 037 and
-  **measured, not inferred**, with the functions that enforce it:
+- ~~**The boots prompt tells the model two different things about the same
+  player sentence.**~~ **Done in 038**, and the useful part is not the
+  contradiction but the reason it lasted: 013 added `brake`, MEASURED that it
+  does the job for nothing, and wrote the assertion that says so, and the
+  sentence telling the model otherwise was never read again. A capability was
+  asserted in the suite and a claim was made in the prompt and nothing joined
+  them, so the two disagreed, both green, for 33 commits. Left struck rather
+  than deleted, because the next reader should see that the entry below
+  called `CarTool`'s claim *"right"* on the strength of the field being named
+  `braking` — which is all it was, a name, and `footing` read just as
+  plausibly. It is now measured by driving a car (`physics_test`). See 038
+  and TRAPS 32.
+
+  The original entry, as 037 wrote it, kept because its last paragraph is the
+  question that turned out to matter: *Found while measuring 037 and
+  **measured, not inferred**, with the functions that enforce it:*
 
   ```
   ordinary                 top 4.48 m/s   stops in 1.45 m from its own top
   footing raised to 1.50   top 2.00 m/s   stops in 0.29 m
   brake raised to 1200     top 4.48 m/s   stops in 0.59 m
   ```
+
+  *(038's note on that table: those are three stops from three different
+  speeds, which is not a comparison. From one speed — 4.48 m/s — footing at
+  1.50 takes 1.09 m where brake at 1200 takes 0.59 m.)*
 
   The `brake` line says *"This does NOT change top speed: someone who wants
   to 'stop on a sixpence' wants brake raised and nothing else."* Three lines
@@ -2712,6 +2986,50 @@ Two smaller ones, either of which is a single session:
   ones are the finding. `prompt_bounds_test` already walks the prompt and
   already fails when `PROMPT_FINGERPRINT` does not move, so the second half
   is in place before the first is written.
+- **Every sentence in the prompt that states what Genesis DOES with a value,
+  asked the way 038 asked of the three it fixed — and this is the next
+  task.** 038's finding is that the prompt makes several kinds of claim and
+  Genesis has now built a door for four of them: limitations (027),
+  capabilities (028), bounds (035) and which-field-does-it (038). **The
+  kind with no door left is the procedural one** — a flat statement about
+  what Genesis will do with a number the model sends. **NOT MEASURED.**
+  These are the sentences, read out of the assembled prompt this session and
+  quoted rather than paraphrased:
+
+  - *"Angles are signed: positive turns right, negative turns left."*
+  - *"Never give a corner, hairpin or chicane a length; it is calculated."*
+  - *"A chicane steps the track sideways by O metres and returns to its
+    original direction."*
+  - *"Room 1 is the entrance, where the player comes in."*
+  - *"R is a room's name or its number counting from 1."*
+  - *"The game can adjust each angle and each straight length by up to 20%
+    to close the loop"* — the 20% is already held by `prompt_bounds_test`
+    against `ClosureSolver`; whether it adjusts **each** rather than some is
+    not.
+  - *"A door joins two different rooms, and the same pair may only be joined
+    once."*
+  - *"a new world replaces whatever was there before, whichever kind it
+    was."*
+
+  Each is a claim about Genesis and gets checked like one, and every one of
+  them is cheap: build the thing the sentence describes and read what comes
+  out. Expect the answer to be wider than one sentence, because that is what
+  034, 035, 036, 037 and 038 each found when the same question was asked of
+  a whole list. **Do not assume any of them is false** — nine of eleven
+  bounds were right in 035, and the value of that session was the two that
+  were not.
+- **Two refusal examples show the model a style shape the prompt forbids.**
+  Found by 037, still open, and **not** part of 038: measured this session,
+  neither string is in the assembled prompt, so it does not move
+  `PROMPT_FINGERPRINT` and does not need its own commit for that reason. The
+  prompt says a style is *"a short lowercase label with underscores"*;
+  `SectionValidator`'s refusal example is `{"style": "a street circuit"}`
+  and `PLAN`'s is `{"style": "a farm with a circuit round it"}`, both with
+  spaces. Nothing refuses a style, so neither example is illegal to Genesis
+  — they just show the model a shape its instructions rule out, in the one
+  place (a refusal) where it is most likely to be copied. Cosmetic, one word
+  each, and worth folding into whichever commit next touches those two
+  files rather than taking on its own.
 - **Ask one more question of every file at once.** 029's finding came from
   asking "what if this is not a number" of all five validators rather than
   one, and it had been true for the project's whole life. Candidates in the

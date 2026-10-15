@@ -1,0 +1,357 @@
+extends SceneTree
+
+# --- 038: the field the prompt names is the field that does it ---
+#
+# HANDOVER named the next assistant task as one contradiction: the boots
+# section told the model that someone who wants to "stop on a sixpence" wants
+# `brake` raised, and three lines below that someone who wants "boots that
+# stop on a sixpence" wants `footing` raised. The same quoted player phrase,
+# two different fields.
+#
+# Asked of the CLASS rather than of those two sentences (TRAPS 11), the prompt
+# makes exactly three claims of this shape - one per tool that has fields
+# worth choosing between - and each is a claim about Genesis of a kind nothing
+# had ever checked: not a bound (035 holds those), not a refusal (030), not a
+# capability (028) and not a limitation (027), but an instruction that a
+# NAMED FIELD is the one that does a NAMED THING, at no cost the player did
+# not ask for. The sentence is the earliest claim Genesis makes, like a bound,
+# and it is the only one that tells the model what to DO rather than what is
+# allowed.
+#
+# WHY IT SURVIVED, which is the part worth keeping. The footing sentence was
+# written in 010 and was true then: footing was the only field that shortened
+# a stop. 013 added `brake` and MEASURED that brake does the same job for
+# nothing - behaviour_test's claim 5 has asserted precisely that, green, ever
+# since. So for 33 commits this repository held a measurement and a prompt
+# sentence that contradicted each other, and nothing caught it, because a
+# capability was asserted in the suite and a claim was made in the prompt and
+# THERE WAS NO DOOR BETWEEN THEM. This suite is that door: it reads the claim
+# out of the prompt and measures it, rather than measuring the capability on
+# its own and hoping the sentence agrees.
+#
+# WHAT THIS ASSERTS, AND WHAT IT DOES NOT (TRAPS 6)
+#
+# FINDING. Every field a tool declares in defaults() appears in the JSON
+# skeleton of that tool's own prompt section, and every key in that skeleton
+# is a declared field. `brake` was described in the boots bullets and absent
+# from the skeleton the model copies, so a model doing what the skeleton told
+# it could not send the field the bullet told it to raise. Measured across
+# ToolRegistry.tools(), it was the only such field in Genesis.
+#
+# FINDING. No two claims may own the same player phrase and name different
+# fields - asserted by substring, because the two that did were "stop on a
+# sixpence" and "boots that stop on a sixpence" and no equality test would
+# have put them together.
+#
+# FINDING, and it is the one that measures rather than compares: a claim that
+# says "and nothing else" must name a field that changes at most ONE of the
+# quantities its tool can measure. Taken to the end of the range the prompt
+# itself states, `brake` changes the stopping distance and not the walking
+# pace; `turning` changes neither; `footing` changes BOTH, which is what made
+# the old sentence false and what fails here.
+#
+# FINDING. The numbers the prompt states about those consequences are the
+# numbers the functions produce. TRAPS 28's rule - a bound stated to the model
+# is read from the code, never remembered - applied to a consequence, since a
+# sentence about what a field costs is as much a claim as a sentence about
+# what it is allowed to be.
+#
+# FINDING. Every "LOW to HIGH" bound the prompt states for a TOOL's field is a
+# bound that tool's validator accepts at both ends. 035 measured this chain
+# for the worlds and left the tools, on the reasoning that the tools render
+# their bounds from their constants - which they do, and which says nothing
+# about whether the constants are legal.
+#
+# GUARD. The claims are enumerated from AIInterpreter.assembled_prompt() and
+# the tools from ToolRegistry.tools(), never written out here, so a tool added
+# later, or a fourth sentence of this shape, is covered without editing this
+# file - and a sentence whose field is not a field of its own tool fails
+# rather than passing unexamined.
+#
+# NOT ASSERTED, deliberately: that any particular sentence exists, or what any
+# of them say. The regex requires only the shape that carries the claim. Every
+# phrase in the prompt may be rewritten, and a field that genuinely does two
+# things may be described honestly - it simply must not be described as doing
+# one.
+#
+# NOT ASSERTED: the car's claim, which is the third of the three. CarTool has
+# no closed-form prediction to read - a car's stop happens in the physics - so
+# "a car that stops better wants braking changed and nothing else" is measured
+# in tests/physics_test.gd, by driving one. This suite checks the car sentence
+# names a real field that is in the skeleton, and says so below rather than
+# passing over it in silence.
+#
+# NOT ASSERTED: that any model obeys any of it. No model has read this prompt.
+# What a model actually sends for "boots that stop on a sixpence" is the
+# owner's editor session and is in HANDOVER under Next action.
+
+var failures: Array = []
+var lines: Array = []
+
+
+func _check(ok: bool, what: String) -> void:
+	lines.append(("PASS  " if ok else "FAIL  ") + what)
+	if not ok:
+		failures.append(what)
+
+
+func _note(what: String) -> void:
+	lines.append("      " + what)
+
+
+# The keys of the JSON object that starts at `open`, nested braces and all.
+func _keys_of_object_at(text: String, open: int) -> Array:
+	if open < 0:
+		return []
+	var depth := 0
+	var close := open
+	while close < text.length():
+		if text[close] == "{":
+			depth += 1
+		elif text[close] == "}":
+			depth -= 1
+			if depth == 0:
+				break
+		close += 1
+	var inner := text.substr(open, close - open + 1)
+	var keys: Array = []
+	var re := RegEx.new()
+	re.compile("\"([a-z_]+)\"\\s*:")
+	for m in re.search_all(inner):
+		if not m.get_string(1) in keys:
+			keys.append(m.get_string(1))
+	return keys
+
+
+# The field names the "spec" object of a tool's skeleton offers the model.
+func _spec_keys(section: String) -> Array:
+	var at := section.find("\"spec\"")
+	if at < 0:
+		return []
+	return _keys_of_object_at(section, section.find("{", at))
+
+
+# The field names a world's "parameters" object offers. "style" comes out of
+# the nested intent object with it, which is why `intent` is checked by
+# membership below rather than by comparing the two sets.
+func _param_keys(section: String) -> Array:
+	var at := section.find("\"parameters\"")
+	if at < 0:
+		return []
+	return _keys_of_object_at(section, section.find("{", at))
+
+
+# "brake: 150 to 1200 newtons, ..." -> [150.0, 1200.0]. The bound AS THE
+# PROMPT STATES IT, not as the constant holds it, because what is being
+# measured here is the claim the model was given.
+func _stated_bound(section: String, field: String) -> Array:
+	var re := RegEx.new()
+	re.compile("(?m)^%s: ([0-9]+(?:\\.[0-9]+)?) to ([0-9]+(?:\\.[0-9]+)?)\\b" % field)
+	var m := re.search(section)
+	if m == null:
+		return []
+	return [m.get_string(1).to_float(), m.get_string(2).to_float()]
+
+
+# What BootsTool can measure about a spec. Each entry is a name and a reading,
+# and a field's claim is checked against every one of them except the one the
+# player asked about - which is why there must be more than one for the check
+# to mean anything.
+func _boots_readings(spec: Dictionary, from_speed: float) -> Dictionary:
+	return {
+		"walking pace": BootsTool.top_speed(spec),
+		"stopping distance": BootsTool.stopping_distance(spec, from_speed),
+	}
+
+
+func _initialize() -> void:
+	var prompt := AIInterpreter.assembled_prompt()
+	var tools := ToolRegistry.tools()
+	_check(not tools.is_empty(), "ToolRegistry has tools to ask")
+
+	# --- every declared field is a field the model can actually send ---
+
+	for t in tools:
+		var tool_mod: ToolModule = t
+		var section := tool_mod.prompt_section()
+		var skeleton := _spec_keys(section)
+		var declared: Array = tool_mod.defaults().keys()
+		_check(not skeleton.is_empty(), "EQUIP %s: its section carries a spec skeleton" % tool_mod.name())
+		for k in declared:
+			_check(str(k) in skeleton,
+				"EQUIP %s: '%s' is a field and the skeleton offers it" % [tool_mod.name(), str(k)])
+		for k in skeleton:
+			_check(tool_mod.defaults().has(k),
+				"EQUIP %s: the skeleton's '%s' is a declared field" % [tool_mod.name(), str(k)])
+
+	# The same question of the worlds, where the answer was already yes. A
+	# list the validator requires and the skeleton omits would be the dungeon
+	# `doors` refusal (034) with nothing to read at all.
+	for m in WorldRegistry.modules():
+		var module: WorldModule = m
+		var params := _param_keys(module.prompt_section())
+		for e in module.lists():
+			var key := str((e as Dictionary)["key"])
+			_check(key in params,
+				"%s: the declared list '%s' is in the skeleton" % [module.command(), key])
+
+	# --- every bound the prompt states for a tool's field, at both ends ---
+
+	for t in tools:
+		var tool_mod: ToolModule = t
+		for k in tool_mod.defaults().keys():
+			var field := str(k)
+			var bound := _stated_bound(tool_mod.prompt_section(), field)
+			if bound.is_empty():
+				continue
+			for end in bound:
+				var result: Dictionary = tool_mod.validate({"tool": tool_mod.name(), "spec": {field: end}})
+				_check(bool(result.get("ok", false)),
+					"EQUIP %s: the stated bound %s for '%s' is accepted%s" % [
+						tool_mod.name(), str(end), field,
+						"" if bool(result.get("ok", false)) else " - refused: %s" % str(result.get("errors", []))])
+
+	# --- every claim that a named field is the one that does a named thing ---
+	#
+	# "and nothing else" is required by the pattern, because that is the part
+	# being measured. A sentence that does not promise it is not making this
+	# claim and is not swept up here.
+
+	var claims: Array = []
+	var re := RegEx.new()
+	# Case-insensitive, and that is not a detail. Written case-SENSITIVE this
+	# sweep found two of the three claims and reported all clear, because one
+	# of them begins a sentence and so begins "Someone". That is TRAPS 31 - a
+	# sweep is a claim about the unit it counted - arriving inside the suite
+	# written to hold TRAPS 31, and prompt_bounds_test carries a comment
+	# saying the same thing about "At most 8 things". A pattern that can miss
+	# a member silently is worse than no sweep: it reports a clear answer to a
+	# question it did not ask.
+	re.compile("(?i)someone who wants (?:to )?\"([^\"]+)\" wants ([a-z_]+) (raised|lowered|changed) and nothing else")
+	for m in re.search_all(prompt):
+		claims.append({"phrase": m.get_string(1), "field": m.get_string(2), "verb": m.get_string(3)})
+	_check(not claims.is_empty(), "the prompt makes at least one 'wants FIELD and nothing else' claim")
+	_note("%d such claims in the assembled prompt" % claims.size())
+	for c in claims:
+		_note("\"%s\" -> '%s' %s" % [str(c["phrase"]), str(c["field"]), str(c["verb"])])
+
+	# No two claims may own the same player phrase and answer it differently.
+	# By substring, because the pair that did were three lines apart and no
+	# equality test would have found them: "stop on a sixpence" and "boots
+	# that stop on a sixpence".
+	for a in claims:
+		for b in claims:
+			if a == b:
+				continue
+			var one := str(a["phrase"])
+			var two := str(b["phrase"])
+			if one.contains(two) or two.contains(one):
+				_check(str(a["field"]) == str(b["field"]),
+					"\"%s\" and \"%s\" are the same request and name the same field ('%s' and '%s')" % [
+						one, two, str(a["field"]), str(b["field"])])
+
+	# Each claim's field must belong to the tool whose section the claim is in,
+	# and must be in that tool's skeleton. A sentence naming a field the model
+	# cannot send is the fault 038 found, one door along from the skeleton
+	# sweep above: that sweep asks whether every field is offered, this asks
+	# whether every field the prompt INSTRUCTS the model to change is.
+	for c in claims:
+		var phrase := str(c["phrase"])
+		var field := str(c["field"])
+		var owner_name := ""
+		for t in tools:
+			var tool_mod: ToolModule = t
+			if tool_mod.prompt_section().contains(phrase):
+				owner_name = tool_mod.name()
+				break
+		_check(owner_name != "", "the claim \"%s\" lives in a tool's own section" % phrase)
+		if owner_name == "":
+			continue
+		var owner: ToolModule = ToolRegistry.find(owner_name)
+		_check(owner.defaults().has(field),
+			"\"%s\": '%s' is a field of %s" % [phrase, field, owner_name])
+		_check(field in _spec_keys(owner.prompt_section()),
+			"\"%s\": '%s' is in the %s skeleton, so the model can send it" % [phrase, field, owner_name])
+
+	# --- and nothing else, measured ---
+	#
+	# Only BootsTool can answer this here: it is the one tool that predicts
+	# what a spec will do before anything moves. The car's claim is measured
+	# by driving one, in tests/physics_test.gd.
+	var boots: BootsTool = ToolRegistry.find("boots")
+	var ordinary: Dictionary = boots.validate({"tool": "boots", "spec": {}})["spec"]
+	var walk := BootsTool.top_speed(ordinary)
+	_check(walk > 0.0, "an ordinary pair of boots walks at a measurable pace (%.2f m/s)" % walk)
+	var plain := _boots_readings(ordinary, walk)
+
+	var measured_any := false
+	for c in claims:
+		var field := str(c["field"])
+		if not boots.defaults().has(field):
+			continue
+		if not boots.prompt_section().contains(str(c["phrase"])):
+			continue
+		var bound := _stated_bound(boots.prompt_section(), field)
+		if bound.is_empty():
+			_note("'%s' states no numeric bound, so there is no end to take it to" % field)
+			continue
+		var ends: Array = []
+		match str(c["verb"]):
+			"raised": ends = [bound[1]]
+			"lowered": ends = [bound[0]]
+			_: ends = [bound[0], bound[1]]
+		for end in ends:
+			var result: Dictionary = boots.validate({"tool": "boots", "spec": {field: end}})
+			_check(bool(result.get("ok", false)),
+				"boots '%s' at %s validates, so the claim can be measured" % [field, str(end)])
+			if not bool(result.get("ok", false)):
+				continue
+			measured_any = true
+			var moved := _boots_readings(result["spec"], walk)
+			var changed: Array = []
+			for what in moved:
+				# A tenth of a percent: the arithmetic is the same arithmetic
+				# either side, so anything that moves at all moved on purpose.
+				if absf(float(moved[what]) - float(plain[what])) > absf(float(plain[what])) * 0.001:
+					changed.append(str(what))
+			_note("'%s' at %s changes: %s" % [field, str(end), "nothing" if changed.is_empty() else ", ".join(PackedStringArray(changed))])
+			_check(changed.size() <= 1,
+				"\"%s\" promises nothing else, and '%s' at %s changes %d of the %d things boots measure%s" % [
+					str(c["phrase"]), field, str(end), changed.size(), plain.size(),
+					"" if changed.size() <= 1 else " (%s)" % ", ".join(PackedStringArray(changed))])
+	_check(measured_any, "at least one claim was measured rather than only read")
+
+	# The stopping claim is a comparison, so the comparison is measured: from
+	# ONE speed, which is the part the 037 reading got wrong. A stop from a
+	# body's own top speed is not comparable with a stop from another's, and
+	# footing lowers the speed it is measured from, which flatters it.
+	var sharp: Dictionary = boots.validate({"tool": "boots", "spec": {"brake": BootsTool.BRAKE[1]}})["spec"]
+	var grippy: Dictionary = boots.validate({"tool": "boots", "spec": {"footing": BootsTool.FOOTING[1]}})["spec"]
+	var sharp_stop := BootsTool.stopping_distance(sharp, walk)
+	var grippy_stop := BootsTool.stopping_distance(grippy, walk)
+	_note("from %.2f m/s: brake at %.0f stops in %.2f m, footing at %.2f stops in %.2f m, ordinary %.2f m" % [
+		walk, BootsTool.BRAKE[1], sharp_stop, BootsTool.FOOTING[1], grippy_stop, float(plain["stopping distance"])])
+	_check(sharp_stop < grippy_stop,
+		"from one speed the free field also stops shorter: %.2f m against %.2f m" % [sharp_stop, grippy_stop])
+	_check(BootsTool.top_speed(grippy) < walk,
+		"and the other one costs the walking pace: %.2f m/s against %.2f" % [BootsTool.top_speed(grippy), walk])
+
+	# --- the consequence the prompt states is the consequence the code gives ---
+	#
+	# Not a wording assertion: these are the numbers, however the sentence
+	# around them is phrased. A number typed by hand here is caught the way
+	# 035 catches a bound typed by hand.
+	var section := boots.prompt_section()
+	for said in [
+		"%.2f m/s rather than %.2f" % [BootsTool.top_speed(grippy), walk],
+		"from %.2f m/s" % walk,
+		"stops in %.2f m" % sharp_stop,
+		"stops in %.2f m" % grippy_stop,
+	]:
+		_check(section.contains(said), "the boots section states \"%s\"" % said)
+
+	for line in lines:
+		print(line)
+	print("")
+	print("CLAIM FIELD failures=%d" % failures.size())
+	quit(1 if failures.size() > 0 else 0)

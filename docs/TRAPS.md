@@ -1426,6 +1426,103 @@ its own commit, because a prompt change moves `PROMPT_FINGERPRINT` and
 
 ---
 
+## 32. The suite measured the opposite of what the prompt said, for 33 commits
+
+**Signature:** a sentence in the AI's prompt names a field as the answer to a
+player's request, and a green test in the same repository measures that a
+different field is the right answer. Both have been true of themselves for
+months.
+
+**Cause.** `boots_tool.gd`'s prompt section said *"someone who wants 'boots
+that stop on a sixpence' wants footing raised and nothing else"*. That was
+written in 010 and was **true then**: `footing` was the only field that
+shortened a stop. 013 added `brake`, measured it, and wrote
+`behaviour_test`'s claim 5 — *"stopping sharply no longer costs top speed"* —
+which asserts in so many words that `brake` does that job and `footing`
+charges for it. The sentence was never read again.
+
+Measured in 038 with the functions that enforce both, from **one** speed:
+
+```
+ordinary                 top 4.48 m/s   stops in 1.45 m from 4.48 m/s
+brake raised to 1200     top 4.48 m/s   stops in 0.59 m from 4.48 m/s
+footing raised to 1.50   top 2.00 m/s   stops in 1.09 m from 4.48 m/s
+```
+
+So the field the prompt named is **both the dearer answer and the worse
+one**: it costs more than half the walking pace and still stops nearly twice
+as far. 037's own reading of this compared each spec's stop *from its own top
+speed* — 0.29 m for footing against 0.59 m for brake — which makes footing
+look sharper and is not a comparison: footing lowers the speed it is then
+measured from. A stop is only comparable with another stop from the same
+speed.
+
+Beside it, and the reason the wrong sentence could not even be acted on
+correctly: **`brake` was absent from the boots JSON skeleton** the model
+copies, while being described in the bullets under it. Swept across
+`ToolRegistry.tools()`, it was the only field in Genesis that `defaults()`
+declared and a skeleton omitted.
+
+**Why nothing caught it.** The capability was asserted in the suite and the
+claim was made in the prompt, and **there was no door between them**. 035
+built the door for *bounds* (prompt ⇔ declaration ⇔ validator) and this is
+the same shape one category along: not what a field is ALLOWED to be, but
+which field DOES the thing. A claim of that kind had never been checked by
+anything — 027 and 028 read the limitations and capabilities, 030 the
+refusals, 035 the bounds, and this sentence is none of those. It is the only
+claim in the prompt that tells the model what to **do**.
+
+**Rules.**
+
+- **"Someone who wants X wants FIELD changed" is a claim about Genesis, and
+  the field it names is a measurement.** Not a wording question. The field's
+  own name is not evidence: `braking` is the right answer for a car and
+  `footing` was the wrong one for boots, and both read plausibly.
+- **"And nothing else" is the other half of the claim, and it is the half
+  that was false.** A field that changes two of the things a tool can
+  measure cannot be offered as the answer to a request about one of them.
+  `tests/claim_field_test.gd` takes each named field to the end of the range
+  the prompt itself states and counts how many of the tool's readings move:
+  at most one, or the sentence is not true.
+- **A phrase can be claimed twice without being the same string.** *"stop on
+  a sixpence"* and *"boots that stop on a sixpence"* are one request and no
+  equality test would have put them together. The check is by substring.
+- **A consequence stated to the model is rendered from the function that
+  produces it**, exactly as 035 made every bound render from its constant
+  (trap 28). The numbers in that section now come out of `top_speed()` and
+  `stopping_distance()`, so the sentence cannot drift from the arithmetic
+  again, and the suite asserts the prompt carries what those functions
+  return.
+- **A comment that records what was true once says WHEN.** The comment above
+  `BootsTool.readback()` said *"'give me boots that stop on a sixpence'
+  became footing 1.2, which is right"* — written in 011, left standing
+  through the commit that made it wrong, and a reader following it would put
+  the fault back. That is trap 22 at a sentence rather than at a rule.
+- **When a new field makes an older sentence wrong, the prompt is part of the
+  change.** 013 added a field, measured it, and tested it, and the one thing
+  it did not do is tell the model.
+- And the trap this suite walked into while being written: the sweep's regex
+  was case-sensitive, so it found **two** of the three claims and reported
+  all clear, because one of them begins a sentence and so begins *"Someone"*.
+  That is trap 31 — a sweep is a claim about the unit it counted — inside the
+  suite written to hold trap 31, and `prompt_bounds_test` carries a comment
+  saying the same thing about *"At most 8 things"*. The failure mode of a
+  sweep is silence.
+
+Found and fixed in 038. `tests/claim_field_test.gd` fails **9 times** against
+the pre-038 code: one for the missing skeleton field, two for the pair of
+phrases that answer the same request differently, one for a claim naming a
+field the model cannot send, one for `footing` moving both readings, and four
+for the consequences the prompt did not state. The car's claim of the same
+shape — *"a car that stops better"* → `braking` — has no closed-form
+prediction to read, so it is measured by driving one in
+`tests/physics_test.gd`: three cars, same five seconds of throttle, 112.9 m
+to 22.95 m/s in **all three**, then stops of 28.42 m, 42.90 m and 74.74 m at
+maximum, ordinary and minimum braking. That one was true, and is now measured
+rather than inferred from the field's name.
+
+---
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
 > A fluent sentence is not evidence that anything was understood.
@@ -1456,3 +1553,5 @@ its own commit, because a prompt change moves `PROMPT_FINGERPRINT` and
 > And a field the prompt tells the model to send, read nowhere, is a drop
 > rather than a refusal, so nobody sees it at all.
 > And a sweep that comes back clear is a claim about the unit it counted.
+> And a sentence telling the model which field does the thing is a claim that
+> it does, and that it does nothing else, and both halves are measurements.
