@@ -1232,6 +1232,101 @@ been asked twice before and answered no.
 
 ---
 
+## 30. The conversion that threw, where no validator stood
+
+**Signature:** a player types a request, Genesis prints nothing at all about
+it, and the ledger carries an understanding record pointing at an id no
+record carries.
+
+**Cause.** 029 established the mechanism: GDScript's `int()` and `float()`
+have no constructor for `null`, `{}` or `[]`. The call does not return a
+wrong number — it **throws**, and a throw abandons the rest of the function
+and leaves the caller holding the constructor's default. 029 asked "what if
+this is not a number" of every numeric field of every **validator** and fixed
+all five.
+
+HANDOVER then asked the fourth question off `CommandParser`'s own list, after
+described (032), recorded (033) and reachable-from-the-prompt (033): **does
+every command have a validator?** The answer is no — and what "no validator"
+turns out to MEAN is not a missing function. It is four conversions that
+throw, in exactly the places nobody had asked 029's question, because 029
+asked it of validators and these commands have none.
+
+Measured headless before anything was changed:
+
+```
+MODIFY_TRACK    "corner": {} [] null    NO RECORD AT ALL, and the
+                                        understanding record still pointing
+                                        at its id - 033's dangling
+                                        reference, back
+CREATE_TRACK    "corners": {} [] null   a record whose only reason is THE
+(sectionless)                           EMPTY STRING, printed to the player
+                                        as a blank line, after the world had
+                                        already been cleared
+PLAN step       "around": {} [] null    the plan refused for the worlds
+                                        OVERLAPPING
+PLAN step       "offset": {"x": null}   the world built and never positioned
+SPAWN_OPPONENTS "count": {} [] null     unreachable: has_track() is always
+                                        false, so the guard returns first
+```
+
+The third is the one a player pays for. `around` is **in the prompt** — the
+model is told to write it — and a value Genesis could not read was silently
+taken as 0, both worlds were placed at the origin, and the refusal said
+*"step 2 overlaps step 1: they must stand apart, or one must be big enough
+to contain the other"*. Every word of that is true and none of it is
+actionable: the player asked for one world inside another, and Genesis never
+read which. A refusal that describes the CONSEQUENCE of a field it could not
+read is trap 18's fault with a sentence in front of it.
+
+**And the safe reading was already in the repository, one function above two
+of them.** `TrackBuilder.readback()` has read `corner` through
+`Readback.as_number()` since 032, and `OpponentBuilder.readback()` has read
+`count` the same way — the function whose callers' comments call it *"the one
+place in Genesis that answers the type question"*. The handlers two files
+along typed `int()` out by hand. That is **trap 28's shape in a handler
+rather than in a prompt**, and trap 26's one door further on: the door that
+is not a refusal and not a prompt, but the code that acts.
+
+**Do:**
+
+- **A value from the AI is converted through `Readback.as_number()`, never by
+  a bare `int()` or `float()`.** The rule is not "validators check types". It
+  is that the type question belongs to one function, and every reader of an
+  unchecked value asks it — handlers and builders included.
+- **Ask it of every command at once.** Four of eleven, and the list is
+  `CommandParser.allowed_commands()`. Not one of the four would have been
+  found by reading the command HANDOVER named.
+- **Where the value changes what Genesis DOES, refuse and name the field.**
+  Where the command builds nothing whatever it is sent, a record with a
+  reason that is not the empty string is the whole of what is owed. Those are
+  different debts and 036 pays them differently on purpose.
+- **One reading of where a field lives.** `around` may be written at the step
+  level or inside `parameters` and means the same either way (003), so the
+  check reads it through the same `WorldRegistry` function the placement
+  uses. A check that looked in one place would pass a step the builder then
+  reads from the other.
+- The suite asserts a record, a non-empty reason, a resolvable id and **the
+  field NAME** — never a sentence. Its table is keyed on the whitelist, so a
+  command added later with no row fails rather than passing unexamined.
+
+Found and fixed in 036. `tests/command_schema_test.gd` fails **28 times**
+against the pre-036 code.
+
+**A near miss worth recording, because trap 14's rule is what caught it.**
+The first draft of 036's own code comment said a plan step's `offset` is *"a
+field no prompted request carries"*. Grepping the assembled prompt for the
+thing that denies — which trap 14 exists to make automatic — found
+`"offset"` in it. It is a **chicane's** sideways step, a different field
+behind `SectionValidator`, so the claim was true of the plan step and would
+have read as false to anyone who checked. It now says which field it means.
+Measured in the same minute: a plan step's `offset` of 150 really does move a
+world to x = 150, while the prompt says *"never give coordinates"* — a
+working capability the prompt denies, which is trap 17 reversed and is
+HANDOVER's "Human decision needed" 8 rather than this commit's to settle.
+
+---
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
 > A fluent sentence is not evidence that anything was understood.
@@ -1255,3 +1350,7 @@ been asked twice before and answered no.
 > And a bound stated to the model is the first claim Genesis makes and the
 > only one no player watches it make.
 > And a version that does not move has stopped telling anything apart.
+> And a number that is not one does not return wrong, it throws, and takes
+> the rest of the function with it.
+> And a refusal that describes the consequence of a field it could not read
+> has told the player about the wrong thing.

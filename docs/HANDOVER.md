@@ -13,7 +13,26 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **035**, the task this file named next
+- Last commit at the time of writing: **036**, the question this file named
+  as the next assistant task — *does every command have a validator?* — and
+  the answer is no, four of eleven. What that MEANS is the finding: not a
+  missing function but **four conversions that throw**. `int()` and `float()`
+  have no constructor for `null`, `{}` or `[]`, so the call abandons the
+  function (029's mechanism, in the places 029 could not reach, because 029
+  asked of validators and these commands have none). `MODIFY_TRACK` with a
+  non-numeric `corner` left **no record at all** while the understanding
+  layer still wrote one pointing at its id — 033's dangling reference back
+  again. A sectionless `CREATE_TRACK` left a record whose only reason was
+  **the empty string**, after clearing the world. And `around`, which **the
+  prompt tells the model to write**, was silently read as 0 and the plan
+  refused for the worlds *overlapping* — a true sentence about geometry for a
+  request whose fault was a field. The safe reading was already one function
+  above two of them (`TrackBuilder.readback()` has used
+  `Readback.as_number()` since 032). 42 suites passed before and 43 after,
+  `--all` included; the new suite fails 28 times against the pre-036 code.
+  The prompt is byte-identical, so `PROMPT_VERSION` did not move. See 036
+  below and TRAPS 30.
+- The commit before it: **035**, the task that file named next
   — the farm prompt stating a bound the code does not have — asked of every
   bound in the prompt rather than of the one sentence. Nine of eleven were
   right. The farm's told the model to *"Use 2 to 24 zones"* while
@@ -140,20 +159,22 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-44 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **42 suites**, and since 024 every one of them runs —
+45 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **43 suites**, and since 024 every one of them runs —
 nothing is skipped as broken. `--all` adds the two slow racing suites.
 
-Last full run (035, Godot 4.7.1 on Linux, headless, in a cloud container):
+Last full run (036, Godot 4.7.1 on Linux, headless, in a cloud container):
 **suites with something to look at: 0**, both without `--all` and with it,
-`drive_test` and `session_test` included. 035's new suite is
+`drive_test` and `session_test` included. 036's new suite is
+`command_schema_test` (28 failures against the pre-036 code); 035's is
 `prompt_bounds_test` (4 failures against the pre-035 prompt); 034's is
 `container_door_test` (30 failures against the pre-034 sentences). Not run on
-the owner's Windows machine. `run_tests.bat` needed no edit for either:
-neither name matches any of its `findstr` patterns — `prompt_bounds_test`
-does not contain the literal `prompt_test` — so both run there without
-`--fixed-fps`, which is what they get here too — checked rather than assumed
-(TRAPS 4).
+the owner's Windows machine. `run_tests.bat` needed no edit for any of the
+three: no name matches any of its `findstr` patterns — `prompt_bounds_test`
+does not contain the literal `prompt_test` — so all three run there without
+`--fixed-fps`, which is what they get here too, and `command_schema_test` was
+run both with it and without and passes either way — checked rather than
+assumed (TRAPS 4).
 
 **Run `--all` before believing a green suite.** 033 introduced a fault that
 the 38 fast suites all passed and `session_test` caught — see TRAPS 25's last
@@ -1937,6 +1958,181 @@ the suite.
 
 ---
 
+## 036 — the commands with no validator, and what that turned out to mean
+
+**Objective.** The question this file named as the next assistant task: *does
+every command have a validator?* — the fourth question off
+`CommandParser.allowed_commands()` after described (032), recorded (033) and
+reachable-from-the-prompt (033).
+
+**Starting state.** Branch `prototype-002a`, commit 035. 42 suites, 0 with
+something to look at, `--all` included — measured before anything was
+changed, not remembered.
+
+### The answer, and why it is not a missing function
+
+Four of the eleven commands have no validator between the AI's parameters and
+the code that uses them. Stated that way it sounds like a gap in a diagram.
+What it MEANS was measured headless, by sending each command the six values a
+model writes where a number belongs:
+
+```
+MODIFY_TRACK     "corner": {} [] null    NO RECORD AT ALL
+                 game_controller.gd:1225
+CREATE_TRACK     "corners": {} [] null   a record whose only reason is
+(sectionless)    track_builder.gd:26     THE EMPTY STRING
+PLAN step        "around": {} [] null    the plan refused for the worlds
+                 world_registry.gd:56    OVERLAPPING
+PLAN step        "offset": {"x": null}   the world built, never positioned
+                 game_controller.gd:914
+SPAWN_OPPONENTS  "count": {} [] null     unreachable (has_track() is always
+                 game_controller.gd:1246 false; the guard returns first)
+```
+
+029's mechanism, in the places 029 could not reach. `int()` and `float()`
+have no constructor for `null`, `{}` or `[]`: the call throws, and a throw
+abandons the function and leaves the caller holding the default. 029 asked
+"what if this is not a number" of every numeric field of every **validator**.
+These four commands have no validator, so nobody asked.
+
+**`MODIFY_TRACK` is 033's fault returning.** The throw lands after
+`_new_record()` and before `_finish_nothing()`, so the request left no record
+at all — while `main.gd` still wrote an understanding record pointing at its
+id. 033 fixed exactly that dangling reference for four commands; a value that
+is not a number put one of them back. The player saw **nothing**: no log
+line, no refusal, no record.
+
+**The sectionless `CREATE_TRACK` is 029's shape in a builder.**
+`TrackBuilder.build()` returns a `String`, so the abandoned call handed back
+`""`, `_finish_nothing` recorded `reasons: [""]` and the player got a blank
+line — after `clear()` had already taken their world away.
+
+**`around` is the one a player pays for, and it is in the prompt.** The model
+is TOLD to write `"around": N`. A value Genesis could not read was taken as
+0, both worlds were placed at the origin, and the plan came back refused for
+*"step 2 overlaps step 1: they must stand apart, or one must be big enough to
+contain the other with 15 m to spare"*. True, and about the wrong thing: the
+player asked for one world inside another and Genesis never read which. Found
+beside it, same field, same sentence: an `around` naming a LATER step or
+itself was also silently not centred and also refused for overlapping —
+`_place()` centres on `plan_footprints[N - 1]`, which holds only the worlds
+already placed, so only an earlier step can ever be surrounded, and nothing
+said so.
+
+**And the safe reading was already here, one function above two of them.**
+`TrackBuilder.readback()` has read `corner` through `Readback.as_number()`
+since 032; `OpponentBuilder.readback()` has read `count` the same way. The
+validators' own comments call that function *"the one place in Genesis that
+answers the type question"*. The handlers two files along typed `int()` out
+by hand — TRAPS 28's shape in a handler rather than in a prompt.
+
+### Implementation
+
+Asked of the class and not the instance (TRAPS 11). Every conversion of an
+AI-supplied value that no validator stands in front of now goes through
+`Readback.as_number()` / `Readback.measure()`. The sweep that found them is
+recorded so the next reader need not repeat it: every `int(` and `float(`
+applied to a `.get()` in `scripts/` was read, and all but these five take
+values that have already been through a validator (a clean `spec`, validated
+`sections`, builder metrics) or are internal (`current_attempt`, set by
+`main.gd`, never by the AI).
+
+- `world_registry.gd` — `around_of()` no longer throws. `around_given()`
+  returns the value **unconverted**, so a caller can tell missing from not-a-
+  number from out-of-range; `around_problem()` is the one check, beside the
+  one reading, because the field may be written at the step level or inside
+  `parameters` and a check looking in one place would pass a step the builder
+  reads from the other.
+- `game_controller.gd` — `_modify_track` and `_spawn_opponents` refuse a
+  non-numeric `corner` / `count` naming the field; `_execute_plan` runs
+  `around_problem()` over every step; `_place` reads `offset`'s `x` and `z`
+  safely; `PLAN` now refuses a non-object `intent`, which all three world
+  validators and `SectionValidator` already did and the fifth door did not —
+  so a ledger record can no longer carry a string where every other record
+  carries an object.
+- `track_builder.gd` — `corners` read safely, so the sentence the function
+  was always going to return actually gets returned.
+
+**Where the value changes what Genesis does, it refuses and names the field.
+Where the command builds nothing whatever it is sent, the debt is a record
+with a reason that is not the empty string.** Those are paid differently on
+purpose. `MODIFY_TRACK`, `SPAWN_OPPONENTS` and the sectionless `CREATE_TRACK`
+build nothing either way, so none of this changes what Genesis makes.
+
+**What was deliberately NOT changed.** The sectionless `CREATE_TRACK` still
+`clear()`s before discovering it has nothing to build. That is "Human
+decision needed" 2(b), 032 and 033 both left it, and so does this: the world
+still goes, and what changed is only that the player is now told why.
+
+### Evidence — what was actually run
+
+Godot 4.7.1 (`4.7.1.stable.official.a13da4feb`) headless, Linux, in a cloud
+container.
+
+- **Baseline, before any change, `--all`: 42 suites, 0 with something to look
+  at.** `drive_test` and `session_test` included.
+- **After, `--all`: 43 suites, 0 with something to look at.** Also run
+  without `--all`: 0.
+- **`command_schema_test` fails 28 times against the pre-036 code.** Measured
+  the way 035 measured its own: `game_controller.gd` and `track_builder.gd`
+  reverted to 035, and `around_of()` put back to the throwing `int()` while
+  `around_problem()`/`around_given()` were left in place so the suite parses.
+  The 28: 3 missing records (`MODIFY_TRACK`), 3 empty reasons (the ring), 20
+  for `around` refused as a scene fault rather than a shape fault and naming
+  the consequence instead of the field, 1 for `around_of` returning 1 from
+  `int(true)`, and 1 dangling-id check covering the three vanished records.
+- **The probe that found all this was run before and after** and is in the
+  session log rather than the repository: 20 `SCRIPT ERROR: Invalid call.
+  Nonexistent 'int'/'float' constructor` lines before the change, across four
+  sites (`_modify_track` 3, `_place` 2, `TrackBuilder.build` 3,
+  `around_of` 12 — three call sites per request). **0 after.**
+- **The prompt is byte-identical**: 15497 characters, `PROMPT_FINGERPRINT`
+  matches, so `PROMPT_VERSION` stays `035-bounds-from-the-code-1` and
+  `prompt_bounds_test` passes. Checked rather than assumed — 036 touches what
+  Genesis DOES with a field, not what the model is told about it. And the
+  prompt's own sentence about `around` (*"N is the number of the earlier
+  step"*) is now what the code enforces, which it was not: the code allowed
+  forward references and 0.
+- **`run_tests.bat` needed no edit, checked rather than assumed (TRAPS 4).**
+  `command_schema_test` matches none of its `findstr` patterns, so it is not
+  skipped as a tool and does not get `--fixed-fps 120` on Windows — and it
+  was run here **without** `--fixed-fps` as well, and passes. It is not in
+  `run_tests.sh`'s `TIMED` list for the same reason: it awaits process frames
+  only, never a physics frame.
+
+### What the tests did NOT prove
+
+- **NO MODEL HAS SENT ANY OF THESE REQUESTS.** Every malformed value in this
+  commit was typed by hand into `_handle_request`. A headless harness has no
+  key and no model. Whether a model actually writes `"around": null` is
+  exactly the thing only the owner's editor session can show, and the premise
+  that it does is 029's, measured there and inherited here rather than
+  re-established.
+- Nothing ran on Windows.
+- **Two of the five sites are guards and not findings (TRAPS 6).**
+  `_spawn_opponents` cannot be reached with a bad `count` while
+  `has_track()` is always false, and `_place`'s `offset` is reached by no
+  prompted request. They were fixed because the fault is the class; they
+  measured nothing.
+- **The records already written cannot be fixed.** The ledger on the owner's
+  machine may contain understanding records pointing at ids no record
+  carries, from any `MODIFY_TRACK` whose `corner` was not a number. 036 did
+  not go near them.
+- **One judgement, labelled as one.** That a plan step whose `around`
+  Genesis cannot read should be refused for its SHAPE rather than built and
+  then refused for overlapping is a design decision, not a measurement. It
+  follows 029's and 030's convention for every other numeric field, and it
+  changes what Genesis does with one shape of request: a **single-step** plan
+  carrying a stray `around` used to build (the field was silently ignored)
+  and is now refused. No other accepted request changed — the four
+  multi-world cases were already refused, for the wrong reason.
+- `capability_test`, `drive_test`, `session_test`, `plan_said_test` and
+  `log_023_test` all pass unchanged, and every `around` in them is `1` on
+  step 2, so the "earlier step" rule was checked against every existing use
+  rather than assumed compatible.
+
+TRAPS 30 records the fault, the rule, and the near miss that trap 14 caught.
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -2096,9 +2292,39 @@ because what changed is a sentence and the suite can only prove it is true:
   prompt does, because a suite now fails if it does not. Nothing was done to
   the records themselves — they are on your machine and they are yours.
 
+036 adds a tenth, and it is two sentences and one thing worth knowing:
+
+- *"a dungeon with a hall and a vault, inside a farm with a barn"* — any plan
+  with two worlds, one inside the other. That still works and should read
+  exactly as it did. **What is new is what happens when the model gets the
+  `around` field wrong**, and the sentence to look at is the refusal: it now
+  says *"step 2: 'around' is 2, and it must be an earlier step (1 to 1)"* or
+  *"step 2: 'around' must be a whole number, the step this world goes around
+  (1 to 1)"*. Before 036 any of those came back as *"step 2 overlaps step 1:
+  they must stand apart, or one must be big enough to contain the other with
+  15 m to spare"* — true, and about the wrong thing. **The judgement is
+  whether "1 to 1" reads as helpful or as absurd** in a two-step plan, since
+  that is the commonest plan there is. If it reads badly the fix is the
+  phrasing in `WorldRegistry.around_problem()` and `command_schema_test`
+  holds the line either way: it asserts that the field is NAMED and that the
+  refusal is a shape fault, never what the sentence says.
+- And one worth typing because it used to be silent: *"make me a race
+  track"*, then anything that makes the model send a `MODIFY_TRACK`. If a
+  model ever wrote `"corner": null`, Genesis printed **nothing at all** — no
+  line, no refusal, no record — and the ledger kept an understanding record
+  pointing at an id no record carried. It now says *"'corner' must be a
+  number, the corner to change"*. Unlikely to be reachable by typing, since
+  the prompt does not mention `MODIFY_TRACK` at all, and recorded here
+  because the silence was the fault.
+- And one worth knowing rather than typing: **any understanding record in
+  your ledger whose `about` id matches no record** is almost certainly this
+  — a `MODIFY_TRACK` whose `corner` was not a number, from any release before
+  036. The records are yours and 036 did not touch them.
+
 **Smallest useful assistant task next.** The ledger question (033), the
-container-door question (034) and the prompt-bound question (035) are all
-**done**. Candidates, in the order the assistant would take them:
+container-door question (034), the prompt-bound question (035) and the
+validator question (036) are all **done**. Candidates, in the order the
+assistant would take them:
 
 - ~~**A refusal that names no legal value, at the one door 030 did not
   reach: the top-level list itself.**~~ **Done in 034**, and it was nine
@@ -2158,10 +2384,20 @@ container-door question (034) and the prompt-bound question (035) are all
   claim holds at the wider width too. There are **no** commands the model is
   never told about beyond the two already known, and both are under "Human
   decision needed" 2.
-- **Does every command have a validator?** The question 023 asked of
+- ~~**Does every command have a validator?**~~ **Done in 036**, and the
+  answer was no — four of eleven — but the useful part is what "no
+  validator" turned out to mean: **four conversions that throw**, abandoning
+  the function and leaving the caller holding `int()`'s default. One of them
+  put 033's dangling ledger reference back; one recorded the empty string as
+  its reason; one refused a plan for the worlds *overlapping* when the real
+  fault was a field the prompt tells the model to write. Left struck rather
+  than deleted, because the next reader should see that a question phrased
+  as "is there a validator" was answered by a crash. See 036 and TRAPS 30.
+
+  The original entry, as 033 wrote it: *The question 023 asked of
   `UNSUPPORTED` alone, asked of the whole list. Not yet measured, and the
   natural fourth question of `CommandParser.allowed_commands()` after
-  described (032), recorded (033) and reachable-from-the-prompt (033).
+  described (032), recorded (033) and reachable-from-the-prompt (033).*
 
 Two smaller ones, either of which is a single session:
 
@@ -2183,6 +2419,17 @@ Two smaller ones, either of which is a single session:
   is worth a minute's thought first, since every record carries it and the
   ledger compares designs by it. *(035's answer: yes, and it should have
   moved twice before — see TRAPS 29.)*
+- **The silent drop, asked of every field the way 036 asked of every
+  command.** 036's `offset` finding is the shape: a field the code READS and
+  acts on, that the prompt never offers, refused by nothing and reported
+  nowhere. `silence_test` exists and this is not what it covers. The question
+  is cheap and the list is enumerable: for every field any handler or builder
+  reads out of the AI's parameters, is it named in the assembled prompt, and
+  is it checked by something? `prompt_bounds_test` already walks the prompt
+  with a regular expression and `WorldRegistry.modules()` already enumerates
+  the declarations, so both ends of the comparison exist. Expect the answer
+  to be wider than `offset` — that is what 034, 035 and 036 each found when
+  the same question was asked of a whole list.
 - **Ask one more question of every file at once.** 029's finding came from
   asking "what if this is not a number" of all five validators rather than
   one, and it had been true for the project's whole life. Candidates in the
@@ -2499,3 +2746,39 @@ decision, so it is his and not the assistant's.
 
    The assistant would take (b) and has not, because it is a change to what
    Genesis accepts.
+
+8. **A plan step can place a world by coordinate, and the prompt says it
+   cannot.** Found in 036 while fixing the conversion that threw there, and
+   measured rather than inferred: a step written
+   `{"command": "CREATE_FARM", "offset": {"x": 150, "z": 0}, ...}` really
+   does put that farm at x = 150. `_place()` has read the field since 003.
+
+   The prompt says *"The game works out where everything goes; **never give
+   coordinates**"*, and it never names the field. (The one line in the
+   assembled prompt containing the word `offset` is a **chicane's** sideways
+   step — a different field, behind `SectionValidator`. That distinction cost
+   a false sentence in 036's own code comment before trap 14's rule caught
+   it, which is recorded at the end of TRAPS 30.)
+
+   So this is **TRAPS 17 reversed**: not a capability stated wider than the
+   code, but a working capability the prompt denies. Nothing is broken today
+   — no prompted request carries the field, so no player reaches it — and
+   that is exactly why it has sat there for thirty commits.
+
+   The options, for the record:
+
+   - **(a) Leave it.** Costs nothing. An undocumented placement field stays
+     reachable by anything that writes JSON directly, including the
+     assistant's own tests.
+   - **(b) Refuse it.** A step carrying `offset` is refused naming the
+     field, so the code and the prompt agree. One check, beside
+     `around_problem()`. It makes the prompt's sentence true.
+   - **(c) Offer it in the prompt.** The opposite answer: coordinates become
+     a thing a player may ask for, and the sentence that forbids them goes.
+     That is a change to what Genesis is for — the AI proposing geometry
+     rather than describing intent — which is why this is here and not in a
+     commit.
+
+   The assistant would take (b), because the prompt's claim should be true,
+   and has not, because (c) is a real alternative and the choice between
+   them is product direction.

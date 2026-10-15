@@ -675,7 +675,19 @@ static func plan_example_step() -> Dictionary:
 func _execute_plan(parameters: Dictionary) -> void:
 	var record := _new_record("PLAN")
 	record["world"] = "plan"
-	record["intent"] = parameters.get("intent", {})
+	# 036: all three world validators and SectionValidator refuse an "intent"
+	# that is not an object, and name it. PLAN read the same field, checked
+	# nothing, and wrote whatever arrived into the ledger - so a record could
+	# carry a string or a list where every other record carries an object,
+	# and an auditor reading the file by field would meet three shapes.
+	# WorldModule.record_fields() has substituted {} for a non-object intent
+	# since 003; this is the fifth door to the same field.
+	var asked_intent = parameters.get("intent", {})
+	if parameters.has("intent") and typeof(asked_intent) != TYPE_DICTIONARY:
+		_finish_failed(record, "FAILED_SCHEMA",
+			["intent must be an object, for example {\"style\": \"a farm with a circuit round it\"}"])
+		return
+	record["intent"] = asked_intent
 
 	var raw = parameters.get("steps", null)
 	if typeof(raw) != TYPE_ARRAY:
@@ -703,6 +715,13 @@ func _execute_plan(parameters: Dictionary) -> void:
 			problems.append("step %d: '%s' is not a command this game has" % [n, step_command])
 		if step.has("parameters") and typeof(step["parameters"]) != TYPE_DICTIONARY:
 			problems.append("step %d: parameters must be an object" % n)
+		# 036: "around" is the one field the PROMPT tells the model to write
+		# that nothing checked. Read through WorldRegistry, which is the one
+		# place that knows where it may be written, so a check here and the
+		# placement in _place() cannot look in different places.
+		var around_wrong := WorldRegistry.around_problem(step, n, steps.size())
+		if around_wrong != "":
+			problems.append(around_wrong)
 
 	if not problems.is_empty():
 		_finish_failed(record, "FAILED_SCHEMA", problems)
@@ -910,8 +929,26 @@ func _place(node: Node3D, bounds_min: Vector2, bounds_max: Vector2) -> void:
 		var target_centre: Vector2 = (target["min"] + target["max"]) * 0.5
 		offset = target_centre - centre
 	elif typeof(step.get("offset", null)) == TYPE_DICTIONARY:
+		# 036: `float(given.get("x", 0.0))` threw on null and {}, abandoning
+		# _place() - so the world was built and never positioned, silently.
+		# A coordinate Genesis cannot read is now treated as no coordinate,
+		# which is what an absent one already does.
+		#
+		# NOT refused, and the reason is a question rather than an answer.
+		# Measured: an offset of 150 really does move a world to x = 150, and
+		# the prompt says "never give coordinates" and never names this
+		# field - the one line in it containing the word "offset" is a
+		# CHICANE's sideways step, a different field behind SectionValidator.
+		# So no prompted request reaches this branch, and a refusal written
+		# here would be a sentence no player can meet. But a working
+		# placement-by-coordinate that the prompt denies is TRAPS 17's shape
+		# reversed, and whether the prompt should offer it or the validator
+		# should refuse it is the owner's: HANDOVER, "Human decision
+		# needed" 8.
 		var given: Dictionary = step["offset"]
-		offset = Vector2(float(given.get("x", 0.0)), float(given.get("z", 0.0)))
+		var ox := Readback.measure(given, "x")
+		var oz := Readback.measure(given, "z")
+		offset = Vector2(0.0 if is_nan(ox) else ox, 0.0 if is_nan(oz) else oz)
 
 	node.position = Vector3(offset.x, 0.0, offset.y)
 	var placed_min := bounds_min + offset
@@ -1222,7 +1259,20 @@ func _modify_track(parameters: Dictionary) -> void:
 		_finish_nothing(record, "FAILED_SCENE",
 			"MODIFY_TRACK failed: composed tracks are changed with MODIFY_SECTION, which comes in a later step")
 		return
-	var corner: int = int(parameters.get("corner", 1))
+	# --- 036: the type question, asked where no validator stands ---
+	# This was `int(parameters.get("corner", 1))`, and int() has no
+	# constructor for null, {} or []: it threw, abandoning this function
+	# AFTER _new_record() and BEFORE _finish_nothing(), so the request left
+	# NO RECORD AT ALL while the understanding layer still wrote one pointing
+	# at its id. That is 033's dangling reference back again, through a value
+	# that is not a number. TrackBuilder.readback() has read the same field
+	# through Readback.as_number() since 032, one file along.
+	var asked_corner := Readback.measure(parameters, "corner")
+	if parameters.has("corner") and is_nan(asked_corner):
+		_finish_failed(record, "FAILED_SCHEMA",
+			["'corner' must be a number, the corner to change"])
+		return
+	var corner: int = 1 if is_nan(asked_corner) else int(asked_corner)
 	var difficulty: String = str(parameters.get("difficulty", "medium"))
 	# The builder's own sentence, which 032 tied to what it actually did, is
 	# both the player's line and the record's reason.
@@ -1243,7 +1293,19 @@ func _spawn_opponents(parameters: Dictionary) -> void:
 		_finish_nothing(record, "FAILED_SCENE", "SPAWN_OPPONENTS failed: build a track first")
 		return
 
-	var count: int = int(parameters.get("count", 1))
+	# 036: the same reading as _modify_track's, and the same rule.
+	# UNREACHABLE TODAY and labelled as such (TRAPS 6): has_track() is always
+	# false, so the guard above returns first and no legal input gets here.
+	# It is fixed anyway because the fault is the CLASS and not the instance
+	# (TRAPS 11) - and because if the owner ever takes option (c) under
+	# "Human decision needed" 2, this line is reached on the first request.
+	# OpponentBuilder.readback() has read "count" safely since 032.
+	var asked_count := Readback.measure(parameters, "count")
+	if parameters.has("count") and is_nan(asked_count):
+		_finish_failed(record, "FAILED_SCHEMA",
+			["'count' must be a number, how many opponents to put on the grid"])
+		return
+	var count: int = 1 if is_nan(asked_count) else int(asked_count)
 	_finish_nothing(record, NOTHING_BUILT, opponent_builder.spawn(
 		count,
 		track_builder.get_start_position(),

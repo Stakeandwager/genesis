@@ -23,7 +23,23 @@ var corner_nodes: Array[Node3D] = []
 # owner may be about to delete, so it is his call and not this commit's.
 func build(parameters: Dictionary) -> String:
 	clear()
-	var corners: int = int(parameters.get("corners", 4))
+	# --- 036: the reading that returned the empty string ---
+	# This was `int(parameters.get("corners", 4))`. int() has no constructor
+	# for null, {} or [], so the call THREW and abandoned build() - which
+	# returns a String, so the caller got "" and _finish_nothing() recorded a
+	# reason of [""] and printed a blank line to the player. The world had
+	# already gone by then: clear() is the line above. A record that exists
+	# and says nothing is the shape 029 found in the validators, here in a
+	# builder, and readback() below has read the sibling field safely since
+	# 032.
+	#
+	# The clear() is deliberately still FIRST. Whether a sectionless
+	# CREATE_TRACK should refuse before taking the player's world away is
+	# "Human decision needed" 2(b) and is the owner's; 032 and 033 both left
+	# it, and so does this. What changes here is only that the sentence the
+	# function was always going to return now actually gets returned.
+	var asked := Readback.as_number(parameters.get("corners", 4))
+	var corners: int = 4 if is_nan(asked) else int(asked)
 	if corner_nodes.is_empty():
 		# The asked-for count is deliberately NOT in this line. stub_claims_test
 		# refuses any line that names a number of corners the build did not

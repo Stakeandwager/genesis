@@ -52,8 +52,80 @@ static func find(command: String) -> WorldModule:
 # the validators are untouched, so an invented command or field is refused
 # exactly as before.
 static func around_of(step: Dictionary) -> int:
+	var raw = around_given(step)
+	var number := Readback.as_number(raw)
+	if is_nan(number):
+		return 0
+	return int(number)
+
+
+# --- 036: the value as the AI wrote it, before anything converts it ---
+#
+# around_of() used to be `int(step.get(...))`, and int() has no constructor
+# for null, {} or []. The call did not return 0: it THREW, and a throw
+# abandons the function and leaves the caller holding int's default - which
+# is 029's mechanism, in a reading that no validator stands in front of.
+# Measured headless: a plan step written `"around": null` threw here three
+# times per request (once in _fit_plan, once in _place, once in the readback)
+# and the plan was refused for the worlds OVERLAPPING - a sentence about
+# geometry for a field Genesis could not read.
+#
+# So the conversion is Readback.as_number()'s now, like every validator's,
+# and this returns the value UNCONVERTED so a caller that must say what was
+# wrong with it can tell MISSING from NOT A NUMBER from OUT OF RANGE. Those
+# are three different sentences to a player and one number to int().
+static func around_given(step: Dictionary) -> Variant:
 	var step_parameters: Dictionary = step.get("parameters", {})
-	return int(step.get("around", step_parameters.get("around", 0)))
+	if step.has("around"):
+		return step["around"]
+	return step_parameters.get("around", null)
+
+
+# --- 036: what is wrong with this step's "around", in a player's words ---
+#
+# The prompt TELLS the model to write `"around": N`, so this is a field a
+# player's request reaches by design, and it was the only prompted field in
+# Genesis that nothing checked. Every other numeric field names itself when
+# it is refused (029, 030); this one was silently read as 0 and the plan was
+# then refused for a consequence of that.
+#
+# One reading, here, for the reason around_of() is here: the field may be
+# written at the step level or inside parameters, and a check that looked in
+# one place would pass a step the builder then reads from the other.
+#
+# Returns "" when there is nothing wrong. An ABSENT "around" is not wrong -
+# a step that does not surround anything is the ordinary case.
+static func around_problem(step: Dictionary, index: int, _step_count: int) -> String:
+	if not _has_around(step):
+		return ""
+	var raw = around_given(step)
+	# Only an EARLIER step can be surrounded, and that is measured rather
+	# than assumed: _place() centres this world on plan_footprints[N - 1],
+	# and plan_footprints holds only the worlds already placed. A forward
+	# reference used to half-work - _fit_plan() grew the container, _place()
+	# centred nothing, and the plan was then refused for overlapping.
+	var highest := index - 1
+	if highest < 1:
+		return "step %d: 'around' names an earlier step, and nothing comes before step 1" % index
+	var number := Readback.as_number(raw)
+	if is_nan(number):
+		return "step %d: 'around' must be a whole number, the step this world goes around (1 to %d)" % [
+			index, highest]
+	if number != floor(number):
+		return "step %d: 'around' must be a whole step number (1 to %d), not %s" % [
+			index, highest, String.num(number, 2)]
+	var at := int(number)
+	if at < 1 or at > highest:
+		return "step %d: 'around' is %d, and it must be an earlier step (1 to %d)" % [
+			index, at, highest]
+	return ""
+
+
+static func _has_around(step: Dictionary) -> bool:
+	if step.has("around"):
+		return true
+	var step_parameters = step.get("parameters", {})
+	return typeof(step_parameters) == TYPE_DICTIONARY and (step_parameters as Dictionary).has("around")
 
 
 # --- 003: what Genesis understood ---
