@@ -4,6 +4,63 @@ class_name SectionValidator
 # --- Prototype 002B - Universal Track Geometry & Vertical Axis (user's build) ---
 
 const SECTION_TYPES := ["straight", "uphill", "downhill", "crest", "dip", "corner", "hairpin", "banked_corner", "chicane", "loop_segment"]
+
+# --- the four a player is offered, and why it is not the ten above ---
+#
+# THIS IS A WALL, NOT A STALE LIST. Read TRAPS 19 before touching it.
+# SECTION_TYPES is what this validator accepts. OFFERED_TYPES is what the
+# player is told a circuit is built from, and the AI's prompt in
+# racing_module.gd says "only these four" for a reason that lives in a third
+# file: docs/GENESIS_BRIEF.md, under "Known rough edges", records that banked
+# corners act as ramps and throw cars over the barrier (about 23 opponent
+# recoveries a race), that loops are built but untested with a car, that the
+# separation check is flat so a loop passing over itself reads as a crash, and
+# that the solver does not check a track returns to its starting height.
+# Those four defects are precisely the six types left out here.
+#
+# The six validate, measure, close and build. What they do not do is behave,
+# and "only these four" is the one thing between a player's sentence and a
+# known car-launching defect. Whether to open them is the owner's - it is
+# product direction and it is item 1 under "Human decision needed" in
+# docs/HANDOVER.md - so nothing here decides it.
+#
+# What 030 changed is only that the refusals below now READ this list instead
+# of naming nothing. Writing out SECTION_TYPES in the message, which is what
+# "name the legal values" looks like at a glance, would have advertised the
+# six withheld types to the player in the one sentence nobody was testing -
+# undoing trap 19's wall through a door it had not been checked for. TRAPS 19
+# asks for the reason to be written where the restriction is. It is now.
+#
+# tests/capability_test.gd fails if this list and the prompt's four ever
+# disagree, in either direction, so the two copies cannot drift (TRAPS 11).
+const OFFERED_TYPES := ["straight", "corner", "hairpin", "chicane"]
+
+# --- what each section type is made of, in one place ---
+#
+# Until 030 a type's fields were written out twice: once as the list of keys
+# _forbid() was handed at the call site, and once not at all - the refusal
+# said "'bank' is not a straight setting" and never said what a straight's
+# settings ARE. Four types also tested for 'length' in a separate line of
+# their own, with a differently worded refusal, because 'length' was not in
+# any _forbid list.
+#
+# Both now read from here: a type's own fields are what it keeps, every other
+# field in the table is what it refuses, and the refusal names the fields the
+# type has. This is around_of() and _wall_rects() again - the thing that acts
+# and the thing that describes reading from one place.
+const FIELDS := {
+	"straight": ["length"],
+	"uphill": ["length", "grade"],
+	"downhill": ["length", "grade"],
+	"crest": ["length", "grade"],
+	"dip": ["length", "grade"],
+	"corner": ["radius", "angle"],
+	"hairpin": ["radius", "angle"],
+	"banked_corner": ["radius", "angle", "bank"],
+	"chicane": ["radius", "offset", "direction"],
+	"loop_segment": ["radius", "angle"],
+}
+
 const MODES := ["circuit"]
 
 const MIN_SECTIONS := 2
@@ -36,7 +93,10 @@ static func validate(parameters: Dictionary) -> Dictionary:
 		errors.append("mode '%s' is not available (only: circuit)" % mode)
 
 	if parameters.has("intent") and typeof(parameters["intent"]) != TYPE_DICTIONARY:
-		errors.append("intent must be an object")
+		# FarmModule and DungeonModule have shown the shape here since they
+		# were written; this one named the type and left the player to guess
+		# what goes in it.
+		errors.append("intent must be an object, for example {\"style\": \"a street circuit\"}")
 
 	var raw = parameters.get("sections", null)
 	if typeof(raw) != TYPE_ARRAY:
@@ -59,16 +119,16 @@ static func validate(parameters: Dictionary) -> Dictionary:
 		match t:
 			"straight":
 				counts["straight"] += 1
-				_forbid(section, ["radius", "angle", "offset", "direction", "grade", "bank"], n, t, errors)
-				var length := _number(section, "length", n, t, errors)
+				_forbid(section, n, t, errors)
+				var length := _number(section, "length", n, t, errors, _span(STRAIGHT_LENGTH, " m"))
 				if _bound(errors, n, t, "length", length, STRAIGHT_LENGTH, " m"):
 					clean.append({"type": "straight", "length": length})
 
 			"uphill", "downhill", "crest", "dip":
 				counts[t] += 1
-				_forbid(section, ["radius", "angle", "offset", "direction", "bank"], n, t, errors)
-				var length := _number(section, "length", n, t, errors)
-				var grade := _number(section, "grade", n, t, errors)
+				_forbid(section, n, t, errors)
+				var length := _number(section, "length", n, t, errors, _span(STRAIGHT_LENGTH, " m"))
+				var grade := _number(section, "grade", n, t, errors, _span(GRADE_RANGE, "%"))
 				# Both are asked, so both are answered: a spec with two bad
 				# numbers is told about two, not about the first one.
 				var length_ok := _bound(errors, n, t, "length", length, STRAIGHT_LENGTH, " m")
@@ -79,13 +139,11 @@ static func validate(parameters: Dictionary) -> Dictionary:
 
 			"corner", "hairpin":
 				counts[t] += 1
-				if section.has("length"):
-					errors.append("section %d (%s): do not supply 'length'" % [n, t])
-				_forbid(section, ["offset", "direction", "grade", "bank"], n, t, errors)
+				_forbid(section, n, t, errors)
 				var radius_range := CORNER_RADIUS if t == "corner" else HAIRPIN_RADIUS
 				var angle_range := CORNER_ANGLE if t == "corner" else HAIRPIN_ANGLE
-				var radius := _number(section, "radius", n, t, errors)
-				var angle := _number(section, "angle", n, t, errors)
+				var radius := _number(section, "radius", n, t, errors, _span(radius_range, " m"))
+				var angle := _number(section, "angle", n, t, errors, _span(angle_range, " degrees", true))
 				var radius_ok := _bound(errors, n, t, "radius", radius, radius_range, " m")
 				# An angle of exactly 0 was refused by a test of its own here.
 				# It still is, by the bound: every angle_range in this file
@@ -100,12 +158,10 @@ static func validate(parameters: Dictionary) -> Dictionary:
 
 			"banked_corner":
 				counts["banked_corner"] += 1
-				if section.has("length"):
-					errors.append("section %d (banked_corner): do not supply 'length'" % n)
-				_forbid(section, ["offset", "direction", "grade"], n, t, errors)
-				var radius := _number(section, "radius", n, t, errors)
-				var angle := _number(section, "angle", n, t, errors)
-				var bank := _number(section, "bank", n, t, errors)
+				_forbid(section, n, t, errors)
+				var radius := _number(section, "radius", n, t, errors, _span(CORNER_RADIUS, " m"))
+				var angle := _number(section, "angle", n, t, errors, _span(CORNER_ANGLE, " degrees", true))
+				var bank := _number(section, "bank", n, t, errors, _span(BANK_ANGLE, " degrees"))
 				var radius_ok := _bound(errors, n, t, "radius", radius, CORNER_RADIUS, " m")
 				var angle_ok := _bound(errors, n, t, "angle", angle, CORNER_ANGLE, " degrees", true)
 				# Bank is the one angle in this file that is NOT bounded on its
@@ -121,11 +177,15 @@ static func validate(parameters: Dictionary) -> Dictionary:
 
 			"chicane":
 				counts["chicane"] += 1
-				if section.has("length"):
-					errors.append("section %d (chicane): do not supply 'length'" % n)
-				_forbid(section, ["angle", "grade", "bank"], n, t, errors)
-				var radius := _number(section, "radius", n, t, errors)
-				var offset := _number(section, "offset", n, t, errors)
+				_forbid(section, n, t, errors)
+				var radius := _number(section, "radius", n, t, errors, _span(CHICANE_RADIUS, " m"))
+				# The one bound in this file that is not a constant, so the
+				# phrase names the RULE rather than a pair of numbers. A
+				# player whose model left the offset out can act on "more
+				# than 0 and at most twice the radius"; they could not act on
+				# "missing 'offset'".
+				var offset := _number(section, "offset", n, t, errors,
+					"more than 0 and at most twice the radius")
 				var direction := str(section.get("direction", ""))
 				var section_ok := not is_nan(radius) and not is_nan(offset)
 				if not direction in ["left", "right"]:
@@ -159,11 +219,9 @@ static func validate(parameters: Dictionary) -> Dictionary:
 
 			"loop_segment":
 				counts["loop_segment"] += 1
-				if section.has("length"):
-					errors.append("section %d (loop_segment): do not supply 'length'" % n)
-				_forbid(section, ["offset", "direction", "grade", "bank"], n, t, errors)
-				var radius := _number(section, "radius", n, t, errors)
-				var angle := _number(section, "angle", n, t, errors)
+				_forbid(section, n, t, errors)
+				var radius := _number(section, "radius", n, t, errors, _span(LOOP_RADIUS, " m"))
+				var angle := _number(section, "angle", n, t, errors, _span(LOOP_ANGLE, " degrees", true))
 				var radius_ok := _bound(errors, n, t, "radius", radius, LOOP_RADIUS, " m")
 				var angle_ok := _bound(errors, n, t, "angle", angle, LOOP_ANGLE, " degrees", true)
 				var section_ok := radius_ok and angle_ok
@@ -172,11 +230,16 @@ static func validate(parameters: Dictionary) -> Dictionary:
 					direction_change += absf(angle)
 					clean.append({"type": "loop_segment", "radius": radius, "angle": angle})
 
+			# Both of these named nothing a player could act on until 030.
+			# They name OFFERED_TYPES and not SECTION_TYPES, deliberately:
+			# see the note on OFFERED_TYPES and TRAPS 19.
 			"":
-				errors.append("section %d has no type" % n)
+				errors.append("section %d has no type (a circuit is built from %s)" % [
+					n, ", ".join(OFFERED_TYPES)])
 
 			_:
-				errors.append("section %d: unknown type '%s'" % [n, t])
+				errors.append("section %d: unknown type '%s' (a circuit is built from %s)" % [
+					n, t, ", ".join(OFFERED_TYPES)])
 
 	return _result(errors, clean, counts, net_turn, direction_change)
 
@@ -195,21 +258,52 @@ static func _result(errors: Array[String], clean: Array, counts: Dictionary, net
 	}
 
 
-static func _number(section: Dictionary, key: String, n: int, t: String, errors: Array[String]) -> float:
+# A number out of a section, or a refusal naming what one would have to be.
+#
+# `allowed` is the same phrase the range refusal uses, built by _span() from
+# the same constant, so the three refusals a field can draw - missing, not a
+# number, out of range - cannot disagree about its bound. Before 030 only the
+# third of them named one; the first two said "missing 'length'" and
+# "'length' must be a number" and left the player with nothing to type
+# (TRAPS 21). The caller passes the phrase rather than the limits because one
+# bound in this file is not a constant: a chicane's offset is twice the radius
+# that was asked for, and its phrase is a rule rather than a pair of numbers.
+#
+# The type question is Readback.as_number()'s, the single place in Genesis
+# that decides whether a value out of a request is a number (029, TRAPS 20).
+static func _number(section: Dictionary, key: String, n: int, t: String,
+		errors: Array[String], allowed: String) -> float:
 	if not section.has(key):
-		errors.append("section %d (%s): missing '%s'" % [n, t, key])
+		errors.append("section %d (%s): missing '%s', and it must be %s" % [n, t, key, allowed])
 		return NAN
-	var value = section[key]
-	if typeof(value) != TYPE_FLOAT and typeof(value) != TYPE_INT:
-		errors.append("section %d (%s): '%s' must be a number" % [n, t, key])
+	var value := Readback.as_number(section[key])
+	if is_nan(value):
+		errors.append("section %d (%s): '%s' must be a number, %s" % [n, t, key, allowed])
 		return NAN
-	return float(value)
+	return value
 
 
-static func _forbid(section: Dictionary, keys: Array, n: int, t: String, errors: Array[String]) -> void:
-	for key in keys:
-		if section.has(key):
-			errors.append("section %d (%s): '%s' is not a %s setting" % [n, t, key, t])
+# A field this type does not have, refused with the fields it DOES have.
+#
+# The forbidden set is every field in FIELDS that this type does not keep, so
+# the list and the sentence come from one place and a type that grows a field
+# stops forbidding it in the same edit. It also absorbs the four hand-written
+# 'length' checks that sat beside the old call sites, which refused the same
+# thing in different words.
+static func _forbid(section: Dictionary, n: int, t: String, errors: Array[String]) -> void:
+	var mine: Array = FIELDS.get(t, [])
+	var asked := {}
+	for type in FIELDS:
+		for key in (FIELDS[type] as Array):
+			if key in mine or asked.has(key):
+				continue
+			asked[key] = true
+			if section.has(key):
+				# Readback.join_list for the same reason every other list in
+				# Genesis uses it: "radius and angle", not "radius, angle".
+				errors.append("section %d (%s): '%s' is not a %s setting (a %s has %s)" % [
+					n, t, key, t, t,
+					Readback.join_list(PackedStringArray(mine))])
 
 
 # --- one reading, applied to the words of a refusal ---
@@ -249,9 +343,19 @@ static func _range_error(n: int, t: String, field: String, value: float,
 	var measured := absf(value) if magnitude else value
 	if measured >= limits.x and measured <= limits.y:
 		return ""
+	return "section %d (%s): %s is %s%s, and must be %s" % [
+		n, t, field, _tidy(value), unit, _span(limits, unit, magnitude)]
+
+
+# What a legal value for this bound would be, in the words a refusal uses.
+#
+# One function, because a field can be refused three ways - missing, not a
+# number, out of range - and all three have to describe the same bound. 028
+# gave the range refusal its limits and 029 recorded that the other two still
+# had none; this is where they get them.
+static func _span(limits: Vector2, unit: String, magnitude: bool = false) -> String:
 	var either := ", either direction" if magnitude else ""
-	return "section %d (%s): %s is %s%s, and must be %s to %s%s%s" % [
-		n, t, field, _tidy(value), unit, _tidy(limits.x), _tidy(limits.y), unit, either]
+	return "%s to %s%s%s" % [_tidy(limits.x), _tidy(limits.y), unit, either]
 
 
 # Records the refusal if there is one, and says whether the number was sound.

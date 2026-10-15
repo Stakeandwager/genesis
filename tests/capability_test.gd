@@ -40,6 +40,10 @@ func _initialize() -> void:
 	_growth_is_recorded()
 	_the_stopping_distance_claim_at_its_real_width()
 	_the_wide_sentences_do_not_come_back()
+	_a_refusal_names_a_legal_value()
+	_an_enumerated_refusal_names_its_values()
+	_the_fields_table_is_a_fact()
+	_the_withheld_types_are_not_offered()
 
 	print("CAPABILITY TEST failures=%d" % bad)
 	quit(1 if bad > 0 else 0)
@@ -454,3 +458,498 @@ func _the_wide_sentences_do_not_come_back() -> void:
 		"and no longer claims it measures the real stop: %s" % physics)
 	_check(physics.contains("predicted stopping distance"),
 		"while still saying what it does predict")
+
+
+# =====================================================================
+# 030 - the same claim, through the two doors nobody had opened
+# =====================================================================
+#
+# The prompt's claim is "It REFUSES rather than clamping. A number outside its
+# limits is refused with the limit named", and 028 asserted it above for every
+# bound in all five validators. But a field can be refused THREE ways, not
+# one:
+#
+#   out of range   "room 1: width is 500 m, and must be 4 to 40 m"
+#   not a number   "power must be a number"                <- named nothing
+#   missing        "zone 1 (barn): missing 'width'"         <- named nothing
+#
+# Only the first was tested, and only the first named a bound. The other two
+# are the doors a MODEL is more likely to walk through than a player: null for
+# a field it had nothing to say about, or a field simply left out. Measured
+# before 030, with the limits sitting in scope on the very line that wrote the
+# sentence:
+#
+#   CarTool           power must be a number
+#   BootsTool         push must be a number
+#   FarmModule        zone 1 (barn): missing 'width'
+#                     zone 1 (barn): 'width' must be a number
+#                     zone 1 has no type
+#   SectionValidator  section 1 (straight): missing 'length'
+#                     section 1 (straight): 'length' must be a number
+#                     section 1 (straight): 'bank' is not a straight setting
+#                     section 1 (corner): do not supply 'length'
+#                     section 1 has no type
+#                     section 1: unknown type 'loop'
+#                     intent must be an object
+#
+# Twelve refusals, in four of the five validators. DungeonModule's two name
+# their bound because 029 happened to be rewriting those lines; that was the
+# instance, and this is the class (TRAPS 11).
+#
+# THE RULE BEING ASSERTED, AND WHY IT IS A FACT AND NOT A FORM OF WORDS
+# A refusal has two jobs: stop the build, and tell the player what would be
+# allowed. So for every way a field can be refused, the message must name a
+# legal value - and what counts as the legal value is READ OUT OF THE CODE,
+# never typed in here. The bound numbers come from the constants; the type and
+# field lists from FIELDS, ZONE_TYPES, OFFERED_TYPES, SKINS, PAINTS, COLOURS
+# and defaults(). A bound that moves moves the assertion with it (TRAPS 13),
+# and the suite is not reading the sentence - it is reading whether the thing
+# a player would have to know is in it.
+#
+# WHICH OF THESE MEASURED SOMETHING AND WHICH ARE ONLY GUARDS
+#
+# TRAPS 6: a check that cannot fail is worth keeping, worth labelling and not
+# worth counting as a measurement. This section adds 364 assertions, taking
+# the suite from 165 to 529, and 109 of them fail against the pre-030
+# messages:
+#
+#    23  a bound not named when the field was LEFT OUT
+#    32  a bound not named when the field was NULL
+#    49  a forbidden field refused without saying what the type does have
+#     3  an enumerated list not named - a farm zone with no type, and both of
+#        the circuit's type refusals
+#     2  a chicane's offset refused without tying it to the radius
+#
+# The measurement was taken against the four validators carrying their
+# pre-030 MESSAGES, not against the pre-030 files verbatim: this suite reads
+# SectionValidator.FIELDS and OFFERED_TYPES, which 030 introduced, so the old
+# file cannot run it at all. What is measured is therefore exactly what 030
+# claims to have changed - what the sentences say - and not the refactor that
+# made saying it possible.
+#
+# The rest are guards, and two whole sections of this file are guards by
+# construction and say so where they stand: _the_fields_table_is_a_fact()
+# checks a table 030 introduced against the validator it describes, and
+# _the_withheld_types_are_not_offered() checks a wall that was never breached.
+# The old refusal named no types at all, so "it does not advertise uphill"
+# passed before this commit for the wrong reason. They are here to stop the
+# next edit breaking either, which is the only thing a guard is for.
+#
+# The dungeon's four probes are guards too, and deliberately: 029 fixed those
+# two messages, and the fault being tested is "one file out of five missed a
+# convention". Nothing but asking all five the same question shows that.
+
+
+# --- 1. every bounded number, through the missing and not-a-number doors ---
+#
+# A TOOL'S FIELDS ARE NOT PROBED FOR "MISSING", DELIBERATELY. Every field of a
+# car, boots or a look may be left out and keeps its ordinary value - that is
+# the design, stated in the prompt, and a missing field is not a refusal there
+# at all. So the missing door is asked only of the worlds, where a measurement
+# left out IS a refusal. Asserting a refusal that should not happen would be
+# the mirror of TRAPS 6: a check that cannot pass.
+func _a_refusal_names_a_legal_value() -> void:
+	var car := CarTool.new()
+	for field in ["power", "braking", "steering", "grip"]:
+		var limits: Vector2 = car.get(field.to_upper())
+		_not_a_number_names(limits, func() -> Array:
+			var r: Dictionary = car.validate({"tool": "car", "spec": {field: null}})
+			return [bool(r["ok"]), r["errors"]], "a car's %s" % field, field)
+
+	var boots := BootsTool.new()
+	for field in ["push", "weight", "footing", "turning", "brake"]:
+		var pair: Array = boots.get(field.to_upper())
+		var limits := Vector2(float(pair[0]), float(pair[1]))
+		_not_a_number_names(limits, func() -> Array:
+			var r: Dictionary = boots.validate({"tool": "boots", "spec": {field: null}})
+			return [bool(r["ok"]), r["errors"]], "boots' %s" % field, field)
+
+	# A farm. Buildings and fields have different bounds, so both are asked
+	# through both doors.
+	var farm := FarmModule.new()
+	for probe in [["barn", FarmModule.BUILDING_SIDE], ["pond", FarmModule.FIELD_SIDE]]:
+		var type: String = probe[0]
+		var limits: Vector2 = probe[1]
+		for field in ["width", "depth"]:
+			var other := "depth" if field == "width" else "width"
+			_missing_names(limits, func() -> Array:
+				var zone := {"type": type}
+				zone[other] = _mid(limits)
+				var r: Dictionary = farm.validate({"zones": [zone]})
+				return [bool(r["ok"]), r["errors"]], "a farm %s's %s" % [type, field], field)
+			_not_a_number_names(limits, func() -> Array:
+				var zone := {"type": type, "width": _mid(limits), "depth": _mid(limits)}
+				zone[field] = null
+				var r: Dictionary = farm.validate({"zones": [zone]})
+				return [bool(r["ok"]), r["errors"]], "a farm %s's %s" % [type, field], field)
+
+	# A dungeon. 029 fixed these two; they are probed anyway, because the fault
+	# being tested is "one file out of five missed a convention", and the only
+	# way to see that is to ask all five the same question.
+	var dungeon := DungeonModule.new()
+	var room_side := Vector2(DungeonModule.MIN_SIDE, DungeonModule.MAX_SIDE)
+	var mid := _mid(room_side)
+	for field in ["width", "depth"]:
+		var other := "depth" if field == "width" else "width"
+		_missing_names(room_side, func() -> Array:
+			var room := {"name": "vault"}
+			room[other] = mid
+			var r: Dictionary = dungeon.validate({
+				"rooms": [room, {"name": "hall", "width": mid, "depth": mid}],
+				"doors": [[1, 2]]})
+			return [bool(r["ok"]), r["errors"]], "a dungeon room's %s" % field, field)
+		_not_a_number_names(room_side, func() -> Array:
+			var room := {"name": "vault", "width": mid, "depth": mid}
+			room[field] = null
+			var r: Dictionary = dungeon.validate({
+				"rooms": [room, {"name": "hall", "width": mid, "depth": mid}],
+				"doors": [[1, 2]]})
+			return [bool(r["ok"]), r["errors"]], "a dungeon room's %s" % field, field)
+
+	# And the circuit, every numeric field of every section type. The pairing
+	# of a field to its bound is knowledge that lives in the validator's match
+	# arms rather than in a constant, so it is written out here - but the
+	# NUMBERS are read from the constants, and _the_fields_table_is_a_fact()
+	# below fails if a type is added to FIELDS and not probed here.
+	for probe in _circuit_bounds():
+		var type: String = probe[0]
+		var field: String = probe[1]
+		var limits: Vector2 = probe[2]
+		_missing_names(limits, func() -> Array:
+			return _circuit_without(type, field), "a %s's %s" % [type, field], field)
+		_not_a_number_names(limits, func() -> Array:
+			return _circuit_with(type, field, null), "a %s's %s" % [type, field], field)
+
+	# A chicane's offset is the one bound that is not a pair of numbers: it is
+	# twice the radius that was asked for. So what a player has to be told is
+	# the RADIUS, and that is what is asserted - the fact behind the sentence,
+	# not the sentence.
+	for outcome in [_circuit_without("chicane", "offset"),
+			_circuit_with("chicane", "offset", null)]:
+		_check(not bool(outcome[0]), "a chicane with no usable offset is refused")
+		var said := _about("offset", outcome[1])
+		_check(said.contains("radius"),
+			"and the refusal says the offset is bounded by the radius: %s" % str(outcome[1]))
+
+
+# One bound, asked for with the field left out entirely.
+func _missing_names(limits: Vector2, run: Callable, what: String, field: String) -> void:
+	_door_names(limits, run, what, field, "left out")
+
+
+# One bound, asked for with null where the number belongs - ordinary output
+# from a model for a field it had nothing to say about.
+func _not_a_number_names(limits: Vector2, run: Callable, what: String, field: String) -> void:
+	_door_names(limits, run, what, field, "null")
+
+
+# Refused, about this field, and naming both ends of the bound. _names_number
+# is 028's, which counts a rendering only where neither neighbour is a digit,
+# so "section 1" cannot pass as a bound of 1.
+func _door_names(limits: Vector2, run: Callable, what: String, field: String,
+		door: String) -> void:
+	var outcome: Array = run.call()
+	var refused: bool = not bool(outcome[0])
+	_check(refused, "%s %s is refused" % [what, door])
+	if not refused:
+		return
+	var said := _about(field, outcome[1])
+	_check(said != "", "%s %s: and the refusal is about %s -> %s" % [
+		what, door, field, str(outcome[1])])
+	if said == "":
+		return
+	_check(_names_number(said, limits.x) and _names_number(said, limits.y),
+		"%s %s: and it names %s to %s -> %s" % [
+			what, door, _tidy(limits.x), _tidy(limits.y), said])
+
+
+# The refusal about this field, without the "section 3" / "zone 1" index that
+# opens it, or "" if nothing was said about it.
+func _about(field: String, errors: Variant) -> String:
+	for error in (errors as Array):
+		if str(error).contains(field):
+			return _tail(str(error))
+	return ""
+
+
+# Which constant bounds which field of which section type. Written out because
+# the validator keeps that pairing in its match arms; the numbers themselves
+# are never typed here.
+func _circuit_bounds() -> Array:
+	return [
+		["straight", "length", SectionValidator.STRAIGHT_LENGTH],
+		["uphill", "length", SectionValidator.STRAIGHT_LENGTH],
+		["uphill", "grade", SectionValidator.GRADE_RANGE],
+		["downhill", "length", SectionValidator.STRAIGHT_LENGTH],
+		["downhill", "grade", SectionValidator.GRADE_RANGE],
+		["crest", "length", SectionValidator.STRAIGHT_LENGTH],
+		["crest", "grade", SectionValidator.GRADE_RANGE],
+		["dip", "length", SectionValidator.STRAIGHT_LENGTH],
+		["dip", "grade", SectionValidator.GRADE_RANGE],
+		["corner", "radius", SectionValidator.CORNER_RADIUS],
+		["corner", "angle", SectionValidator.CORNER_ANGLE],
+		["hairpin", "radius", SectionValidator.HAIRPIN_RADIUS],
+		["hairpin", "angle", SectionValidator.HAIRPIN_ANGLE],
+		["banked_corner", "radius", SectionValidator.CORNER_RADIUS],
+		["banked_corner", "angle", SectionValidator.CORNER_ANGLE],
+		["banked_corner", "bank", SectionValidator.BANK_ANGLE],
+		["chicane", "radius", SectionValidator.CHICANE_RADIUS],
+		["loop_segment", "radius", SectionValidator.LOOP_RADIUS],
+		["loop_segment", "angle", SectionValidator.LOOP_ANGLE],
+	]
+
+
+# A sound section of this type, built from the constants.
+func _sound_section(type: String) -> Dictionary:
+	var section := {"type": type}
+	for field in (SectionValidator.FIELDS[type] as Array):
+		match field:
+			"length":
+				section["length"] = _mid(SectionValidator.STRAIGHT_LENGTH)
+			"grade":
+				section["grade"] = _mid(SectionValidator.GRADE_RANGE)
+			"direction":
+				section["direction"] = "left"
+			"bank":
+				section["bank"] = _mid(SectionValidator.BANK_ANGLE)
+			"radius":
+				section["radius"] = _radius_for(type)
+			"angle":
+				section["angle"] = _angle_for(type)
+			"offset":
+				# At most twice the radius, so the radius itself is always
+				# inside the bound.
+				section["offset"] = _radius_for(type)
+			_:
+				_check(false, "a %s has a field '%s' this test cannot build" % [type, field])
+	return section
+
+
+func _radius_for(type: String) -> float:
+	match type:
+		"hairpin":
+			return _mid(SectionValidator.HAIRPIN_RADIUS)
+		"chicane":
+			return _mid(SectionValidator.CHICANE_RADIUS)
+		"loop_segment":
+			return _mid(SectionValidator.LOOP_RADIUS)
+	return _mid(SectionValidator.CORNER_RADIUS)
+
+
+func _angle_for(type: String) -> float:
+	match type:
+		"hairpin":
+			return _mid(SectionValidator.HAIRPIN_ANGLE)
+		"loop_segment":
+			return _mid(SectionValidator.LOOP_ANGLE)
+	return _mid(SectionValidator.CORNER_ANGLE)
+
+
+func _mid(limits: Vector2) -> float:
+	return (limits.x + limits.y) * 0.5
+
+
+func _filler() -> Dictionary:
+	return {"type": "straight", "length": _mid(SectionValidator.STRAIGHT_LENGTH)}
+
+
+func _validated(section: Dictionary) -> Array:
+	var r: Dictionary = SectionValidator.validate({"sections": [section, _filler()]})
+	return [bool(r["ok"]), r["errors"]]
+
+
+func _circuit_without(type: String, field: String) -> Array:
+	var section := _sound_section(type)
+	section.erase(field)
+	return _validated(section)
+
+
+func _circuit_with(type: String, field: String, value: Variant) -> Array:
+	var section := _sound_section(type)
+	section[field] = value
+	return _validated(section)
+
+
+# --- 2. every refusal of a value out of a FIXED LIST names the list ---
+#
+# The same rule where the legal values are an enumeration rather than a range.
+# Most of these named their list already; "zone 1 has no type", "section 1 has
+# no type" and "section 1: unknown type 'x'" did not, which is the case where
+# a player most needs it. Every expected list is read from the code.
+func _an_enumerated_refusal_names_its_values() -> void:
+	var car := CarTool.new()
+	_lists(func() -> Array:
+		var r: Dictionary = car.validate({"spec": {"paint": "taupe"}})
+		return [bool(r["ok"]), r["errors"]], CarTool.PAINTS.keys(), "a car's paints")
+	_lists(func() -> Array:
+		var r: Dictionary = car.validate({"spec": {"spoiler": 3}})
+		return [bool(r["ok"]), r["errors"]], car.defaults().keys(), "a car's own fields")
+
+	var boots := BootsTool.new()
+	_lists(func() -> Array:
+		var r: Dictionary = boots.validate({"spec": {"colour": "taupe"}})
+		return [bool(r["ok"]), r["errors"]], BootsTool.COLOURS.keys(), "boots' colours")
+	_lists(func() -> Array:
+		var r: Dictionary = boots.validate({"spec": {"laces": 3}})
+		return [bool(r["ok"]), r["errors"]], boots.defaults().keys(), "boots' own fields")
+
+	var look := LookTool.new()
+	_lists(func() -> Array:
+		var r: Dictionary = look.validate({"spec": {"skin": "taupe"}})
+		return [bool(r["ok"]), r["errors"]], LookTool.SKINS.keys(), "a look's skins")
+	_lists(func() -> Array:
+		var r: Dictionary = look.validate({"spec": {"hat": 3}})
+		return [bool(r["ok"]), r["errors"]], look.defaults().keys(), "a look's own fields")
+
+	var farm := FarmModule.new()
+	var fmid := _mid(FarmModule.FIELD_SIDE)
+	# Both doors into the type: a zone with no type at all, and one whose type
+	# is not a zone.
+	_lists(func() -> Array:
+		var r: Dictionary = farm.validate({"zones": [{"width": fmid, "depth": fmid}]})
+		return [bool(r["ok"]), r["errors"]], FarmModule.ZONE_TYPES,
+		"a farm's zone types, none given")
+	_lists(func() -> Array:
+		var r: Dictionary = farm.validate({"zones": [
+			{"type": "quarry", "width": fmid, "depth": fmid}]})
+		return [bool(r["ok"]), r["errors"]], FarmModule.ZONE_TYPES,
+		"a farm's zone types, one unknown")
+	_lists(func() -> Array:
+		var r: Dictionary = farm.validate({"zones": [
+			{"type": "crop", "crop": "tulips", "width": fmid, "depth": fmid}]})
+		return [bool(r["ok"]), r["errors"]], FarmModule.CROP_COLOURS.keys(), "a farm's crops")
+
+	# The circuit's two type refusals, which named nothing at all.
+	_lists(func() -> Array:
+		return _validated({}), SectionValidator.OFFERED_TYPES,
+		"a circuit's types, none given")
+	_lists(func() -> Array:
+		return _validated({"type": "loop"}), SectionValidator.OFFERED_TYPES,
+		"a circuit's types, one unknown")
+
+	# A chicane's direction, where the legal values are the two words.
+	var wrong_way := _circuit_with("chicane", "direction", "widdershins")
+	_check(not bool(wrong_way[0]), "a chicane facing neither way is refused")
+	var about_direction := _about("direction", wrong_way[1])
+	_check(about_direction.contains("left") and about_direction.contains("right"),
+		"and the refusal names left and right: %s" % str(wrong_way[1]))
+
+	# And a field a section type does not have, refused with the fields it
+	# does have. Every type, every field it lacks - not the one that was found
+	# wanting (TRAPS 11).
+	for type in SectionValidator.FIELDS:
+		var mine: Array = SectionValidator.FIELDS[type]
+		var tried := {}
+		for other in SectionValidator.FIELDS:
+			for field in (SectionValidator.FIELDS[other] as Array):
+				if field in mine or tried.has(field):
+					continue
+				tried[field] = true
+				var section := _sound_section(type)
+				section[field] = _sound_section(other)[field]
+				var outcome := _validated(section)
+				_check(not bool(outcome[0]),
+					"a %s given a '%s' is refused" % [type, field])
+				var said := _about("'%s' is not" % field, outcome[1])
+				var every := said != ""
+				for has in mine:
+					if not said.contains(str(has)):
+						every = false
+				_check(every, "a %s given a '%s' is told a %s has %s -> %s" % [
+					type, field, type, str(mine),
+					said if said != "" else str(outcome[1])])
+
+
+# Refused, and the refusal names every member of the list it should offer.
+func _lists(run: Callable, expected: Array, what: String) -> void:
+	var outcome: Array = run.call()
+	_check(not bool(outcome[0]), "%s: the unknown value is refused" % what)
+	if bool(outcome[0]):
+		return
+	var said := ""
+	for error in (outcome[1] as Array):
+		said += str(error) + " "
+	var missing := PackedStringArray()
+	for value in expected:
+		if not said.contains(str(value)):
+			missing.append(str(value))
+	_check(missing.is_empty(), "%s: and the refusal names all %d of them%s" % [
+		what, expected.size(),
+		"" if missing.is_empty() else " - left out %s: %s" % [
+			str(missing), said.strip_edges()]])
+
+
+# --- 3. FIELDS is a fact about the validator, not a list beside it ---
+#
+# SectionValidator.FIELDS is new in 030 and now decides two things: which
+# fields a type refuses, and what its refusal says a type is made of. A table
+# that drifts from the code it describes is TRAPS 16's shape - a rule written
+# down and not enforced - so it is checked against the validator itself.
+func _the_fields_table_is_a_fact() -> void:
+	for type in SectionValidator.FIELDS:
+		_check(type in SectionValidator.SECTION_TYPES,
+			"FIELDS names '%s', which the validator accepts" % type)
+		var outcome := _validated(_sound_section(type))
+		_check(bool(outcome[0]),
+			"a %s built from exactly the fields FIELDS gives it validates: %s" % [
+				type, str(outcome[1])])
+
+	for type in SectionValidator.SECTION_TYPES:
+		_check(SectionValidator.FIELDS.has(type),
+			"the validator accepts '%s', and FIELDS says what it is made of" % type)
+
+	# Every type in the table has its bounds probed by section 1 above. A type
+	# added later and not probed fails here rather than passing silently,
+	# which is the guard TRAPS 13 asks for.
+	var probed := {}
+	for probe in _circuit_bounds():
+		probed[probe[0]] = true
+	for type in SectionValidator.FIELDS:
+		var numeric := false
+		for field in (SectionValidator.FIELDS[type] as Array):
+			if field != "direction":
+				numeric = true
+		if numeric:
+			_check(probed.has(type),
+				"'%s' has bounded numbers and its refusals are probed above" % type)
+
+
+# --- 4. the wall between the ten types and the four, from both sides ---
+#
+# TRAPS 19: SectionValidator accepts ten section types and the prompt offers
+# four, and that gap is deliberate - docs/GENESIS_BRIEF.md records that the
+# other six throw cars over barriers, are untested with a car, read as a crash
+# when a loop passes over itself, and are not checked for returning to their
+# starting height.
+#
+# 030 made the circuit's type refusals name the types a player may ask for,
+# which is a SECOND place that restriction now lives. The obvious way to write
+# that message - list SECTION_TYPES, because that is what the validator takes -
+# would have advertised all six withheld types to the player, undoing the wall
+# through the one sentence nobody was testing. So the two copies are bound
+# together here, in both directions, and a refusal may never name a type the
+# validator would then reject.
+func _the_withheld_types_are_not_offered() -> void:
+	var prompt := RacingModule.new().prompt_section()
+	var withheld := PackedStringArray()
+	for type in SectionValidator.SECTION_TYPES:
+		if not type in SectionValidator.OFFERED_TYPES:
+			withheld.append(type)
+
+	for type in SectionValidator.OFFERED_TYPES:
+		_check(prompt.contains("%s: {\"type\": \"%s\"" % [type, type]),
+			"the prompt offers '%s', which a refusal now names" % type)
+		_check(type in SectionValidator.SECTION_TYPES,
+			"and the validator accepts '%s', so the refusal names nothing it would reject" % type)
+
+	for type in withheld:
+		_check(not prompt.contains("%s: {\"type\": \"%s\"" % [type, type]),
+			"the prompt still withholds '%s' (TRAPS 19)" % type)
+
+	# And the refusal withholds them too, which is the half that is new.
+	var said := str(_validated({"type": "loop"})[1])
+	for type in withheld:
+		_check(not said.contains(type),
+			"and a refusal does not advertise '%s' either: %s" % [type, said])
+	_check(withheld.size() == 6,
+		"six types are withheld, as TRAPS 19 records: %s" % str(withheld))

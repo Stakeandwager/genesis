@@ -101,14 +101,18 @@ func validate(parameters: Dictionary) -> Dictionary:
 		var type := str(zone.get("type", ""))
 		if not type in ZONE_TYPES:
 			if type == "":
-				errors.append("zone %d has no type" % n)
+				# The unknown-type refusal beside this one has listed the
+				# types since the module was written; this one named none,
+				# though a zone with no type at all is the case where the
+				# player most needs the list (TRAPS 21).
+				errors.append("zone %d has no type (allowed: %s)" % [n, ", ".join(ZONE_TYPES)])
 			else:
 				errors.append("zone %d: unknown type '%s' (allowed: %s)" % [n, type, ", ".join(ZONE_TYPES)])
 			continue
 
 		var limits := BUILDING_SIDE if type in BUILDINGS else FIELD_SIDE
-		var width := _number(zone, "width", n, type, errors)
-		var depth := _number(zone, "depth", n, type, errors)
+		var width := _number(zone, "width", n, type, limits, errors)
+		var depth := _number(zone, "depth", n, type, limits, errors)
 		if is_nan(width) or is_nan(depth):
 			continue
 
@@ -502,12 +506,25 @@ func metric_lines(metrics: Dictionary, _record: Dictionary) -> Array:
 	return lines
 
 
-func _number(zone: Dictionary, key: String, n: int, type: String, errors: Array) -> float:
+# A zone's measurement, or a refusal naming what one would have to be.
+#
+# The limits arrive from the caller because they depend on the zone's type -
+# a building is 5 to 60 m and a field 20 to 300 - and the caller has already
+# worked out which. Before 030 this function did not take them at all, so the
+# two refusals it writes named no bound while the range check below it named
+# one from the same constant. A player whose model omitted a width was told
+# "missing 'width'" and had to guess the number (TRAPS 21).
+#
+# The type question is Readback.as_number()'s, the one place in Genesis that
+# decides whether a value out of a request is a number.
+func _number(zone: Dictionary, key: String, n: int, type: String, limits: Vector2, errors: Array) -> float:
 	if not zone.has(key):
-		errors.append("zone %d (%s): missing '%s'" % [n, type, key])
+		errors.append("zone %d (%s): missing '%s', and it must be %.0f to %.0f m" % [
+			n, type, key, limits.x, limits.y])
 		return NAN
-	var value = zone[key]
-	if typeof(value) != TYPE_FLOAT and typeof(value) != TYPE_INT:
-		errors.append("zone %d (%s): '%s' must be a number" % [n, type, key])
+	var value := Readback.as_number(zone[key])
+	if is_nan(value):
+		errors.append("zone %d (%s): '%s' must be a number, %.0f to %.0f m" % [
+			n, type, key, limits.x, limits.y])
 		return NAN
-	return float(value)
+	return value

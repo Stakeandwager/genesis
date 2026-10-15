@@ -691,6 +691,69 @@ Fixed in 029.
 
 ---
 
+## 21. One fault fixed at one of its three doors
+
+**Signature:** the fault was found, named, written into TRAPS, and fixed - and
+the next session finds it again in the same function, two lines up. Every
+suite is green both times.
+
+**Cause:** 028 found that `SectionValidator` refused eleven bounds and named
+none of them, and fixed it. 029 noticed the fix had been written too narrowly
+and corrected HANDOVER, listing four validators that still refused without
+naming a legal value. What neither noticed is that a bounded field can be
+refused **three** ways, and both of them had looked at one:
+
+```
+out of range   room 1: width is 500 m, and must be 4 to 40 m    <- tested
+not a number   power must be a number                           <- named nothing
+missing        zone 1 (barn): missing 'width'                   <- named nothing
+```
+
+Twelve refusals, in four of the five validators, with the limits sitting in
+scope on the line that wrote the sentence. `CarTool._bounded` knew `limits`;
+it used them in the range branch and not in the branch three lines above.
+`SectionValidator._number` did not take the limits at all, so the range
+refusal named a bound the missing refusal could not.
+
+And the two doors that named nothing are the ones a MODEL is more likely to
+walk through than a player. Out of range is a player asking for a 2 km
+straight. `null` and a field left out are ordinary model output for a field it
+had nothing to say about - which is exactly the input trap 20 was written
+about, arriving at a different layer.
+
+**Why no test saw it:** `tests/capability_test.gd` asserted the claim "a
+number outside its limits is refused with the limit named" for every bound in
+all five validators, which is TRAPS 11 done properly - and still saw none of
+this, because the claim it was testing is about ONE of the three doors. The
+whole class was probed through a third of its entrances. 165 assertions in that suite and 34 green ones around it, and the thing nobody asked was not "which validator" but "which
+way in".
+
+**Do:**
+
+- When a check has several entrances, enumerate the entrances before
+  enumerating the subjects. Trap 11 says fix the class, not the instance; this
+  is the axis trap 11 does not mention. A field can be missing, be the wrong
+  type, or be out of range, and a rule about what a refusal must say is a rule
+  about all three.
+- A test that quotes a claim from the prompt inherits the claim's scope. "A
+  number outside its limits is refused with the limit named" is narrower than
+  "a refusal names what a legal value would be", and testing the first to the
+  letter is how the second went unchecked. Ask what the rule behind the
+  sentence is, and test that.
+- The obvious fix to a nameless refusal is to make it name everything the
+  validator accepts, and in one place here that would have been a regression:
+  `SectionValidator` accepts ten section types and the player is deliberately
+  offered four (trap 19). Listing `SECTION_TYPES` in the refusal would have
+  advertised the six withheld types in the one sentence nobody was testing.
+  **Before making a message name the legal values, find out whether the set of
+  legal values is a wall.** `OFFERED_TYPES` now carries the four and the
+  reason, where the restriction is, as trap 19 asked.
+
+Fixed in 030, in all four validators and at all three doors, with 109
+assertions that fail against the pre-030 messages.
+
+---
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
 > A fluent sentence is not evidence that anything was understood.
@@ -699,3 +762,5 @@ Fixed in 029.
 > So is a limitation, and that one gets written into the documents.
 > So is a capability, and that one gets promised to a player.
 > And a number in a request is a claim that it is one.
+> And a refusal that names no legal value is half a claim, at whichever
+> door the player came in by.

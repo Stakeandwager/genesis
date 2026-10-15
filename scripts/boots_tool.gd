@@ -195,14 +195,19 @@ func validate(parameters: Dictionary) -> Dictionary:
 	return {"ok": true, "errors": [], "spec": spec}
 
 
+# Both refusals name the bound. See the note on CarTool._bounded and TRAPS 21:
+# until 030 the not-a-number branch said bare "push must be a number" while
+# the range branch two lines down named 120 to 600, from the same `limits`.
+# The type question belongs to Readback.as_number(), so all five validators
+# answer it in one place rather than in five.
 func _bounded(asked: Dictionary, key: String, limits: Array, fallback: float, errors: Array) -> float:
 	if not asked.has(key):
 		return fallback
-	var value = asked[key]
-	if typeof(value) != TYPE_FLOAT and typeof(value) != TYPE_INT:
-		errors.append("%s must be a number" % key)
+	var number := Readback.as_number(asked[key])
+	if is_nan(number):
+		errors.append("%s must be a number, %s to %s" % [
+			key, _tidy(float(limits[0])), _tidy(float(limits[1]))])
 		return fallback
-	var number := float(value)
 	if number < float(limits[0]) or number > float(limits[1]):
 		errors.append("%s is %s, and boots' %s must be %s to %s" % [
 			key, _tidy(number), key, _tidy(float(limits[0])), _tidy(float(limits[1]))])

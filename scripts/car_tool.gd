@@ -112,14 +112,26 @@ func validate(parameters: Dictionary) -> Dictionary:
 # A number inside its limits, or an error naming the limits. Out of range is
 # refused rather than clamped: a player who asked for a car twice as fast as
 # this game allows should be told so, not quietly given a slower one.
+#
+# BOTH REFUSALS NAME THE BOUND, and until 030 only one of them did. The range
+# branch said "power is 5000, and a car's power must be 400 to 1800"; the
+# branch above it said bare "power must be a number" with `limits` in scope on
+# that very line. Two doors into the same bound, and the one a model is more
+# likely to walk through - null for a field it had nothing to say about - was
+# the one that told the player nothing. A refusal has two jobs: stop the
+# build, and say what would be allowed. See TRAPS 21.
+#
+# The type question is Readback.as_number()'s and not this function's, which
+# is what 029 settled for DungeonModule and 030 finished for the other four
+# validators: one function in the project decides whether a value out of a
+# request is a number, so five cannot drift apart about it.
 func _bounded(asked: Dictionary, key: String, limits: Vector2, fallback: float, errors: Array) -> float:
 	if not asked.has(key):
 		return fallback
-	var value = asked[key]
-	if typeof(value) != TYPE_FLOAT and typeof(value) != TYPE_INT:
-		errors.append("%s must be a number" % key)
+	var number := Readback.as_number(asked[key])
+	if is_nan(number):
+		errors.append("%s must be a number, %.0f to %.0f" % [key, limits.x, limits.y])
 		return fallback
-	var number := float(value)
 	if number < limits.x or number > limits.y:
 		errors.append("%s is %.0f, and a car's %s must be %.0f to %.0f" % [key, number, key, limits.x, limits.y])
 		return fallback
