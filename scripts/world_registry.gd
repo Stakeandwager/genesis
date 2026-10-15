@@ -111,13 +111,17 @@ static func around_problem(step: Dictionary, index: int, _step_count: int) -> St
 	if is_nan(number):
 		return "step %d: 'around' must be a whole number, the step this world goes around (1 to %d)" % [
 			index, highest]
-	if number != floor(number):
+	# 040: the three sentences stay as 036 wrote them - they are the best of
+	# the five doors' and the reason this one was already right. What moved is
+	# the DECISION: Readback.ordinal_index() now answers "is this a usable
+	# position in a list" for all five, so the four that used to truncate and
+	# the one that refused cannot drift apart again (TRAPS 31's last rule).
+	if Readback.is_fraction(raw):
 		return "step %d: 'around' must be a whole step number (1 to %d), not %s" % [
 			index, highest, String.num(number, 2)]
-	var at := int(number)
-	if at < 1 or at > highest:
+	if Readback.ordinal_index(raw, highest) < 0:
 		return "step %d: 'around' is %d, and it must be an earlier step (1 to %d)" % [
-			index, at, highest]
+			index, int(number), highest]
 	return ""
 
 

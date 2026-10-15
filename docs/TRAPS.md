@@ -1617,6 +1617,134 @@ worked example that was not there.
 
 ---
 
+## 34. A position in a list, truncated at four doors and refused at the fifth
+
+**Signature:** a question asked of one member of a list was answered properly
+once, by one session, and the other members kept the old behaviour — so the
+project holds the right rule and applies it in one place.
+
+**Cause.** HANDOVER named the next assistant task as a door for the five
+procedural claims 039 had measured by hand. Two of those five turned out to be
+members of larger classes, and each class had a fault in it.
+
+**THE CLASS: a reference by POSITION.** *"R is a room's name or its number
+counting from 1"* is one of **five** places the prompt tells the model to name
+a piece of a world by where it sits in a list:
+
+```
+CREATE_DUNGEON  "doors": [[A, B]]      room numbers, 1 for the first
+CREATE_DUNGEON  "things": [{"in": R}]  a name or a number counting from 1
+ORDER           "room": ROOM           a name or a number counting from 1
+SHUT / OPEN     "between": [R, R]      the token ROOM, defined under ORDERS
+PLAN            step "around": N       the step number, 1 for the first
+```
+
+Asked at the DOOR rather than at the field — 037's unit, because 036's
+`offset` sweep came back clear at the field and the fault was one level down —
+every one of the five **bound-checks**, which is the half that holds: no
+caller can reach a negative index, and in GDScript `array[-1]` is the LAST
+element, so an unchecked reference would have answered with the wrong room
+rather than refusing.
+
+What did not hold is the shape of the number. A value that is a number but not
+a **whole** number was taken by `int()` to the position below it, **in
+silence**, at four of the five:
+
+```
+things  "in": 2.9          ->  room 2, accepted
+doors   [1, 2.9]           ->  the door from room 1 to room 2, accepted
+ORDER   "room": 2.9        ->  room 2 (vault), accepted
+SHUT    "between": [1,2.9] ->  the door 0-1, accepted
+PLAN    "around": 1.5      ->  REFUSED: "'around' must be a whole step
+                               number (1 to 1), not 1.5"
+```
+
+**The fifth is the one that was already right, and that is the whole lesson.**
+036 added the `around` check, reasoned it out, and wrote the sentence; nothing
+carried it to the other four, because 036 was asking "does every command have
+a validator?" and these four have one. The repository therefore held the
+correct rule, stated in a function, for four commits, and applied it to one
+member of a list of five. That is trap 11 in its quietest form: not a fault
+reappearing in a different word, but a FIX that never reached its own class.
+
+**And what it cost.** A drop, not a refusal. The prompt says of Genesis that
+*"it REFUSES rather than clamping. A number outside its limits is refused with
+the limit named"* — and truncation is clamping, done without saying so. A
+player whose key was put in room 2 when the model wrote 2.9 is never told that
+a number was rounded on their behalf, which is trap 31's rule arriving at a
+different kind of field: **dropping a value is worse than refusing it, because
+a refusal is visible and a drop is not.**
+
+**THE SECOND CLASS: a refusal does not destroy what was there.** *"a new world
+replaces whatever was there before"* is one member of a rule Genesis follows
+everywhere else. A single world's refusal never reaches `_build_world`, so the
+clear is never run; a PLAN refused for its SCHEMA returns before any clearing.
+But `_execute_plan` cleared the world **before pass 1**, and pass 1 can refuse:
+a plan holding one unbuildable world took the player's standing world away and
+then reported that it had built nothing. Measured: a farm of 62 children down
+to 0, no geometry built. There were two clears to move, not one — the tidy-up
+at the end ran unconditionally too, so moving only the first still destroyed
+the world at the end instead of at the beginning.
+
+**Rules.**
+
+- **A reference by position is a whole number, and a value that is not one is
+  refused with the range named.** Numbers arrive from `JSON.parse` as floats,
+  so `2` is `2.0` and a whole-number check must accept it: the test is
+  `number == floor(number)`, never the type.
+- **When one session answers a question properly at one door, the answer is
+  the class's.** Before writing a new check, grep for the sentence it is about
+  — `around_problem` had been in the repository for four commits saying
+  exactly what a position may be. The cheap way to find the next fault of a
+  kind is to look for where the project has already been right once.
+- **One reading, so the five cannot drift.** `Readback.ordinal_index()` answers
+  "which position is this, or is it none" for all five doors, and
+  `whole_number_rule()` is the clause they all end their refusal with. Each
+  door keeps its own locator sentence, because "thing 1: 'key' is in …" and
+  "door 3: [1, 2] …" are different sentences to a player, and 037's rule is
+  about the sentence that would be written five times, not the locator that
+  must be.
+- **A refusal does not clear the world.** Clear when a build is certain to
+  start, never before it is known whether one can — and tidy up only what this
+  request actually put in the scene.
+- **A number said back is said as the player wrote it.** Every number is a
+  float by the time a refusal prints it, so `Readback.number_said()` prints 0
+  as "0" and not "0.0". Trap 10 and 23's family: a sentence stating something
+  the request never said.
+
+**Found beside it, and fixed in the same commit.** At the SHUT and OPEN door,
+a room NUMBER out of range was refused as though it were a name — *"this
+dungeon has no room called '0' (it has hall, vault, crypt)"* — answering with
+names a model that had given a number, and naming no range. The other three
+room doors all name the range or the count. Trap 18's rule at the one door
+nobody had asked it of.
+
+**Found and NOT fixed, because both are already the owner's.**
+
+- A plan refused for **OVERLAPPING** still destroys the standing world. The
+  overlap is found in pass 3 by `_place()`, after the clear and after earlier
+  steps have been built, so making it safe means knowing every world's
+  footprint before building any of them. That is a change to how a plan is
+  built: HANDOVER, "Human decision needed" 10. **It is the more reachable of
+  the two halves** — two worlds with no `"around"`, which is the shape of the
+  prompt's own PLAN skeleton, take that path.
+- A **sectionless `CREATE_TRACK`** clears the world and then reports that it
+  built nothing. `procedure_test` found this by itself, when the refused
+  request it sent each world was `{}`; it has been measured since 032 and is
+  "Human decision needed" 2.
+
+Neither is asserted as correct. A suite that guards a fault is trap 14 in its
+most literal form, so the two are written into the suite's header with their
+measurements and left out of its assertions.
+
+Found and fixed in 040. `tests/procedure_test.gd` fails **38 times** against
+the pre-040 code: 36 at the four reference doors that truncated, and 2 for the
+plan that destroyed a world it could not replace. It fails **0 times** at
+`plan around`, which is the control member of the class and the reason the
+class was visible at all.
+
+---
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
 > A fluent sentence is not evidence that anything was understood.
@@ -1651,3 +1779,9 @@ worked example that was not there.
 > it does, and that it does nothing else, and both halves are measurements.
 > And a formula stated to the model is arithmetic Genesis claims to do, down
 > to the order it does it in, so it is checked by doing the arithmetic.
+> And a reference by position is a whole number, so a value that is not one is
+> refused with the range named and never rounded on the player's behalf.
+> And a fix that stops at the door it was found at has left its own class
+> standing, so the place the project was already right once is where to look
+> for the next fault of its kind.
+> And a refusal does not take the world away.

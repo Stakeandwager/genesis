@@ -769,10 +769,28 @@ func _execute_plan(parameters: Dictionary) -> void:
 		_finish_failed(record, "FAILED_SCHEMA", problems)
 		return
 
-	# Clear once, then let each step add to the same scene.
-	track_builder.clear()
-	opponent_builder.clear()
-	_clear_world_node()
+	# --- 040: the clear waits until a build is certain to start ---
+	#
+	# This used to happen HERE, before pass 1, and pass 1 can refuse: a step
+	# that will not validate makes the whole plan FAILED_SCENE. So a plan
+	# containing one unbuildable world TOOK THE PLAYER'S STANDING WORLD AWAY
+	# and then reported that it had built nothing - measured, a farm of 62
+	# children down to 0 with no geometry built. Every other refusal in
+	# Genesis leaves the world alone: a single world's refusal never reaches
+	# _build_world, and a plan refused for its SCHEMA returns above this line.
+	# This path was the exception, and the rule it broke is Genesis's own.
+	#
+	# Pass 1 builds nothing (_prepare_world is "everything up to but not
+	# including geometry") and pass 2 only grows layouts, so the clear is
+	# simply late rather than conditional. It is still before any geometry.
+	#
+	# WHAT THIS DOES NOT FIX, because the fix is not a move: a plan whose
+	# worlds OVERLAP is refused in pass 3, by _place(), after the clear and
+	# after earlier steps have been built. Two worlds with no "around" - the
+	# shape of the prompt's own PLAN skeleton - take that path. Making it
+	# safe means knowing every world's footprint before building any of them,
+	# which is a change to how a plan is built: HANDOVER, "Human decision
+	# needed" 10.
 	plan_running = true
 	plan_bounds_min = Vector2(INF, INF)
 	plan_bounds_max = Vector2(-INF, -INF)
@@ -814,8 +832,15 @@ func _execute_plan(parameters: Dictionary) -> void:
 		if not fitted.is_empty():
 			record["fitted"] = fitted
 
-	# Pass 3: build, in the order the AI gave.
+	# Pass 3: build, in the order the AI gave. Clear once first, then let
+	# each step add to the same scene - 040 moved this down from above pass 1
+	# so that a plan refused before here leaves the standing world standing.
+	var cleared_for_building := false
 	if plan_problems.is_empty():
+		track_builder.clear()
+		opponent_builder.clear()
+		_clear_world_node()
+		cleared_for_building = true
 		for i in steps.size():
 			var step: Dictionary = steps[i]
 			var step_command := str(step["command"]).to_upper()
@@ -846,9 +871,16 @@ func _execute_plan(parameters: Dictionary) -> void:
 			track_measured.emit(step_record)
 
 	if not plan_problems.is_empty():
-		track_builder.clear()
-		opponent_builder.clear()
-		_clear_world_node()
+		# 040: tidy up only what THIS plan put in the scene. Clearing
+		# unconditionally here was the second half of the same fault: the
+		# clear above now waits for pass 3, so a plan refused in pass 1 has
+		# built nothing, and running this would take the standing world away
+		# at the end instead of at the beginning. Measured: a farm of 62
+		# children survives a plan whose second step will not validate.
+		if cleared_for_building:
+			track_builder.clear()
+			opponent_builder.clear()
+			_clear_world_node()
 		_finish_failed(record, "FAILED_SCENE", plan_problems)
 		return
 

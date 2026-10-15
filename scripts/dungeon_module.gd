@@ -213,6 +213,15 @@ func validate(parameters: Dictionary) -> Dictionary:
 		if is_nan(raw_a) or is_nan(raw_b):
 			errors.append(Readback.member_error(list_of("doors"), n))
 			continue
+		# 040: and a number that is not a WHOLE number is not a room number
+		# either. int() used to take [1, 2.9] quietly to the door between
+		# rooms 1 and 2, which is the drop the four prompted reference doors
+		# all shared - see Readback.ordinal_index().
+		if Readback.is_fraction((pair as Array)[0]) or Readback.is_fraction((pair as Array)[1]):
+			errors.append("door %d: [%s, %s] names a room by a fraction, and %s" % [
+				n, Readback.number_said(raw_a), Readback.number_said(raw_b),
+				Readback.whole_number_rule("room", rooms.size())])
+			continue
 		var a := int(raw_a)
 		var b := int(raw_b)
 		if a < 1 or a > rooms.size() or b < 1 or b > rooms.size():
@@ -265,6 +274,14 @@ func validate(parameters: Dictionary) -> Dictionary:
 		var where := _room_index(thing.get("in", null), clean_rooms)
 		if where < 0:
 			var given = thing.get("in", null)
+			# 040: a fraction is a number, so saying "this dungeon's rooms
+			# are hall, vault" answers a question the model did not ask. It
+			# gave a number; what it needs told is which numbers are rooms.
+			if Readback.is_fraction(given):
+				errors.append("thing %d: '%s' is in room %s, and %s" % [
+					n, label, Readback.number_said(given),
+					Readback.whole_number_rule("room", clean_rooms.size())])
+				continue
 			errors.append("thing %d: '%s' is in '%s', and this dungeon's rooms are %s" % [
 				n, label, "nothing" if given == null else str(given),
 				", ".join(_room_names(clean_rooms))])
@@ -292,8 +309,10 @@ static func _room_index(given, rooms: Array) -> int:
 	if given == null:
 		return -1
 	if typeof(given) == TYPE_INT or typeof(given) == TYPE_FLOAT:
-		var number := int(given)
-		return number - 1 if number >= 1 and number <= rooms.size() else -1
+		# 040: one reading of "which position in the list is this?", shared
+		# with the other four doors the prompt offers a number at. It used to
+		# be int(given), which took 2.9 to room 2 without saying so.
+		return Readback.ordinal_index(given, rooms.size())
 	var wanted := str(given).to_lower().strip_edges().replace(" ", "_")
 	for i in rooms.size():
 		if str((rooms[i] as Dictionary).get("name", "")).to_lower() == wanted:

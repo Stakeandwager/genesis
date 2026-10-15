@@ -66,15 +66,22 @@ static func validate(parameters: Dictionary, rooms: Array, things: Array = []) -
 	if asked == null:
 		errors.append("go_to needs a room (this dungeon has %s)" % ", ".join(names))
 	elif typeof(asked) == TYPE_INT or typeof(asked) == TYPE_FLOAT:
-		var number := int(asked)
-		if number < 1 or number > rooms.size():
-			# 034: "this dungeon has 1 rooms". The same hand-written plural
-			# as DungeonModule's door count, in the file TRAPS 10 and 23
-			# both came out of.
-			errors.append("this dungeon has %s, so there is no room %d" % [
-				Readback.plural(rooms.size(), "room"), number])
+		# 040: a fraction is not room 2. int() used to make it room 2 and say
+		# nothing - see Readback.ordinal_index() for the class this is one of.
+		if Readback.is_fraction(asked):
+			errors.append("there is no room %s: %s" % [
+				Readback.number_said(asked),
+				Readback.whole_number_rule("room", rooms.size())])
 		else:
-			room = number - 1
+			var number := int(asked)
+			if number < 1 or number > rooms.size():
+				# 034: "this dungeon has 1 rooms". The same hand-written plural
+				# as DungeonModule's door count, in the file TRAPS 10 and 23
+				# both came out of.
+				errors.append("this dungeon has %s, so there is no room %d" % [
+					Readback.plural(rooms.size(), "room"), number])
+			else:
+				room = Readback.ordinal_index(asked, rooms.size())
 	else:
 		var wanted := str(asked).to_lower().strip_edges().replace(" ", "_")
 		for i in names.size():
@@ -157,10 +164,11 @@ static func validate_door(parameters: Dictionary, rooms: Array, layout: Dictiona
 	var ends: Array = []
 	for side in (raw as Array):
 		var found := -1
-		if typeof(side) == TYPE_INT or typeof(side) == TYPE_FLOAT:
-			var number := int(side)
-			if number >= 1 and number <= names.size():
-				found = number - 1
+		var numbered := typeof(side) == TYPE_INT or typeof(side) == TYPE_FLOAT
+		if numbered:
+			# 040: one reading, shared with the other four doors. This was
+			# int(side), so [1, 2.9] shut the door between rooms 1 and 2.
+			found = Readback.ordinal_index(side, names.size())
 		else:
 			var wanted := str(side).to_lower().strip_edges().replace(" ", "_")
 			for i in names.size():
@@ -168,7 +176,17 @@ static func validate_door(parameters: Dictionary, rooms: Array, layout: Dictiona
 					found = i
 					break
 		if found < 0:
-			errors.append("this dungeon has no room called '%s' (it has %s)" % [str(side), ", ".join(names)])
+			# 040: and a NUMBER is not refused as though it were a name. This
+			# door said "no room called '0'" and then listed the room names -
+			# answering with names a model that had given a number, and never
+			# naming the range, which every other reference door does
+			# (TRAPS 18's rule, at the one door nobody had asked).
+			if numbered:
+				errors.append("this dungeon has no room %s: %s" % [
+					Readback.number_said(side),
+					Readback.whole_number_rule("room", names.size())])
+			else:
+				errors.append("this dungeon has no room called '%s' (it has %s)" % [str(side), ", ".join(names)])
 		ends.append(found)
 
 	if not errors.is_empty():

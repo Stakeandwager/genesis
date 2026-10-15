@@ -106,6 +106,64 @@ static func measure(source: Dictionary, key: String) -> float:
 	return as_number(source[key])
 
 
+# --- 040: one reading of a reference by its POSITION in a list ---
+#
+# The prompt tells the model to name a piece of a world by its number,
+# counting from 1, at five doors: a dungeon's door pairs, a thing's "in", an
+# ORDER's "room", a SHUT or OPEN's "between", and a plan step's "around".
+#
+# A number counting from 1 is a WHOLE number. 2.9 is not the third room, and
+# it is not the second one either. Four of those five doors took int() to it
+# and carried on with room 2 IN SILENCE - a drop, which is worse than a
+# refusal because a refusal is visible and a drop is not (TRAPS 31). The
+# fifth, "around", refused it and named the range, because 036 was the one
+# session that thought to ask. This is 036's answer, applied to the class
+# (TRAPS 11), and it is also what Genesis says about itself in the prompt:
+# "It REFUSES rather than clamping." Truncation is clamping, done quietly.
+#
+# Returns the index counting from 0, or -1 when the value cannot be used. In
+# GDScript array[-1] is the LAST element, so every caller must treat -1 as a
+# refusal and never as an index.
+static func ordinal_index(value: Variant, count: int) -> int:
+	var number := as_number(value)
+	if is_nan(number) or number != floor(number):
+		return -1
+	var at := int(number)
+	if at < 1 or at > count:
+		return -1
+	return at - 1
+
+
+# Is this a number, but not a whole one? The one case the four doors had no
+# sentence for. "Not a number at all" and "out of range" are different faults
+# with sentences of their own at each door, so this answers only its own.
+static func is_fraction(value: Variant) -> bool:
+	var number := as_number(value)
+	return not is_nan(number) and number != floor(number)
+
+
+# A number out of a request, said back as the player wrote it. 1 is "1" and
+# not "1.0": every number arrives from JSON.parse as a float, so a refusal
+# that prints the raw value tells a player they wrote a decimal they did not
+# write. TRAPS 10 and 23's family - a sentence stating something the request
+# never said - in the one place all five reference doors can share it.
+static func number_said(value: Variant) -> String:
+	var number := as_number(value)
+	if is_nan(number):
+		return "nothing"
+	if number == floor(number) and absf(number) < 1.0e15:
+		return "%d" % int(number)
+	return String.num(number, 2)
+
+
+# What a legal reference by number would be, as a clause a refusal ends with.
+# Written ONCE: five doors ask this question, and five hand-written copies
+# diverge, with the one that diverges being the one nobody is reading
+# (TRAPS 31, the rule 037's intent_problem() came out of).
+static func whole_number_rule(noun: String, count: int) -> String:
+	return "a %s number is a whole number, 1 to %d" % [noun, count]
+
+
 # --- one reading, applied to the article in front of a name (TRAPS 10) ---
 #
 # "Got to the room 2." "Fetching the red key to the chamber 3." A numbered

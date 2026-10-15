@@ -13,7 +13,30 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **039**, the task this file named as
+- Last commit at the time of writing: **040**, the task this file named as
+  the next assistant task — *a door for the five procedural claims 039
+  measured by hand*, built from the registry and the prompt rather than from
+  the quoted five. Two of the five were members of larger classes and each
+  class had a fault. **A reference by POSITION is offered at five doors**
+  (a dungeon's `doors` pairs, a thing's `in`, an `ORDER`'s `room`, a
+  `SHUT`/`OPEN`'s `between`, a plan step's `around`); all five bound-check,
+  so nothing can reach GDScript's `array[-1]`, but a number that is not a
+  WHOLE number was taken by `int()` to the position below it **in silence at
+  four of them**. The fifth, `around`, refused it and named the range — **036
+  had written the correct rule four commits earlier and nothing carried it to
+  its own class**, which is TRAPS 11 at a fix rather than at a fault. And
+  **a refusal does not destroy what was there** is a rule Genesis follows
+  everywhere except a PLAN: `_execute_plan` cleared the world before working
+  its steps out, so a plan holding one unbuildable world took the standing
+  world away and reported that it had built nothing (measured: a farm of 62
+  children to 0). Fixed for that case; **still broken for a plan refused for
+  OVERLAPPING**, which is the more reachable half and is "Human decision
+  needed" 10. 46 suites passed before and 47 after, `--all` included; the new
+  suite fails **38 times** against the pre-040 code and **0 times at
+  `plan around`**, the control member. The prompt is byte-identical, so
+  `PROMPT_VERSION` did not move and designs are comparable across this
+  commit. See 040 below and TRAPS 34.
+- The commit before it: **039**, the task that file named as
   the next assistant task — *the procedural sentences, the one kind of prompt
   claim with no door* — asked of the class rather than of the eight sentences
   quoted here (TRAPS 11). The sharpest sub-class is the one that can be
@@ -235,28 +258,30 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-48 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **46 suites**, counted with `ls tests/*.gd` rather than
+49 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **47 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites.
 
-Last full run (039, Godot 4.7.1 on Linux — `4.7.1.stable.official.a13da4feb`
+Last full run (040, Godot 4.7.1 on Linux — `4.7.1.stable.official.a13da4feb`
 — headless, in a cloud container): **suites with something to look at: 0**,
 both without `--all` and with it, `drive_test` and `session_test` included.
-039's new suite is `formula_test` (2 failures against the pre-039 prompt);
+040's new suite is `procedure_test` (38 failures against the pre-040 code);
+039's is `formula_test` (2 failures against the pre-039 prompt);
 038's is `claim_field_test` (9 failures against the pre-038 code);
 037's is `intent_door_test` (39 failures against the pre-037 code); 036's is
 `command_schema_test` (28 failures against the pre-036 code); 035's is
 `prompt_bounds_test` (4 failures against the pre-035 prompt); 034's is
 `container_door_test` (30 failures against the pre-034 sentences). Not run on
 the owner's Windows machine. `run_tests.bat` needed no edit for any of the
-six: no name matches any of its `findstr` patterns — `prompt_bounds_test`
+seven: no name matches any of its `findstr` patterns — `prompt_bounds_test`
 does not contain the literal `prompt_test`, `intent_door_test` contains none
-of the physics names, and `claim_field_test` and `formula_test` match
-nothing at all — so all six run there without `--fixed-fps`, which is what
-they get here too, and `command_schema_test`, `intent_door_test`,
-`claim_field_test` and `formula_test` were each run both with it and without
-and pass either way — checked rather than assumed (TRAPS 4). `physics_test` gained 038's car measurement and is already
+of the physics names, and `claim_field_test`, `formula_test` and
+`procedure_test` match nothing at all — so all seven run there without
+`--fixed-fps`, which is what they get here too, and `command_schema_test`,
+`intent_door_test`, `claim_field_test`, `formula_test` and `procedure_test`
+were each run both with it and without and pass either way — checked rather
+than assumed (TRAPS 4). `physics_test` gained 038's car measurement and is already
 on both the Linux `TIMED` list and the `.bat`'s `physics` pattern, so it
 keeps `--fixed-fps` on both.
 
@@ -473,6 +498,27 @@ verified, and what remains uncertain.
   sections of a type: a readback that groups says things about groups, and a
   group keyed on one measurement took its name from the first member and was
   false of the rest.
+- **A green suite had never asked whether a position in a list is a WHOLE
+  number**, nor whether a refused PLAN leaves the world alone. Found and
+  fixed in 040: a fractional room reference was truncated to the room below
+  it in silence at four of the five doors the prompt offers a position at —
+  while the fifth, `around`, had refused it and named the range since 036, so
+  the repository held the right rule and applied it to one member of its own
+  class. Beside it, `_execute_plan` cleared the world before working its
+  steps out, so a plan holding one unbuildable world destroyed the standing
+  world and then reported that it had built nothing. 46 suites passed before
+  and 47 after. Neither fault was found by the owner: both came of asking a
+  claim's question of the whole class rather than of the five sentences
+  HANDOVER had quoted. See 040 below and TRAPS 34.
+
+  **What that says about the method:** 029 asked one question of every file,
+  030 every way in to one check, 031 what the sentence must say, 037 the door
+  rather than the field. This one asked a different axis again — **where has
+  this project already been RIGHT once?** A rule that exists in a function and
+  is called from one place is cheaper to find than a fault, and it is the same
+  fault waiting in every place that does not call it. That question is the
+  next assistant task.
+
 - **A green suite had never asked whether every COMMAND the whitelist allows
   reads back**, only whether every field of one command does. Found and fixed
   in 032: two of the eleven commands in `CommandParser.allowed_commands()` had
@@ -2796,6 +2842,193 @@ next session does not re-measure them, and so it knows they are unguarded:
   not clear anything — the clear lives in `_build_world`, which a refusal
   never reaches.
 
+  **040 correction: that last sentence was stated wider than it was true**,
+  which is TRAPS 14's shape in this file rather than in the prompt. It is
+  true of a SINGLE world. It was false of a PLAN: `_execute_plan` cleared
+  the world before working its steps out, so a plan holding one unbuildable
+  world took the standing world away and then said it had built nothing —
+  measured, a farm of 62 children down to 0. Fixed in 040 for the pass-1
+  case. It is **still false** of a plan refused for OVERLAPPING ("Human
+  decision needed" 10) and of a sectionless `CREATE_TRACK` ("Human decision
+  needed" 2). See 040 below and TRAPS 34.
+
+## 040 — a position in a list, truncated at four doors and refused at the fifth
+
+**Objective.** HANDOVER named the next assistant task as a door for the five
+procedural claims 039 measured by hand and recorded as true and unguarded —
+built *"the way `formula_test` built one for the six — enumerated from
+`WorldRegistry.modules()` and the prompt rather than quoted, since a quoted
+list is what this entry got wrong."* Asked that way, two of the five turned
+out to be members of larger classes, and each class had a fault in it.
+
+### The class, and the member that was already right
+
+*"R is a room's name or its number counting from 1"* is one of **five** places
+the prompt tells the model to name a piece of a world by where it sits in a
+list: a dungeon's `doors` pairs, a thing's `in`, an `ORDER`'s `room`, a
+`SHUT`/`OPEN`'s `between`, and a plan step's `around`.
+
+Asked at the DOOR rather than at the field (037's unit), **every one
+bound-checks** — so nothing can reach a negative index, which matters because
+in GDScript `array[-1]` is the LAST element and an unchecked reference would
+have answered with the wrong room instead of refusing. That half of 039's
+hand measurement is now held by a suite.
+
+What did not hold is the SHAPE of the number. A value that is a number but not
+a **whole** number was taken by `int()` to the position below it, in silence,
+at four of the five:
+
+```
+things  "in": 2.9           ->  room 2, accepted
+doors   [1, 2.9]            ->  the door from room 1 to room 2, accepted
+ORDER   "room": 2.9         ->  room 2 (vault), accepted
+SHUT    "between": [1, 2.9] ->  the door 0-1, accepted
+PLAN    "around": 1.5       ->  REFUSED, with the range named
+```
+
+**The fifth is the one that was already right, and that is the finding.** 036
+added the `around` check, reasoned it out and wrote the sentence; nothing
+carried it to the other four, because 036 was asking *"does every command have
+a validator?"* and these four have one. So this repository held the correct
+rule, written down in a function, for four commits, and applied it to one
+member of a list of five — TRAPS 11 in its quietest form: not a fault
+reappearing in a different word, but a FIX that never reached its own class.
+
+### What it cost
+
+A drop, not a refusal. The prompt says of Genesis that *"it REFUSES rather
+than clamping. A number outside its limits is refused with the limit named"*,
+and truncation is clamping done without saying so. A player whose key was put
+in room 2 when the model wrote 2.9 is never told a number was rounded for
+them. TRAPS 31's rule at a different kind of field: **dropping a value is
+worse than refusing it, because a refusal is visible and a drop is not.**
+
+Reachability is honest about itself: nothing in the prompt invites a
+fractional room number, so this is not a fault a model is being steered into,
+the way 039's formula was. It is the shape 019 found with names — *"every test
+had used a number, so nothing had ever exercised it"* — one field along.
+
+### The second class: a refusal does not destroy what was there
+
+*"a new world replaces whatever was there before, whichever kind it was"* is
+one member of a rule Genesis follows everywhere else. A single world's refusal
+never reaches `_build_world`, so the clear is never run; a PLAN refused for its
+SCHEMA returns before any clearing. But `_execute_plan` cleared the world
+**before pass 1**, and pass 1 can refuse. Measured headless:
+
+```
+a plan refused for its SCHEMA (bad "around")      farm 62 children -> 62   survived
+a plan with a step that cannot be worked out      farm 62 children ->  0   GONE
+a plan refused for OVERLAPPING (no "around")      farm 62 children ->  0   GONE
+```
+
+There were **two** clears to move, not one: the tidy-up at the end ran
+unconditionally as well, so moving only the first still destroyed the world at
+the end instead of at the beginning.
+
+### What changed
+
+- `Readback.ordinal_index()` is the one reading of *"which position in a list
+  is this, or is it none"*, and all five doors ask it. `whole_number_rule()`
+  is the clause they all end a refusal with, so the sentence is written once
+  (TRAPS 31's rule, the one 037's `intent_problem()` came out of). Each door
+  keeps its own locator, because *"thing 1: 'key' is in …"* and *"door 3:
+  [1, 2] …"* are different sentences to a player.
+- `Readback.number_said()` prints a number out of a request as the player
+  wrote it: 0 as "0", not "0.0". Every number arrives from `JSON.parse` as a
+  float, so a refusal that prints the raw value tells a player they wrote a
+  decimal they did not write — TRAPS 10 and 23's family.
+- The plan's clear moved to just before pass 3, where a build is certain to
+  start, and the failure tidy-up now clears only if that clear ran.
+- **Found beside it and fixed in the same commit:** at the `SHUT`/`OPEN` door
+  a room NUMBER out of range was refused as though it were a name — *"this
+  dungeon has no room called '0' (it has hall, vault, crypt)"* — answering
+  with names a model that had given a number, and naming no range, where the
+  other three room doors all name the range or the count. TRAPS 18's rule at
+  the one door nobody had asked it of.
+
+**The prompt did not move.** `PROMPT_FINGERPRINT` is unchanged at
+`c6c2b955…`, the prompt is the same 15846 characters, and `PROMPT_VERSION` is
+still `039-the-arithmetic-it-really-does-1` — verified by running the suite
+that insists on it rather than by remembering. **So designs are comparable
+across this commit**, boots included.
+
+### What the suite asserts, and what it does not (TRAPS 6, TRAPS 14)
+
+`tests/procedure_test.gd`, 264 assertions, 1.5 seconds. Nothing in it matches
+a sentence: every claim is settled by building the thing the sentence
+describes and reading what came out, which is the only way these five can be
+settled at all — *"the prompt says room 1 is the entrance"* tests nothing.
+
+The units are enumerated, never quoted:
+
+- the reference doors, against a sweep of the assembled prompt for the phrases
+  that DEFINE an ordinal, so a prompt that grows a sixth door makes the count
+  disagree and the suite FAILS rather than quietly not covering it;
+- the room permutations, all six, rather than one reordering — and each room's
+  size belongs to its NAME, so if size decided the entrance the same room
+  would lead every time. Three different rooms lead;
+- the room pairs, every ordered pair, so *"the same pair may only be joined
+  once"* is asked of `[1, 2]` then `[2, 1]` — the case a normalisation gets
+  wrong — and the pair ONCE is asserted accepted, so the rule is not simply
+  refusing everything;
+- the adjustable sections, from `TrackGeometry`'s own type families, so
+  *"EACH angle and EACH straight length"* is counted rather than assumed: a
+  chicane has neither and is correctly not the solver's to move;
+- the worlds, every ORDERED PAIR from `WorldRegistry.modules()`, so a fourth
+  world has rows here without this file being edited, and a world with no
+  buildable request is a failure rather than a gap.
+
+**NOT asserted, deliberately, both the owner's:**
+
+- that a built section stays inside its type's own range. It does not — a 120
+  degree corner is built at 136.2. The 20% licence is what the prompt states
+  and that is what is asserted; whether the stated range should also bound
+  what Genesis BUILDS is "Human decision needed" 9.
+- that a plan refused for OVERLAPPING leaves the world standing, and that a
+  sectionless `CREATE_TRACK` does. Neither does. Both are left out of the
+  assertions rather than asserted as correct, because a suite that guards a
+  fault is TRAPS 14 in its most literal form; both are in the suite's header
+  with their measurements.
+
+### Evidence — what was actually run
+
+Godot 4.7.1 (`4.7.1.stable.official.a13da4feb`) headless, Linux, in a cloud
+container.
+
+- **Baseline, before anything changed:** 46 suites, **0 with something to look
+  at**.
+- **After:** 47 suites, **0 with something to look at**, both without `--all`
+  and with it — `drive_test` and `session_test` included.
+- **`procedure_test` fails 38 times against the pre-040 code**, measured the
+  way 035-039 measured their own: the five changed scripts reverted to 039
+  with the suite left in place. 36 of the 38 are the four reference doors that
+  truncated; 2 are the plan that destroyed a world it could not replace. It
+  fails **0 times at `plan around`**, which is the control member of the class
+  and the reason the class was visible at all.
+- The prompt is byte-identical: `prompt_bounds_test` passes, and the
+  fingerprint was printed and compared rather than assumed.
+- `run_tests.bat` needed no edit (TRAPS 4): `procedure_test` matches none of
+  its `findstr` patterns, so it runs there without `--fixed-fps` as it does
+  here, and it was run **both ways** and passes either.
+- README said 46 suites and there are 47, counted with `ls`.
+
+### Not verified
+
+- **No model has sent any of this.** Every reference in the suite was typed by
+  hand; a headless harness has no key and no model. Whether a model ever
+  writes a fractional room number is exactly what the harness cannot know —
+  and the honest expectation is that it rarely does, which is why this is a
+  class fix rather than a fault report.
+- **Nothing ran on Windows.**
+- **The player-facing half of the plan fix is unverified in the editor.** What
+  was measured is `world_node.get_child_count()`, not what a person sees. That
+  a plan refused for a bad step now leaves the previous world on screen is the
+  kind of thing only the owner's session confirms.
+- The suite measures the five claims named above and no others. The other
+  three of 039's eight are in `formula_test`.
+- The records on the owner's disk are his and 040 did not touch them.
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -3031,9 +3264,25 @@ line that comes back:
   The records are yours and 038 did not touch them.
 
 **Smallest useful assistant task next.** The ledger question (033), the
-container-door question (034), the prompt-bound question (035) and the
-validator question (036) are all **done**. Candidates, in the order the
-assistant would take them:
+container-door question (034), the prompt-bound question (035), the validator
+question (036), the intent-door question (037), the which-field question
+(038), the arithmetic question (039) and the five build-it claims (040) are
+all **done**. Candidates, in the order the assistant would take them:
+
+- **THE NEXT ONE, named by 040: the question 040 answered at the reference
+  doors, asked of every other place a FIX has already been written once.**
+  040's finding was not a fault that reappeared in a new word — it was a
+  CORRECT RULE, written out in `WorldRegistry.around_problem()` by 036, that
+  never reached the four other doors of its own class. TRAPS 11 has always
+  said to fix the class rather than the instance; nothing had asked the
+  reverse question, which is cheaper and has a sharper answer: **for every
+  fix in TRAPS 1 to 34, is the rule it produced applied everywhere it
+  holds, or only where the fault was found?** Thirty-four traps, each with
+  a "Do" section stating a general rule, and at least one of them has
+  already turned out to be enforced in one place — so the expected answer
+  is not "all clear". Enumerate from TRAPS's own entries rather than from
+  memory, which is the mistake 039 caught in this file's list of eight.
+  **NOT MEASURED.**
 
 - ~~**A refusal that names no legal value, at the one door 030 did not
   reach: the top-level list itself.**~~ **Done in 034**, and it was nine
@@ -3216,17 +3465,18 @@ Two smaller ones, either of which is a single session:
   see that the eight quoted sentences were a reading and the finding was one
   the reading missed. See 039 above and TRAPS 33.
 
-  **Still undoored of the eight below:** *"Never give a corner, hairpin or
-  chicane a length"* and the two chicane and signed-angle claims ARE now in
-  `formula_test`; *"Room 1 is the entrance"*, *"R is a room's name or its
-  number counting from 1"*, *"A door joins two different rooms, and the same
-  pair may only be joined once"*, *"The game can adjust each angle and each
-  straight length by up to 20%"* and *"a new world replaces whatever was
-  there before"* are measured by hand in 039's "Measured this session by
-  hand" and have no suite. That is the natural next assistant task: a door
-  for the five, built the way `formula_test` built one for the six —
-  enumerated from `WorldRegistry.modules()` and the prompt rather than
-  quoted, since a quoted list is what this entry got wrong.
+  ~~**Still undoored of the eight below:**~~ **All eight are now doored.**
+  The three chicane and signed-angle claims went into `formula_test` in 039;
+  the remaining five — *"Room 1 is the entrance"*, *"R is a room's name or
+  its number counting from 1"*, *"A door joins two different rooms, and the
+  same pair may only be joined once"*, *"The game can adjust each angle and
+  each straight length by up to 20%"* and *"a new world replaces whatever
+  was there before"* — are `tests/procedure_test.gd` as of **040**, built
+  from the registry and the prompt as this entry asked. Asking it that way
+  was the whole value: **two of the five were members of larger classes and
+  each class had a fault** — a fractional position truncated in silence at
+  four of five reference doors, and a plan that destroyed the standing world
+  it then failed to replace. See 040 above and TRAPS 34.
 
   The original entry, as 038 wrote it: *038's finding is that the prompt makes several kinds of claim and
   Genesis has now built a door for four of them: limitations (027),
@@ -3670,3 +3920,53 @@ decision, so it is his and not the assistant's.
    The assistant has not chosen: (b) changes what Genesis builds and (a)
    versus (c) is a judgement about which of the two is the honest limit.
    Measured, not inferred, in 039.
+
+10. **A plan refused for OVERLAPPING destroys the standing world, and making
+    it safe changes how a plan is built.** Found in 040 while building the
+    door for *"a new world replaces whatever was there before"*, which is one
+    member of a rule Genesis follows everywhere else: a refusal leaves what
+    was there alone. Measured headless, before and after 040's fix:
+
+    ```
+                                                   before 040   after 040
+    a single world refused by its validator          survived    survived
+    a plan refused for its SCHEMA                    survived    survived
+    a plan with a step that cannot be worked out     DESTROYED    survived
+    a plan refused for OVERLAPPING                   DESTROYED   DESTROYED
+    a sectionless CREATE_TRACK (Prototype 001)       DESTROYED   DESTROYED
+    ```
+
+    040 fixed the third row by clearing when a build is certain to start
+    rather than before it is known whether one can. The fourth row is not a
+    move: the overlap is found in **pass 3**, by `_place()`, after the clear
+    and after earlier steps have already been built, because a world's
+    footprint is read off `module.build()`'s report. The fifth row is
+    Prototype 001's ring and is item 2 above, deferred twice on purpose.
+
+    **This is the more reachable half.** Two worlds with no `"around"` is the
+    shape of the prompt's own PLAN skeleton — the skeleton shows two steps and
+    says nothing about `around`, which is introduced in the sentence after it
+    — so *"a farm and a dungeon"* is prompt-conformant model output that takes
+    this path. Measured: a farm plus a 12 m hall and a 20 m vault, no
+    `around`, is refused *"step 2 overlaps step 1"* and the farm that was
+    standing is gone.
+
+    The options, for the record:
+
+    - **(a) Leave it.** Costs nothing new; the fault is as old as plans. The
+      player loses a world to a refusal, and `/save` is the only way back.
+    - **(b) Compute every footprint before building any of them**, so the
+      overlap check moves into a pass of its own between 2 and 3 and the
+      clear waits for it. `module.extent(layout)` already answers the size
+      question for `_fit_plan` without building, so the pieces exist — but
+      `_place()` works in built bounds and plan order, and moving it is a
+      change to how a plan is assembled rather than a smaller clear.
+    - **(c) Build the plan beside the standing world and swap it in only if
+      every step succeeds.** Makes every plan atomic, which fixes this row and
+      any future one, and needs `drivable`, `standable` and `pending_order`
+      saved and restored. The largest change and the only one that does not
+      have to be revisited when a fourth refusal layer appears.
+
+    The assistant has not chosen: all three change how a plan is built, which
+    is architecture, and (a) is a judgement about how much a lost world costs
+    a player. Measured, not inferred, in 040.
