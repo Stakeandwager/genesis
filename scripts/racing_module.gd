@@ -96,9 +96,9 @@ RULES FOR A CLOSED CIRCUIT
 # The record fields racing has always written, in the same order. Racing
 # records never had a "world" field, so they still don't.
 func record_fields(parameters: Dictionary, attempt: Dictionary) -> Dictionary:
-	var intent = parameters.get("intent", {})
 	var fields := {
-		"intent": intent if typeof(intent) == TYPE_DICTIONARY else {},
+		# 037: Readback.intent_of(), shared with WorldModule.record_fields().
+		"intent": Readback.intent_of(parameters),
 		"command": "CREATE_TRACK",
 		"proposed_sections": parameters.get("sections", []),
 		"attempt": int(attempt.get("attempt", 1)),

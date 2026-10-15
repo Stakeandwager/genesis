@@ -294,3 +294,42 @@ static func member_error(entry: Dictionary, n: int) -> String:
 	if shape == "":
 		shape = "a pair" if typeof(sample[0]) == TYPE_ARRAY else "an object"
 	return "%s %d must be %s, for example %s" % [one, n, shape, as_json(sample[0])]
+
+
+# --- 037: one reading, applied to the field the prompt asks for most ---
+#
+# "intent" is offered by SIX of the JSON skeletons in
+# AIInterpreter.assembled_prompt() - every world and all three tools - which
+# makes it the field the model is told to send more often than any other.
+# Five doors refused a non-object one and named it; each wrote the sentence
+# out by hand with its own example, which is the shape list_error() exists to
+# stop. The sixth door, EQUIP, read the field NOWHERE AT ALL: not checked,
+# not recorded, so a style the model sent exactly as instructed was dropped
+# in silence and the measurements panel said "REQUESTED: not stated" for
+# every tool ever asked for.
+#
+# So the question "is this an object" is asked here and nowhere else, and the
+# example is rendered through as_json() from the real value, for the same
+# reason member_error() renders its own: an example typed out beside a check
+# is an example nothing checks.
+#
+# Returns "" when there is nothing wrong. An ABSENT intent is not wrong -
+# every door has always treated it as optional, and the prompt says a request
+# with no description uses "unspecified" rather than leaving the field out,
+# which is advice to the model and not a rule Genesis enforces.
+static func intent_problem(parameters: Dictionary, example: String) -> String:
+	if not parameters.has("intent"):
+		return ""
+	if typeof(parameters["intent"]) == TYPE_DICTIONARY:
+		return ""
+	return "intent must be an object, for example %s" % as_json({"style": example})
+
+
+# The same field, read for the RECORD rather than for the refusal. A
+# non-object becomes {} - what WorldModule.record_fields() and
+# RacingModule.record_fields() each did by hand - so every record in the
+# ledger carries an object here and an auditor reading the file by field
+# meets one shape. Both readers are now this one.
+static func intent_of(parameters: Dictionary) -> Dictionary:
+	var given = parameters.get("intent", {})
+	return given if typeof(given) == TYPE_DICTIONARY else {}

@@ -1327,6 +1327,105 @@ HANDOVER's "Human decision needed" 8 rather than this commit's to settle.
 
 ---
 
+## 31. A sweep at the wrong granularity, and the field that fell through it
+
+**Signature:** a question asked of every member of a list comes back *all
+clear*, and the fault is one level down — at the DOORS a field arrives
+through, not at the field.
+
+**Cause.** 036 found `offset`: a field the code reads and acts on that the
+prompt never offers. HANDOVER named the next task as that question asked of
+every field — *for every field any handler or builder reads out of the AI's
+parameters, is it named in the assembled prompt, and is it checked by
+something?*
+
+Asked exactly that way, **the answer is yes, all 44 of them**, and the sweep
+reports nothing. Every field name the assembled prompt mentions has a read
+site somewhere in `scripts/`. `intent` has five.
+
+The fault is that a field is not read in one place. It arrives at a DOOR —
+one per command the prompt offers it at — and `intent` is offered at **six**
+and was read at **three**:
+
+```
+CREATE_FARM      "intent": {"style": STYLE}   read, checked, recorded
+CREATE_TRACK     "intent": {"style": STYLE}   read, checked, recorded
+CREATE_DUNGEON   "intent": {"style": STYLE}   read, checked, recorded
+EQUIP car        "intent": {"style": STYLE}   READ NOWHERE
+EQUIP boots      "intent": {"style": STYLE}   READ NOWHERE
+EQUIP look       "intent": {"style": STYLE}   READ NOWHERE
+```
+
+Not in `game_controller._equip`, not in `ToolRegistry`, not in `CarTool`,
+`BootsTool` or `LookTool`. So, measured headless before anything was
+changed: **no `EQUIP` record in the ledger carried an `intent` key at all**;
+`main._on_track_measured` reads `record["intent"]["style"]` for the one line
+the player sees, so the panel said **`REQUESTED: not stated`** for every tool
+ever asked for while a farm with the identical field said `smallholding`; and
+an `intent` that was a string, a list, a number, a bool or `null` was
+accepted in silence where the other five doors refuse it and name it.
+
+**This is 036's `offset` reversed, and it is the worse direction.** `offset`
+is a field the code reads that the prompt never offers, so no prompted
+request reaches it and nothing is lost today — which is why it sat there for
+thirty commits. `intent` at an `EQUIP` is a field the **prompt instructs the
+model to send**, so it arrives on real requests and goes in the bin.
+
+**Rules.**
+
+- **A sweep's granularity is a claim about where faults live, and it goes
+  unchecked like any other.** "Every field is read somewhere" and "every
+  field is read where it is sent" are different questions with different
+  answers, and the first one is the one that is easy to ask. Before
+  believing a clear report, ask what unit it counted — and prefer the unit
+  the model actually writes against, which here is one command's skeleton.
+- **Both directions, and the prompt's direction first.** A field the code
+  reads that the prompt withholds costs nothing until something writes it. A
+  field the prompt offers that the code drops is being sent right now, by a
+  model that was told to send it.
+- **A field the prompt tells the model to send is read where it is sent:
+  checked like every other field, and recorded.** Dropping it is worse than
+  refusing it, because a refusal is visible and a drop is not.
+- **The sixth copy of a sentence is not a fix.** Five doors asked this
+  question and each wrote the sentence out by hand with its own example, in a
+  project whose own `Readback` comment says *"six copies of a sentence
+  diverge, and the one that diverges is the one nobody is reading"*. The
+  question is now `Readback.intent_problem()` and the example is rendered
+  through `as_json()`, so the six doors cannot drift and the example cannot
+  promise a shape the check refuses. Trap 11, at a sentence rather than at a
+  behaviour.
+- **A record carries what was PROPOSED, before anything is validated.** The
+  worlds have always written their record fields first, so a refused request
+  says in the ledger what it was refused about. `_equip` now does too.
+- The suite **enumerates the doors from `AIInterpreter.assembled_prompt()`**
+  by reading its skeletons for the field, so a world or tool added later
+  whose skeleton offers `intent` has no row and fails rather than passing
+  unexamined — the property that would have caught this in 004, when `EQUIP`
+  was written. It asserts the field is NAMED, never what the sentence says,
+  and asserts that an **absent** `intent` is still accepted, so it cannot be
+  satisfied by making the field required.
+
+Found and fixed in 037. `tests/intent_door_test.gd` fails **39 times**
+against the pre-037 code, all of them the three `EQUIP` doors.
+
+**Found in the same reading and deliberately not fixed, because it moves the
+prompt.** The boots section tells the model two different things about the
+same player sentence. Measured with the functions that enforce it: raising
+`footing` to 1.50 takes top speed from 4.48 to **2.00 m/s**, while raising
+`brake` to 1200 leaves it at 4.48 and still stops in 0.59 m. The prompt's
+`brake` line says *"This does NOT change top speed: someone who wants to
+'stop on a sixpence' wants brake raised and nothing else"*; three lines
+below, the `Every field may be left out` line says *"someone who wants
+'boots that stop on a sixpence' wants footing raised and nothing else"*. The
+same quoted phrase, two different fields, and the second costs more than half
+the player's walking speed. Beside it: `brake` is **absent from the boots
+JSON skeleton** the model copies, while being described in the bullets under
+it. That is trap 28's shape and it is HANDOVER's next assistant task, with
+its own commit, because a prompt change moves `PROMPT_FINGERPRINT` and
+`PROMPT_VERSION` and makes designs non-comparable across it (trap 29).
+
+---
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
 > A fluent sentence is not evidence that anything was understood.
@@ -1354,3 +1453,6 @@ HANDOVER's "Human decision needed" 8 rather than this commit's to settle.
 > the rest of the function with it.
 > And a refusal that describes the consequence of a field it could not read
 > has told the player about the wrong thing.
+> And a field the prompt tells the model to send, read nowhere, is a drop
+> rather than a refusal, so nobody sees it at all.
+> And a sweep that comes back clear is a claim about the unit it counted.

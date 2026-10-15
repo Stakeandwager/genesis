@@ -13,7 +13,31 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **036**, the question this file named
+- Last commit at the time of writing: **037**, the question this file named
+  as the next assistant task — *036's `offset` finding asked of every field
+  rather than of the one it was found at*. Asked field by field the answer is
+  **yes, all 44 of them**, and that answer is worthless: every field name the
+  assembled prompt mentions has a read site somewhere. The fault is one door
+  along. **`intent` is offered by six of the prompt's JSON skeletons and was
+  read at three.** The three `EQUIP` skeletons were read nowhere — not in
+  `_equip`, not in `ToolRegistry`, not in any of the three tools — so a style
+  the model sent *exactly as instructed* was dropped in silence: **no `EQUIP`
+  record in the ledger carried an `intent` key at all**, the measurements
+  panel said `REQUESTED: not stated` for every tool ever asked for while a
+  farm with the identical field said `smallholding`, and an `intent` that was
+  a string, a list, a number, a bool or `null` was accepted where the other
+  five doors refuse it and name it. **This is 036's `offset` reversed and it
+  is the worse direction**: `offset` is a field the code reads that the prompt
+  never offers, so nothing reaches it; this is a field the prompt INSTRUCTS
+  the model to send. The sentence now lives in `Readback.intent_problem()` and
+  all six doors read it, because a sixth hand-written copy would have been
+  fixing the instance (TRAPS 11). 43 suites passed before and 44 after,
+  `--all` included; the new suite fails 39 times against the pre-037 code, all
+  of them the three `EQUIP` doors. The prompt is byte-identical, so
+  `PROMPT_VERSION` did not move. Found while measuring and left for its own
+  commit: **the boots prompt tells the model two different things about the
+  same player sentence** — see 037 below and TRAPS 31.
+- The commit before it: **036**, the question that file named
   as the next assistant task — *does every command have a validator?* — and
   the answer is no, four of eleven. What that MEANS is the finding: not a
   missing function but **four conversions that throw**. `int()` and `float()`
@@ -159,22 +183,24 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-45 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **43 suites**, and since 024 every one of them runs —
+46 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **44 suites**, and since 024 every one of them runs —
 nothing is skipped as broken. `--all` adds the two slow racing suites.
 
-Last full run (036, Godot 4.7.1 on Linux, headless, in a cloud container):
+Last full run (037, Godot 4.7.1 on Linux, headless, in a cloud container):
 **suites with something to look at: 0**, both without `--all` and with it,
-`drive_test` and `session_test` included. 036's new suite is
+`drive_test` and `session_test` included. 037's new suite is
+`intent_door_test` (39 failures against the pre-037 code); 036's is
 `command_schema_test` (28 failures against the pre-036 code); 035's is
 `prompt_bounds_test` (4 failures against the pre-035 prompt); 034's is
 `container_door_test` (30 failures against the pre-034 sentences). Not run on
 the owner's Windows machine. `run_tests.bat` needed no edit for any of the
-three: no name matches any of its `findstr` patterns — `prompt_bounds_test`
-does not contain the literal `prompt_test` — so all three run there without
-`--fixed-fps`, which is what they get here too, and `command_schema_test` was
-run both with it and without and passes either way — checked rather than
-assumed (TRAPS 4).
+four: no name matches any of its `findstr` patterns — `prompt_bounds_test`
+does not contain the literal `prompt_test`, and `intent_door_test` contains
+none of the physics names — so all four run there without `--fixed-fps`,
+which is what they get here too, and `command_schema_test` and
+`intent_door_test` were each run both with it and without and pass either
+way — checked rather than assumed (TRAPS 4).
 
 **Run `--all` before believing a green suite.** 033 introduced a fault that
 the 38 fast suites all passed and `session_test` caught — see TRAPS 25's last
@@ -2133,6 +2159,198 @@ container.
 
 TRAPS 30 records the fault, the rule, and the near miss that trap 14 caught.
 
+## 037 — the field the prompt asks for six times, and read at three doors
+
+**Objective.** The question this file named as the next assistant task:
+036's `offset` finding asked of every field rather than of the one it was
+found at. *For every field any handler or builder reads out of the AI's
+parameters, is it named in the assembled prompt, and is it checked by
+something?*
+
+**Starting state.** Branch `prototype-002a`, commit 036. 43 suites, 0 with
+something to look at, `--all` included — measured before anything was
+changed, not remembered.
+
+### The question had to be asked at the DOOR, not at the field
+
+Asked field by field, the answer is *yes, all of them*, and that answer is
+worthless. Every one of the **44 field names the assembled prompt mentions**
+— enumerated from the prompt by reading the quoted keys out of its JSON
+skeletons, not written out by hand — has a read site somewhere in
+`scripts/`. A sweep at that granularity reports all clear.
+
+The fault is one door along. `intent` is offered by **six** of the prompt's
+skeletons — every world and all three tools, which makes it the field the
+model is told to send more often than any other — and it was read at
+**three**. The three `EQUIP` skeletons were not read anywhere: not in
+`game_controller._equip`, not in `ToolRegistry`, not in `CarTool`,
+`BootsTool` or `LookTool`. A field can have five honest readers and a sixth
+door where it falls on the floor, and only a per-door reading sees it.
+
+That is **036's `offset` reversed, and it is the worse direction**. `offset`
+is a field the code reads that the prompt never offers, so no prompted
+request reaches it and nothing is lost today. `intent` at an `EQUIP` is a
+field the **prompt instructs the model to send**, so it arrives on real
+requests — and went in the bin.
+
+### What that cost, measured headless rather than inferred
+
+```
+EQUIP car   {"intent": {"style": "rally_car"}}   record has NO "intent" KEY
+EQUIP boots {"intent": [1, 2]}                   accepted, result VALID
+EQUIP look  {"intent": 7}                        accepted, result VALID
+CREATE_FARM {"intent": "smallholding"}           refused, field named
+```
+
+- **No `EQUIP` record in the ledger carried an `intent` key at all.** The
+  style a player described for a tool was absent from the one artefact this
+  project exists to keep. Every record before 037 is like this and 037 did
+  not go near them; they are on the owner's machine and they are his.
+- **`main._on_track_measured` reads `record["intent"]["style"]`** for the
+  `REQUESTED` line the player sees, and `_equip` emits `track_measured`. So
+  the panel said **`REQUESTED: not stated`** for every tool ever asked for,
+  while a farm carrying the identical field said `smallholding`. Measured
+  side by side, both lines in the probe output.
+- **An `intent` that was a string, a list, a number, a bool or `null` was
+  accepted in silence** at all three tools, while the other five doors
+  refused it and named the field. This is the sixth door to the field 036
+  called the fifth.
+
+### What changed, asked of the class and not the instance (TRAPS 11)
+
+The five doors that did ask the question each wrote the sentence out by hand
+with its own example — which is the shape `Readback.list_error()` was
+created to stop, in the file whose own comment says *"six copies of a
+sentence diverge, and the one that diverges is the one nobody is reading"*.
+Adding a sixth copy would have been fixing the instance.
+
+So the question is now asked in one place and the six doors read from it:
+
+- **`Readback.intent_problem(parameters, example)`** — `""`, or the refusal.
+  The example is rendered through `as_json()` from a real value, for the
+  reason `member_error()` renders its own: an example typed out beside a
+  check is an example nothing checks. The suite parses the example back out
+  of the sentence and asserts the check accepts it.
+- **`Readback.intent_of(parameters)`** — the same field read for the
+  RECORD, substituting `{}` for a non-object. This was
+  `WorldModule.record_fields()` and `RacingModule.record_fields()` doing it
+  by hand; both now read this.
+- `FarmModule`, `DungeonModule`, `SectionValidator` and `PLAN` call
+  `intent_problem`. **Their sentences are byte-identical to what they were**
+  — checked by diff, not assumed — so nothing a player reads changed at
+  those four doors and no suite assertion about them moved.
+- **`_equip` is the new door.** It records `Readback.intent_of(parameters)`
+  before validating anything, so a refused `EQUIP` says in the ledger what
+  it was refused about, which is what the worlds have always done; and it
+  refuses a non-object naming the field.
+- **`_equip` now answers both faults rather than the first.** A spec whose
+  `intent` is a string and whose `tool` is missing is told about two things.
+  `SectionValidator` has done this for a section's `length` and `grade`
+  since it was written; this function returned on the first.
+
+**One example for the `EQUIP` door rather than one per tool**, because what
+the sentence has to show is the SHAPE of the field, and a player who sent a
+string needs that whether they asked for a car or for boots.
+
+**Not changed, deliberately: the prompt.** It is **byte-identical** — 15497
+characters, `PROMPT_FINGERPRINT` matches, `PROMPT_VERSION` stays at
+`035-bounds-from-the-code-1` — checked rather than assumed (TRAPS 29),
+because 037 changes what Genesis DOES with a field and not what the model is
+told. The prompt's own instruction to send `intent` with every `EQUIP` is
+now a thing Genesis acts on, which it was not.
+
+### Evidence
+
+- Godot 4.7.1 (`4.7.1.stable.official.a13da4feb`) headless, Linux, in a
+  cloud container. **Baseline 43 suites, 0 with something to look at, with
+  `--all`. After: 44 suites, 0 without `--all` and 0 with it**, `drive_test`
+  and `session_test` included.
+- `intent_door_test` **fails 39 times against the pre-037 code**,
+  measured the way 035 and 036 measured theirs: the six changed scripts
+  reverted to 036 with `Readback`'s two new functions left in place so the
+  suite parses. All 39 are the three `EQUIP` doors, 13 apiece — 3 for the
+  record (no key, no style, no key when intent is absent) and 10 for the
+  five non-object values that were accepted. **The three world doors and
+  `PLAN` pass against the pre-037 code as well**, which is the point: their
+  behaviour did not change, only where their sentence lives.
+- `run_tests.bat` needed no edit (TRAPS 4): `intent_door_test` matches none
+  of its `findstr` patterns, so it runs there without `--fixed-fps` — which
+  is what it gets here too, and it was run **both ways** and passes either.
+- The suite's doors are **enumerated from `AIInterpreter.assembled_prompt()`**
+  by reading its skeletons for the field, so a world or tool added later
+  whose skeleton offers `intent` has no row and **FAILS rather than passing
+  unexamined**. That is the property that would have caught this in 004,
+  when `EQUIP` was written.
+- It asserts the field is NAMED in the refusal and never what the sentence
+  says, so every refusal in Genesis may be rewritten without touching it.
+  It asserts that an **absent** `intent` is still accepted at all six doors,
+  so it cannot be satisfied by making the field required.
+
+### Not verified
+
+- **NO MODEL HAS SENT ANY OF THESE REQUESTS.** Every one was typed by hand
+  into `_handle_request`; a headless harness has no key and no model.
+  Whether a model actually writes `"intent": {"style": ...}` on an `EQUIP`
+  is the premise this inherits from the prompt telling it to, and only the
+  owner's editor session can show it. **This is the half that matters most
+  here**, because the whole finding is about a field arriving on real
+  requests.
+- Nothing ran on Windows.
+- **The ledger records already on the owner's disk cannot be fixed.** Any
+  `EQUIP` record there has no `intent` key, so no before-and-after of
+  described styles across 037 is possible for tools.
+- **One judgement, labelled as one.** That a non-object `intent` at an
+  `EQUIP` should be REFUSED rather than quietly recorded as `{}` is a
+  design decision, not a measurement. It follows what all five other doors
+  do and what 036 decided for `PLAN`, and it changes what Genesis accepts:
+  an `EQUIP` whose `intent` is a string used to build and is now refused.
+  The record-carrying half of 037 is additive and changes nothing that was
+  accepted.
+- `plan_said_test`, `tool_test`, `boots_test`, `look_test`,
+  `ledger_said_test`, `ledger_audit_test` and `session_test` all pass
+  unchanged, so the new `intent` key on `EQUIP` records was checked against
+  every existing reader of those records rather than assumed harmless.
+
+### Found while measuring it, and left for its own commit
+
+**The boots prompt tells the model two different things about the same
+player sentence.** Measured, not inferred, with `BootsTool.top_speed()` and
+`BootsTool.stopping_distance()`:
+
+```
+ordinary                 top 4.48 m/s   stops in 1.45 m from its own top
+footing raised to 1.50   top 2.00 m/s   stops in 0.29 m
+brake raised to 1200     top 4.48 m/s   stops in 0.59 m
+```
+
+The prompt's `brake` line says *"This does NOT change top speed: someone who
+wants to 'stop on a sixpence' wants brake raised and nothing else."* Three
+lines below it, the `Every field may be left out` line says *"someone who
+wants 'boots that stop on a sixpence' wants footing raised and nothing
+else."* **The same quoted player phrase, two different fields**, and the
+second costs the player more than half their walking speed — which is
+exactly what the first sentence warns against. Beside it: `brake` is
+**absent from the boots JSON skeleton** the model copies, while being
+described in the bullets under it, so a model following the skeleton never
+sends the field the bullet tells it to raise.
+
+That is TRAPS 28's shape — a sentence in the prompt the code contradicts —
+and it is **not folded in here**, for the reason 030 gave for not folding in
+035's farm bound: it is a prompt change, so it moves `PROMPT_FINGERPRINT`
+and `PROMPT_VERSION` and makes designs non-comparable across it. It wants
+its own commit and it is the next assistant task below.
+
+**And two refusal examples name a style shape the prompt forbids.** The
+prompt says a style is *"a short lowercase label with underscores"*.
+`SectionValidator`'s example is `{"style": "a street circuit"}` and `PLAN`'s
+is `{"style": "a farm with a circuit round it"}` — both with spaces.
+Nothing refuses a style, so neither example is illegal to Genesis; they just
+show the model a shape its instructions rule out. Cosmetic, one word each,
+and recorded rather than swept because 037's own rule is that the sentence
+lives in one place and the examples are the callers' to choose.
+
+TRAPS 31 records the fault and the rule.
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -2321,6 +2539,27 @@ because what changed is a sentence and the suite can only prove it is true:
   — a `MODIFY_TRACK` whose `corner` was not a number, from any release before
   036. The records are yours and 036 did not touch them.
 
+037 adds an eleventh, and it is one sentence and one glance at a panel:
+
+- **Ask for a tool with a style in it** — *"give me a rally car"*, *"boots
+  for climbing"*, anything that makes the model write
+  `"intent": {"style": ...}` on an `EQUIP`, which all three `EQUIP`
+  skeletons in its prompt tell it to. Before 037 that field was read
+  nowhere: the ledger record for the car carried **no `intent` key at all**
+  and the measurements panel said **`REQUESTED: not stated`**. It should now
+  say the style the model wrote, the way it has always done for a farm.
+  **The judgement is whether the style a model puts there is worth having**
+  — whether *"rally_car"* or whatever it writes reads as a useful record of
+  what the player described, or as noise in the panel. That is the half a
+  test cannot answer, because no model has sent one of these requests; every
+  request in `intent_door_test` was typed by hand.
+- And one worth typing because it used to be accepted in silence: an `EQUIP`
+  whose intent is not an object. Unlikely from a model following the prompt,
+  and the point is that Genesis now says *"intent must be an object, for
+  example {"style": "lightweight"}"* instead of building the thing and
+  dropping the field. `intent_door_test` holds the line either way: it
+  asserts the field is NAMED, never what the sentence says.
+
 **Smallest useful assistant task next.** The ledger question (033), the
 container-door question (034), the prompt-bound question (035) and the
 validator question (036) are all **done**. Candidates, in the order the
@@ -2419,17 +2658,60 @@ Two smaller ones, either of which is a single session:
   is worth a minute's thought first, since every record carries it and the
   ledger compares designs by it. *(035's answer: yes, and it should have
   moved twice before — see TRAPS 29.)*
-- **The silent drop, asked of every field the way 036 asked of every
-  command.** 036's `offset` finding is the shape: a field the code READS and
-  acts on, that the prompt never offers, refused by nothing and reported
-  nowhere. `silence_test` exists and this is not what it covers. The question
-  is cheap and the list is enumerable: for every field any handler or builder
-  reads out of the AI's parameters, is it named in the assembled prompt, and
-  is it checked by something? `prompt_bounds_test` already walks the prompt
-  with a regular expression and `WorldRegistry.modules()` already enumerates
-  the declarations, so both ends of the comparison exist. Expect the answer
-  to be wider than `offset` — that is what 034, 035 and 036 each found when
-  the same question was asked of a whole list.
+- ~~**The silent drop, asked of every field the way 036 asked of every
+  command.**~~ **Done in 037**, and the useful part is that the question as
+  this entry phrased it — *per FIELD* — answers *yes, all 44 of them* and
+  finds nothing. Asked per DOOR it found `intent`: offered by six of the
+  prompt's skeletons, read at three, and the three that read it nowhere are
+  the three the prompt instructs the model to send it with. Left struck
+  rather than deleted, because the next reader should see that the
+  granularity of the sweep was the whole difference between a clear report
+  and a finding. See 037 and TRAPS 31.
+
+  The original entry, as 036 wrote it: *036's `offset` finding is the shape:
+  a field the code READS and acts on, that the prompt never offers, refused
+  by nothing and reported nowhere. `silence_test` exists and this is not what
+  it covers. The question is cheap and the list is enumerable: for every
+  field any handler or builder reads out of the AI's parameters, is it named
+  in the assembled prompt, and is it checked by something?
+  `prompt_bounds_test` already walks the prompt with a regular expression and
+  `WorldRegistry.modules()` already enumerates the declarations, so both ends
+  of the comparison exist. Expect the answer to be wider than `offset` — that
+  is what 034, 035 and 036 each found when the same question was asked of a
+  whole list.*
+- **The boots prompt tells the model two different things about the same
+  player sentence, and this is the next task.** Found while measuring 037 and
+  **measured, not inferred**, with the functions that enforce it:
+
+  ```
+  ordinary                 top 4.48 m/s   stops in 1.45 m from its own top
+  footing raised to 1.50   top 2.00 m/s   stops in 0.29 m
+  brake raised to 1200     top 4.48 m/s   stops in 0.59 m
+  ```
+
+  The `brake` line says *"This does NOT change top speed: someone who wants
+  to 'stop on a sixpence' wants brake raised and nothing else."* Three lines
+  below it the `Every field may be left out` line says *"someone who wants
+  'boots that stop on a sixpence' wants footing raised and nothing else."*
+  The same quoted player phrase, two different fields, and the second costs
+  the player **more than half their walking speed** — the thing the first
+  sentence exists to warn against. Beside it, in the same section: `brake` is
+  **absent from the boots JSON skeleton** the model copies while being
+  described in the bullets under it, so a model following the skeleton never
+  sends the field the bullet tells it to raise.
+
+  This is TRAPS 28's shape — a sentence in the prompt the code contradicts —
+  and it wants its own commit because it moves the prompt, and so
+  `PROMPT_FINGERPRINT` and `PROMPT_VERSION` with it, which makes designs
+  non-comparable across it. 030 gave the same reason for not folding in
+  035's farm bound. **Worth asking of the class and not these two
+  sentences**: every "someone who wants X wants FIELD changed and nothing
+  else" sentence in the prompt names a field, and whether that field is the
+  one that does X is a measurement, not a wording question. `CarTool`'s is
+  *"a car that stops better"* → `braking`, which is right; the two boots
+  ones are the finding. `prompt_bounds_test` already walks the prompt and
+  already fails when `PROMPT_FINGERPRINT` does not move, so the second half
+  is in place before the first is written.
 - **Ask one more question of every file at once.** 029's finding came from
   asking "what if this is not a number" of all five validators rather than
   one, and it had been true for the project's whole life. Candidates in the

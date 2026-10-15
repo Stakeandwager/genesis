@@ -501,10 +501,44 @@ func _thing_node(label: String) -> Node3D:
 	return null
 
 
+# --- 037: the sixth door to "intent", which read the field nowhere at all ---
+#
+# The example in the refusal. One for the EQUIP door rather than one per tool,
+# because what the sentence has to show is the SHAPE of the field, and a
+# player who sent a string for it needs that whether they were asking for a
+# car or for boots. Written as the prompt tells the model to write a style -
+# "a short lowercase label with underscores" - which two of the five older
+# examples are not, and which is recorded in HANDOVER rather than swept here.
+const EQUIP_INTENT_EXAMPLE := "lightweight"
+
+
 func _equip(parameters: Dictionary) -> void:
 	var record := _new_record("EQUIP")
 	record["tool"] = str(parameters.get("tool", ""))
+	# 037: MEASURED, not inferred. All three EQUIP skeletons in the assembled
+	# prompt carry "intent": {"style": STYLE}, and nothing in Genesis read it:
+	# not this function, not ToolRegistry, not one of the three tools. So a
+	# style the model sent exactly as instructed was dropped in silence - the
+	# ledger carried no "intent" key for any EQUIP ever made, and
+	# main._on_track_measured reads record["intent"]["style"] for the one line
+	# the player sees, so the panel said "REQUESTED: not stated" for every
+	# tool while a farm with the identical field said "smallholding".
+	#
+	# Written here and not in the tools for the same reason the worlds write
+	# it before validating: the record must carry what was PROPOSED whether or
+	# not the proposal stands, so a refused EQUIP says what it was refused
+	# about. A non-object becomes {}, as it does for every world.
+	record["intent"] = Readback.intent_of(parameters)
 	record["proposed_spec"] = parameters.get("spec", {})
+
+	# Both faults are asked, so both are answered. A spec whose intent is a
+	# string and whose power is 5000 is told about two things, which is what
+	# SectionValidator has done for a section's length and grade since it was
+	# written; this function used to return on the first.
+	var problems: Array = []
+	var intent_wrong := Readback.intent_problem(parameters, EQUIP_INTENT_EXAMPLE)
+	if intent_wrong != "":
+		problems.append(intent_wrong)
 
 	var asked_tool := str(parameters.get("tool", "")).strip_edges()
 	var tool := ToolRegistry.find(asked_tool)
@@ -520,12 +554,19 @@ func _equip(parameters: Dictionary) -> void:
 			why = "an EQUIP has to say which tool it is for (this game has %s)" % kinds
 		else:
 			why = "this game has no tool called '%s' (it has %s)" % [asked_tool, kinds]
-		_finish_failed(record, "FAILED_SCHEMA", [why])
+		problems.append(why)
+		_finish_failed(record, "FAILED_SCHEMA", problems)
 		return
 
 	var checked := tool.validate(parameters)
 	if not bool(checked["ok"]):
-		_finish_failed(record, "FAILED_SCHEMA", checked["errors"])
+		problems.append_array(checked["errors"])
+	# Both conditions, not just the list: a validator that answered ok=false
+	# with no reasons would otherwise fall through to the build below holding
+	# an empty spec. None of the three does; the guard is here so that a tool
+	# written later cannot make this the quiet path.
+	if not bool(checked["ok"]) or not problems.is_empty():
+		_finish_failed(record, "FAILED_SCHEMA", problems)
 		return
 
 	var spec: Dictionary = checked["spec"]
@@ -682,12 +723,13 @@ func _execute_plan(parameters: Dictionary) -> void:
 	# and an auditor reading the file by field would meet three shapes.
 	# WorldModule.record_fields() has substituted {} for a non-object intent
 	# since 003; this is the fifth door to the same field.
-	var asked_intent = parameters.get("intent", {})
-	if parameters.has("intent") and typeof(asked_intent) != TYPE_DICTIONARY:
-		_finish_failed(record, "FAILED_SCHEMA",
-			["intent must be an object, for example {\"style\": \"a farm with a circuit round it\"}"])
+	# 037: the sentence moved into Readback.intent_problem(), which is the one
+	# place that answers it for all six doors the prompt offers this field at.
+	var intent_wrong := Readback.intent_problem(parameters, "a farm with a circuit round it")
+	if intent_wrong != "":
+		_finish_failed(record, "FAILED_SCHEMA", [intent_wrong])
 		return
-	record["intent"] = asked_intent
+	record["intent"] = Readback.intent_of(parameters)
 
 	var raw = parameters.get("steps", null)
 	if typeof(raw) != TYPE_ARRAY:

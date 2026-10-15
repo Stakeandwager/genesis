@@ -123,11 +123,12 @@ static func validate(parameters: Dictionary) -> Dictionary:
 	if not mode in MODES:
 		errors.append("mode '%s' is not available (only: circuit)" % mode)
 
-	if parameters.has("intent") and typeof(parameters["intent"]) != TYPE_DICTIONARY:
-		# FarmModule and DungeonModule have shown the shape here since they
-		# were written; this one named the type and left the player to guess
-		# what goes in it.
-		errors.append("intent must be an object, for example {\"style\": \"a street circuit\"}")
+	# FarmModule and DungeonModule have shown the shape here since they were
+	# written; this one named the type and left the player to guess what goes
+	# in it. 037: all six doors now ask Readback.intent_problem().
+	var intent_wrong := Readback.intent_problem(parameters, "a street circuit")
+	if intent_wrong != "":
+		errors.append(intent_wrong)
 
 	var raw = parameters.get("sections", null)
 	if typeof(raw) != TYPE_ARRAY:

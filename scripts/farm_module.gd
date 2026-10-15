@@ -111,8 +111,11 @@ func validate(parameters: Dictionary) -> Dictionary:
 	var errors: Array = []
 	var clean: Array = []
 
-	if parameters.has("intent") and typeof(parameters["intent"]) != TYPE_DICTIONARY:
-		errors.append("intent must be an object, for example {\"style\": \"smallholding\"}")
+	# 037: the sentence is Readback.intent_problem()'s, so the five doors that
+	# already asked this and the sixth that never did cannot drift apart.
+	var intent_wrong := Readback.intent_problem(parameters, "smallholding")
+	if intent_wrong != "":
+		errors.append(intent_wrong)
 
 	var raw = parameters.get("zones", null)
 	if typeof(raw) != TYPE_ARRAY:

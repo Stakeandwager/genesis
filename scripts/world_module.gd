@@ -47,10 +47,11 @@ func prompt_section() -> String:
 # raw_command, source and experiment, in the order given here.
 # attempt is {"attempt": 1}, or {"attempt": 2, "revision_of": {...}}.
 func record_fields(parameters: Dictionary, _attempt: Dictionary) -> Dictionary:
-	var intent = parameters.get("intent", {})
 	return {
 		"world": display_name(),
-		"intent": intent if typeof(intent) == TYPE_DICTIONARY else {},
+		# 037: Readback.intent_of(), which is this line and RacingModule's
+		# copy of it, in one place.
+		"intent": Readback.intent_of(parameters),
 		"command": command(),
 	}
 

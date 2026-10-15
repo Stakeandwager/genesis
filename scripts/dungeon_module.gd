@@ -159,8 +159,10 @@ func record_fields(parameters: Dictionary, attempt: Dictionary) -> Dictionary:
 func validate(parameters: Dictionary) -> Dictionary:
 	var errors: Array = []
 
-	if parameters.has("intent") and typeof(parameters["intent"]) != TYPE_DICTIONARY:
-		errors.append("intent must be an object, for example {\"style\": \"crypt\"}")
+	# 037: one reading, shared with the five other doors to this field.
+	var intent_wrong := Readback.intent_problem(parameters, "crypt")
+	if intent_wrong != "":
+		errors.append(intent_wrong)
 
 	var raw_rooms = parameters.get("rooms", null)
 	if typeof(raw_rooms) != TYPE_ARRAY:
