@@ -62,6 +62,11 @@ func display_name() -> String:
 	return "farm"
 
 
+# The list a farm is built from, read by the same key validate() reads.
+func pieces() -> Array:
+	return ["zones", "zone"]
+
+
 func prompt_section() -> String:
 	return """CREATE_FARM - design a farm
 {"command": "CREATE_FARM", "parameters": {"intent": {"style": STYLE}, "zones": [ZONE, ZONE, ...]}}

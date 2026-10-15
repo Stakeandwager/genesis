@@ -202,11 +202,43 @@ func readback(_parameters: Dictionary) -> String:
 	return Readback.article(display_name())
 
 
+# --- 032: the one list a world is built from ---
+# ["zones", "zone"] for a farm: the key its validator reads, and the word for
+# one of them. readback_short() names how many there are, so the short line a
+# plan reads can catch a piece that went missing.
+#
+# This is declared per world rather than guessed, because the key is the same
+# one the validator reads and the two must not drift apart. A world that is
+# not a list of pieces returns [] and is named on its own.
+func pieces() -> Array:
+	return []
+
+
 # The same world in a few words, for a plan. A plan's meaning is mostly how
 # its worlds are related, and a line long enough to bury the relationship at
 # the end is a line nobody reads to the end of.
-func readback_short(_parameters: Dictionary) -> String:
-	return Readback.article(display_name())
+#
+# 032: so it stays short, and names ONE field - how many pieces. Before this,
+# a farm of two zones and a farm of twenty read back identically inside a
+# plan, and so did a four-section circuit and a twelve-section one; the
+# dungeon was the only world that counted its rooms. A plan is the only
+# description a player gets of a multi-world request - WorldRegistry.readback
+# calls _plan_readback and never the long readback - so a count silent here
+# is a count said nowhere. Measured, not inferred; see HANDOVER 032.
+#
+# The world's NAME comes from display_name(), which is the one function that
+# names a world. Racing used to spell its own name a second time here ("a
+# race circuit" against a display_name of "circuit"), which is the TRAPS 16
+# shape: one fact, two renderings, and nothing making them agree.
+func readback_short(parameters: Dictionary) -> String:
+	var named := Readback.article(display_name())
+	var piece := pieces()
+	if piece.size() != 2:
+		return named
+	var raw = parameters.get(str(piece[0]), null)
+	if typeof(raw) != TYPE_ARRAY or (raw as Array).is_empty():
+		return named
+	return "%s of %s" % [named, Readback.count_of((raw as Array).size(), str(piece[1]))]
 
 
 # --- 002I: each world writes its own metrics panel ---

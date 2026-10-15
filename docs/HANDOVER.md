@@ -13,7 +13,18 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: 031, the readback audit HANDOVER has
+- Last commit at the time of writing: 032, the plan readback 031 did not
+  reach - asked of every command the whitelist allows rather than every field
+  of one, and it turned up something larger than a readback. Two of the eleven
+  commands in `CommandParser.allowed_commands()` had **no readback at all**,
+  and the reason is that they do nothing and said they had: 002B removed
+  Prototype 001's track and opponents and left the builders' success strings
+  behind, so `SPAWN_OPPONENTS` logged `count=8` with no car on the grid. 37
+  suites passed before and 39 after, `--all` included; the two new suites fail
+  11 times against the pre-032 code. See 032 below and TRAPS 24. **What to do
+  with the three Prototype 001 stubs is the owner's** and is under "Human
+  decision needed".
+- The commit before it: 031, the readback audit HANDOVER has
   named as the next assistant task since 028. The question 028 asked of the
   prompt's capabilities - is the sentence as wide as the thing it describes -
   asked of every field of every readback, by DIFFERENCE rather than by
@@ -89,16 +100,17 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-39 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **37 suites**, and since 024 every one of them runs —
+41 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **39 suites**, and since 024 every one of them runs —
 nothing is skipped as broken. `--all` adds the two slow racing suites.
 
-Last full run (031, Godot 4.7.1 on Linux, headless, in a cloud container):
+Last full run (032, Godot 4.7.1 on Linux, headless, in a cloud container):
 **suites with something to look at: 0**, both without `--all` and with it,
-`drive_test` and `session_test` included. The new suite is
-`said_fields_test`: 26 of its assertions fail against the pre-031 readbacks
-and the rest are guards, with the split written into the suite's header per
-TRAPS 6. Not run on the owner's Windows machine.
+`drive_test` and `session_test` included. The two new suites are
+`plan_said_test` (8 of its assertions fail against the pre-032 code) and
+`stub_claims_test` (3 of 3 in its first group fail), with the finding/guard
+split written into each suite's header per TRAPS 6. Not run on the owner's
+Windows machine.
 
 ## What Genesis is
 
@@ -159,7 +171,21 @@ verified, and what remains uncertain.
   fields out of `SectionValidator.FIELDS` and each tool's `defaults()`, so a
   type that grows a field fails the suite until the sentence grows with it.
   Eleven fields were silent when the question was first asked; see 031 and
-  TRAPS 22.
+  TRAPS 22. Since 032 the same holds **one layer up**: every command the
+  whitelist allows reads back, and every world names how many pieces it is
+  made of in the short line a plan uses — which is the only line a player sees
+  for a multi-world request. `tests/plan_said_test.gd` enumerates from
+  `CommandParser.allowed_commands()` and `WorldRegistry.modules()`, so a
+  command or a world added later cannot be silent. Two commands had no
+  readback at all when the question was first asked; see 032 and TRAPS 24.
+- **What a builder reports must be read from what it built.** 032. Three
+  Prototype 001 builders kept their success strings after 002B removed their
+  bodies, so `"SPAWN_OPPONENTS count=8"` was the asked-for number wearing a
+  result's clothes. A line that states a count reads it from what was placed,
+  never from what was requested, and `tests/stub_claims_test.gd` asserts the
+  tie rather than the wording: if nothing was placed, the line must not
+  contain the number asked for. This is the carrier-delivery rule above,
+  applied to a function reporting on itself.
 - **Silence is not agreement.** `ACCEPTED_BY_SILENCE` is recorded and excluded
   from the understanding score.
 - **A carrier's claim is evidence of an attempt, not of delivery.** Delivery is
@@ -260,6 +286,26 @@ verified, and what remains uncertain.
   sections of a type: a readback that groups says things about groups, and a
   group keyed on one measurement took its name from the first member and was
   false of the rest.
+- **A green suite had never asked whether every COMMAND the whitelist allows
+  reads back**, only whether every field of one command does. Found and fixed
+  in 032: two of the eleven commands in `CommandParser.allowed_commands()` had
+  no readback at all, and two of the three worlds were silent in a plan about
+  how many pieces they are made of. 37 suites passed before and 39 after. See
+  032 below and TRAPS 24.
+
+  **And what the silence was hiding, which is the part that matters.** The two
+  commands with no readback do nothing and said they had: 002B removed
+  Prototype 001's track and opponents and left the builders' success strings
+  behind, so `SPAWN_OPPONENTS` logged `count=8` with no car placed, and
+  `MODIFY_TRACK` — the one of them a player can reach — reported which corner
+  it had made harder without touching anything. Those lines go to the player's
+  log. **That is a construction-layer claim with no measurement behind it** —
+  the thing this project's first rule forbids — and 37 green suites sat around
+  it. It is not added to the count of eight below: that count is the owner's
+  editor sessions specifically, and this one, like 029, 030 and 031, the
+  assistant found by asking one question of a whole list. The claims are gone;
+  the three stubs still do nothing, and that is the owner's.
+
 - **The capability statement in the prompt is hand-written prose and can go
   stale.** `tests/log_023_test.gd` asserts that each thing it claims points at
   a function that still exists (`NpcGoals.delivery_line`,
@@ -1059,6 +1105,182 @@ is recorded here rather than folded into a commit about something else.
 
 ---
 
+## 032 — the two commands nothing described, and what that was hiding
+
+**Objective.** The task this file named as the next assistant one: the plan
+readback, which 031 did not reach. 031 asked, of every field of every world's
+long readback, *does the sentence change when the field does*. This asks the
+same question one layer up, and off the other list — not every field of one
+command, but **every command `CommandParser.allowed_commands()` admits**.
+
+**Starting state.** Branch `prototype-002a` at 0dadcf0 (031). Baseline run,
+Godot 4.7.1 headless: suites with something to look at: 0, 37 suites.
+
+**Why the plan layer and not just the single-command one.** `WorldRegistry.readback`
+sends a `PLAN` to `_plan_readback` and never to a world's long readback. So
+for a multi-world request the short line is the **only** description a player
+is ever shown, and a field silent there is a field said nowhere.
+
+### What the audit found, measured headless before anything was changed
+
+**Two of the eleven whitelisted commands had no readback AT ALL.**
+`WorldRegistry.readback` returned the empty string for `SPAWN_OPPONENTS` and
+`MODIFY_TRACK`, and inside a plan they printed the raw JSON token — *"a
+dungeon of two rooms, then a spawn_opponents"*, underscore and all. Eight
+opponents and two read back identically; corner 1 made hard and corner 3 made
+easy read back identically.
+
+**Two worlds were silent about how many pieces they are made of.** Inside a
+plan, a farm of two zones and a farm of twenty both read *"a farm"*, and a
+four-section circuit and a twelve-section one both read *"a race circuit"* —
+`RacingModule.readback_short` ignored its parameters entirely. The dungeon was
+the only world of the three that counted its rooms. One member of a list
+right and two wrong is TRAPS 11's shape.
+
+**And then the thing worth the owner's attention. The two commands with no
+readback do nothing, and said they had.** 002B replaced Prototype 001's track
+and opponents with world modules and removed the old builders' bodies — 89
+lines from `opponent_builder.gd`, 148 from `track_builder.gd` — leaving the
+function **signatures and their return strings**. Measured, Godot 4.7.1
+headless:
+
+```
+OpponentBuilder.spawn(8, ...)           "SPAWN_OPPONENTS count=8"
+                                        0 children, opponents.size() == 0
+TrackBuilder.build({"corners": 4})      "CREATE_TRACK corners=4"
+                                        0 children, has_track() false
+TrackBuilder.modify_corner(2, "hard")   "MODIFY_TRACK corner=2 difficulty=hard"
+                                        0 children before, 0 after
+```
+
+All three strings go straight to `log_message.emit()`, so they are what a
+player reads. Each is a **construction-layer claim with no measurement behind
+it**, which is the one thing this project's first rule forbids. `corner_nodes`
+is declared, cleared and read in `track_builder.gd` and **appended to nowhere
+in the repository**, so `has_track()` can never be true — which is also why
+`SPAWN_OPPONENTS` can never run at all, and `MODIFY_TRACK` is the one of the
+three a player actually reaches.
+
+The silence and the false line had the same cause and hid each other: the
+layer whose only job is to describe a request was silent about exactly the
+commands whose outcomes were invented, so there was never a sentence to
+compare a result against. TRAPS 24.
+
+**`SPAWN_OPPONENTS` and `MODIFY_TRACK` are in no part of the AI's prompt** —
+checked against `AIInterpreter.SYSTEM_PROMPT`, 7573 characters, which does not
+contain either word, nor "opponent" at all. So the model is not being told
+about them; they are reachable because the whitelist admits them, and
+`_execute_plan` admits any whitelisted command as a step.
+
+### Implementation
+
+- `scripts/world_module.gd`: a world now declares `pieces()` — `["zones",
+  "zone"]` for a farm — and `readback_short()` is the one implementation that
+  reads it, naming the count. A new world gets the count for free, and a world
+  that is not a list of pieces returns `[]` and is named alone.
+- `farm_module.gd`, `racing_module.gd`, `dungeon_module.gd`: each declares its
+  own pieces, by the same key its validator reads. The racing and dungeon
+  `readback_short()` overrides are **deleted** — the dungeon's said what
+  `WorldModule`'s now says, and racing's spelled its own name a second time
+  (*"a race circuit"* against a `display_name()` of *"circuit"*), which is
+  TRAPS 16's shape waiting for the release where one of them is reworded.
+  **A circuit in a plan now reads "a circuit of six sections", not "a race
+  circuit"** — a wording change the owner can reverse by changing
+  `display_name()`, which is now the one place a world is named.
+- `track_builder.gd`, `opponent_builder.gd`: each gains a `static readback()`
+  beside the fields it reads, so the sentence and the code reading `count` /
+  `corner` / `difficulty` cannot drift apart. `WorldRegistry.readback` and
+  `_doing` both call those same functions, so a plan describes these commands
+  exactly as well as a single command does.
+- The same three builder functions **stop reporting success**. Each now says
+  what happened, which is nothing, and the asked-for count is deliberately
+  not in the line.
+- `world_registry.gd`: `CLEAR_WORLD`'s sentence was written out in full in
+  **both** `readback()` and `_doing()` — the two functions this commit
+  extends. They agreed and nothing was making them. It is now the one const
+  `CLEARED`, read by both: fixing two commands with no sentence while leaving
+  a third written twice would be the instance and not the class (TRAPS 11).
+- `tests/plan_said_test.gd`, new: enumerated from
+  `CommandParser.allowed_commands()` and `WorldRegistry.modules()`, so a
+  command added to the whitelist or a world added to the registry **adds a row
+  on its own and fails the suite until its sentence tells two requests apart**.
+  A command with no pair listed is a FAIL and never a skip.
+- `tests/stub_claims_test.gd`, new: ties each builder's reported line to its
+  own measurement — if nothing was placed, the line must not state the number
+  that was asked for.
+- `docs/TRAPS.md`: trap 24.
+
+### Evidence — what was actually run
+
+Godot 4.7.1 (`4.7.1.stable.official.a13da4feb`), Linux, headless, in a cloud
+container.
+
+- Baseline before the change: **0 suites with something to look at**, 37
+  suites.
+- After: **0 with something to look at**, 39 suites, both without `--all` and
+  with it — `drive_test` and `session_test` included and both passing.
+- **The new checks were proved able to fail, against the old code itself**
+  (TRAPS 6). The seven changed scripts were restored to 0dadcf0 and the new
+  suites run against them: `plan_said_test` fails **8** times (the two
+  commands with no readback as single commands, the same two inside a plan,
+  and the farm's and circuit's piece count at both layers — four faults,
+  caught twice each, which is the point of asserting at both layers),
+  `stub_claims_test` fails **3** of the 3 assertions in its first group. The
+  scripts were then put back and `cmp` confirms all seven byte-identical to
+  the versions the suite passed against.
+  - One honest qualification on that measurement: `plan_said_test` reads
+    `module.pieces()`, which did not exist before this commit, so the copy run
+    against the old code carried the three keys as a literal instead. That one
+    line differed; every assertion was the committed suite's. The
+    `stub_claims_test` measurement needed no such change and ran verbatim.
+- **The suite caught the commit's own first draft.** `TrackBuilder.build`'s
+  replacement line read *"a Prototype 001 ring of 4 corners is not built any
+  more"* — true, and still a `4` beside a `CREATE_TRACK` in the player's log.
+  `stub_claims_test` failed it, and the count came out of the sentence. That
+  is the difference between asserting a fact and asserting a wording.
+- The dead-code claims above are measurements, not greps: a `TrackBuilder` and
+  an `OpponentBuilder` were instantiated and their builders called, and the
+  child counts, `corner_nodes.size()` and `has_track()` read afterwards.
+
+### What the tests did NOT prove
+
+- **No model produced any of these requests.** A headless harness has no key
+  and no model, so what is measured is what the code says to JSON of each
+  shape.
+- **No player has read any of these sentences.** A circuit inside a plan reads
+  differently than it did, and whether *"a circuit of four sections and a
+  dungeon of two rooms, side by side"* is better than *"a race circuit and a
+  dungeon of two rooms"* is the owner's call; the request that shows it is
+  under Next action.
+- **A plan still does not name a world's MEASUREMENTS, deliberately.** A farm
+  whose barn is 20 m and one whose barn is 50 m still read alike inside a
+  plan. A plan's meaning is mostly how its worlds are RELATED and a line long
+  enough to bury that is a line nobody finishes, so the count is the one field
+  the short line carries. That is a limitation, `plan_said_test`'s header says
+  so, and widening it is the owner's.
+- **Nothing was fixed about what the three Prototype 001 stubs DO.** They
+  still do nothing; they have stopped claiming otherwise. In particular
+  `TrackBuilder.build` still `clear()`s first, so a sectionless `CREATE_TRACK`
+  **takes the player's world away and then reports that it built nothing**.
+  Changing that is a change to behaviour on a path the owner may be about to
+  delete, so it is recorded and not touched.
+- Nothing ran on Windows; `run_tests.bat` was not edited and not executed.
+- **The AI's prompt and `PROMPT_VERSION` are byte-identical.** A readback is
+  output, not instruction, and no validator, builder, solver, ledger or
+  physics was touched, so nothing about what is accepted or refused has moved.
+- `sweep_test` still reports that no legal command reaches
+  `FAILED_UNWALKABLE`, unchanged by this commit.
+
+**What that says about the method.** 029 asked one question of every
+validator, 030 asked every way IN to one check, 031 asked every field of
+`SectionValidator.FIELDS`. Three audits driven off a table — and none of them
+off `CommandParser.allowed_commands()`, which is the list that decides what
+Genesis can be asked for at all. Two of its eleven members had never been
+described by anything, and that silence was the reason a false success line
+sat in the log for three weeks with 37 green suites around it. The next
+question of this kind should start by asking which list is **authoritative**,
+not which list is already in hand.
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -1139,23 +1361,40 @@ fault and `RefusalCheck` should be catching it.
   dropped field — `said_fields_test` will hold the line either way, because
   it asserts that the sentences differ and never what they say.
 
-**Smallest useful assistant task next.** The readback audit 028 named is
-**done** (031). Two candidates, in the order the assistant would take them:
+032 adds a sixth, and this one is the only part of 032 a person has to
+judge:
 
-- **The plan readback, which 031 did not reach.** `WorldRegistry` describes
-  each world in a plan through `readback_short()`, and racing's ignores its
-  parameters entirely: every circuit in every plan is *"a race circuit"*.
-  The farm has no `readback_short()` at all and falls back to
-  `WorldModule`'s, which is *"a farm"*. That is deliberate and documented —
-  a plan's meaning is mostly how its worlds are RELATED and a long line
-  buries the relationship — so this is not the same finding as 031 and must
-  not be fixed by pasting the long sentence in. The question worth asking,
-  and it is 031's question one layer up, is whether *"a dungeon of five
-  rooms and a race circuit, one inside the other"* can catch a dropped
-  clause at all, and what the shortest sentence that can is. 022 found a
-  real fault in exactly this line.
-- **Ask one more question of every file at once.** Unchanged from 030 and
-  still the cheapest way to find the next one; the candidates are below.
+- *"a dungeon with a hall and a vault, inside a race circuit"* — any plan with
+  two worlds. Each world now says how many pieces it is made of: *"a circuit
+  of four sections and a dungeon of two rooms, one inside the other"*. Before
+  032 the circuit said *"a race circuit"* whatever was in it, and a farm said
+  *"a farm"*. **The word "race" is gone from that line** — a plan now names a
+  world through `display_name()`, which is the one function that names a
+  world, and racing's was already "circuit". If *"a race circuit of four
+  sections"* reads better, the fix is `display_name()` and every layer moves
+  with it. The judgement is whether the counts help or just lengthen the line.
+
+And one worth typing because it is a false claim a player could have hit:
+*"make me a race track"* with no sections described. That hits Prototype
+001's stub, which until 032 **cleared the world and then said "CREATE_TRACK
+corners=4"**. It now says it built nothing — but it still clears first, so
+the world still goes. See "Human decision needed" 3.
+
+**Smallest useful assistant task next.** The plan readback this file named is
+**done** (032), and it found three Prototype 001 stubs on the way; what to do
+with those is the owner's, under "Human decision needed" 3. Candidates, in
+the order the assistant would take them:
+
+- **Ask one more question of every file at once, off an authoritative list.**
+  Unchanged from 030 and still the cheapest way to find the next one, with
+  032's refinement: pick the list that decides what Genesis can be asked for,
+  not the list already in hand. `CommandParser.allowed_commands()` has now
+  been enumerated for readbacks (`plan_said_test`) and nothing else. The same
+  list has never been asked: does every command **record** a ledger entry? Is
+  every one reachable from the prompt, or are there more than the two 032
+  found that the model is never told about? Either is a single session.
+- **The farm prompt states a bound the code does not have**, below, unchanged
+  and still the narrow direction.
 
 Two smaller ones, either of which is a single session:
 
@@ -1333,12 +1572,54 @@ decision, so it is his and not the assistant's.
    restriction is. Right now it is enforced in `racing_module.gd` and
    explained three directories away.
 
-2. **Commit authorship.** Commits since 2026-10-10 are authored by
+2. **The three Prototype 001 stubs: rebuild them, or take them out of the
+   whitelist?** Found and measured in 032, where only their false success
+   lines were fixed. The facts, all measured headless rather than inferred:
+
+   - `CommandParser.allowed_commands()` admits `SPAWN_OPPONENTS` and
+     `MODIFY_TRACK`, and `CREATE_TRACK` **without** a `sections` list routes
+     to Prototype 001's ring. All three build nothing. `corner_nodes` is
+     appended to nowhere in the repository, so `TrackBuilder.has_track()` can
+     never be true — which makes `SPAWN_OPPONENTS` unreachable (its handler
+     guards on it) and `MODIFY_TRACK` the one a player meets.
+   - **The AI's prompt mentions none of them** — 7573 characters, and not the
+     word "opponent" anywhere. So the model is not being told about them. They
+     are reachable because the whitelist admits them, and `_execute_plan`
+     admits any whitelisted command as a plan step.
+   - A composed circuit already has its own grid (`RaceDirector`, ~23
+     opponent recoveries a race per `GENESIS_BRIEF.md`), so the *capability*
+     is not missing from Genesis — only from the Prototype 001 path.
+   - **One of them still destroys something.** `TrackBuilder.build` calls
+     `clear()` before it discovers it has nothing to build, so a sectionless
+     `CREATE_TRACK` takes the player's world away and then reports that it
+     built nothing. 032 fixed the report and left the behaviour, because
+     changing it is a change to what Genesis does on a path that may be about
+     to be deleted.
+
+   The options, for the record:
+
+   - **(a) Take all three out of the whitelist.** Cheapest, and it removes
+     the world-clearing fault with them. `MODIFY_TRACK`'s own guard message
+     says *"composed tracks are changed with MODIFY_SECTION, which comes in a
+     later step"*, so there is a roadmap intent here that this would drop.
+   - **(b) Leave them and fix only the clearing**, so a sectionless
+     `CREATE_TRACK` refuses before touching the world. Smallest honest change,
+     keeps the names reserved for the later step.
+   - **(c) Rebuild them against the composed circuit**, i.e. make
+     `SPAWN_OPPONENTS` put cars on a real circuit's grid and `MODIFY_TRACK`
+     become the `MODIFY_SECTION` its guard already promises. The most work and
+     the only option that makes the commands mean anything.
+
+   This is product direction and the assistant has not chosen. What it did
+   choose, and would undo on request, is that the three now report what they
+   did rather than what they used to do.
+
+3. **Commit authorship.** Commits since 2026-10-10 are authored by
    "Claude Opus 5"; before that by the owner with the assistant as co-author.
    The protocol asks for a record of what the AI contributed and what the human
    accepted, which the current arrangement gives accurately. The owner has not
    ruled on which they want.
-3. ~~Whether scripts may be pushed before the owner has run them.~~
+4. ~~Whether scripts may be pushed before the owner has run them.~~
    **OWNER, 2026-10-14: settled.** The owner's job is testing. The assistant
    builds, tests headlessly and pushes - scripts included. The owner pulls,
    runs it on real hardware with a real API key, and reports what happened.
@@ -1348,7 +1629,7 @@ decision, so it is his and not the assistant's.
    In exchange, **every commit states what was verified and what was not**, so
    the owner never has to guess whether a change has been near real hardware.
    The standing caveat stands: a green suite is necessary and not sufficient.
-4. ~~Whether work should happen while the owner is away. The assistant does
+5. ~~Whether work should happen while the owner is away. The assistant does
    not run on its own — nothing happens between messages. Autonomy would
    require a scheduled task, which does not exist.~~
    **Out of date as of 2026-10-14: it exists.** 024 was committed by a

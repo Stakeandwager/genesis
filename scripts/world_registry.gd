@@ -7,6 +7,17 @@ class_name WorldRegistry
 # be half-added: if it is here, it is whitelisted, described to the AI,
 # validated and measured; if it is not, the AI cannot reach it at all.
 
+# --- 032: one reading, applied to the one sentence written twice here ---
+# CLEAR_WORLD's line was spelled out in full in BOTH readback() and _doing(),
+# the two functions 032 extends. They agreed, and nothing was making them: it
+# is TRAPS 16's shape waiting for the release where one of them is reworded.
+# Every other command's sentence already came from exactly one function
+# (NpcGoals, ToolRegistry, and since 032 TrackBuilder and OpponentBuilder),
+# and this is the last one that did not. Fixing the two commands with no
+# sentence while leaving one written twice would be the instance and not the
+# class (TRAPS 11).
+const CLEARED := "to clear everything away"
+
 static func modules() -> Array:
 	return [FarmModule.new(), RacingModule.new(), DungeonModule.new()]
 
@@ -64,7 +75,18 @@ static func readback(command: String, parameters: Dictionary) -> String:
 			# from being told the wrong thing is.
 			return str(parameters.get("understood", "")).strip_edges()
 		"CLEAR_WORLD":
-			return "to clear everything away"
+			return CLEARED
+		# --- 032: the two commands the whitelist allowed and nothing described ---
+		# Asked of every command in CommandParser.allowed_commands() at once
+		# rather than of one, these two returned the empty string here and the
+		# raw JSON token inside a plan. Each sentence is written in ONE
+		# function, beside the fields it reads, and _doing() below calls the
+		# same function, so a plan describes them exactly as well as a single
+		# command does.
+		"MODIFY_TRACK":
+			return TrackBuilder.readback(parameters)
+		"SPAWN_OPPONENTS":
+			return OpponentBuilder.readback(parameters)
 		"EQUIP":
 			return ToolRegistry.readback(parameters)
 		"ORDER":
@@ -157,7 +179,17 @@ static func _doing(command: String, parameters: Dictionary) -> String:
 		"OPEN":
 			return NpcGoals.door_readback(parameters, false)
 		"CLEAR_WORLD":
-			return "to clear everything away"
+			return CLEARED
+		"MODIFY_TRACK":
+			return TrackBuilder.readback(parameters)
+		"SPAWN_OPPONENTS":
+			return OpponentBuilder.readback(parameters)
+	# A command with no sentence of its own, said as the token the AI wrote.
+	# Reachable only before validation refuses it, since _execute_plan admits
+	# no command outside the whitelist - so what is printed here is a request
+	# that is about to be refused, and saying the word back is more use than
+	# saying nothing. Every whitelisted command has a case above, and
+	# plan_said_test fails if one is ever added without one.
 	return Readback.article(command.to_lower())
 
 

@@ -860,6 +860,62 @@ once per dungeon.
 
 ---
 
+## 24. The body was removed and the success string stayed behind
+
+**Signature:** a command prints a result and nothing in the world changes.
+`SPAWN_OPPONENTS count=8` in the log, no cars on the grid. Nothing errors,
+nothing is red, and no suite is failing.
+
+**Cause:** 002B replaced Prototype 001's track and opponents with world
+modules and took the old builders' bodies out - 89 lines from
+`opponent_builder.gd`, 148 from `track_builder.gd` - leaving the function
+**signatures** and the **return strings** in place. `spawn()` still returned
+`"SPAWN_OPPONENTS count=%d" % count` after the grid that made it true had
+been deleted. `build()` still returned `"CREATE_TRACK corners=%d"`.
+`modify_corner()` still reported which corner it had made harder. All three
+strings go straight to `log_message.emit()`, so they are what a player reads,
+and all three are construction-layer claims with nothing behind them - the
+exact thing the carrier-delivery rule exists to forbid, one layer down and
+with nobody looking.
+
+Nobody was looking for a reason worth stating: **those were the two commands
+with no readback at all.** `WorldRegistry.readback` returned the empty string
+for `SPAWN_OPPONENTS` and `MODIFY_TRACK`, and inside a plan they printed the
+raw JSON token, "a spawn_opponents". The layer whose only job is to describe
+the request was silent about precisely the commands whose results were
+invented, so there was never a sentence to compare the outcome against.
+
+Dates, because a duration is a claim too: the commands are Prototype 001's
+(stages 4-7). **002B gutted the builders on 2026-09-25** and 032 found it on
+**2026-10-15** - three weeks for the false success lines, and for however long
+the readback layer has existed for the silence, which this entry does not
+claim to have measured.
+
+**Do:**
+
+- When a function's body is removed, its return string goes with it. A
+  signature kept for a caller returns what is now true, not what used to be.
+- **A line that states a count must read the count from what was BUILT, not
+  from what was asked.** `"count=%d" % count` is the asked-for number wearing
+  a result's clothes. This one is cheap to test and the test is a fact rather
+  than a wording: if nothing was placed, the line must not contain the number
+  that was requested. `tests/stub_claims_test.gd` asserts exactly that, and
+  the first draft of 032's own replacement sentence failed it - *"a Prototype
+  001 ring of 4 corners is not built any more"*, true, and still a `4` beside
+  a `CREATE_TRACK` in the log.
+- When an audit asks a question of a list, ask which list is **authoritative**
+  rather than which list is already in hand. 029 enumerated every validator,
+  030 every door of one check, 031 every field of `SectionValidator.FIELDS` -
+  three audits off a table, and none off `CommandParser.allowed_commands()`,
+  which is the list that decides what Genesis can be asked for at all. Two of
+  its eleven members had never been described or exercised by anything.
+
+Found and fixed in 032. What to do with the three Prototype 001 stubs
+themselves - rebuild them or take them out of the whitelist - is the owner's
+and is in HANDOVER under "Human decision needed".
+
+---
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
 > A fluent sentence is not evidence that anything was understood.
@@ -872,3 +928,6 @@ once per dungeon.
 > door the player came in by.
 > And a readback that says the same thing about two different requests has
 > described neither of them.
+> And a command nothing describes is a command nothing is checking.
+> And a function that keeps its success string after losing its body reports
+> a result it cannot have produced.

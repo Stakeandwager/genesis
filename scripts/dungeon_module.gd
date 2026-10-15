@@ -71,6 +71,14 @@ func display_name() -> String:
 	return "dungeon"
 
 
+# The list a dungeon is built from, read by the same key validate() reads.
+# Until 032 this world was the only one that counted its pieces, in a
+# readback_short() of its own; the count is now WorldModule's for every world
+# and this is all that is left of it.
+func pieces() -> Array:
+	return ["rooms", "room"]
+
+
 func prompt_section() -> String:
 	return """CREATE_DUNGEON - design a dungeon of rooms joined by doors
 {"command": "CREATE_DUNGEON", "parameters": {"intent": {"style": STYLE}, "rooms": [ROOM, ROOM, ...], "doors": [[A, B], ...], "things": [THING, ...]}}
@@ -1423,13 +1431,6 @@ func _things_said(parameters: Dictionary, names: PackedStringArray) -> String:
 	if said.is_empty():
 		return ""
 	return ", with " + Readback.join_list(said)
-
-
-func readback_short(parameters: Dictionary) -> String:
-	var rooms = parameters.get("rooms", null)
-	if typeof(rooms) != TYPE_ARRAY or (rooms as Array).is_empty():
-		return "a dungeon"
-	return "a dungeon of %s" % Readback.count_of((rooms as Array).size(), "room")
 
 
 func metric_lines(metrics: Dictionary, record: Dictionary) -> Array:

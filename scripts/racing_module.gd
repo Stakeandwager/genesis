@@ -37,6 +37,12 @@ func display_name() -> String:
 	return "circuit"
 
 
+# The list a circuit is built from, read by the same key SectionValidator
+# reads.
+func pieces() -> Array:
+	return ["sections", "section"]
+
+
 # Everything the AI needs to compose a closed circuit, and nothing about
 # style: what a style word does to the geometry is what the experiment
 # measures, so it is never described here.
@@ -430,10 +436,6 @@ func _before(a: Dictionary, b: Dictionary) -> bool:
 	if is_nan(bm):
 		bm = -1.0
 	return am > bm
-
-
-func readback_short(_parameters: Dictionary) -> String:
-	return "a race circuit"
 
 
 # The panel racing has always shown, in the same order, moved here from
