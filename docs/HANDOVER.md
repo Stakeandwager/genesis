@@ -24,7 +24,55 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **049**, the task this file named as
+- Last commit at the time of writing: **050**, the task this file named as
+  the next assistant task and as **the one that outranks everything else on
+  the list, because it is the OWNER'S**: *there is no way to ASK Genesis
+  anything*. His machine, 2026-10-16, live key, recorded in `5d36bfb`:
+  *"show me the dungeon metrics"* came back a **SHUT** and *"where is the red
+  key now"* came back **UNSUPPORTED**. **NO COMMAND WAS ADDED**, as this file
+  said twice; what a query door should be is now "Human decision needed" 16,
+  with the options measured rather than guessed.
+  **GENESIS HAS BOTH ANSWERS AND NO DOOR TO EITHER**, which is the finding
+  and is what makes a refusal that denies the capability false:
+  `measure(layout)` returns every number the first question asks for, and
+  `room_of(layout, position)` is how the second is answered every time a
+  delivery is judged. `CommandParser.allowed_commands()` has eleven entries
+  and every one of them builds, changes or removes something.
+  **THE CAUSE OF BOTH OF HIS ANSWERS IS IN THE PROMPT.** It binds a refusal's
+  REASON to *"name the part that is missing, from the list above"* — and that
+  list had **no entry for a question**, measured: *"question"* appears **0**
+  times in the 15846-character assembled prompt and *"query"* **0** times,
+  while the list above it says *"It MEASURES everything it builds"* and
+  *"Never say Genesis cannot do one of them"*. A model with a question in
+  front of it had three moves: invent a reason, deny a listed capability, or
+  send the nearest command on the whitelist. **Both answers the owner got are
+  on that list of three, and so is the false refusal 048 caught in the same
+  session.** The limitation is now stated, so `PROMPT_VERSION` moves to
+  `050-no-command-for-a-question-1` and designs are not comparable across it.
+  **AND THE CHECKER CALLED THE TRUE ANSWER FALSE**, which is 048's own fix
+  seen from the other side. Measured before anything changed, **three of the
+  nine true refusals of a question in the new suite were flagged as
+  understating Genesis** — one of them by the entry whose rebuttal has said
+  since 048 that *"a refusal about THAT is right"*. The exception was in
+  prose and implemented nowhere. **And `log_023_test` was guarding a wording
+  rather than a claim**: its honest neighbour *"there is no command for
+  asking where a thing is; the panel shows it"* passed only because it
+  contains no word from either list; reworded as *"there is no way to ask
+  Genesis to report the position of a thing"*, the same true claim was
+  caught. **The fix is the rule**: a capability word standing AFTER an asking
+  word is not being denied — what is denied is the door to it — and the mark
+  is per capability, because *is there anything the player can type that
+  produces this on demand?* is a fact about which doors exist. Asked of all
+  seven: two have no door (the panel is drawn when a world is built; a
+  thing's position is read when an errand is judged) and five do (`ORDER`,
+  `PLAN`, `/save`, `/load`, `/log`, `/worlds`, `/session end`), so *"you
+  cannot ask for one world inside another"* stays caught, which the new suite
+  asserts in both directions. 56 suites passed before and 57 after, `--all`
+  in both, lists diffed; `asked_test` **fails 4 times** against the pre-050
+  code. **Not verified: no model sent any of this**, nothing was reproduced
+  from the owner's screen, and whether the new prompt line stops a question
+  becoming a SHUT is his next editor session. See 050 below and TRAPS 44.
+- The commit before it: **049**, the task that file named as
   the next assistant task: **the farm's panel and the circuit's panel,
   against the geometry they describe** — 047 asked 046's axis at the
   dungeon's panel and left the other two half asked, and this file said the
@@ -88,7 +136,7 @@ that the owner has not ruled on.** Do not promote one to the other.
   `PROMPT_VERSION` did not move. **Not verified: no model sent any of this**,
   and the rail still runs across the gate on every farm — that is "Human
   decision needed" 15. See 049 below and TRAPS 43.
-- The commit before it: **047**, the task that file named as
+- Before it: **047**, the task that file named as
   the next assistant task: **the sixth axis applied to `tests/` — which
   suites never RUN the thing they make a claim about?** This file handed over
   a starting point marked MEASURED BY GREP AND NOT A FINDING, and said to
@@ -660,19 +708,24 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-58 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **56 suites**, counted with `ls tests/*.gd` rather than
+59 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **57 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites.
 
-Last full run (049 **on the merged tree, 048 included**, Godot 4.7.1 on Linux
+Last full run (050, Godot 4.7.1 on Linux
 — `4.7.1.stable.official.a13da4feb` — headless, in a cloud container):
-**suites with something to look at: 0** on all 56, with `--all`, so
-`drive_test`, `session_test`, 048's `outgoing_world_test` and 049's
-`panel_geometry_test` all ran and all passed. The baseline at 047, measured
-the same way in the same container, was the same on 54 suites, and the suite
-lists were **diffed** rather than eyeballed: the only two differences are
-048's new suite and 049's.
+**suites with something to look at: 0** on all 57, with `--all`, so
+`drive_test`, `session_test`, 048's `outgoing_world_test`, 049's
+`panel_geometry_test` and 050's `asked_test` all ran and all passed. The
+baseline at 049, measured the same way in the same container minutes
+earlier, was the same on 56 suites, and the suite lists were **diffed**
+rather than eyeballed: the only difference is `asked_test`.
+050's new suite is `asked_test` (**4 failures** against the pre-050 code,
+measured by stashing the two script changes and running it against the
+committed ones: three true refusals of a question flagged as understating
+Genesis, and the `no_command_asks` marks absent. It parses against the
+pre-050 code, because it adds no constant and calls no new function);
 049's new suite is `panel_geometry_test` (**119 assertions**; 2 failures
 against the pre-049 gate, with the rest of 049 in place, and it does NOT
 parse against the pre-049 code entire, because `FarmModule.GATE_WIDTH` and
@@ -719,7 +772,11 @@ without and pass either way — checked rather than assumed (TRAPS 4).
 not `ledger`, not `session`, not `drive`, not `physics`, not `walker`, not
 `order_test`, not `explore` — checked against the file, so it runs there
 without `--fixed-fps`, which is what it got here, and it was run both with
-`--fixed-fps 60` and without and passes either way. `panel_geometry_test` matches
+`--fixed-fps 60` and without and passes either way. `asked_test` matches none of the `.bat`'s sixteen patterns either —
+checked by running every one of them against the name rather than by reading
+the list — so it runs there without `--fixed-fps` too, and it was run both
+with `--fixed-fps 60` and without and passes either way (TRAPS 4).
+`panel_geometry_test` matches
 none of them either — checked by running every one of the `.bat`'s sixteen
 patterns against the name rather than by reading the list — so it runs there
 without `--fixed-fps` too, and it was run both with `--fixed-fps 60` and
@@ -5139,6 +5196,138 @@ way to ASK Genesis anything — and that outranks the panel work. 049's own
 follow-on, the panel beside a REFUSAL and the layout fields no sentence
 reads, is the entry under it.
 
+## 050 — the question Genesis has no door to, and the net that called the true answer false
+
+**Objective.** The task this file named as the next assistant task and as the
+one that **outranks everything else on the list, because it is the owner's**:
+*there is no way to ASK Genesis anything*. Found on his machine on 2026-10-16
+with a live key, recorded in `5d36bfb`'s message: *"show me the dungeon
+metrics"* came back a **SHUT** and *"where is the red key now"* came back
+**UNSUPPORTED**. This file set the shape of the work — read the two refusals
+and what produced them, measure which facts are already reachable without a
+new command, and write the options into "Human decision needed" — and said
+twice, **do not add a command**. None is added. What a query door should be
+is a change to what Genesis IS and it is "Human decision needed" 16.
+
+### What the measuring found, headless, before anything changed
+
+**One. Genesis has both answers and no door to either.** `measure(layout)`
+returns every number *"show me the dungeon metrics"* asks for, and
+`room_of(layout, position)` is how *"where is the red key now"* is answered
+every time a delivery is judged — `GameController` takes the thing node's
+position, puts it through `room_of()` and compares (`game_controller.gd:260`
+and `:366`). `CommandParser.allowed_commands()` has **eleven** entries and
+every one builds, changes or removes something. **The missing thing is a
+door, not a fact**, which is what makes a refusal that denies the capability
+false and a refusal that denies the command true.
+
+**Two, and this is the cause of both of the owner's answers: the prompt left
+the model no honest refusal.** It binds a refusal's REASON to *"name the part
+that is missing, **from the list above**"*, and that list had no entry for a
+question — measured, the assembled prompt contained *"question"* **0** times
+and *"query"* **0** times in 15846 characters — while the list above it says
+*"It MEASURES everything it builds"* and *"Never say Genesis cannot do one of
+them"*. That leaves a model exactly three moves: invent a reason, deny a
+listed capability, or send the nearest command on the whitelist. **Both
+answers the owner got are on that list of three**, and so is the false
+refusal 048 caught in the same session.
+
+**Three. And the checker called the true answer false.** 048 widened that
+capability's net from a phrase list to a PAIR of ideas, because a claim
+survives rewording and a phrase does not. Measured before anything changed,
+**three of the nine true refusals of a question in the new suite were flagged
+as understating Genesis**, one of them by the entry whose own rebuttal has
+said since 048 that *"a refusal about THAT is right"*. The exception was
+written in prose and implemented nowhere. **And `log_023_test` was guarding
+the wording rather than the claim**: it has asserted since 048 that *"there
+is no command for asking where a thing is; the panel shows it"* is left
+alone, and it was — but only because that sentence happens to contain no word
+from either list. Reworded as *"there is no way to ask Genesis to report the
+position of a thing"*, the same true claim was caught.
+
+### Implementation — the class, not the sentence (TRAPS 11)
+
+- **`refusal_check.gd`**: a capability word standing **after** an asking word
+  is not being denied; what is being denied is the door to it. Order is what
+  makes it safe, the same way order makes the negation frame safe — *"Genesis
+  cannot report where a thing is, so asking is pointless"* still flags,
+  because the capability word comes first. For the pair form, **both** halves
+  must stand after the asking word.
+- **The mark is per capability and the audit is written above the list**, so
+  a later entry does not have to guess. The question asked of all seven was
+  *is there anything the player can type that produces this on demand?*:
+  **measurement** (the panel is drawn when a world is built and nothing
+  redraws it) and **verification from the world** (a thing's position is read
+  when an errand is judged and at no other moment) have no such door; the
+  other five do — `ORDER`, `PLAN` with `around`, `/save`, `/load`, `/log`,
+  `/worlds`, `/session end`. An asking word excuses nothing in those five.
+- **`query` is deliberately not an asking word.** It is in the same entry's
+  ACT list, where it means the act of reading the world, and *"Genesis cannot
+  query the world state"* is one of the false refusals this file exists to
+  catch.
+- **`ai_interpreter.gd`**: the CANNOT list gains the one limitation it did not
+  have — Genesis cannot be ASKED anything; there is no command for a
+  question; the measurements are shown when a world is BUILT and a thing's
+  position is read when an errand is judged; so the reason is *there is no
+  command for asking*, never that Genesis cannot measure, cannot read the
+  world or cannot report what it finds. It also says that a request for a
+  world AND a question about it is still built, with the question named as
+  the part dropped — the prompt's existing rule, applied to the new case.
+  `PROMPT_VERSION` moves to `050-no-command-for-a-question-1` and
+  `PROMPT_FINGERPRINT` with it.
+
+### Evidence — what was actually run
+
+Godot 4.7.1 headless on Linux (`4.7.1.stable.official.a13da4feb`), in a cloud
+container. **Baseline at 049: 56 suites, `--all`, suites with something to
+look at: 0. After: 57 suites, `--all`, suites with something to look at: 0.**
+The suite lists were **diffed** rather than eyeballed and the only difference
+is `asked_test`.
+
+`tests/asked_test.gd` **fails 4 times against the pre-050 code** — three true
+refusals of a question flagged as understating Genesis, and the marks absent
+— measured by stashing the two script changes and running the new suite
+against the committed ones. It runs with `--fixed-fps 60` and without and
+passes either way (TRAPS 4). `run_tests.bat` needed no edit: all sixteen of
+its `findstr` patterns were RUN against the name `asked_test` and none
+matches, so it runs there without `--fixed-fps` as it does here.
+
+What the suite asserts is **facts, not wording**: the eleven commands that
+answer nothing (read from `CommandParser`, so a twelfth fails it and the
+message says to take the limitation out of the prompt and the marks off
+`RefusalCheck`); that `measure()` and `room_of()` already answer the owner's
+two questions, on a dungeon solved in the suite rather than typed into it;
+and the checker's truth table in all three directions — true refusals of a
+question left alone, false claims still caught however worded, and an asking
+word excusing none of the five capabilities that CAN be asked for.
+
+### What the tests did NOT prove
+
+- **No model sent any of this.** Every refusal in the suite was typed into
+  it, except the one quoted from `5d36bfb`. This harness has no key, so
+  whether the new prompt line actually stops a model turning a question into
+  a SHUT is the owner's editor session and nothing else.
+- **Nothing was reproduced from the owner's session.** The SHUT and the
+  UNSUPPORTED are read from `5d36bfb`'s commit message. Which of his two
+  questions produced the false refusal 048 caught is **not recorded**, and no
+  claim is made here about which.
+- **The prompt is longer, which is a cost.** 15846 → 16555 characters. Nothing
+  measures whether a longer CANNOT list makes the model refuse more.
+- **No behaviour changed for a request that is not a question**, and nothing
+  measured says otherwise: the 56 suites that passed before pass unchanged,
+  including `log_023_test`'s fifteen honest refusals and its four reworded
+  lies.
+- **A hole stays open and is named rather than widened:** *"you cannot ask
+  for a record of what happened"* is caught by nothing, because *"a record
+  of"* is not in that entry's word list. Checked against the pre-050 matcher
+  as well, so it is a pre-existing gap and not something 050 made. Adding the
+  phrase would be the fourth phrase, which is the move 048 decided against.
+- **No record moved and no ledger field changed.** But `prompt_version` does:
+  a question asked under `050-no-command-for-a-question-1` is not comparable
+  with one asked under `039-the-arithmetic-it-really-does-1`, which is what
+  that string is for. The records on the owner's disk are his and 050 did not
+  touch them.
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -5540,14 +5729,67 @@ first fault in several commits that a player could have met:
   before-and-after of anything; the records on your disk are yours and 049
   did not touch them.
 
+050 adds a nineteenth, and it is **yours before it is anything else,
+because it is your own finding and the only thing that settles it is what a
+model sends back**:
+
+- **Ask Genesis a question, in a fresh session with a key.** *"show me the
+  dungeon metrics"* and *"where is the red key now"* are the two you asked
+  on 2026-10-16; they came back a **SHUT** and an **UNSUPPORTED**. The
+  prompt now tells the model the one limitation it did not have — Genesis
+  cannot be ASKED anything, there is no command for a question, and the
+  reason for refusing one is THAT and never that Genesis cannot measure or
+  cannot read the world. **What to watch for, in order:** that the metrics
+  question no longer comes back as a SHUT or any other command that changes
+  the world; that the refusal names the missing door rather than inventing a
+  reason; and that **no "REFUSAL UNDERSTATES" note appears under it**, which
+  is the half 050 fixed in the checker. If a question still lands on a
+  command, the wording is not enough and the next move is an example in the
+  prompt rather than a rule — the same answer 035 and 038 are both still
+  waiting for.
+- **And the one worth typing beside it:** *"build a dungeon with a hall and
+  a vault and tell me how deep it is"*. The prompt's existing rule says not
+  to refuse a whole request because one clause is impossible, and the new
+  limitation says so again for this case: the dungeon should be BUILT, with
+  the question named as the part that was dropped — and the panel then
+  states the depth anyway. **If that comes back UNSUPPORTED, the new
+  limitation is costing a build**, which is the one way this change could
+  make things worse, and it should be narrowed or taken out.
+- And one worth knowing rather than typing: **`prompt_version` is
+  `050-no-command-for-a-question-1` from here.** Every record in your ledger
+  under `039-the-arithmetic-it-really-does-1` was made by a model that had
+  not been told this, so a before-and-after of how questions are answered
+  across this commit is a comparison of two different populations — which is
+  what that string is for. The records are yours and 050 did not touch them.
+
 **Smallest useful assistant task next.** The ledger question (033), the
 container-door question (034), the prompt-bound question (035), the validator
 question (036), the intent-door question (037), the which-field question
 (038), the arithmetic question (039) and the five build-it claims (040) are
 all **done**. Candidates, in the order the assistant would take them:
 
-- **THE NEXT ONE, AND IT OUTRANKS EVERYTHING BELOW IT BECAUSE IT IS THE
-  OWNER'S: there is no way to ASK Genesis anything.** Found on his machine on
+- ~~**THE NEXT ONE, AND IT OUTRANKS EVERYTHING BELOW IT BECAUSE IT IS THE
+  OWNER'S: there is no way to ASK Genesis anything.**~~ **DONE IN 050, AS
+  FAR AS IT GOES WITHOUT THE OWNER.** The finding is written up — in the
+  starting state, in the 050 section, and in TRAPS 44 — the facts are
+  measured, and the options are "Human decision needed" 16. **No command was
+  added.** Two things were found in the measuring and both are fixed: the
+  prompt's CANNOT list had no entry for a question while binding every
+  refusal to name a part FROM that list, which is why the model had to
+  invent one or send a command; and `RefusalCheck` flagged three of the nine
+  TRUE refusals of a question as understating Genesis, one of them by the
+  entry whose own rebuttal says such a refusal is right. Left struck rather
+  than deleted because the lesson is the one worth carrying: **the one
+  limitation a prompt leaves out is the one its refusals will have to
+  invent.** **And one line of the entry below was wrong, which 050 says
+  rather than quietly fixing (TRAPS 14): it called both answers *"honest
+  refusals of commands that do not exist"*, and a SHUT is not a refusal. It
+  is one of the eleven, and `GameController._set_door()` runs on it — a
+  question had been turned into an attempt to CHANGE the world. Whether it
+  changed anything depends on the parameters the model sent, and `5d36bfb`
+  does not record them, so nothing is claimed here about that. The
+  UNSUPPORTED was a refusal.** The entry as it stood:
+  Found on his machine on
   2026-10-16 and recorded in `5d36bfb`'s message, which is the only place it
   is written down: *"show me the dungeon metrics"* came back `SHUT` and
   *"where is the red key now"* came back `UNSUPPORTED`. Both are honest
@@ -5567,7 +5809,8 @@ all **done**. Candidates, in the order the assistant would take them:
   Prototype 001 stubs are the standing warning about what a whitelist entry
   that builds nothing costs.
 
-- **The panel beside a REFUSAL, and the fields no sentence
+- **THE NEXT ONE, now that 050 has taken the owner's finding as far as it
+  goes without him: the panel beside a REFUSAL, and the fields no sentence
   reads.** 047 and 049 between them have now put every panel line of all
   three worlds beside the geometry it describes, **for a world that was
   BUILT**. `main.gd:996` draws the panel from a second place as well:
@@ -6764,3 +7007,77 @@ decision, so it is his and not the assistant's.
     own header says it refuses — *"A farm you cannot drive a tractor around
     is refused"*. Recorded here rather than guarded, because nothing drives
     on a farm today.
+
+16. **Whether Genesis should have a door to a QUESTION at all, and if so
+    which kind.** This is your own finding — *"show me the dungeon metrics"*
+    and *"where is the red key now"*, 2026-10-16 — and 050 deliberately
+    added no command. What 050 did do is stop the two wrong answers it was
+    producing: the prompt now states the limitation, so a question comes
+    back as an honest refusal instead of an invented reason or a SHUT, and
+    the checker no longer calls that honest refusal false.
+
+    **The facts, measured headless and not read:**
+
+    - **Both answers already exist inside Genesis.** `measure(layout)`
+      returns room count, floor area, corridor length, the deepest room,
+      the largest room and the extent — the whole of the first question.
+      `room_of(layout, position)` turns a thing's position into a room, and
+      it is how a delivery is judged, so the second question is a function
+      call away.
+    - **What a player can reach today, on demand, with no AI involved:**
+      the game commands — `/save`, `/load`, `/worlds`, `/delete`, `/drive`,
+      `/race`, `/explore`, `/view`, `/experiment`, `/stop`, `/status`,
+      `/revise`, `/session`, `/log`. **Not one of them reports anything
+      about the world that is standing.** `/status` is the experiment
+      runner's; `/log` gives the ledger's file path; `/worlds` lists SAVED
+      worlds; `/session end` summarises a tester's session. Read from
+      `main.gd`'s `_run_local_command`, which is the whole list.
+    - **What a player can reach today only by building or refusing:** the
+      panel. `metric_lines()` is drawn from a record, and
+      `GameController._prepare()` is the one place `measure()` is called,
+      before anything is built. Nothing redraws it — which is "Human
+      decision needed" 14 from the other side.
+    - **`CommandParser.allowed_commands()` is eleven commands and every one
+      builds, changes or removes something.** `asked_test` asserts that, and
+      fails the day a twelfth appears, so whichever way this goes the
+      limitation cannot be left in the prompt by accident.
+
+    **The options, for the record, cheapest first:**
+
+    - **(a) Nothing.** The refusal is honest now and says where the facts
+      are. Costs nothing and the question stays unanswerable.
+    - **(b) A GAME command — `/panel`, `/where`.** This is the shape every
+      other on-demand door in Genesis already has: the player types it, no
+      model sees it, nothing enters the whitelist, and no refusal can be
+      made false by it. **The limitation in the prompt stays true**, because
+      the model still cannot be asked. Two things it would run into, both
+      read rather than guessed: the panel is `metric_lines(metrics, record)`
+      and nothing keeps a standing world's metrics, so `/panel` would have
+      to call `measure()` again — which with 047 in means it would honour a
+      door shut since, and therefore answers 14's second half too, for good
+      or ill. And `standable` — layout, rooms, node — is reported by the
+      DUNGEON only, so a `/where` has a dungeon's layout to hand and a
+      `/panel` for a farm or a circuit would need the last record instead.
+    - **(c) A third GOAL on `ORDER`, not a new command.** `NpcGoals.GOALS`
+      is `["go_to", "carry"]`; a goal that reports where a thing is rather
+      than walking to it would reuse the validator, the readback and the
+      record. Smaller than a command, and the cost is that it bends what an
+      ORDER is: an order sends a character somewhere, and a question does
+      not. **This one does change what the prompt says Genesis cannot do.**
+    - **(d) A new whitelisted command.** The honest version of what the
+      model was reaching for. It is the most expensive and it is the one
+      032's three Prototype 001 stubs are the standing warning about: a
+      whitelist entry that builds nothing. Two things to know before
+      choosing it: **the name `LOOK` is taken** — `EQUIP look` is the tool
+      that decides how the player's body looks, so a `LOOK` command and a
+      `look` tool would be two different things with one name; and every
+      command writes a ledger record with a construction outcome, so a
+      command that constructs nothing needs an answer to what its record
+      says (033 and 045 are both about that question).
+
+    **Whichever it is, the limitation and the marks move with it**, and the
+    suite is wired so they cannot be forgotten: `asked_test` fails if the
+    whitelist changes, and its message names both places — the prompt's
+    CANNOT list and `RefusalCheck`'s two `no_command_asks` marks.
+
+

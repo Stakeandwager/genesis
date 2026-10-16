@@ -2,6 +2,16 @@ extends SceneTree
 
 # 027 - the seven things the prompt says Genesis CANNOT do, checked.
 #
+# 050: THERE ARE EIGHT NOW, and this header would otherwise be a count that
+# had stopped being true - the thing TRAPS 14 is about. The eighth is
+# "Genesis cannot be ASKED anything", added to the prompt in 050 because a
+# refusal is bound to name a missing part FROM that list and a question had
+# none, so the model had to invent a reason or send a command. It is
+# asserted the same way the seven below are - as facts about the code, never
+# as words in the prompt - but in tests/asked_test.gd, with the rest of that
+# finding: the eleven commands that answer nothing, and the measurements and
+# positions Genesis already has and has no door to.
+#
 # WHY THIS SUITE EXISTS
 # TRAPS 14 is a limitation nobody rechecked: HANDOVER said "no persistence of
 # any kind" while /save and /load had been in main.gd for releases, 023 copied

@@ -72,7 +72,18 @@ const TEMPERATURE := 1.0
 # so a model obeying that sentence proposed specs Genesis refuses and
 # withheld specs it accepts. Boots designs from here are not comparable with
 # those made under 038.
-const PROMPT_VERSION := "039-the-arithmetic-it-really-does-1"
+#
+# 050 adds the one limitation the list did not have: Genesis cannot be ASKED
+# anything. The owner asked two questions in one session on 2026-10-16 -
+# "show me the dungeon metrics" and "where is the red key now" - and got a
+# SHUT and an UNSUPPORTED. (Which request produced the false refusal 048
+# caught in that same session is not recorded in 5d36bfb, so nothing is
+# claimed here about which.) The prompt binds a refusal
+# to name a missing part FROM THE LIST ABOVE IT, and no part of that list
+# fitted a question, so the only answers left were an invented reason or the
+# nearest command. Interpretation of a question under this version is not
+# comparable with interpretation under 039.
+const PROMPT_VERSION := "050-no-command-for-a-question-1"
 
 # --- 035: the version cannot be left behind again ---
 #
@@ -94,7 +105,7 @@ const PROMPT_VERSION := "039-the-arithmetic-it-really-does-1"
 # if they disagree, and says to move PROMPT_VERSION as well as this string.
 # It is a fingerprint, not an assertion about wording: it says only that the
 # prompt the model receives is the one this version names.
-const PROMPT_FINGERPRINT := "c6c2b9555fa6283c1f4d379c925ba95a15db8000a2d8e3d7d26d4e9010c46e62"
+const PROMPT_FINGERPRINT := "5a15cd3972ceb300e353c6204ef80ca08f991f07cf8662e30599e475bf1d9cfb"
 # Which wording of the closure feedback a revised track was given.
 # feedback-2 adds Godot's test of whether ANY straight lengths could close the layout.
 const REVISION_VERSION := "002C-closure-feedback-2"
@@ -161,6 +172,7 @@ Say so plainly when one of these is asked for, and name which part:
 - One set of equipment at a time, so two cars with different specs cannot exist together and be compared.
 - A farm's zones never overlap EACH OTHER: they are laid out in rows with a lane between them, so "do not let the barn sit in the pond" is already true of every farm and is not a refusal. What is not checked is a zone against anything OUTSIDE the farm - a road, or any world a PLAN puts around it - so "do not let the circuit cross the barn" is the one that cannot be promised.
 - A farm's overall size cannot be given; it comes out of the zones that were asked for.
+- Genesis cannot be ASKED anything. There is no command for a question, so nothing says what is standing, what was measured, or where a thing is, because the player asked for it. A world's measurements are shown when it is BUILT, in the panel and in the ledger, and a thing's position is read when an errand is judged. So "show me the dungeon metrics" and "where is the red key now" are refused, and the reason is that THERE IS NO COMMAND FOR ASKING - never that Genesis cannot measure, cannot read the world or cannot report what it finds, all three of which it does. A request that asks for a world AND a question about it is still built: make the world, and name the question as the part that was dropped.
 
 For a request this game cannot build, return:
 {"command": "UNSUPPORTED", "parameters": {"understood": "what the player is asking for", "reason": "short explanation of why this game cannot build it"}}

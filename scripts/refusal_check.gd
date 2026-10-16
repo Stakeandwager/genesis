@@ -67,6 +67,35 @@ const NEGATIONS := [
 	"does nt", "doesnt", "unsupported", "missing",
 ]
 
+# --- 050: a denial scoped to BEING ASKED is not a denial of the capability ---
+#
+# Genesis does some things of its own accord and has no command for being
+# asked to do them on demand. For those, "there is no way to ASK Genesis to
+# report where the key is" is TRUE, and the checker was calling it false:
+# measured before this commit, three of the nine true refusals of a question
+# in asked_test were flagged, one of them by the entry whose own rebuttal
+# already says "a refusal about THAT is right".
+#
+# log_023_test has asserted since 048 that "there is no command for asking
+# where a thing is; the panel shows it" is left alone. It was - but only
+# because that sentence happens to avoid both word lists. Write the same
+# true claim as "there is no way to ask Genesis to report the position of a
+# thing" and it was caught. That is TRAPS 42's lesson arriving from the
+# other side: a claim survives being reworded and a phrase does not, and an
+# honest-neighbour list is a phrase list too.
+#
+# So the rule, rather than a third phrase: a capability word that stands
+# AFTER an asking word is not being denied - what is being denied is the
+# door to it. Order is what makes this safe, the same way order makes the
+# negation frame safe above. "Genesis cannot report where a thing is, so
+# asking is pointless" still flags, because the capability word comes first.
+#
+# "query" is deliberately NOT here. It is in the act list two entries down,
+# where it means the act of reading the world rather than the player asking
+# for something, and a refusal that denies Genesis queries the world is one
+# of the false ones this file exists to catch.
+const ASKING := [" ask", " question"]
+
 # --- when a denial is about NUMBER, it is probably honest ---
 #
 # Every real limit Genesis has is a limit of number. ONE character. ONE order
@@ -90,9 +119,40 @@ const ABOUT_NUMBER := [
 
 # Each entry: what Genesis does, the words that name it, the phrases that deny
 # it outright with no frame needed, and what the player is told.
+#
+# --- 050: and whether there is any way to ASK for it ---
+#
+# "no_command_asks" marks a capability the player cannot ask for ON DEMAND -
+# nothing they can type produces it when they want it. For those, and only
+# those, ASKING above scopes a denial. The question was asked of all seven
+# rather than of the one the owner's session turned up (TRAPS 11), and the
+# answer is a fact about which doors exist, not a judgement:
+#
+#   measurement and physics     NO DOOR. The panel is drawn when a world is
+#                               built or refused and nothing redraws it.
+#   verification from the world NO DOOR. A thing's position is read when an
+#                               errand is judged and at no other moment.
+#   the record                  /log, /worlds and /session end are typed by
+#                               the player whenever they like. Not marked.
+#   saving and loading          /save and /load, the same. Not marked.
+#   routing                     ORDER. Not marked.
+#   fetching and carrying       ORDER carry. Not marked.
+#   one world inside another    PLAN with "around". Not marked.
+#
+# The five unmarked ones are the reason this is a per-entry fact and not a
+# rule in the matcher: "you cannot ask for one world inside another" is
+# FALSE and must keep being caught, and it would not be if an asking word
+# excused every entry. asked_test asserts that in both directions.
+#
+# If a command for asking is ever added, the two marks come off, the
+# limitation comes out of the prompt, and asked_test fails until both are
+# done - it asserts the whitelist is the eleven that do not answer anything.
 const CAPABILITIES := [
 	{
 		"name": "measurement and physics",
+		# 050: no command asks for a measurement; the panel is drawn when a
+		# world is built. See the audit above CAPABILITIES.
+		"no_command_asks": true,
 		"words": [
 			"physics", "physics engine", "simulate", "simulation",
 			"measure", "measurement", "measured", "model the",
@@ -133,6 +193,10 @@ const CAPABILITIES := [
 		# negation, act, subject - plus the number rule, which is what keeps it
 		# from firing on everything.
 		"name": "verification from the world",
+		# 050: no command asks where a thing is; its position is read when an
+		# errand is judged. This entry's own "but" has said so since 048 -
+		# "a refusal about THAT is right" - and nothing implemented it.
+		"no_command_asks": true,
 		"words": ["verify", "verification", "verified", "verifying"],
 		"pairs": [
 			["inspect", "inspection", "report", "query", "check", "read",
@@ -261,9 +325,21 @@ static func _denial_in(whole: String, sentences: Array, capability: Dictionary) 
 				negated_from = at
 		if negated_from < 0:
 			continue
+
+		# 050: where this sentence stops denying the capability and starts
+		# denying the DOOR to it. Only for a capability nothing can ask for;
+		# see the audit above CAPABILITIES. -1 means the sentence never gets
+		# there, which is every sentence in every other entry.
+		var asked_from := -1
+		if bool(capability.get("no_command_asks", false)):
+			for asking in ASKING:
+				var at := one.find(asking, negated_from)
+				if at > negated_from and (asked_from < 0 or at < asked_from):
+					asked_from = at
+
 		for word in (capability["words"] as Array):
 			var where := one.find(str(word), negated_from)
-			if where > negated_from:
+			if where > negated_from and (asked_from < 0 or where < asked_from):
 				return str(word)
 
 		# 048: and the pair form. One word for the ACT and one for the THING,
@@ -275,7 +351,15 @@ static func _denial_in(whole: String, sentences: Array, capability: Dictionary) 
 			var act := _first_of((pairs as Array)[0], one, negated_from)
 			var thing := _first_of((pairs as Array)[1], one, negated_from)
 			if act != "" and thing != "":
-				return "%s ... %s" % [act, thing]
+				# 050: the pair is scoped to asking only when BOTH halves of
+				# it stand after the asking word. Either one in front of it
+				# is a claim about the capability itself and is caught, so
+				# "cannot report where a thing is, so asking is pointless"
+				# is still a denial.
+				var act_at := one.find(act, negated_from)
+				var thing_at := one.find(thing, negated_from)
+				if asked_from < 0 or act_at < asked_from or thing_at < asked_from:
+					return "%s ... %s" % [act, thing]
 	return ""
 
 

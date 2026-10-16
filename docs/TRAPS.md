@@ -2628,6 +2628,107 @@ layout that no line prints.
 
 ---
 
+## 44. The one limitation the prompt left out, and the net that caught the true answer
+
+**Signature, from the owner's editor on 2026-10-16, with a live key, and
+recorded in `5d36bfb`'s message:** two questions in one session —
+*"show me the dungeon metrics"* and *"where is the red key now"* — came back
+as a **SHUT** and an **UNSUPPORTED**. In the same session the checker from
+023 met its first real false refusal: *"Genesis cannot inspect or report the
+current state of the world or character"*. 048 fixed the net; this entry is
+about why the model was writing that sentence at all.
+
+**Cause, and it is in the prompt rather than in a function.** The prompt
+gives the model a list of what Genesis can do, a list of what it cannot, and
+one binding rule for a refusal:
+
+> REASON must name the part that is missing, **from the list above**, and
+> must not deny anything from the list before it.
+
+**There was no entry on the CANNOT list for a question.** Measured: the
+assembled prompt contained the word *"question"* 0 times and *"query"* 0
+times, in 15846 characters. Directly above, the CAN list says *"It MEASURES
+everything it builds"* and *"Never say Genesis cannot do one of them"*. So a
+player's question left the model three moves: refuse and name a part that is
+not on the list (which is a reason it has to invent, and the invented one
+denied a capability), refuse and name a part that is on the list (false for
+the same reason), or send the nearest command on the whitelist. **Both
+things the owner saw are on that list of three.** A SHUT is what
+*"show me the dungeon metrics"* looks like after the model has been told that
+every sentence must come back as one of eleven commands and none of them
+answers anything.
+
+**And Genesis has both answers already.** `measure(layout)` returns every
+number the first question asks for, and `room_of(layout, position)` is how
+the second is answered whenever a delivery is judged — the controller takes
+the thing node's position, puts it through `room_of()`, and compares. **The
+door is what is missing, not the fact**, which is exactly what makes a
+refusal that denies the capability false and a refusal that denies the
+command true.
+
+**The second fault, and it is 42's lesson from the other side.** 048 widened
+that capability's net from a phrase list to a PAIR of ideas — an act word
+and a thing word, after a negation, in either order — because *a claim
+survives being reworded and a phrase does not*. Measured here before
+anything was changed: the widened net **flags refusals that are TRUE**.
+
+```
+There is no way to ask Genesis to report the current position of a thing.
+                                     FLAGGED  report ... position
+There is no command for asking Genesis what it has built; the
+measurements are shown in the panel when a world is built.
+                                     FLAGGED  measure
+Genesis cannot be asked for the measurements of the dungeon that is
+standing.                            FLAGGED  measure
+```
+
+The first of those is flagged by the entry **whose own rebuttal has said
+since 048 that such a refusal is right** — *"What it has no command for is
+being ASKED, in so many words, where something is; a refusal about THAT is
+right"*. The exception was written in prose and implemented nowhere.
+
+**And the suite was guarding it the same way the prompt was.** `log_023_test`
+has asserted since 048 that *"there is no command for asking where a thing
+is; the panel shows it"* is left alone — and it was, but only because that
+sentence happens to contain no word from either list. The honest-neighbour
+list is a phrase list too, and it protected one wording of a claim rather
+than the claim.
+
+**The fix is the rule and not a phrase (TRAPS 11).** A capability word that
+stands **after** an asking word is not being denied; what is being denied is
+the door to it. Order is what keeps it safe, the same way order keeps the
+negation frame safe: *"Genesis cannot report where a thing is, so asking is
+pointless"* still flags, because the capability word comes first. And the
+exception is marked per capability, because it is a fact about which doors
+exist and not a rule about English: the question *is there anything the
+player can type that produces this on demand?* was asked of all seven
+capabilities, and two have no such door (the panel is drawn when a world is
+built; a thing's position is read when an errand is judged) while five do
+(`ORDER`, `PLAN`, `/save`, `/load`, `/log`, `/worlds`, `/session end`). An
+asking word excuses nothing in those five, which `asked_test` asserts in
+both directions — *"you cannot ask for one world inside another"* is false
+and stays caught.
+
+**`query` is deliberately not an asking word.** It is in the same entry's ACT
+list, where it means the act of reading the world rather than the player
+asking for something, and *"Genesis cannot query the world state"* is one of
+the false refusals this checker exists to catch.
+
+**The rules.** *A net widened to catch a paraphrase of a lie will catch the
+truth that is worded the same way, so an exception has to be written as what
+makes the true one true — and an honest-neighbour list is a phrase list, so
+it proves one wording and not the claim.* And: **the one limitation a prompt
+leaves out is the one its refusals will have to invent.** A model bound to
+name a missing part from a list cannot refuse honestly outside that list, so
+a limitation that is true and absent costs more than one that is stated.
+
+**What was NOT done, and it is the owner's:** no command was added. Whether
+Genesis should have a door to a question at all is "Human decision needed"
+16.
+
+
+---
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
 > A fluent sentence is not evidence that anything was understood.
@@ -2708,3 +2809,7 @@ layout that no line prints.
 > draws anything against it, because a point fixed to where the edge USED to
 > be is not on the edge any more — and the number no line of the panel states
 > is the number nothing has ever checked.
+> And a net widened to catch a paraphrase of a lie will catch the truth that
+> is worded the same way, so the thing to say is what makes the true one
+> true — and the one limitation a prompt leaves out is the one its refusals
+> will have to invent.
