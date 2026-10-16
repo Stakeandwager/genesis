@@ -2371,6 +2371,89 @@ rather than stubbed, so the number means the sentence and not the scaffolding.
 
 ---
 
+## 41. Five lines in one panel, and four of them walked a door the body could not
+
+**Signature:** the dungeon's measurement panel, nine lines and the longest in
+Genesis. Line 8 says *"WALKABLE 4 of 4 rooms reachable by a body 1.6 m
+across"*. Line 9, directly under it, says *"WAYS ROUND 1 loop"*. The door
+that closes the ring is shut. Line 8 knows. Line 9 does not. 53 suites are
+green, and the suite written for the panel feeds it a dictionary typed into
+the suite.
+
+**Cause.** `walkable()` decides which doorways a body can use, for the two
+reasons a doorway cannot be used: somebody has shut it (018) or no body fits
+through it (005). `route()` reads that decision, and so does the body. Four
+readings in `measure()` - how deep the deepest room is, which room that is,
+how many dead ends there are, how many ways round there are - walked
+`layout["doors"]`, the dungeon's full list, because `_reachable()` had been
+written for `pre_check()`, where the request is all there is and nothing can
+be shut yet. The panel then put both answers side by side without either
+knowing the other was there.
+
+Measured headless on a ring of four rooms, before anything was changed, with
+the ring-closing door shut:
+
+```
+DEEPEST     crypt   2 doors from the entrance     the cell is 3 doors away
+DEAD ENDS   0                                     rooms 1 and 4 are dead ends
+WALKABLE    4 of 4 rooms reachable                correct, honours the door
+WAYS ROUND  1 loop                                there is no way round
+summary()   "4 rooms joined by 4 doors, 1 way back round"
+route()     1 -> 4: 38 points before, 191 after
+```
+
+The body had been told. The sentence had not.
+
+**The second fault was in the list itself, and it is a crash.**
+`walkable()["blocked_doors"]` appended a `Vector2i` for a shut door and a
+`String` for a doorway no body fits - one list, two types - and `route()` read
+every entry as a `Vector2i`. A blocked doorway therefore threw inside
+`route()`, which returned `[]`, and the controller reads `[]` as *"There is no
+way through to the vault."* A crashed function and a plausible sentence, which
+is the pair this project exists to catch. Demonstrated on a hand-built layout
+in `tests/panel_built_test.gd`: before 047 a dungeon with one blocked doorway
+could not be routed through the doorway that was **clear**.
+
+**Both halves are LATENT and 047 says so.** `measure()` is called in one
+place, `GameController._prepare()`, before anything is built; `set_shut()`
+only ever runs on a layout that is already standing. So the panel a player
+reads was drawn when nothing was shut. And a doorway no body fits does not
+occur from a legal request: 4000 random legal ring dungeons were solved this
+session, 2597 built and post-checked, and **none** had one - which is
+`sweep_test`'s finding arrived at from the other direction. What was wrong was
+not a number anyone had seen. It was that four lines about walking were
+reading a graph nothing walks.
+
+**Why no suite saw it.** 046 found that the dungeon's panel had never been
+produced from a built dungeon - `metric_lines(` appeared in two of 53 suites
+and the dungeon's nine lines were fed a dictionary typed into
+`container_door_test`, whose `loops: 1` cannot occur. That was handed over as
+a starting point. Producing the panel from a measured, built dungeon is what
+found this: on a dungeon as built every one of the nine lines agrees with the
+geometry exactly, and the fault is one question along - **which doors the
+lines walk**, not which numbers they print.
+
+**The fix is the class and not the four lines (trap 11).** One list of the
+doorways a body cannot use, as door pairs, with the sentences beside it in
+`blocked_why`; one list of the doors a body **can** use, in `usable_doors`,
+which `route()` and `measure()` both read so neither builds its own graph; and
+the loop count in one function, `loop_count(doors, rooms, components)`, used
+by `pre_check()` and `measure()` alike. The formula changed with it: the old
+`doors.size() - rooms.size() + 1` was right only because the one graph either
+caller had ever been asked about was one `pre_check()` had already proved
+connected. A door a body cannot use can split a graph in two, and then `+ 1`
+states a way round that is not there.
+
+**The rule.** *A reading that describes getting about reads the graph the
+body obeys.* And: *one list, one type* - a list whose entries mean the same
+thing in two different shapes will be read correctly by whichever reader was
+written beside the shape its author had in mind.
+
+**And the panel is where to look for this class**, because a panel is many
+readings printed together: two lines of a panel that answer the same question
+from different sources look, on the screen, exactly like two facts.
+
+---
 
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
@@ -2435,3 +2518,9 @@ rather than stubbed, so the number means the sentence and not the scaffolding.
 > of, not the list that asked for it - so a count off a loop is a count off
 > the request wearing a result's clothes, and a suite that calls the sentence
 > without building the world has measured the wording and nothing else.
+> And a reading that describes getting about reads the graph the body obeys,
+> so a panel whose lines answer one question from two sources is printing two
+> facts that cannot both be true.
+> And one list holds one type, because a list whose entries mean the same
+> thing in two shapes is read correctly only by the reader written beside the
+> shape its author had in mind.

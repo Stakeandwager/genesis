@@ -36,7 +36,7 @@ func _initialize() -> void:
 		else:
 			bad += 1
 			print("FAIL  %-20s physical %d/%d, unreachable %s, blocked %s" % [
-				s[0], int(w["reached"]), int(w["room_count"]), w["unreachable"], w["blocked_doors"]])
+				s[0], int(w["reached"]), int(w["room_count"]), w["unreachable"], w["blocked_why"]])
 
 	# The check must be able to FAIL. A body wider than the corridor cannot
 	# pass, however well connected the graph is.

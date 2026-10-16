@@ -62,7 +62,7 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      Windows
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      Linux
 ```
 
-53 suites, run against the scripts beside them, so what is tested is what is
+54 suites, run against the scripts beside them, so what is tested is what is
 committed. `--all` adds the two slow racing suites, and it is worth the wait:
 they are the only ones that drive a whole scripted session, and in 033 one of
 them caught a fault that all 38 fast suites passed. Nothing is skipped as

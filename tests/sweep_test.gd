@@ -59,7 +59,7 @@ func _initialize() -> void:
 				if reached != count or not (w["blocked_doors"] as Array).is_empty():
 					divergent += 1
 					failures.append("%s n=%d size=%.1f  logical %d/%d, physical %d/%d  blocked %s" % [
-						shape, n, size, n, n, reached, count, w["blocked_doors"]])
+						shape, n, size, n, n, reached, count, w["blocked_why"]])
 
 	# A mixed-size dungeon: one tiny room on the end of a chain of large ones,
 	# which is the shape most likely to pinch a doorway.
@@ -78,7 +78,7 @@ func _initialize() -> void:
 		if int(w["reached"]) != int(w["room_count"]):
 			divergent += 1
 			failures.append("mixed closet %.1f m  physical %d/%d  blocked %s" % [
-				size, int(w["reached"]), int(w["room_count"]), w["blocked_doors"]])
+				size, int(w["reached"]), int(w["room_count"]), w["blocked_why"]])
 
 	# How much room to spare does a body actually have in the tightest legal
 	# room? Interior width minus the wall on each side, against the body.

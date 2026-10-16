@@ -13,7 +13,62 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **046**, the task this file named as
+- Last commit at the time of writing: **047**, the task this file named as
+  the next assistant task: **the sixth axis applied to `tests/` — which
+  suites never RUN the thing they make a claim about?** This file handed over
+  a starting point marked MEASURED BY GREP AND NOT A FINDING, and said to
+  **start at the dungeon's panel, because it is the longest, and ask of each
+  of its nine lines what the number is read from**. Asked, and the reading
+  was right about where to look.
+  **ON A DUNGEON AS BUILT, NOTHING IN THE PANEL WAS WRONG** — measured
+  headless before anything changed, every one of the nine lines agrees with
+  the geometry actually placed: 2 `Room_` slabs for *"ROOMS 2"*, 244 m² of
+  slab for *"ROOM FLOOR 244 m2"*, 88 m² and 18 m of `Corridor_` slab for
+  *"CORRIDOR 18 m long, 88 m2"*, 29 × 12 m of placed floor for *"SIZE 29 m by
+  12 m"*. **THE FAULT IS ONE QUESTION ALONG: WHICH DOORS THE LINES WALK.**
+  Four of the nine describe getting about — how deep the deepest room is,
+  which room that is, how many dead ends, how many ways round — and all four
+  walked the dungeon's FULL door list. **WALKABLE, the line directly above
+  WAYS ROUND, walks the doors a body can USE**, and so do `route()` and the
+  body. Measured on a ring of four rooms with the ring-closing door shut:
+  *"WALKABLE 4 of 4 rooms reachable"* on one line and *"WAYS ROUND 1 loop"*
+  on the next, with no way round; *"DEAD ENDS 0"* where there were two;
+  *"DEEPEST crypt 2 doors from the entrance"* where the cell was 3 away; and
+  `route()` 1→4 had gone from 38 points to 191, so **the body had been told
+  what the sentence had not**. **THE SECOND FAULT IS A CRASH, NOT A FALSE
+  SENTENCE**: `walkable()["blocked_doors"]` appended a `Vector2i` for a shut
+  door and a `String` for a doorway no body fits — one list, two types — and
+  `route()` read every entry as a `Vector2i`, so a blocked doorway **threw
+  inside `route()`**, which returned `[]`, which the controller reads as
+  *"There is no way through to the vault."* Demonstrated: before 047 a
+  dungeon with one blocked doorway could not be routed through the doorway
+  that was **clear**. **BOTH HALVES ARE LATENT AND 047 CLAIMS NOTHING ELSE.**
+  `measure()` is called in one place, `GameController._prepare()`, before
+  anything is built, and `set_shut()` only ever runs on a standing layout, so
+  the panel a player reads was drawn when nothing was shut; and a doorway no
+  body fits does not occur from a legal request — **4000 random legal ring
+  dungeons solved this session, 2597 built and post-checked, none with one**,
+  which is `sweep_test`'s finding from the other direction. **The fix is the
+  class**: one list of unusable doorways as door pairs with the sentences
+  beside it in `blocked_why`, one `usable_doors` list that `route()` and
+  `measure()` both read so neither builds its own graph, and the loop count
+  in one function — `loop_count(doors, rooms, components)`, used by
+  `pre_check()` and `measure()` alike. The formula moved with it: the old
+  `doors.size() - rooms.size() + 1` was right only because the one graph
+  either caller had ever seen was one `pre_check()` had already proved
+  connected, and a door a body cannot use can split a graph in two. **THE
+  SENTENCES DID NOT MOVE**: every panel line and both summaries are
+  byte-identical before and after on every dungeon with nothing shut,
+  measured. 53 suites passed before and 54 after, `--all` included; the new
+  suite `panel_built_test` fails **7 times** and throws twice against the
+  pre-047 readings, and does not parse against the pre-047 code at all
+  (`loop_count` does not exist there), recorded that way rather than stubbed.
+  The prompt is byte-identical (sha256 `c6c2b955...`, held by
+  `prompt_bounds_test`), so `PROMPT_VERSION` did not move. **Not verified: no
+  model sent any of this**, and the dungeon's DOOR count still counts a shut
+  door as joining two rooms, which is deliberate and is "Human decision
+  needed". See 047 below and TRAPS 41.
+- The commit before it: **046**, the task that file named as
   the next assistant task and the last entry on its own list of rules with a
   function left to count: **TRAPS 24's**, *a line that states a count reads it
   from what was BUILT, not from what was asked*. The answer is **only where
@@ -56,7 +111,7 @@ that the owner has not ruled on.** Do not promote one to the other.
   not move. **Not verified: no model sent any of this**, the farm's silence is
   left as a silence, and the dungeon's DOOR count and the circuit's road
   LENGTH still come from the layout. See 046 below and TRAPS 40.
-- The commit before it: **045**, the task that file named as
+- Before 046: **045**, the task that file named as
   the next assistant task — *ask every suite in `tests/` what IT cannot see* —
   and **this file's own prediction about where to look was right**: it said to
   expect the readback and the RECORD to be the layers nobody probed, "because
@@ -492,15 +547,21 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-55 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **53 suites**, counted with `ls tests/*.gd` rather than
+56 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **54 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites.
 
-Last full run (046, Godot 4.7.1 on Linux — `4.7.1.stable.official.a13da4feb`
+Last full run (047, Godot 4.7.1 on Linux — `4.7.1.stable.official.a13da4feb`
 — headless, in a cloud container): **suites with something to look at: 0**,
 both without `--all` and with it, `drive_test` and `session_test` included.
-046's new suite is `built_count_test` (30 assertions; 4 failures against the
+The baseline before 047 was the same on 53 suites, and the only difference
+between the two runs' suite lists is the new one.
+047's new suite is `panel_built_test` (7 failures and two thrown
+`SCRIPT ERROR`s against the pre-047 readings, with the 047 scaffolding in
+place; it does not parse against the pre-047 code at all, because
+`DungeonModule.loop_count()` does not exist there);
+046's is `built_count_test` (30 assertions; 4 failures against the
 pre-046 sentences, and it does not parse against the pre-046 code at all,
 because the base functions it reads do not exist there);
 045's is `record_proposal_test` (8 failures against the pre-045 code);
@@ -529,7 +590,12 @@ of them either, and `said_position_test` contains none of them (not
 `said_number_test`, `counted_said_test`, `said_article_test` and
 `said_position_test` and `built_count_test` were each run
 both with it and
-without and pass either way — checked rather than assumed (TRAPS 4). `physics_test` gained 038's car measurement and is already
+without and pass either way — checked rather than assumed (TRAPS 4).
+`panel_built_test` matches none of the `.bat`'s `findstr` patterns either —
+not `ledger`, not `session`, not `drive`, not `physics`, not `walker`, not
+`order_test`, not `explore` — checked against the file, so it runs there
+without `--fixed-fps`, which is what it got here, and it was run both with
+`--fixed-fps 60` and without and passes either way. `physics_test` gained 038's car measurement and is already
 on both the Linux `TIMED` list and the `.bat`'s `physics` pattern, so it
 keeps `--fixed-fps` on both.
 
@@ -4578,6 +4644,167 @@ container, downloaded this session.
   `pieces()` declaration, which is the list it is built from, and a world
   whose interesting count is something else would need its own.
 
+## 047 — four lines in one panel walked a door the body could not
+
+**Objective.** The task this file named: **the sixth axis applied to
+`tests/`** — *which suites never RUN the thing they make a claim about?* —
+starting, as this file said to, at **the dungeon's measurement panel, because
+it is the longest in Genesis, asking of each of its nine lines what the
+number is read from**.
+
+**Starting state.** Branch `prototype-002a` at 046
+(`3498237`). 53 suites, 0 with something to look at, `--all` included,
+measured here before anything changed. The dungeon's panel had never been
+produced from a built dungeon: 046 found `metric_lines(` in two of 53 suites,
+with the dungeon's nine lines fed a dictionary typed into
+`container_door_test` whose `loops: 1` cannot occur.
+
+**What the reading found, and what it did not.**
+
+**On a dungeon as built, nothing in the panel was wrong, and 047 claims
+nothing else.** Every one of the nine lines is `measure(layout)`, and every
+one of them agrees with the geometry actually placed — measured headless
+before anything changed, by walking the tree:
+
+```
+  ROOMS          2   doors 1           2 Room_ slabs
+  SIZE           29 m by 12 m          29.0 x 12.0 m of placed floor
+  ROOM FLOOR     244 m2                244.0 m2 of Room_ slab
+  CORRIDOR       18 m long, 88 m2      18.0 m of run, 88.0 m2 of Corridor_
+  LARGEST ROOM   hall   144 m2         the biggest slab, 144.0 m2, named hall
+```
+
+**The fault is one question along: which doors the lines walk.** Four of the
+nine describe getting about — `deepest`, `deepest_room`, `dead_ends`,
+`loops` — and all four walked `layout["doors"]`, the dungeon's full list.
+`WALKABLE`, the line directly above `WAYS ROUND`, walks the doors a body can
+**use**, and so do `route()` and the body itself. `_reachable()` was written
+for `pre_check()`, where the request is all there is and nothing can be shut
+yet, and `measure()` called it with the same argument.
+
+Measured on a ring of four rooms, headless, with the ring-closing door shut:
+
+```
+  DEEPEST     crypt   2 doors from the entrance    the cell is 3 doors away
+  DEAD ENDS   0                                    rooms 1 and 4 are
+  WALKABLE    4 of 4 rooms reachable               correct: honours the door
+  WAYS ROUND  1 loop                               there is no way round
+  summary()   "4 rooms joined by 4 doors, 1 way back round"
+  route()     1 -> 4: 38 points open, 191 with the door shut
+```
+
+**The body had been told what the sentence had not**, on the line under one
+that had got it right.
+
+**The second fault is a crash, not a false sentence.**
+`walkable()["blocked_doors"]` appended a `Vector2i` for a shut door and a
+`String` for a doorway no body fits — one list, two types — and `route()` read
+every entry as a `Vector2i`. A blocked doorway therefore **threw inside
+`route()`**, which returned `[]`, and the controller reads `[]` as *"There is
+no way through to the vault."* A crashed function and a plausible sentence.
+Demonstrated in the suite on a hand-built layout: before 047 a dungeon with
+one blocked doorway **could not be routed through the doorway that was
+clear**.
+
+**Both halves are LATENT. Neither has reached a player.** `measure()` is
+called in exactly one place — `GameController._prepare()` — before anything is
+built, and `set_shut()` only ever runs on a layout that is already standing,
+so the panel a player reads was drawn when nothing was shut. And a doorway no
+body fits does not occur from a legal request: **4000 random legal ring
+dungeons were solved headless this session, 2597 of them built and
+post-checked, and none had one**, which is `sweep_test`'s finding arrived at
+from the other direction. What 047 fixes is a panel that would state the
+design the moment anything re-measured a standing dungeon, and a `route()`
+that throws the moment a corridor can be blocked.
+
+**Decision — the fix is the class and not the four lines (TRAPS 11).**
+
+- `walkable()` returns **`blocked_doors` as door pairs only**, one type, one
+  entry per unusable doorway whichever of the two reasons it is, with the
+  sentence for each at the same index in the new **`blocked_why`**.
+- It also returns **`usable_doors`**, the doors a body can use. `route()` and
+  `measure()` both read it, so the path the body walks and the sentence the
+  player reads cannot be built from different graphs. `route()` no longer
+  derives the list by subtraction.
+- `post_check()` appends `blocked_why` rather than `str()` of each
+  `blocked_doors` entry. **Its refusal strings for a blockage are
+  byte-identical** to the ones it appended before; a shut door cannot reach it.
+- `_reachable()` now also returns **`components`**, and the loop count lives
+  in one function, **`loop_count(doors, rooms, components)`**, used by
+  `pre_check()` and `measure()` alike. The formula moved with it:
+  `doors.size() - rooms.size() + 1` was written out by hand in both places and
+  was right only because the one graph either had ever been asked about was
+  one `pre_check()` had already proved connected. **A door a body cannot use
+  can split a graph in two, and then `+ 1` states a way round that is not
+  there.**
+- The counts beside them are **left alone**: `door_count` is still the
+  dungeon's doors, because a shut door still joins two rooms. That is a
+  question about what the sentence MEANS, not a fault, and it is "Human
+  decision needed" below.
+
+**Implementation.** `scripts/dungeon_module.gd` — `walkable()`,
+`_reachable()`, new `loop_count()`, `pre_check()`, `measure()`,
+`post_check()`, `route()`. `tests/panel_built_test.gd` is new.
+`tests/sweep_test.gd` and `tests/walk_test.gd` had three diagnostic prints
+pointed at `blocked_why`, so their failure messages carry the same sentences
+they carried before; **neither assertion was changed and neither was
+weakened** — both still check `blocked_doors` is empty. `README.md`: 53 → 54
+suites, counted with `ls`.
+
+**Evidence.** Godot 4.7.1 (`4.7.1.stable.official.a13da4feb`) headless, Linux,
+in a cloud container. Baseline **53 suites, 0 with something to look at**,
+`--all` included. After: **54 suites, 0 with something to look at**, `--all`
+included, so `drive_test` and `session_test` both ran and both passed, and the
+only difference between the two runs' suite lists is the new one.
+`tests/panel_built_test.gd` **fails 7 times and throws twice** against the
+pre-047 readings — the four getting-about readings and the blocked-doorway
+entry type reverted with the 047 scaffolding left in place, the way 035–046
+each measured their own. Against the pre-047 code entire it **does not
+parse**, because `loop_count()` does not exist there; recorded that way rather
+than stubbed. **The sentences did not move**: the sample dungeon's whole panel
+and both summaries are byte-identical before and after, and so is the open
+ring's, measured on the same worlds. **The prompt did not move**: sha256
+`c6c2b955...`, unchanged since 043, held by `prompt_bounds_test` rather than
+by a measurement of mine. Run both with `--fixed-fps 60` and without, passes
+either way (TRAPS 4). `run_tests.bat` needed no edit: `panel_built_test`
+matches none of its `findstr` patterns, checked against the file.
+
+**Limitations — what the tests did NOT prove.**
+
+- **No model sent any of this.** Every request in the suite is built from the
+  module's own declared samples, read off `lists()`, or is the ring typed into
+  the suite. This harness has no key.
+- **Nothing ran on Windows and nothing ran in the editor.**
+- **Both faults are latent**, as above, and the suite says so in its header.
+  The blocked-doorway half is held against a **hand-built layout**, labelled
+  as such in the suite, because no legal request reaches it.
+- **The 2597-dungeon sweep is not a proof** that no legal request can ever
+  produce a blocked doorway. It is 2597 random ring dungeons with a fixed
+  seed, and it agrees with `sweep_test`.
+- **`metrics["walk_blocked"]` is still read by nothing** — not a script, not
+  a suite, not a sentence. `measure()` counts how many doorways a body cannot
+  use and no panel line states it. Adding one would be adding a sentence, so
+  it is left and recorded: "Human decision needed" below.
+- **The dungeon's door count, and the shut door's new sentence.** A shut door
+  still counts in `door_count`, deliberately. And `blocked_why` now carries
+  one new string, *"hall to vault: somebody has shut this door"*, which is
+  **not a player-facing line today**: the only reader that prints it is
+  `post_check()`, which a shut door cannot reach. If it ever becomes one it
+  should go through the article rule (043).
+- **The suite asserts no wording.** Where a number has to be shown to have
+  reached the panel it is looked for as a substring of the rendered value, so
+  every sentence in Genesis can be rewritten and this stays green.
+- **No record changed and no ledger field moved.** `blocked_why`,
+  `usable_doors` and `components` live in function returns;
+  `record["reachability"]["loops"]` is computed by the new function from the
+  design graph `pre_check()` has just proved connected, and is the same number
+  it was. An audit by field across this commit is not a before-and-after.
+
+**Next action.** See "Next action" below: 046's axis has one question left in
+it that this commit only half asked.
+
+---
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -4903,14 +5130,73 @@ sentences did not change:
   sentence and is not written to the ledger. The records on your disk are
   yours and 046 did not touch them.
 
+047 adds a sixteenth, and like 046's it is short, because the sentences did
+not change either:
+
+- **There is nothing to type to see 047's fault, and that is the honest
+  summary of it.** Both halves are latent: the panel is measured once, before
+  anything is built, and a door can only be shut on a dungeon that is already
+  standing, so the panel a player reads was drawn when nothing was shut. On
+  every dungeon with nothing shut, every panel line and both summaries are
+  byte-identical before and after — measured, on the same worlds.
+- **One thing worth typing anyway, because it is the fault's own shape.**
+  Build a dungeon with a ring in it — *"a dungeon with a hall, a vault, a
+  crypt and a cell, each joined to the next and the last joined back to the
+  hall"* — then shut the door that closes the ring and **look at the panel**.
+  It will not have changed, because nothing re-measures. **If you would
+  rather it did**, that is the change worth asking for: the panel would then
+  say *"WAYS ROUND none"* and *"DEAD ENDS 2"* the moment the door shut, which
+  is what 047 made possible and did not wire up. Re-measuring a standing
+  dungeon is a change to when Genesis speaks, so it is yours and not the
+  assistant's.
+- **And one judgement, which is one line.** `measure()` counts how many
+  doorways a body cannot use — `walk_blocked` — and **no panel line states
+  it, and nothing in the repository reads it.** With 047 in, a shut door
+  silently changes DEAD ENDS and WAYS ROUND; a line saying *"BLOCKED 1
+  doorway"* would say why. Adding it is adding a sentence, so it is "Human
+  decision needed" 14 rather than a commit.
+
 **Smallest useful assistant task next.** The ledger question (033), the
 container-door question (034), the prompt-bound question (035), the validator
 question (036), the intent-door question (037), the which-field question
 (038), the arithmetic question (039) and the five build-it claims (040) are
 all **done**. Candidates, in the order the assistant would take them:
 
-- **THE NEXT ONE: the sixth axis, applied to `tests/` — which suites never RUN
-  the thing they make a claim about?** 046 added that axis to the table below
+- **THE NEXT ONE: the farm's panel and the circuit's panel, against the
+  geometry they describe.** 047 asked 046's axis at the dungeon's panel and
+  left the other two half asked, and the half it left is the numeric half.
+  `panel_built_test` now produces **every** module's panel from a world that
+  was solved and BUILT, which closes the gap as far as SHAPE goes — no line
+  empty, no line stating `nan` — but **only the dungeon's nine lines are tied
+  to the slabs in the tree**. The farm's panel and the circuit's are still
+  checked against nothing: `counted_said_test` feeds both
+  `measure(solved["layout"])`, a layout and not a construction.
+
+  **The method is 047's and it is cheap**: build the world, walk the tree,
+  count the pieces and add up their areas and lengths yourself, and put each
+  number beside the panel line that states it. 047's dungeon pass took four
+  readings and found the fault in none of them — the fault was one question
+  along, in WHICH GRAPH four lines walked — so expect the same: the numbers
+  will probably agree, and the thing to ask of each line is **what fact it is
+  reading, and whether anything else in the same panel answers that question
+  from somewhere else.** A panel is many readings printed together, which is
+  why it is where this class lives (TRAPS 41).
+
+  **READ AND NOT MEASURED, as a starting point for the next session and not a
+  finding:** the circuit's panel states a road LENGTH, which 046 recorded as
+  coming from the layout and not the construction (*"with one section removed
+  from the tree the circuit says 7 sections, 1114 m of road"*), so the
+  circuit's panel has at least one line whose number is known not to follow
+  the world. Whether that is the same fault or a different fact is the
+  question to ask first.
+
+- ~~**The sixth axis, applied to `tests/` — which suites never RUN
+  the thing they make a claim about?**~~ **ASKED AT THE DUNGEON'S PANEL IN
+  047.** The answer on the panel's nine lines was that all nine agree with
+  the geometry, and the fault was one question along: four of them walked a
+  door the body could not. Left struck rather than deleted because the entry
+  below is still the right method and is only half spent. The entry as it
+  stood: 046 added that axis to the table below
   and found it by accident, in the one layer where the answer was *none of
   them*. The method is the same as 042's and it is cheap: for every suite,
   list the functions it calls and ask **where their arguments came from** — a
@@ -5944,3 +6230,30 @@ decision, so it is his and not the assistant's.
     any of them: `built_count_test` asserts about the piece count and says in
     its own header that it asserts nothing about doors, length or the farm's
     sentence, because a suite that freezes an unmade decision is TRAPS 14.
+
+14. **A panel line for a doorway a body cannot use, and whether the panel
+    should re-measure at all.** 047 made the dungeon's getting-about lines
+    follow the doors a body can use, which is what `WALKABLE`, `route()` and
+    the body had always done. Two questions came out of it and both are
+    yours, because both are about what Genesis SAYS:
+
+    - **`measure()` already counts the doorways a body cannot use —
+      `walk_blocked` — and nothing in Genesis reads it.** No panel line, no
+      sentence, no suite. With 047 in, shutting a door changes `DEAD ENDS`
+      and `WAYS ROUND` and nothing says why. A line — *"BLOCKED 1 doorway"*,
+      or whatever reads best — would say it. The number is already measured,
+      so this is a sentence and not a mechanism.
+    - **Nothing re-measures a standing dungeon.** `measure()` is called once,
+      in `GameController._prepare()`, before the world is built. So the panel
+      is a measurement of the dungeon **as created**, and a door shut
+      afterwards does not reach it. 047 made the numbers correct for a
+      standing dungeon without wiring anything to ask them again. Whether
+      shutting a door should redraw the panel is a change to when Genesis
+      speaks and to what the panel is FOR — a record of what was made, or a
+      readout of what is there — and that is a product decision.
+
+    And the smaller one beside them: **a shut door still counts in
+    `door_count`**, so *"ROOMS 4 doors 4"* and *"joined by 4 doors"* are
+    unchanged by shutting one. That is deliberate — a shut door still joins
+    two rooms — and it is left where 046 left the same question about a
+    door's construction being a corridor.

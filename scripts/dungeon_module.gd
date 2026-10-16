@@ -369,7 +369,11 @@ func pre_check(content: Dictionary, record: Dictionary) -> Dictionary:
 	record["reachability"] = {
 		"reached": reach["reached"],
 		"room_count": rooms.size(),
-		"loops": doors.size() - rooms.size() + 1,
+		# 047: the same function measure() uses. This is the DESIGN's graph,
+		# where nothing can be shut yet - set_shut() only ever runs on a
+		# layout that is standing - so the component count it passes is the
+		# one this function is about to refuse the request for not having.
+		"loops": loop_count(doors.size(), rooms.size(), int(reach["components"])),
 	}
 
 	if unreachable.is_empty():
@@ -413,7 +417,43 @@ func _reachable(count: int, doors: Array) -> Dictionary:
 	for i in count:
 		if not depth.has(i):
 			unreachable.append(i)
-	return {"reached": depth.size(), "depth": depth, "unreachable": unreachable, "links": links}
+
+	# 047: how many separate pieces the graph is in. The loop count is
+	# edges - rooms + COMPONENTS, and both places that worked it out wrote
+	# "+ 1" by hand - right only because the one graph either had ever been
+	# asked about was one pre_check had already proved connected. A door a
+	# body cannot use can split the graph in two, and then "+ 1" states a
+	# way round that is not there.
+	var components := 0
+	var seen := {}
+	for i in count:
+		if seen.has(i):
+			continue
+		components += 1
+		seen[i] = true
+		var walk_queue: Array = [i]
+		while not walk_queue.is_empty():
+			var at_now: int = walk_queue.pop_front()
+			for nxt in links[at_now]:
+				if not seen.has(nxt):
+					seen[nxt] = true
+					walk_queue.append(nxt)
+
+	return {
+		"reached": depth.size(),
+		"depth": depth,
+		"unreachable": unreachable,
+		"links": links,
+		"components": components,
+	}
+
+
+# 047: the number of independent ways round a door graph, in one place. This
+# was written out by hand as `doors.size() - rooms.size() + 1` in pre_check
+# and again in measure(), which is the shape 034 and 046 both found: a
+# formula correct in two copies is how the third copy comes to be wrong.
+static func loop_count(doors: int, rooms: int, components: int) -> int:
+	return doors - rooms + components
 
 
 # --- where everything goes ---
@@ -596,7 +636,13 @@ func post_check(layout: Dictionary) -> Dictionary:
 			"every room has a door to it, but a person %.1f m across cannot get to %s" % [
 				BODY, ", ".join(walk["unreachable"])],
 		]
-		for b in walk["blocked_doors"]:
+		# 047: the sentences, not the pairs. This read "blocked_doors" and
+		# printed str() of each entry, which gave this sentence for a
+		# doorway no body fits and "(0, 3)" for a shut door. The strings it
+		# appends for a blockage are byte-identical to the ones it appended
+		# before; nothing shut can reach here, because set_shut() only runs
+		# on a layout that is already standing.
+		for b in walk["blocked_why"]:
 			why.append(str(b))
 		return {"ok": false, "category": "FAILED_UNWALKABLE", "reasons": why, "record": record}
 	if across.x > MAX_EXTENT or across.y > MAX_EXTENT:
@@ -663,21 +709,32 @@ func walkable(layout: Dictionary) -> Dictionary:
 	# Walk each door's corridor and see whether a body fits the whole way.
 	var passable := {}
 	var blocked: Array = []
+	var blocked_why: Array = []
 	for door in layout["doors"]:
 		var d: Vector2i = door
 		# 018: a door somebody has shut is not a way through. The same
 		# function answers both "is this doorway wide enough" and "is it
 		# open", so routing, the walkability metric and the character's own
 		# plan cannot disagree about it.
+		#
+		# 047: and both answers go into the list the SAME WAY. This appended
+		# a Vector2i for a shut door and a String for a doorway no body
+		# fits, and route() read every entry as a Vector2i - so a blocked
+		# doorway threw inside route(), which then returned [] and the
+		# player was told "There is no way through" by a function that had
+		# crashed. One list, one type; the sentences travel beside it.
 		if is_shut(layout, d.x, d.y):
 			blocked.append(d)
+			blocked_why.append("%s to %s: somebody has shut this door" % [
+				str(rooms[d.x]["name"]), str(rooms[d.y]["name"])])
 			continue
 		var path := _corridor_path(layout, d.x, d.y)
 		var stuck := _first_blockage(path, floors, walls)
 		if stuck.is_empty():
 			passable[d] = true
 		else:
-			blocked.append("%s to %s: %s" % [
+			blocked.append(d)
+			blocked_why.append("%s to %s: %s" % [
 				str(rooms[d.x]["name"]), str(rooms[d.y]["name"]), str(stuck["why"])])
 
 	# Reachability over the doors a body can actually use.
@@ -706,7 +763,17 @@ func walkable(layout: Dictionary) -> Dictionary:
 		"reached": seen.size(),
 		"room_count": rooms.size(),
 		"unreachable": unreachable,
+		# 047: the doorways a body cannot use, as door pairs - one entry per
+		# door, whichever of the two reasons it is - and the sentence for
+		# each one at the same index in "blocked_why". Everything that
+		# describes getting about reads one of these two lists and nothing
+		# re-decides which doors are usable for itself.
 		"blocked_doors": blocked,
+		"blocked_why": blocked_why,
+		# 047: the doors a body CAN use. route() and measure() both read
+		# this, so the sentence a player reads and the path the body walks
+		# cannot be built from different graphs.
+		"usable_doors": passable.keys(),
 		"body": BODY,
 	}
 
@@ -786,7 +853,19 @@ func measure(layout: Dictionary) -> Dictionary:
 			corridor_area += leg.size.x * leg.size.y
 			corridor_length += maxf(leg.size.x, leg.size.y) - CORRIDOR
 
-	var reach := _reachable(rooms.size(), doors)
+	# 047: the four readings below - how deep the deepest room is, which room
+	# that is, how many dead ends there are and how many ways round - all
+	# describe GETTING ABOUT, and all four read the dungeon's full door list.
+	# WALKABLE in the same panel, route(), and the body itself read the doors
+	# a body can USE. So a ring of four rooms with the ring-closing door shut
+	# said "1 loop" with no way round it, and with a second door shut said
+	# "0 dead ends" where there were two, on the line under one that had just
+	# said "3 of 4 rooms reachable". Measured, not reasoned about: see
+	# tests/panel_built_test.gd. One graph for everything that describes
+	# walking, and it is the one walkable() decides.
+	var walk := walkable(layout)
+	var usable: Array = walk["usable_doors"]
+	var reach := _reachable(rooms.size(), usable)
 	var depth: Dictionary = reach["depth"]
 	var deepest := 0
 	var deepest_name := ""
@@ -804,7 +883,6 @@ func measure(layout: Dictionary) -> Dictionary:
 	var bounds := _bounds(layout, rects)
 	var across: Vector2 = bounds["max"] - bounds["min"]
 
-	var walk := walkable(layout)
 	return {
 		"room_count": rooms.size(),
 		"door_count": doors.size(),
@@ -818,7 +896,7 @@ func measure(layout: Dictionary) -> Dictionary:
 		"deepest": deepest,
 		"deepest_room": deepest_name,
 		"dead_ends": dead_ends,
-		"loops": doors.size() - rooms.size() + 1,
+		"loops": loop_count(usable.size(), rooms.size(), int(reach["components"])),
 		"pitch": float(layout["pitch"]),
 		"width": across.x,
 		"depth": across.y,
@@ -992,18 +1070,20 @@ func route(layout: Dictionary, from_room: int, to_room: int) -> Array:
 		return [here.position + here.size * 0.5]
 
 	var walk: Dictionary = walkable(layout)
-	var sealed := {}
-	for d in (walk["blocked_doors"] as Array):
-		var b: Vector2i = d
-		sealed[Vector2i(mini(b.x, b.y), maxi(b.x, b.y))] = true
 
+	# 047: the doors a body can use, read from the one function that decides
+	# it. This built the same list by taking "blocked_doors" away from the
+	# full list and reading each entry as a Vector2i - and a doorway no body
+	# fits put a String in that list, so the assignment THREW, route()
+	# returned [] and the controller said "There is no way through to the
+	# vault." A crashed function and a plausible sentence, which is the
+	# combination this project exists to catch. Demonstrated in
+	# tests/panel_built_test.gd.
 	var near := {}
 	for i in rooms.size():
 		near[i] = []
-	for door in layout["doors"]:
+	for door in (walk["usable_doors"] as Array):
 		var e: Vector2i = door
-		if sealed.has(Vector2i(mini(e.x, e.y), maxi(e.x, e.y))):
-			continue
 		near[e.x].append(e.y)
 		near[e.y].append(e.x)
 
