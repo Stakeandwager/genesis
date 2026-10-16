@@ -2894,3 +2894,80 @@ Found and fixed in 051, in one function: `WorldRegistry.panel_lines()`.
 > for exactly the record it exists for — and a default in a reader is a claim
 > that the field is optional, right for the one case it was written for and
 > unexamined for every other.
+
+## 46. The clearance check that compared against a number with no name on it
+
+**Signature:** none. Nothing is wrong with any farm, and that is the point of
+this entry. `FarmModule._check_reachable()` is the farm's version of *"the
+circuit must close"* — the module's own header says a farm you cannot drive a
+tractor around is refused — and it decided an edge was clear unless a
+neighbour stood **within half a metre** of it. `LANE_WIDTH` is **6 m**. The
+test admitted a gap **one twelfth** of the thing its own comment calls a
+lane, and the number it should have compared against was sitting in the
+layout it was handed, read by nothing in the repository.
+
+**How it was found.** Not by reading the check. By asking 049's question of
+every key of every world's layout — *who reads this?* — which 051 began and
+HANDOVER left as the next task. `lane_width` was the one key `grep` found in
+exactly one line: the line that writes it.
+
+**Cause.** A check acquires its threshold when it is written, and 0.5 was
+what "flush" meant to whoever wrote the four comparisons. The dimension the
+check is about arrived later, in the same dictionary, and nothing connected
+them. The project had already been right about this twice:
+`SeparationCheck.MIN_SEPARATION` **is** `ROAD_WIDTH + SAFETY_MARGIN`, and the
+dungeon walks its corridors with a body `BODY` metres across and reports that
+width in `walkable()`. Three clearance checks, one per world; two read the
+dimension they are about and one read a literal.
+
+**What it cost: nothing yet, measured rather than assumed.** Over 468 legal
+farms swept headless, `solve()` never leaves two zones closer than
+**6.0000 m**, so the failure branch is not reachable from any request a
+player can send and both thresholds agree on every farm that exists — the
+same shape `sweep_test` reports out loud about `FAILED_UNWALKABLE`. What was
+wrong is that the guard did not guard what it names: a packing change putting
+zones 0.6 m apart would pass it. `limits_test` has asserted since it was
+written that the SOLVER leaves a lane; that the CHECK requires one was
+asserted nowhere, so the two halves could drift apart without a suite moving.
+
+**And the suite written to catch it could not fail, twice.** The reader sweep
+perturbs a layout key and asks whether anything the module does with the
+layout changes. Its signature included the built tree, and two things in it
+differ between two builds of the SAME layout: a node its builder did not name
+is given a generated one with a global counter in it (`@MeshInstance3D@57` —
+the farm's fence posts), and a build report that carries a node prints that
+node's instance id. So every key "changed something" and the sweep passed
+against the pre-052 code it was written to fail against. Found by running it
+against that code and reading the result, not by reading the suite.
+
+**Do:**
+
+- A clearance check compares against the dimension it is about, named. If the
+  number it needs is in the layout, read it from the layout — a threshold and
+  the thing it is a threshold for are one number, in one place.
+- Ask who reads a key before deciding what to do with it, and ask it of every
+  key, not the suspicious one. A layout in Genesis is an INPUT to the builder
+  and not a record of anything: nothing serialises it, so a key with no reader
+  is dead weight rather than documentation.
+- A guard whose failure branch no legal input can reach is still worth
+  keeping, and is worth knowing about. Say which it is — `sweep_test`'s
+  VERDICT line is the pattern — because "it has never fired" and "it cannot
+  fire" are different facts and only one of them is reassuring.
+- **Run a new suite against the code it is supposed to catch.** A suite that
+  passes everywhere is a suite that has not been measured. Any identity in a
+  signature — a generated node name, an instance id, a timestamp, a hash of
+  an object — makes a comparison always-unequal and every assertion built on
+  it vacuous.
+- A code comment that names two checks when one exists is a false claim about
+  Genesis (TRAPS 14, in a comment). The farm's header claimed every lane
+  connects to the gate; nothing verifies that. It is true by construction —
+  the zones sit 12 m inside the fence, so the ring between them reaches the
+  gate — and the header now says so at the width of the check that exists.
+
+Found and fixed in 052, in one function: `FarmModule._check_reachable()`.
+`tests/layout_key_test.gd` fails **13 times** against the pre-052 module.
+
+> And a clearance check compares against the dimension it is about, so a
+> threshold with no name on it is a guard that does not guard the thing it is
+> named for — and a key nothing reads cannot be wrong, which is exactly why
+> nobody would notice if it stopped being true.

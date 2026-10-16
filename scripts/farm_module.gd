@@ -5,9 +5,17 @@ class_name FarmModule
 # The AI proposes what is on the farm. This module works out where everything
 # goes, checks the result can actually work, measures it, and builds it.
 #
-# The farm's version of "the circuit must close" is: every zone must touch a
-# lane, and every lane must connect to the gate. A farm you cannot drive a
-# tractor around is refused, exactly as an unclosable circuit is.
+# The farm's version of "the circuit must close" is _check_reachable(): every
+# zone must have a lane's width of clear ground along at least one edge, or it
+# cannot be worked, and a farm that fails it is refused as an unclosable
+# circuit is.
+#
+# 052: this used to say "and every lane must connect to the gate" as well, and
+# NOTHING CHECKS THAT. It is true of every farm built so far and it is true by
+# construction rather than by test: the zones sit MARGIN (12 m) inside the
+# fence, so the ring of ground between the two reaches every lane and the gate
+# is cut in it. Said at the width of the check that exists (TRAPS 14): the
+# second half is a property of the packing, not a thing this module verifies.
 
 const ZONE_TYPES := ["crop", "pasture", "orchard", "pond", "barn", "farmhouse", "silo", "yard"]
 const BUILDINGS := ["barn", "farmhouse", "silo"]
@@ -255,8 +263,43 @@ func solve(content: Dictionary) -> Dictionary:
 
 
 # Every zone must have a lane along at least one edge, or it cannot be worked.
+#
+# --- 052: the width a lane has to be is read from the layout being checked ---
+#
+# This compared each edge against a bare 0.5 m, with no name on it: a zone was
+# reachable unless a neighbour stood within half a metre. LANE_WIDTH is 6 m,
+# so the test admitted a gap ONE TWELFTH of the thing its own comment calls a
+# lane, and a farm whose zones stood 0.6 m apart passed a check whose whole
+# job is to say a tractor can get round.
+#
+# The other two worlds already read the dimension their clearance check is
+# about: SeparationCheck's threshold is MIN_SEPARATION, which IS
+# ROAD_WIDTH + SAFETY_MARGIN, and the dungeon walks its corridors with a body
+# BODY metres across. This was the one member of that class that did not
+# (TRAPS 11), and the number it should read was already in the layout and
+# read by nothing at all.
+#
+# MEASURED BEFORE IT WAS CHANGED, and it is why this costs no farm a
+# centimetre: over 468 legal farms swept headless, solve() never leaves two
+# zones closer than 6.0000 m, so the failure branch is not reachable from any
+# request a player can send and both thresholds agree on every farm that
+# exists. What changes is what the check would catch if the packing ever
+# changed - which is the only reason a guard is kept at all. That the solver
+# leaves a lane is asserted in limits_test; that the CHECK requires one was
+# asserted nowhere.
+#
+# An edge has a lane along it when the strip of ground one lane deep outside
+# that edge is clear of every other zone. One rule in one place instead of
+# four flush tests, and it blocks on an overlap as well - the case the four
+# tests could only see when the overlap was within half a metre of exact.
+const LANE_TOLERANCE := 0.01          # a centimetre of float slack on the strip
 func _check_reachable(layout: Dictionary) -> Dictionary:
 	var zones: Array = layout["zones"]
+	# No default. solve() writes this key into every layout it returns, and a
+	# default here would be a claim that a layout without it is legal
+	# (TRAPS 45).
+	var lane: float = float(layout["lane_width"])
+	var deep := maxf(lane - LANE_TOLERANCE, 0.0)
 	var reasons: Array = []
 	for i in zones.size():
 		var z: Dictionary = zones[i]
@@ -265,28 +308,29 @@ func _check_reachable(layout: Dictionary) -> Dictionary:
 		var right := left + float(z["width"])
 		var top := float(z["z"])
 		var bottom := top + float(z["depth"])
+		var across := right - left
+		var down := bottom - top
 
-		# A lane runs along an edge if nothing else is flush against it.
+		var strips := {
+			"left": Rect2(left - deep, top, deep, down),
+			"right": Rect2(right, top, deep, down),
+			"top": Rect2(left, top - deep, across, deep),
+			"bottom": Rect2(left, bottom, across, deep),
+		}
+
 		for edge in ["left", "right", "top", "bottom"]:
+			var strip: Rect2 = strips[edge]
+			if strip.get_area() <= 0.0:
+				continue
 			var blocked := false
 			for j in zones.size():
 				if i == j:
 					continue
 				var o: Dictionary = zones[j]
-				var o_left := float(o["x"])
-				var o_right := o_left + float(o["width"])
-				var o_top := float(o["z"])
-				var o_bottom := o_top + float(o["depth"])
-				var overlaps_z: bool = o_top < bottom and o_bottom > top
-				var overlaps_x: bool = o_left < right and o_right > left
-				if edge == "left" and overlaps_z and absf(o_right - left) < 0.5:
+				var other := Rect2(float(o["x"]), float(o["z"]), float(o["width"]), float(o["depth"]))
+				if strip.intersects(other):
 					blocked = true
-				if edge == "right" and overlaps_z and absf(o_left - right) < 0.5:
-					blocked = true
-				if edge == "top" and overlaps_x and absf(o_bottom - top) < 0.5:
-					blocked = true
-				if edge == "bottom" and overlaps_x and absf(o_top - bottom) < 0.5:
-					blocked = true
+					break
 			if not blocked:
 				touching = true
 				break

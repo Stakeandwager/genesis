@@ -24,7 +24,64 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **051**, the task this file named as
+- Last commit at the time of writing: **052**, the task this file named as
+  the next assistant task: **the layout keys nothing reads, enumerated world
+  by world** — and the class question it set with it, *is a layout a RECORD
+  of what was decided or an INPUT to the builder?*
+  **THE CLASS QUESTION IS ANSWERED AND IT IS "AN INPUT", MEASURED:** 051
+  established that nothing serialises a layout, so a layout is produced by
+  `solve()`, consumed by the module, and does not survive — which makes a key
+  with no reader dead weight and not documentation, and makes *give it a
+  reader* the choice this repository's own shape asks for.
+  **AND THE READER IT WAS GIVEN WAS NOT ASSUMING A LANE WIDTH. IT WAS
+  COMPARING AGAINST 0.5.** `FarmModule._check_reachable()` is the farm's
+  version of *"the circuit must close"* — the module header says a farm you
+  cannot drive a tractor around is refused — and it called an edge clear
+  unless a neighbour stood **within half a metre** of it. `LANE_WIDTH` is
+  **6 m**, so the test admitted a gap **one twelfth** of the thing its own
+  comment calls a lane, and the number it should have read was the dead key
+  in the layout it was handed.
+  **WHAT IT COST IS NOTHING YET AND THE COMMIT SAYS SO.** Over **468 legal
+  farms** swept headless before anything changed, `solve()` never leaves two
+  zones closer than **6.0000 m**: the failure branch is **not reachable from
+  any request a player can send**, so both thresholds agree on every farm
+  that exists and **no farm changes by a centimetre** — re-swept after, 468
+  of 468 still solve and none is refused. What was wrong is that the guard
+  did not guard what it names. `limits_test` has asserted that the SOLVER
+  leaves a lane; that the CHECK requires one was asserted nowhere.
+  **THE FIX IS THE CLASS AND THE PROJECT HAD ALREADY BEEN RIGHT TWICE**
+  (TRAPS 11, and 040's question — *where has this project already been RIGHT
+  once?*). Genesis has three clearance checks, one per world:
+  `SeparationCheck.MIN_SEPARATION` **is** `ROAD_WIDTH + SAFETY_MARGIN`, the
+  dungeon walks with a body `BODY` metres across and reports that width, and
+  the farm's was the one that read a literal. The rule — **a clearance check
+  compares against the dimension it is about** — is now asserted at all
+  three. The four flush tests became one: an edge has a lane along it when
+  the strip of ground one lane deep outside it is clear, which also blocks
+  on an overlap the four could only see within half a metre of exact.
+  **AND THE SUITE COULD NOT FAIL, TWICE, AND THAT IS THE PART WORTH
+  KEEPING.** `layout_key_test` perturbs each layout key and asks whether
+  anything the module does with the layout changes. Its signature included
+  the built tree, and two things in it differ between two builds of the SAME
+  layout: an unnamed node gets a generated name with a global counter
+  (`@MeshInstance3D@57` — the farm's fence posts), and a build report that
+  carries a node prints that node's instance id. Every key therefore
+  "changed something" and the sweep **passed against the pre-052 code it was
+  written to fail against**. Found by running it against that code and
+  reading the output; the suite now asserts that the same layout signs the
+  same way twice, before it asserts anything else.
+  58 suites passed before and 59 after, `--all` in both, lists **diffed**:
+  the only difference is `layout_key_test`, **64 assertions**, **13 failures**
+  against the pre-052 module. **One thing was found and written up rather
+  than fixed**: the circuit's `target_turn` survives into the layout to be
+  read **for its sign only** — quadruple it and the track is identical,
+  negate it and the direction flips — which is 049's predicted
+  "wrongly-read field" in its mildest form, and a sweep that only asks *did
+  anything change?* would have called it fully read. **Not verified: no model
+  sent any of this, nothing was rendered on a screen, and no farm, record or
+  saved world changes** — the prompt is byte-identical and `PROMPT_VERSION`
+  did not move. See 052 below and TRAPS 46.
+- The commit before it: **051**, the task this file named as
   the next assistant task: **the panel beside a REFUSAL**. It asked two
   questions of it — does every line stay inside what the caveat covers, and
   is the caveat shown in every case it is owed — and **both answers were no**.
@@ -750,20 +807,29 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-60 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **58 suites**, counted with `ls tests/*.gd` rather than
+61 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **59 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites.
 
-Last full run (051, Godot 4.7.1 on Linux
+Last full run (052, Godot 4.7.1 on Linux
 — `4.7.1.stable.official.a13da4feb` — headless, in a cloud container):
-**suites with something to look at: 0** on all 58, with `--all`, so
+**suites with something to look at: 0** on all 59, with `--all`, so
 `drive_test`, `session_test`, 048's `outgoing_world_test`, 049's
-`panel_geometry_test`, 050's `asked_test` and 051's `panel_refused_test` all
-ran and all passed. The baseline at 050, measured the same way in the same
-container minutes earlier, was the same on 57 suites, and the suite lists
-were **diffed** rather than eyeballed: the only difference is
-`panel_refused_test`.
+`panel_geometry_test`, 050's `asked_test`, 051's `panel_refused_test` and
+052's `layout_key_test` all ran and all passed. The baseline at 051, measured
+the same way in the same container minutes earlier, was the same on 58
+suites, and the suite lists were **diffed** rather than eyeballed: the only
+difference is `layout_key_test`.
+052's new suite is `layout_key_test` (**64 assertions**; **13 failures**
+against the pre-052 `FarmModule`, measured by checking out the committed
+module under the new suite and running it — two of them the reader sweep
+naming `lane_width` as read by nothing, eleven the lane threshold. It PARSES
+against the pre-052 code, because it adds no constant to the module it tests
+and calls no function that did not already exist). Run with `--fixed-fps 60`
+and without; passes either way (TRAPS 4). `run_tests.bat` needed no edit: all
+sixteen of its `findstr` patterns were RUN against the name and none matches.
+README said 58 suites and there are 59, counted with `ls`.
 051's new suite is `panel_refused_test` (**90 assertions**; **11 failures**
 against the old decisions, measured by restoring the three pre-051 readings
 inside the new function and running the suite against them — which measures
@@ -896,6 +962,23 @@ verified, and what remains uncertain.
   also refuses a combination whose fields are each legal. Since 028 the
   circuit does it too, and a bound is never computed from a number that has
   already been refused.
+- **A clearance check compares against the dimension it is about, named.**
+  052. Genesis has three — the circuit's `SeparationCheck`, whose threshold
+  `MIN_SEPARATION` **is** `ROAD_WIDTH + SAFETY_MARGIN`; the dungeon's
+  `walkable()`, which clears a body `BODY` metres across and reports that
+  width; and the farm's `_check_reachable()`, which compared against a bare
+  `0.5` where a lane is 6 m, with the lane width sitting unread in the layout
+  it was handed. A threshold and the thing it is a threshold for are one
+  number in one place, and where that number is in the layout it is read from
+  the layout. `tests/layout_key_test.gd` asserts all three.
+- **A key in a layout is read by something, or it is not written.** 052. A
+  layout is an INPUT to the builder and not a record: nothing serialises one,
+  so a key no reader can tell the difference about is dead weight rather than
+  documentation — and it cannot be wrong, which is why nobody notices when
+  what it says stops being true. `tests/layout_key_test.gd` perturbs every
+  key of every world's solved layout and asks whether anything the module
+  does with the layout changes; a world with no fixture and a key with no
+  declared perturbation both fail rather than being skipped.
 - **A readback must not be silent about part of the request**, or it cannot
   catch a dropped clause, which is the only thing it is for. Since 031 that
   is a measured property and not an intention: a readback names every field
@@ -1126,6 +1209,32 @@ verified, and what remains uncertain.
   the blind spot was in the CHECK and not in the code**, and none of the
   three was found by reading the code under test. The question that found
   all three is *what can this check not see?*
+
+- **A green suite had never asked what a CLEARANCE CHECK COMPARES AGAINST**,
+  only whether the thing being checked came out right. Found and fixed in
+  052: `FarmModule._check_reachable()` — the check behind the module's claim
+  that a farm a tractor cannot get round is refused — tested each edge
+  against a bare **0.5 m** where a lane is **6 m**, and the number it should
+  have read was a layout key nothing in the repository read at all. 58 suites
+  passed before and 59 after. Measured over 468 legal farms, **the failure
+  branch is not reachable from any request a player can send**, so nothing a
+  player has ever built changes; what was wrong is that the guard did not
+  guard the thing it names.
+
+  **What that says about the method, and it is the fifth variation.** 029
+  asked one question of every file, 030 every way IN to one check, 031 what
+  the sentence must SAY, 037 the door rather than the field, 040 where the
+  project had already been RIGHT once. This one asked **what a number in a
+  check is a number OF** — and 040's question answered it: two of the three
+  clearance checks in Genesis already read the dimension they are about
+  (`MIN_SEPARATION` **is** `ROAD_WIDTH + SAFETY_MARGIN`; the dungeon clears
+  `BODY`), so the rule existed and one member did not obey it. **And the
+  suite written to catch it passed against the code it was written to catch**
+  — its signature included a generated node name and an instance id, so every
+  comparison was unequal and every assertion vacuous. That is the fourth
+  commit running with the blind spot in the CHECK (041, 042, 043, 052), and
+  the only thing that found it was running the new suite against the old
+  code and reading the output.
 
 - **A green suite had never asked whether every COMMAND the whitelist allows
   reads back**, only whether every field of one command does. Found and fixed
@@ -5581,6 +5690,199 @@ request in the suite **fails** rather than being skipped.
   nothing would catch it. The three options are "Human decision needed"
   17(c), and the records on the owner's disk were not touched.
 
+## 052 — the layout keys nothing reads, and the clearance that named no dimension
+
+**Objective.** The task this file named as the next assistant task: *for
+every world, list the keys its `solve()` writes into the layout, and ask of
+each one WHO READS IT* — with the class question set beside it, *is a layout
+a RECORD of what was decided or an INPUT to the builder?*, because that
+decides whether a key with no reader is dead weight or documentation. 051
+enumerated the three layouts by grep and left one key behind:
+`FarmModule.solve()` writes `"lane_width"` and `grep` across every file in
+the repository finds it in that one line.
+
+**Starting state.** Branch `prototype-002a` at `2b15d17` (051). 58 suites,
+`--all`, **0 with something to look at**, measured in this container before
+anything was changed.
+
+### The class question, answered rather than argued
+
+051 had already checked the half that decides it: **nothing serialises a
+layout.** `WorldStore` saves *"the description that made it"* — `command`,
+`parameters`, `metrics` — and `grep` for `layout` in `world_store.gd` and
+`track_log.gd` finds nothing. So a layout is produced by `solve()`, consumed
+by the module, and does not survive the frame. **It is an INPUT**, a key with
+no consumer is dead weight rather than a record of anything, and of the three
+choices this file named — drop it, give it a reader, label it — *give it a
+reader* is the one the repository's own shape asks for. This file also named
+the reader it would be: `_check_reachable()`, reading the lane width it is
+checking for rather than assuming one.
+
+### It was not assuming one. It was comparing against 0.5
+
+`FarmModule._check_reachable()` is the farm's version of *"the circuit must
+close"*: the module's header says a farm you cannot drive a tractor around is
+refused, and this is the check behind that claim. It decided an edge was
+clear unless a neighbour stood **within half a metre** of it — four `absf()`
+tests against a bare literal with no name on it. `LANE_WIDTH` is **6 m**. The
+test admitted a gap **one twelfth** of the thing its own comment calls a
+lane, and the number it should have compared against was in the layout it was
+handed, read by nothing.
+
+### What it cost, measured headless before anything was changed
+
+**Nothing yet, and this says so rather than dressing it up.** 468 legal farms
+were swept — every zone type, random sizes through the legal range, counts
+from 1 to the maximum of 24, plus every type at both ends of its range —
+and **`solve()` never leaves two zones closer than 6.0000 m**. The failure
+branch is **not reachable from any request a player can send**: the only
+producer of a farm's zone coordinates is the solver that spaces them, and the
+prompt tells the model *"Do not give positions"*. So both thresholds agree on
+every farm that exists, and re-swept after the change, **468 of 468 still
+solve and none is refused**.
+
+What was wrong is that the guard did not guard what it names. A packing
+change that put zones 0.6 m apart would pass it. `limits_test` has asserted
+from the other side that the SOLVER leaves a lane; that the CHECK requires
+one was asserted nowhere, so the two halves could drift apart without a suite
+moving. This is the shape `sweep_test` reports out loud about
+`FAILED_UNWALKABLE`, and the farm's is the second known member.
+
+### The fix is the class, and the project had already been right twice
+
+TRAPS 11, by way of 040's question — *where has this project already been
+RIGHT once?* Genesis has **three** clearance checks, one per world:
+
+| world   | check                        | compares against |
+|---------|------------------------------|------------------|
+| circuit | `SeparationCheck`            | `MIN_SEPARATION`, which **is** `ROAD_WIDTH + SAFETY_MARGIN` |
+| dungeon | `walkable()`                 | `BODY`, the body's own width, reported back in the result |
+| farm    | `_check_reachable()`         | **`0.5`** |
+
+The rule — **a clearance check compares against the dimension it is about** —
+now holds at all three, and all three facts are asserted, so the two that
+were already right cannot quietly stop being right either.
+
+### Implementation
+
+- `scripts/farm_module.gd`. `_check_reachable()` reads
+  `float(layout["lane_width"])` — **no default**, because `solve()` writes the
+  key into every layout it returns and a default would be a claim that a
+  layout without it is legal (TRAPS 45). The four flush tests became **one
+  rule**: an edge has a lane along it when the strip of ground one lane deep
+  outside that edge is clear of every other zone, tested with
+  `Rect2.intersects()`, which also blocks on an **overlap** — the case the
+  four tests could only see when it was within half a metre of exact. A
+  `LANE_TOLERANCE` of a centimetre keeps float error on an exactly-a-lane gap
+  from reading as blocked.
+- The module header. It claimed *"every zone must touch a lane, **and every
+  lane must connect to the gate**"* and **nothing checks the second half**
+  (TRAPS 14, in a comment). It is true of every farm — the zones sit `MARGIN`
+  12 m inside the fence, so the ring between them reaches every lane and the
+  gate is cut in it — and it is true **by construction, not by test**. The
+  header now says so at the width of the check that exists.
+- `README.md`: 58 suites → 59, counted with `ls`.
+
+### The suite, and it could not fail, twice
+
+`tests/layout_key_test.gd`, **64 assertions**. The reader sweep is
+mechanical: worlds from `WorldRegistry.modules()`, keys from the layout
+`solve()` actually returned, and the reader surface found by **reflection**
+over `get_method_list()` — every method of the module taking one `layout`
+argument, so a check added to a world later is part of the surface without
+this file being edited — plus `build()` into a real tree. Each key is
+perturbed and the module asked again. A world with no fixture, and a layout
+key with no declared perturbation, **FAIL rather than being skipped**, so a
+fourth world and a new key are both asked. `min_extent` is asked on a layout
+that has been grown, which is the only kind that carries it.
+
+**And it passed against the pre-052 code it was written to fail against.**
+The signature included the built tree, and two things in it differ between
+two builds of the SAME layout: a node its builder did not name is given a
+generated one with a **global counter** in it (`@MeshInstance3D@57` — the
+farm's fence posts), and a build report that carries a node prints that
+node's **instance id**. Every key therefore "changed something". Found by
+running the suite against the committed module and reading the output, not by
+reading the suite. The signature now uses the class name where a builder left
+a node unnamed, strips instance ids, and **the first thing the sweep asserts
+is that the same layout signs the same way twice** — the check on the check,
+and it is there because this suite failed it.
+
+### Evidence — what was actually run
+
+Godot 4.7.1 headless on Linux, `4.7.1.stable.official.a13da4feb`, in a cloud
+container.
+
+- **Baseline at 051: 58 suites, `--all`, 0 with something to look at.**
+- **After 052: 59 suites, `--all`, 0 with something to look at.** The suite
+  lists were **diffed** rather than eyeballed; the only difference is
+  `layout_key_test`.
+- `layout_key_test` **fails 13 times** against the pre-052 `FarmModule`,
+  measured by checking the committed module back out under the new suite:
+  **two** are the reader sweep naming `lane_width` — plain and grown — as
+  read by nothing, and **eleven** are the lane threshold. It **parses**
+  against the pre-052 code, because it adds no constant to the module it
+  tests and calls no function that did not already exist.
+- Run with `--fixed-fps 60` and without; passes either way (TRAPS 4).
+- `run_tests.bat` needed no edit: all sixteen of its `findstr` patterns were
+  **run against the name** rather than read, and none matches.
+- The farm sweep, 468 legal farms, **before and after**: 468 solve, 0
+  refused, narrowest gap between two zones anywhere **6.0000 m**.
+- The threshold **moves with the layout**: a 3×3 grid of zones 6 m apart is
+  reachable at lane widths 1, 3 and 6 m and **not** at 8, 12 and 24 m, with
+  exactly one zone — the middle, the only one with a neighbour on all four
+  sides — reported each time.
+
+### What the suite asserts, and what it does not (TRAPS 6, TRAPS 14)
+
+Nothing in it asserts a sentence. *"The comment says a lane"* would pass
+against a check comparing to 0.5 and against one comparing to 6. What is
+asserted is verdicts and numbers: that the verdict moves when the lane width
+in the layout moves, that a gap of 0.6, 1, 3 or 5 m is not a 6 m lane, that
+an overlap blocks, that every layout `solve()` returns carries the key the
+check reads, and that no legal farm is refused by the stricter threshold.
+
+It does **not** prove that a key is read for the right reason, or that a
+reader is correct. It proves something downstream can tell the difference,
+which is the one property a dead key does not have.
+
+### Found while measuring it, and written up rather than fixed
+
+**The circuit's `target_turn` is read to one bit.** It reaches the layout and
+the only thing that reads it there is `build()`, for its **sign**:
+quadrupling it builds the identical track to the millimetre, negating it
+flips `direction`. Inside `solve()` the number is the closure target the
+solver aims at; in the layout its size is read by nothing. That is not a
+fault and nothing is proposed about it — it is written down because 049
+predicted *"at least one more dead or wrongly-read field"* and this is what
+that prediction turned up on the circuit, and because **a sweep that only
+asks "did anything change?" would have called it fully read.** The suite
+measures it explicitly instead.
+
+**The farm's fence posts are built as unnamed nodes.** Harmless in the game,
+and recorded because it is what made this commit's own suite vacuous.
+
+### Not verified
+
+- **NO MODEL SENT ANY OF THIS.** Every request in the suite and in the
+  measuring was typed by hand; this harness has no key, and nothing was
+  reproduced from the owner's screen.
+- **Nothing was rendered on a screen.** No farm was looked at. What was
+  compared is layouts, measurements and built trees, headless.
+- **No farm, no record and no saved world changes.** The prompt is
+  byte-identical, so `PROMPT_VERSION` did not move and designs stay
+  comparable across this commit. Nothing on the owner's disk was touched.
+- **The guard is now twelve times stricter and catches nothing today.** That
+  it will catch the thing it names if the packing ever changes is asserted
+  against hand-built layouts, not against a solver that produces one — by
+  construction there is no such solver to run it against.
+- Whether `_check_reachable()` belongs in `post_check()`, where
+  `WorldModule`'s own comment says a check on a solved layout goes and where
+  racing puts its separation check, was **considered and not done**: it would
+  be behaviour-identical today (the farm has no `solve_record()` and no
+  `correction_feedback()`, so the controller treats both failures the same)
+  and it is a move rather than a fix. Left for whoever has a reason.
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -6066,6 +6368,31 @@ changed is what the panel says about which world it is describing:
   by id. No record on your disk was touched. Three options, "Human decision
   needed" 17(c).
 
+052 adds a twenty-first, and it is **one glance and nothing to type**,
+because what changed cannot be reached from a request:
+
+- **Nothing in any farm moves.** `FarmModule._check_reachable()` — the check
+  behind the module's claim that a farm a tractor cannot get round is
+  refused — compared each edge against a bare **0.5 m** where a lane is
+  **6 m**. It now reads the lane width out of the layout it is checking.
+  **Measured both ways over 468 legal farms: the solver never leaves two
+  zones closer than 6.0000 m, so no farm a player can ask for is affected
+  and none is refused.** The guard is twelve times stricter and catches
+  nothing today; what it would catch is a packing change, which is the only
+  reason a guard is kept. Nothing to look at, and said here because a
+  stricter refusal is the kind of change that should never arrive quietly.
+- **One thing found and written up rather than fixed, and it is not a
+  fault:** the circuit's `target_turn` reaches the layout and only its SIGN
+  is read there — quadrupling it builds the identical track, negating it
+  flips `direction`. Worth knowing if a future change wants the closure
+  target after solving: the layout carries the number but nothing downstream
+  depends on its size.
+- And one worth knowing rather than typing: **the farm's fence posts are
+  built as unnamed nodes**, so Godot gives each a generated name with a
+  global counter in it. Harmless in the game; it is written down because it
+  made 052's own new suite pass against the code it was written to catch,
+  and the next person to sign a built tree needs to know.
+
 **Smallest useful assistant task next.** The ledger question (033), the
 container-door question (034), the prompt-bound question (035), the validator
 question (036), the intent-door question (037), the which-field question
@@ -6113,8 +6440,54 @@ all **done**. Candidates, in the order the assistant would take them:
   Prototype 001 stubs are the standing warning about what a whitelist entry
   that builds nothing costs.
 
-- **THE NEXT ONE, AND IT IS THE REMAINING HALF OF 051'S OWN ENTRY: the
-  layout keys nothing reads, enumerated world by world.** 051 answered the
+- **THE NEXT ONE: which refusals can no legal request reach, and does each
+  of those checks catch the thing it names?** This is 052's question asked
+  of a LIST instead of a key, and the list is the refusal categories.
+  `sweep_test` has reported since 005 that **no legal command reaches
+  `FAILED_UNWALKABLE`** — TRAPS 6's own example — and 052 found the second
+  member without looking for it: the farm's reachability branch of
+  `FAILED_LAYOUT` cannot be reached either, because the only producer of a
+  farm's zone coordinates is the `solve()` that leaves a lane between them.
+  **Two of an unknown number, both found by accident.** The method is the
+  one 033 used on the whitelist and 052 used on the layout: enumerate every
+  category a module can return — `grep` for `"category"` and
+  `FAILED_` across `scripts/` — and ask two questions of each, in this
+  order, because the second is only interesting when the first says no:
+  **(1) can any request a player can send produce it?** Sweep the legal
+  space the way `sweep_test` and 052's farm sweep do, and say so either way.
+  **(2) handed an input that DOES violate it, does the check fire?** That is
+  the half `walk_negative` does for the dungeon and 052 added for the farm,
+  and it is the half that tells an unreachable guard apart from a broken
+  one. A category nothing can reach and whose check does not fire when
+  violated is dead code pretending to be a safety net; one that cannot be
+  reached but fires correctly is a guard against a future packing change and
+  should be labelled, not deleted. **Expect the answer to be "unreachable"
+  more often than it looks**, because the solvers in this project construct
+  what the checks then verify, which is the shape both known members have.
+  **And expect the blind spot to be in the check**, which it has now been in
+  041, 042, 043 and 052: in 052 the new suite's own signature could not fail,
+  because it included a generated node name and an instance id. Run every
+  new sweep against the code it is written to catch, and read the output.
+
+- ~~**THE REMAINING HALF OF 051'S OWN ENTRY: the layout keys nothing
+  reads, enumerated world by world.**~~ **DONE IN 052, AND THE CLASS
+  QUESTION IS ANSWERED: A LAYOUT IS AN INPUT.** Nothing serialises one, so a
+  key with no reader is dead weight and not documentation, and the choice
+  HANDOVER named — give `lane_width` a reader — is the one the repository's
+  shape asks for. **The reader was not assuming a lane width; it was
+  comparing against 0.5 m**, one twelfth of the lane, and the number it
+  should have read was the dead key itself. Measured over 468 legal farms
+  before and after: no farm changes, and the failure branch is reachable
+  from nothing a player can send. `layout_key_test` now asks the "who reads
+  this?" question **mechanically** — worlds from `WorldRegistry.modules()`,
+  keys from the layout `solve()` returned, readers found by reflection over
+  `get_method_list()` — so a fourth world or a new key is asked without the
+  file being edited, and a key with no declared perturbation FAILS rather
+  than being skipped. Left struck rather than deleted because the lesson is
+  the one worth carrying: **a key nothing reads cannot be wrong, which is
+  exactly why nobody would notice if it stopped being true** — and a
+  threshold with no name on it is the same fault one layer in. The entry as
+  it stood: 051 answered the
   PANEL half of the entry below and left the FIELD half, which the entry
   itself called the cheapest thing on the list: **for every world, list the
   keys its `solve()` writes into the layout, and ask of each one WHO READS
