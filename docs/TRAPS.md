@@ -1947,6 +1947,101 @@ the feasibility gate's `(s)`, `LoadCheck`, and the output sweep.
 
 ---
 
+## 37. The article had one function, and it could only be reached from one file
+
+**Signature:** *"The key 2 is in the vault."* *"there is no door between the
+room 1 and the room 2."* *"a lamp in the room 1."* Trap 10's signature
+exactly, twenty-one commits after trap 23 was written to end it, in a file
+whose own comment reads *"There is now no other way to name a room in this
+file."*
+
+**Cause.** Trap 23's rule is right and was applied to one noun. The fact -
+*a numbered name is a label and takes no article* - went into
+`Readback.is_label()`, and two functions were made readers of it:
+`Readback.article()`, which writes **a**, and `NpcGoals._place()`, which
+writes **the**.
+
+`_place()` is a ROOM-naming function, `static`, in `npc_goals.gd`. Nothing
+outside that file could call it and nothing in that file called it for
+anything but a room. So **the definite article had no reader at all** for
+the other things Genesis names, and ten renderings wrote it by hand.
+Measured headless before anything was changed:
+
+```
+NpcGoals.readback, carry     "to have the key 2 carried to the vault"
+NpcGoals.delivery_line x4    "The key 2 is in the vault."
+                             "Cannot tell whether the key 2 got to ..."
+NpcGoals.validate_door       "there is no door between the room 1
+                              and the room 2"
+DungeonModule._things_said   "... with a lamp in the room 1"
+DungeonModule._room_said     "entered through a 12 m room 1"
+GameController x2            "the key 2 is not in the world any more"
+```
+
+Six of the ten are in `npc_goals.gd` itself, under that comment. The
+comment was written about ROOMS and was false of rooms too: `validate_door`
+names two of them two hundred lines above it.
+
+**Why no suite saw it, which is the part worth keeping.** `log_022_test` has
+asserted this exact rule on a dungeon readback since 031 - seven assertions,
+green every run - and **every room it asks about has a width and depth of
+`null`**. That is the one branch of `_room_said()` that calls `article()`;
+the branch beside it, the one every measured room takes, wrote *"a"* by
+hand. A correct assertion fed the one input that could not make it fail -
+trap 6, and the third commit running to find the blind spot in the CHECK
+rather than in the code (traps 35 and 36 are the other two).
+
+**And the one function had the fault at its own edge**, as trap 35's did.
+`article()` chose between *a* and *an* **by the first letter**, and trap 10's
+own rule is to write the rule about the thing that makes it true - which is
+the **sound**. A size is rendered in front of a name, so *"a 8 m hall"*, *"a
+11 m vault"* and, through `count_of()`, *"a 80 by 20 m barn"* were reachable
+in every dungeon readback and every farm readback in the project's life.
+
+**Found in the same line, and not about names.** `SectionValidator._forbid`
+writes *"a"* twice in one sentence: *"'radius' is not a uphill setting (a
+uphill has length and grade)"*, while `article()` one call away says *"an
+uphill"*. The validator accepts `uphill` whatever the prompt offers, and the
+prompt not offering a type is not enforcement (trap 19).
+
+**Do:**
+
+- **A function is only a "one reading" if everything that needs it can reach
+  it.** `_place()` was the right rule in the wrong place: `static` in a
+  module file is not the same as available. The fact and both its articles
+  live in `readback.gd` now - `is_label()`, `article()`, `the()` - and
+  `_place()` is a reader of `the()`.
+- **A rule about a word is a rule about every word that sentence names.**
+  Trap 23 asked it of the room and the thing in a dungeon readback and
+  stopped there; the errand's thing, the refusal's two rooms, and the room
+  after *"in"* in the very sentence trap 23 fixed were all the same fact.
+- **Write the rule about the thing that makes it true - and then check the
+  function that was supposed to.** Trap 10 says this and `article()` broke
+  it: the letter is a proxy for the sound, and the proxy fails wherever a
+  number is spoken.
+- **A sweep needs both directions.** Trap 36's lesson, and this suite's own
+  first draft walked into a third costume of it: `_says()` is a containment
+  test, and *"a 12 m room 1"* CONTAINS *"12 m room 1"*, so a check for what
+  should be there cannot see what should not. **Measured: twelve assertions
+  written to catch this fault passed against the pre-043 code** until each
+  one was made to assert the absence of a stray article as well.
+- **A sweep built on a guess about grammar will guess wrong.** The first
+  draft allowed two words between the article and the number and caught *"a
+  track needs 2 to 40 sections"* ten times, because `is_label()` says yes to
+  *"track needs 2"*. One word is the narrower claim and it is the one that
+  is true.
+
+**Not fixed, and said so rather than quietly:** a word beginning with a
+LETTER is still decided by that letter, so *"an hour"* and *"a unicorn"*
+come out wrong. That needs how a word is pronounced, which Genesis does not
+have and will not get from a rule about spelling. The half that is a NUMBER
+is decided by arithmetic, which is why it is the half that is fixed.
+
+Found and fixed in 043. `tests/said_article_test.gd` fails **27 times**
+against the pre-043 code.
+
+---
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
 > A fluent sentence is not evidence that anything was understood.
@@ -1995,3 +2090,6 @@ the feasibility gate's `(s)`, `LoadCheck`, and the output sweep.
 > And a panel that prints a total is doing arithmetic in front of the player,
 > so the pieces it names add up to it or the panel is the thing that is
 > wrong.
+> And the article in front of a name is one fact with two words, so a
+> function only one file can reach is not the one reading it was written to
+> be - and a rule written about the letter is a guess at the sound.

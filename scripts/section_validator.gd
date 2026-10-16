@@ -336,8 +336,14 @@ static func _forbid(section: Dictionary, n: int, t: String, errors: Array[String
 			if section.has(key):
 				# Readback.join_list for the same reason every other list in
 				# Genesis uses it: "radius and angle", not "radius, angle".
-				errors.append("section %d (%s): '%s' is not a %s setting (a %s has %s)" % [
-					n, t, key, t, t,
+				# 043: this wrote "a" twice by hand, so "'radius' is not a
+				# uphill setting (a uphill has length and grade)" - while
+				# Readback.article() one call away says "an uphill".
+				# Measured at every one of SECTION_TYPES: the validator
+				# accepts uphill whatever the prompt offers, and the prompt
+				# not offering a type is not enforcement (TRAPS 19).
+				errors.append("section %d (%s): '%s' is not %s setting (%s has %s)" % [
+					n, t, key, Readback.article(t), Readback.article(t),
 					Readback.join_list(PackedStringArray(mine))])
 
 

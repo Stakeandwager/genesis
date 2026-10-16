@@ -253,14 +253,14 @@ func _order(parameters: Dictionary) -> void:
 		var found := _thing_node(str(goal["thing"]))
 		if found == null:
 			_finish_failed(record, "FAILED_SCENE", [
-				"the %s is not in the world any more" % str(goal["thing"]).replace("_", " ")])
+				NpcGoals.missing_thing_line(str(goal["thing"]), "gone")])
 			return
 		carried = found
 		var local_thing: Vector3 = (standable["node"] as Node3D).to_local(found.global_position)
 		var thing_room := module.room_of(layout, Vector2(local_thing.x, local_thing.z))
 		if thing_room < 0:
 			_finish_failed(record, "FAILED_SCENE", [
-				"the %s is not in any room" % str(goal["thing"]).replace("_", " ")])
+				NpcGoals.missing_thing_line(str(goal["thing"]), "roomless")])
 			return
 		var to_thing := module.route(layout, from_room, thing_room)
 		var onward := module.route(layout, thing_room, int(goal["room"]))
@@ -899,8 +899,13 @@ func _execute_plan(parameters: Dictionary) -> void:
 	lines.append("Plan built in %s: %s" % [Readback.plural(done.size(), "step"), ", ".join(done)])
 	for note in fitted:
 		var n: Dictionary = note
-		lines.append("%s grown to %.0f by %.0f m so the %s fits inside it" % [
-			str(n["world"]).capitalize(), float(n["to_width"]), float(n["to_depth"]), str(n["inner"])])
+		# 043: "the" through the one function that decides it, like every
+		# other name in Genesis. A world's display_name() is never numbered,
+		# so this line is byte-identical today - which is the point: it can
+		# no longer be the one that is wrong when something else is.
+		lines.append("%s grown to %.0f by %.0f m so %s fits inside it" % [
+			str(n["world"]).capitalize(), float(n["to_width"]), float(n["to_depth"]),
+			Readback.the(str(n["inner"]))])
 	log_message.emit("\n".join(lines))
 
 

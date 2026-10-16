@@ -13,7 +13,44 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **042**, the task this file named as the
+- Last commit at the time of writing: **043**, the task this file named as
+  the next assistant task — *the same audit, at the rules 042 did not ask*,
+  taking the one 042 said it would have taken next. The rule asked is
+  **TRAPS 10 and 23's**: *a fact about a WORD lives in one function and
+  every rendering reads it*, put into `Readback.is_label()` and read by
+  `Readback.article()` (which writes **a**) and `NpcGoals._place()` (which
+  writes **the**). The answer is **only where the fault was found, FOR THE
+  THIRD COMMIT RUNNING** — and the reason is sharper than the count.
+  `_place()` is a ROOM-naming function in `npc_goals.gd`, so **the definite
+  article had no reader anything else could reach**, and ten renderings
+  wrote it by hand. Measured headless before anything changed: *"to have
+  the key 2 carried to the vault"*, *"The key 2 is in the vault."*, *"there
+  is no door between the room 1 and the room 2"*, *"a lamp in the room 1"*,
+  *"entered through a 12 m room 1"*, and two sentences inside
+  `GameController`. **Six of the ten are in the one file whose own comment
+  read "There is now no other way to name a room in this file"** — false
+  when it was written, false of rooms, and false for twenty-one commits
+  (TRAPS 14). **Why no suite saw it**: `log_022_test` has asserted this
+  exact rule on a dungeon readback since 031 and every room it asks about
+  has a width and depth of `null` — the one branch of `_room_said()` that
+  calls `article()`, while the branch beside it, the one every measured room
+  takes, wrote *"a"* by hand. TRAPS 6 at a correct assertion, as in 041 and
+  042. **And the one function had the fault at its own edge**: `article()`
+  chose between *a* and *an* **by the first letter**, and the thing that
+  makes an article *an* is the **sound** — so *"a 8 m hall"*, *"a 11 m
+  vault"* and, through `count_of()`, *"a 80 by 20 m barn"* were reachable in
+  every dungeon and every farm readback Genesis has ever produced. **Found
+  in the same line and not about names**: `SectionValidator._forbid` writes
+  *"a"* twice by hand — *"'radius' is not a uphill setting (a uphill has
+  length and grade)"* — at a type the validator accepts. 49 suites passed
+  before and 50 after, `--all` included; the new suite fails **27 times**
+  against the pre-043 code. The prompt is byte-identical (15846 chars,
+  sha256 `c6c2b955...`), so `PROMPT_VERSION` did not move and designs are
+  comparable across this commit. **Not fixed and said so**: a word beginning
+  with a LETTER is still decided by that letter, so *"an hour"* and *"a
+  unicorn"* come out wrong — that needs pronunciation, which Genesis does
+  not have. See 043 below and TRAPS 37.
+- The commit before it: **042**, the task that file named as the
   next assistant task — *the audit 041 began, continued through the rest of
   TRAPS's rules*. The rule asked is **TRAPS 27's**: *a count and the noun
   after it are one fact, read from `Readback.plural()` and never written out
@@ -316,15 +353,16 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-51 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **49 suites**, counted with `ls tests/*.gd` rather than
+52 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **50 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites.
 
-Last full run (042, Godot 4.7.1 on Linux — `4.7.1.stable.official.a13da4feb`
+Last full run (043, Godot 4.7.1 on Linux — `4.7.1.stable.official.a13da4feb`
 — headless, in a cloud container): **suites with something to look at: 0**,
 both without `--all` and with it, `drive_test` and `session_test` included.
-042's new suite is `counted_said_test` (24 failures against the pre-042 code,
+043's new suite is `said_article_test` (27 failures against the pre-043 code);
+042's is `counted_said_test` (24 failures against the pre-042 code,
 61 assertions); 041's is `said_number_test` (146 failures against the pre-041
 code, 312 assertions); 040's is `procedure_test` (38 failures against the pre-040 code);
 039's is `formula_test` (2 failures against the pre-039 prompt);
@@ -339,10 +377,12 @@ does not contain the literal `prompt_test`, `intent_door_test` contains none
 of the physics names, and `claim_field_test`, `formula_test` and
 `procedure_test` match nothing at all, and `said_number_test` contains none of
 them either, and `counted_said_test` contains none of them (not `ledger`, not
-`session`, not `drive`, not `physics`) — so all nine run there without
+`session`, not `drive`, not `physics`), and `said_article_test` contains none
+of them either — so all ten run there without
 `--fixed-fps`, which is what they get here too, and `command_schema_test`,
 `intent_door_test`, `claim_field_test`, `formula_test`, `procedure_test`,
-`said_number_test` and `counted_said_test` were each run both with it and
+`said_number_test`, `counted_said_test` and `said_article_test` were each run
+both with it and
 without and pass either way — checked rather than assumed (TRAPS 4). `physics_test` gained 038's car measurement and is already
 on both the Linux `TIMED` list and the `.bat`'s `physics` pattern, so it
 keeps `--fixed-fps` on both.
@@ -451,6 +491,22 @@ verified, and what remains uncertain.
   is rendered from a value that is checked. The same suite asserts that no
   example names a command the prompt withholds, after 034's own first
   attempt offered `MODIFY_TRACK`. See 034 and TRAPS 26.
+- **A fact about a word lives in one function, at both ends of the noun —
+  and the function has to be reachable from everywhere the fact holds.**
+  034, widened in 043. TRAPS 10 and 23 established this for the article in
+  front of a name and put it in `Readback.is_label()`; 043 found that the
+  DEFINITE article's only reader was `NpcGoals._place()`, a room-naming
+  function in a dungeon file, so nine sentences elsewhere wrote *"the"* by
+  hand — *"The key 2 is in the vault"*, *"there is no door between the room
+  1 and the room 2"*, *"a lamp in the room 1"*. `Readback.the()` is the
+  definite article now and `_place()` is a reader of it, so a room, a thing
+  and a world are all named the same way. The same commit found that
+  `article()` chose between *a* and *an* **by the first letter** when the
+  thing that decides it is the **sound**: *"a 8 m hall"*, *"a 11 m vault"*.
+  The number half is decided by arithmetic in `Readback._takes_an()`; the
+  letter half is unfixed and is a stated limitation rather than a silence.
+  `tests/said_article_test.gd` asserts both directions — a numbered name
+  loses the article AND an ordinary one keeps it. See TRAPS 37.
 - **A fact about a word lives in one function, at both ends of the noun.**
   034. TRAPS 10 and 23 established this for the article in front of a name
   and put it in `Readback.is_label()`. The plural on the end was still
@@ -580,6 +636,24 @@ verified, and what remains uncertain.
   is called from one place is cheaper to find than a fault, and it is the same
   fault waiting in every place that does not call it. That question is the
   next assistant task.
+
+- **A green suite had never asked whether the one function that owns a rule
+  can be REACHED from everywhere the rule holds**, nor whether `article()`'s
+  own choice between *a* and *an* was right. Found and fixed in 043: the
+  definite article's only reader was `NpcGoals._place()`, a static
+  room-naming function in `npc_goals.gd`, so ten renderings wrote *"the"*
+  by hand — six of them in that same file, under a comment claiming there
+  was no other way to name a room in it. 49 suites passed before and 50
+  after. See 043 below and TRAPS 37.
+
+  **What that says about the method, and it is the third time:** 041 found a
+  correct assertion fed the one input that could not make it fail; 042 found
+  a correct sweep whose regex could not match half its class; 043 found a
+  correct assertion that has only ever been given rooms with a `null` size —
+  the one branch of `_room_said()` that was right. **Three commits running,
+  the blind spot was in the CHECK and not in the code**, and none of the
+  three was found by reading the code under test. The question that found
+  all three is *what can this check not see?*
 
 - **A green suite had never asked whether every COMMAND the whitelist allows
   reads back**, only whether every field of one command does. Found and fixed
@@ -3444,6 +3518,235 @@ itself and asserted on its own output, because the sentence lived inline in
   `as_number()` are still unasked.
 - The records on the owner's disk are his and 042 did not touch them.
 
+## 043 — the article had one function, and only one file could reach it
+
+**Objective.** The task this file named as the next assistant task: *the same
+audit, at the rules 042 did not ask*, taking the one 042 named as the one it
+would have taken next. The rule is **TRAPS 10 and 23's**: *a fact about a
+WORD lives in one function and every rendering reads it*. The method, which
+has now worked three times: take the rule, find the FUNCTION the fix
+introduced, grep its call sites, and count them against the places the rule
+holds.
+
+**Starting state.** Branch `prototype-002a` at 042. 49 suites, 0 with
+anything to look at, `--all` included, run before anything was changed.
+
+### The call-site count, and why the answer is sharper than the number
+
+The fact is `Readback.is_label()` — *a numbered name is a label and takes no
+article*. It has two readers: `Readback.article()`, which writes **a**, and
+`NpcGoals._place()`, which writes **the**.
+
+```
+Readback.article()   8 call sites, in 6 files
+NpcGoals._place()   11 call sites, in 1 file, all of them rooms
+```
+
+`_place()` is `static` in `npc_goals.gd`. Nothing outside that file calls it
+and nothing inside it calls it for anything but a room — so **the definite
+article had no reader that anything else could reach**, and every other
+sentence that needed one wrote it out. Grepping every format string in
+`scripts/` for an article in front of a substitution gives fifteen; nine of
+them render a NAME, and **nine of those ten were measurably wrong at a
+numbered name** — the tenth, `GameController`'s *"so the farm fits inside
+it"*, names a world, and a world's `display_name()` is never numbered. A
+second grep, for an article in front of a NUMBER, adds `_room_said()`'s
+measured branch, which no search for `"the %s"` or `"a %s"` can find.
+**Ten wrong renderings in all**, measured headless before anything was
+changed:
+
+```
+NpcGoals.readback, carry        "to have the key 2 carried to the vault"
+NpcGoals.delivery_line, x4      "The key 2 is in the vault."
+                                "The key 2 did not get to the vault. ..."
+                                "Cannot tell whether the key 2 got to ..."
+NpcGoals.validate_door          "there is no door between the room 1
+                                 and the room 2"
+DungeonModule._things_said      "... with a lamp in the room 1"
+DungeonModule._room_said        "entered through a 12 m room 1"
+GameController, x2              "the key 2 is not in the world any more"
+                                "the key 2 is not in any room"
+```
+
+**Six of the ten are in `npc_goals.gd`**, the file carrying this comment
+since 022:
+
+> There is now no other way to name a room in this file.
+
+It was false when it was written and false of rooms, not only of things:
+`validate_door`'s no-door refusal names two rooms by hand two hundred lines
+above it. A claim about the code is checked like any other claim (TRAPS 14);
+this one went twenty-one commits unchecked.
+
+### Why no suite saw it, which is the part worth keeping
+
+`log_022_test` has asserted this exact rule on a dungeon readback since 031
+— seven assertions, green every run — and **every room it asks about has a
+width and depth of `null`**:
+
+```gdscript
+var unsized := d.readback({"rooms": [
+    {"name": "room_1", "width": null, "depth": null},
+    {"name": "chamber_2", "width": null, "depth": null}], "doors": [[1, 2]]})
+```
+
+`null` is the one branch of `_room_said()` that calls `article()`. The branch
+beside it — the one every measured room takes, which is every real room —
+wrote *"a"* by hand. A correct assertion fed the one input that could not
+make it fail: TRAPS 6, exactly as 041 found it and 042 found it. **Three
+commits running the blind spot has been in the check rather than in the
+code.**
+
+### And the one reading had the fault at its own edge
+
+As 041's `number_said()` did. `article()` chose between *a* and *an* **by the
+first letter**:
+
+```gdscript
+return ("an " if word[0] in ["a", "e", "i", "o", "u"] else "a ") + word
+```
+
+TRAPS 10's own rule is to write the rule about the thing that makes it true,
+and the thing that makes an article *an* is the **sound**. A size is rendered
+in front of a name, and a size starts with a digit, so this is reachable in
+**every dungeon readback** through `_room_said()` and **every farm readback**
+through `count_of()`:
+
+```
+"a 8 m hall"      "a 11 m vault"      "a 18 m crypt"
+"a 80 by 20 m barn"                   "a 8 by 8 m barn"
+```
+
+A room is 4 to 40 m and a farm zone 5 to 60 m, so 8, 11, 18 and 80–89 are all
+inside the bounds. `Readback._takes_an()` now decides a leading number by
+arithmetic: a leading 8 is always *eight* something (8, 80, 800, 8000), and
+*eleven* and *eighteen* survive only on a thousands boundary — 11 and 11000
+take *an*, while 110 is "one hundred ten" and 1100 is "one thousand one
+hundred" and both take *a*.
+
+### Found in the same line, and not about names
+
+`SectionValidator._forbid` writes *"a"* twice in one sentence:
+
+```
+section 1 (uphill): 'radius' is not a uphill setting (a uphill has
+length and grade)
+```
+
+while `article()` one call away says *"an uphill"*. Measured at every one of
+`SECTION_TYPES`: the validator accepts `uphill` whatever the prompt offers,
+and the prompt not offering a type is not enforcement (TRAPS 19) — the same
+argument 042 used to call the SECTIONS panel's arithmetic reachable.
+
+### Implementation
+
+- `Readback.the()` is the definite article and a second reader of
+  `is_label()`. `Readback.sentence_start()` raises the first letter only,
+  because Godot's `String.capitalize()` title-cases every word.
+- `Readback._takes_an()` decides a leading number by how it is spoken.
+- `NpcGoals._place()` is a reader of `the()`; `NpcGoals._thing()` is the
+  thing-naming half that had no function at all. All six sentences in that
+  file and the no-door refusal read one of them.
+- `NpcGoals.missing_thing_line()` holds the two sentences that lived inline
+  in `GameController`, a `Node3D` no suite can instantiate — the wall 042 hit
+  at `/worlds` and solved the same way.
+- `DungeonModule._room_said()`'s measured branch and `_things_said()`'s
+  *"in the"* read the one function. `SectionValidator._forbid` reads
+  `article()`. `GameController`'s *"so the %s fits inside it"* reads `the()`
+  and is byte-identical today, which is the point.
+- The false comment in `npc_goals.gd` is corrected in place rather than
+  deleted, and says what was false about it.
+
+### What the suite asserts, and what it does not (TRAPS 6, TRAPS 14)
+
+- Every sentence that names a room or a thing contains that name **exactly**
+  as `Readback.the()` or `article()` renders it — the article they give, and
+  no article they do not. Reword either function and it still passes; write
+  one by hand again and it fails.
+- **Two-directional**, which is 042's lesson applied to this class: the same
+  sentence is produced with a NUMBERED name and with an ORDINARY one, and
+  must drop the article for the first and keep it for the second. A function
+  that returned the bare name always would pass a one-directional check.
+- Which article a leading NUMBER takes, asserted as **facts about English
+  typed into the suite** (8, 11, 18, 80, 800, 11000 take *an*; 110, 180, 1100
+  take *a*) rather than by re-reading the function under test.
+- The chain is asserted at each link: `is_label()` against the fact,
+  `the()`/`article()` against `is_label()`, and every sentence against
+  `the()`/`article()` — plus a sweep that is independent of all three.
+- The section refusal, enumerated from `SectionValidator.SECTION_TYPES` and
+  never typed in, so a type the owner opens is covered without editing it.
+- **NOT asserted.** Nothing here has been near a model; every name was typed
+  by hand. The two `GameController` sentences are reached through the
+  function they were moved into and **not** through `GameController`, so what
+  is checked is the sentence, not that the controller still passes it the
+  right thing. A word beginning with a LETTER is still decided by that
+  letter, so *"an hour"* and *"a unicorn"* come out wrong and **nothing here
+  claims otherwise**.
+
+### And the suite's own first draft walked into the fault it is about
+
+For the second commit running. `_says()` is a containment test, and
+*"a 12 m room 1"* CONTAINS *"12 m room 1"* — so a check for what should be
+there cannot see what should not. **Measured: the suite fails 27 times
+against the pre-043 code with the absence asserted and 15 times without, so
+twelve assertions written to catch this fault passed against it.** Every
+name check is `_named_as()` now, which also refuses a stray article.
+
+Beside it, the sweep's first draft allowed two words between the article and
+the number and caught *"a track needs 2 to 40 sections"* ten times, because
+`is_label()` says yes to *"track needs 2"*. A regex cannot tell a name from a
+verb; one word is the narrower claim and it is the one that is true.
+
+### Evidence — what was actually run
+
+- Godot 4.7.1 (`4.7.1.stable.official.a13da4feb`) headless, Linux, in a cloud
+  container. **Baseline before anything changed: 49 suites, 0 with something
+  to look at**, both without `--all` and with it, `drive_test` and
+  `session_test` included. **After: 50 suites, 0 with something to look at**,
+  `--all` included.
+- `tests/said_article_test.gd` **fails 27 times against the pre-043 code**,
+  measured the way 035–042 measured their own: the five changed scripts
+  reverted to 042 with the suite left in place, and `Readback.the()`,
+  `Readback.sentence_start()` and `NpcGoals.missing_thing_line()` stubbed at
+  their pre-043 wording so the suite parses.
+- **The prompt did not move.** Nothing here touches
+  `AIInterpreter.assembled_prompt()` or any `prompt_section()`: measured at
+  **15846 characters, sha256 `c6c2b9555fa6283c1f4d379c925ba95a15db8000a2d8e3d7d26d4e9010c46e62`**,
+  which is what 041 and 042 recorded, so `PROMPT_VERSION` is still
+  `039-the-arithmetic-it-really-does-1` and designs are comparable across
+  this commit. `prompt_bounds_test` passes, which fails if the fingerprint
+  and the version disagree.
+- `run_tests.bat` needed no edit (TRAPS 4): `said_article_test` matches none
+  of its `findstr` patterns — not `ledger`, not `session`, not `drive`, not
+  `physics`, not `carry_test`, not `explore`, not `walker`, not `behaviour`,
+  not `interference`, not `repeat_test`, not `order_test`, not
+  `false_delivery` — so it runs there without `--fixed-fps` as it does here,
+  and it was run both ways and passes either. README said 49 suites and there
+  are 50, counted with `ls tests/*.gd` less the two tools.
+
+### Not verified
+
+- **No model has sent any of this.** Every name was typed by hand. A model
+  naming rooms `room_1..4` is what 022 actually observed, so the numbered
+  case is not invented — but no numbered name reached these sentences from a
+  live API in this session, because this harness has no key.
+- **Nothing ran on Windows** and nothing ran in the editor. What was measured
+  is the string a function returns, not what a person reads on screen.
+- **The two `GameController` sentences were moved and not driven.**
+  `GameController` is a `Node3D`; the suite reaches
+  `NpcGoals.missing_thing_line()` directly. That the controller still calls
+  it with the right thing and the right reason is read from the diff, not
+  measured.
+- **The letter half of the article is still wrong and is not claimed
+  otherwise.** *"an hour"*, *"a unicorn"*. Reachable: a thing's name comes
+  from the model and can be any word.
+- **`_takes_an()` is faithful over the numbers Genesis renders** — room,
+  zone, section and tool bounds are all under 10000 — and the thousands rule
+  above that is argued from how English is spoken rather than measured
+  against anything.
+- The experiment runner was not run; it drives a live API.
+- The records on the owner's disk are his and 043 did not touch them.
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -3678,28 +3981,57 @@ line that comes back:
   different populations — which is exactly what the version string is for.
   The records are yours and 038 did not touch them.
 
+043 adds a thirteenth, and it is one request and one glance at the line that
+comes back, because what changed is prose and the owner is the editor:
+
+- **Ask for a dungeon and let the model name the rooms.** 022 is the session
+  where it called them `chamber_1..4` rather than `hall` and `vault`, and
+  that is the case this is about. Until 043 a measured numbered room read
+  *"entered through a 12 m room 1"* and an errand in it read *"The key 2 is
+  in the vault."* and *"there is no door between the room 1 and the room 2"*.
+  They should now read *"entered through 12 m room 1"*, *"Key 2 is in the
+  vault."* and *"there is no door between room 1 and room 2"* — the rule the
+  owner already accepted in 022 and 031, applied at the nine doors it had
+  never reached. **The judgement is whether a sentence that OPENS on a bare
+  label reads as a sentence**: *"Key 2 is in the vault."* is the one worth
+  looking at, because it is the only one where the dropped article is the
+  first word. If it reads as clipped, the fix is to rephrase that sentence,
+  not to put the article back — `said_article_test` holds the line either
+  way, because it asserts that the name is rendered as the one function
+  renders it and never what the sentence says around it.
+- And one worth knowing rather than typing: **a room of 8, 11, 18 or 80–89 m
+  now reads *"an 8 m hall"*** instead of *"a 8 m hall"*, in every dungeon and
+  every farm readback. A word beginning with a LETTER is still decided by
+  that letter, so if the model names a thing *"hourglass"* or *"unicorn"* the
+  article will be wrong — that needs pronunciation, Genesis does not have it,
+  and it is recorded rather than quietly left (TRAPS 37).
+
 **Smallest useful assistant task next.** The ledger question (033), the
 container-door question (034), the prompt-bound question (035), the validator
 question (036), the intent-door question (037), the which-field question
 (038), the arithmetic question (039) and the five build-it claims (040) are
 all **done**. Candidates, in the order the assistant would take them:
 
-- **THE NEXT ONE: the same audit, at the rules 042 did not ask.** 042 asked
-  TRAPS 27's rule and found that the answer was *only where the fault was
-  found* for the **second time running**, and that **the sweep guarding it
-  could see only one of the two directions the fault runs in** — a count of
-  one wearing a plural, never a count of two wearing a singular. Two rules
-  asked, two answers of "only where the fault was found", and in both cases
-  the suite that was supposed to hold the line was the thing that had the
-  blind spot. **Expect the third to be the same.** The remaining rules with a
-  function to count, in the order the assistant would take them:
+- **THE NEXT ONE: the same audit, at the rules 043 did not ask — and the
+  prediction above came true, so make it again.** 042 expected the third
+  rule to have the same shape as the first two, and it did. 043 asked
+  TRAPS 10 and 23's and the answer was *only where the fault was found* for
+  the **third time running**, with the blind spot in the CHECK for the third
+  time running: 041's assertion was fed the one input that could not make it
+  fail, 042's sweep could match only one direction of its class, and 043's
+  had only ever been given rooms with a `null` size — the one branch that
+  was right. **Expect the fourth to be the same.** The remaining rules with
+  a function to count, in the order the assistant would take them:
 
-  - **TRAPS 10 and 23 — `Readback.is_label()` and `article()`.** Untouched by
-    042 and the oldest unasked rule: *a numbered name is a label and takes no
-    article*, found in `the`, fixed, found again in `a`. Counted against every
-    place a name is rendered with an article in front of it. `grep` for
-    `"a %s"`, `"the %s"` and `article(` and count the call sites against the
-    renderings. This is the one 042 would have taken next.
+  - ~~**TRAPS 10 and 23 — `Readback.is_label()` and `article()`.**~~
+    **Done in 043**, and the finding was not the call-site count but *why*
+    it was short: the definite article's only reader was `NpcGoals._place()`,
+    a `static` room-naming function in a module file, so nothing else could
+    reach it. **A "one reading" that one file can call is not one reading** —
+    worth carrying to the other rules in this list, because it is a question
+    none of them has been asked. The same commit found `article()` deciding
+    between *a* and *an* by the first LETTER when the sound decides it. Left
+    struck rather than deleted, like 042's entry above.
   - **TRAPS 20 and 30 — `Readback.as_number()`.** Still as 041 left it: *a
     value from the AI is converted through as_number(), never a bare int() or
     float()*, handlers and builders included. 036 fixed four commands. Bare

@@ -212,7 +212,70 @@ static func article(word: String) -> String:
 		return ""
 	if is_label(word):
 		return word
-	return ("an " if word[0] in ["a", "e", "i", "o", "u"] else "a ") + word
+	return ("an " if _takes_an(word) else "a ") + word
+
+
+# The DEFINITE article, and the same reader of the same fact. 022 put this
+# rule in NpcGoals._place(), which is a room-naming function in a dungeon
+# file, so nothing else could reach it: the thing in "The key 2 is in the
+# vault", the two room names in "there is no door between the room 1 and the
+# room 2", and the room in "a lamp in the room 1" each wrote "the" by hand,
+# in the very file whose own comment said there was no other way to name a
+# room in it. "the" and "a" are now two readers of is_label() and nothing
+# else writes either of them.
+#
+# An empty name has nothing to put an article in front of.
+static func the(name: String) -> String:
+	var said := name.replace("_", " ").strip_edges()
+	if said == "":
+		return ""
+	if is_label(said):
+		return said
+	return "the " + said
+
+
+# The same name at the start of a sentence. Godot's String.capitalize()
+# title-cases every word ("The Red Key"), which is not this.
+static func sentence_start(said: String) -> String:
+	if said == "":
+		return ""
+	return said.substr(0, 1).to_upper() + said.substr(1)
+
+
+# --- which article, decided by the SOUND and not by the letter ---
+#
+# TRAPS 10's rule is to write the rule about the thing that makes it true,
+# and the thing that makes an article "an" is the sound the word starts
+# with. This function tested the LETTER, which is the same mistake one level
+# down: "a 8 m hall", "a 11 m vault", "a 80 by 20 m barn" - reachable in
+# every dungeon readback through _room_said() and in every farm readback
+# through count_of(), because a size is rendered in front of the name and a
+# size starts with a digit.
+#
+# A leading 8 is always read "eight" something - 8, 80, 800, 8000 - so the
+# digit alone decides it. "eleven" and "eighteen" survive only on a
+# thousands boundary: 11 and 11000 take "an", while 110 is "one hundred ten"
+# and 1100 is "one thousand one hundred" and both take "a".
+#
+# NOT FIXED, and deliberately: a word beginning with a LETTER is still
+# decided by that letter, so "an hour" and "a unicorn" come out wrong. That
+# needs how a word is pronounced, which Genesis does not have and will not
+# get from a rule about spelling. The half that is a NUMBER is decided by
+# arithmetic, which is why it is the half that is fixed here.
+static func _takes_an(word: String) -> bool:
+	var digits := ""
+	for i in word.length():
+		if not word[i].is_valid_int():
+			break
+		digits += word[i]
+	if digits == "":
+		return word[0] in ["a", "e", "i", "o", "u"]
+	if digits[0] == "8":
+		return true
+	var head := digits.substr(0, 2)
+	if head != "11" and head != "18":
+		return false
+	return (digits.length() - 2) % 3 == 0
 
 
 # "a, b and c" - the list separator people actually read.

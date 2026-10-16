@@ -1462,7 +1462,14 @@ func readback(parameters: Dictionary) -> String:
 func _room_said(name: String, size: float) -> String:
 	if is_nan(size) or size <= 0.0:
 		return Readback.article(name)
-	return "a %.0f m %s" % [size, name]
+	# 043: and the branch beside it wrote "a" by hand, so the rule applied
+	# to the unmeasured half of this one function and not to the measured
+	# half. "a 12 m room 1" for a numbered room, and "a 8 m hall" for a size
+	# that is read aloud starting with a vowel. log_022_test had asserted
+	# the label rule here since 031 and passed, because every room it asked
+	# about had a size of null - a correct assertion fed the one input that
+	# could not make it fail (TRAPS 6).
+	return Readback.article("%.0f m %s" % [size, name])
 
 
 # --- 016: say what is IN it ---
@@ -1503,7 +1510,12 @@ func _things_said(parameters: Dictionary, names: PackedStringArray) -> String:
 					where = i
 					break
 		if where >= 0 and where < names.size():
-			said.append("%s in the %s" % [Readback.article(label), str(names[where])])
+			# 043: the indefinite article here has read is_label() since
+			# 031 and the definite one three words later was written by
+			# hand, so "a lamp in the room 1". One sentence, two articles,
+			# the rule applied to one of them - which is TRAPS 23 again, in
+			# the same line TRAPS 23 fixed.
+			said.append("%s in %s" % [Readback.article(label), Readback.the(str(names[where]))])
 		else:
 			said.append(Readback.article(label))
 	if said.is_empty():

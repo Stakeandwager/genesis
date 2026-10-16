@@ -125,7 +125,7 @@ static func validate(parameters: Dictionary, rooms: Array, things: Array = []) -
 static func readback(parameters: Dictionary) -> String:
 	var goal := str(parameters.get("goal", "")).to_lower().strip_edges()
 	if goal == "carry":
-		var thing := str(parameters.get("thing", "")).replace("_", " ")
+		var thing := _thing(str(parameters.get("thing", "")))
 		var asked_room = parameters.get("room", null)
 		var where := ""
 		if asked_room == null:
@@ -136,7 +136,7 @@ static func readback(parameters: Dictionary) -> String:
 			where = _place(str(asked_room))
 		if thing == "":
 			return "to have something carried to %s" % where
-		return "to have the %s carried to %s" % [thing, where]
+		return "to have %s carried to %s" % [thing, where]
 	if goal != "go_to":
 		return ""
 	var asked = parameters.get("room", null)
@@ -202,8 +202,8 @@ static func validate_door(parameters: Dictionary, rooms: Array, layout: Dictiona
 			exists = true
 	if not exists:
 		return {"ok": false, "errors": [
-			"there is no door between the %s and the %s" % [
-				str(names[int(ends[0])]).replace("_", " "), str(names[int(ends[1])]).replace("_", " ")]],
+			"there is no door between %s and %s" % [
+				_place(str(names[int(ends[0])])), _place(str(names[int(ends[1])]))]],
 			"door": {}}
 
 	return {"ok": true, "errors": [], "door": {
@@ -237,16 +237,37 @@ static func door_line(door: Dictionary, closed: bool, changed: bool) -> String:
 # that makes an article wrong is the NUMBER on the end, not the word in front
 # of it: a numbered name is a label, and labels take no article.
 static func _place(label: String) -> String:
-	var said := label.replace("_", " ").strip_edges()
-	if said == "":
-		return "somewhere"
-	# The same question Readback.article() asks before it writes "a", and
-	# asked in the same place since 031, so the definite and the indefinite
-	# article cannot come to different answers about the same name. Having
-	# the rule in two files is how it was fixed in one of them twice.
-	if Readback.is_label(said):
-		return said
-	return "the " + said
+	var said := Readback.the(label)
+	# A room nobody named is still somewhere; that part is this file's, not
+	# the article's.
+	return "somewhere" if said == "" else said
+
+
+# A THING in a sentence, and the half of this rule that had no function at
+# all. _place() has carried the definite article for a ROOM since 022 and
+# the comment below outcome_line() said there was no other way to name a
+# room in this file - while six sentences here wrote "the" in front of a
+# THING by hand, and one wrote it in front of two ROOMS. Measured on the
+# pre-043 code: "to have the key 2 carried to the vault", "The key 2 is in
+# the vault.", "there is no door between the room 1 and the room 2".
+static func _thing(name: String) -> String:
+	return Readback.the(name)
+
+
+# Why a carry could not start, which lived inline in GameController until
+# 043. GameController is a Node3D and no suite can instantiate one, so these
+# two sentences were the only ones in this family that nothing could read -
+# and both wrote "the" in front of a thing's name by hand. 042 hit the same
+# wall at /worlds and moved the sentence to WorldStore for the same reason:
+# a sentence a suite cannot reach is a sentence nothing holds.
+#
+# "gone" is the thing no longer in the world at all; "roomless" is a thing
+# in the world but outside every room.
+static func missing_thing_line(thing: String, why: String) -> String:
+	var what := _thing(thing)
+	if why == "roomless":
+		return "%s is not in any room" % what
+	return "%s is not in the world any more" % what
 
 
 # What is being attempted, said once the order is accepted. Phrased as an
@@ -264,17 +285,18 @@ static func sent_line(parameters: Dictionary) -> String:
 # What happened to a delivery, measured from where the thing ENDED UP rather
 # than from anything the carrier says.
 static func delivery_line(outcome: String, thing: String, room_name: String, actually: String) -> String:
-	var what := thing.replace("_", " ")
+	var what := _thing(thing)
+	var opener := Readback.sentence_start(what)
 	match outcome:
 		"DELIVERED":
-			return "The %s is in %s." % [what, _place(room_name)]
+			return "%s is in %s." % [opener, _place(room_name)]
 		"NOT_DELIVERED":
 			if actually == "":
-				return "The %s did not get to %s. It is not in any room." % [what, _place(room_name)]
-			return "The %s did not get to %s. It is in %s." % [
-				what, _place(room_name), _place(actually)]
+				return "%s did not get to %s. It is not in any room." % [opener, _place(room_name)]
+			return "%s did not get to %s. It is in %s." % [
+				opener, _place(room_name), _place(actually)]
 		"INCONCLUSIVE":
-			return "Cannot tell whether the %s got to %s: it is not in the world any more." % [
+			return "Cannot tell whether %s got to %s: it is not in the world any more." % [
 				what, _place(room_name)]
 	return "Nothing happened."
 
@@ -282,8 +304,16 @@ static func delivery_line(outcome: String, thing: String, room_name: String, act
 # 022: this said "the room 2" in all four branches, because it put "the" in
 # by hand instead of asking _place. delivery_line had already been fixed the
 # same way once (019); the lesson that did not take was that the article
-# belongs in ONE function, not in every sentence that needs it. There is now
-# no other way to name a room in this file.
+# belongs in ONE function, not in every sentence that needs it.
+#
+# 043: and the sentence this comment used to end with - "There is now no
+# other way to name a room in this file" - was FALSE when it was written and
+# stayed false for twenty-one commits. validate_door's no-door refusal named
+# TWO rooms with a hand-written "the", and six sentences here named a THING
+# the same way, which this comment did not cover because it was written
+# about rooms. A claim about the code is checked like any other claim
+# (TRAPS 14); this one is now true of rooms AND things, and said_article_test
+# is what keeps it true rather than this comment.
 static func outcome_line(outcome: String, room_name: String, metres: float, seconds: float) -> String:
 	var where := _place(room_name)
 	match outcome:
