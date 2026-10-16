@@ -978,42 +978,32 @@ func _build_metrics_panel() -> void:
 	_metric("", "Build a composed track to see its measurements.", METRIC_LABEL_COLOUR)
 
 
+# 002I: each world writes its own panel. This used to guess the world from
+# which keys it measured, which meant a new world either crashed here or
+# showed nothing until main.gd was edited.
+#
+# 051: and what is LEFT here is drawing. Which lines the panel has, which
+# layer of the record each one reads and whether the proposal caveat is owed
+# are all WorldRegistry.panel_lines()'s now, because deciding them here put
+# them behind a RichTextLabel where no suite could reach them - and two of
+# them were wrong. This function maps a role's kind to a colour and prints,
+# so a panel line can be measured without a running UI.
 func _on_track_measured(record: Dictionary) -> void:
 	metrics_log.clear()
-	var valid: bool = record.get("result", "") == "VALID"
+	for line in WorldRegistry.panel_lines(record):
+		var entry: Dictionary = line
+		_metric(str(entry["label"]), str(entry["value"]), _metric_colour(str(entry["kind"])))
 
-	var intent = record.get("intent", {})
-	var style := "not stated"
-	if typeof(intent) == TYPE_DICTIONARY and intent.has("style"):
-		style = str(intent["style"])
-	_metric("REQUESTED", style)
 
-	if valid:
-		_metric("RESULT", "Valid " + str(record.get("world", "circuit")), METRIC_GOOD_COLOUR)
-	else:
-		_metric("RESULT", "FAILED: " + str(record.get("category", "")), METRIC_BAD_COLOUR)
-
-	var m: Dictionary = record.get("metrics", record.get("proposed_metrics", {}))
-	if m.is_empty():
-		var reasons: Array = record.get("reasons", [])
-		if not reasons.is_empty():
-			_metric("REASON", str(reasons[0]), METRIC_BAD_COLOUR)
-		return
-	if not valid:
-		_metric("", "(measurements below describe the proposal, not a built track)", METRIC_LABEL_COLOUR)
-
-	# 002I: each world writes its own panel. This used to guess the world
-	# from which keys it measured, which meant a new world either crashed
-	# here or showed nothing until main.gd was edited.
-	var module := WorldRegistry.find(str(record.get("command", "CREATE_TRACK")))
-	if module:
-		for line in module.metric_lines(m, record):
-			_metric(str((line as Array)[0]), str((line as Array)[1]))
-
-	if not valid:
-		var why: Array = record.get("reasons", [])
-		if not why.is_empty():
-			_metric("REASON", str(why[0]), METRIC_BAD_COLOUR)
+func _metric_colour(kind: String) -> Color:
+	match kind:
+		WorldRegistry.PANEL_GOOD:
+			return METRIC_GOOD_COLOUR
+		WorldRegistry.PANEL_BAD:
+			return METRIC_BAD_COLOUR
+		WorldRegistry.PANEL_LABEL:
+			return METRIC_LABEL_COLOUR
+	return METRIC_VALUE_COLOUR
 
 
 func _metric(label: String, value: String, colour := METRIC_VALUE_COLOUR) -> void:

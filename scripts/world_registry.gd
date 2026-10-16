@@ -312,3 +312,154 @@ static func prompt_sections() -> String:
 		if section != "":
 			parts.append(section)
 	return "\n\n".join(parts)
+
+
+# --- 051: the measurements panel, and the layer each of its lines speaks for ---
+#
+# Every decision the panel makes about a record, in one function a suite can
+# call. All four of them were inline in main.gd's _on_track_measured, which
+# needs a RichTextLabel and a running UI, so NOTHING in tests/ had ever
+# reached them: 047 and 049 between them put every panel line of all three
+# worlds beside the geometry it describes, and the question of WHICH WORLD a
+# panel is describing - which is what main.gd decided, not the modules - had
+# never been asked of anything. HANDOVER named it as the next task and asked
+# two questions of it: does every line stay inside what the caveat covers,
+# and is the caveat shown in every case it is owed. Both had an answer and
+# both answers were no.
+#
+# THE RULE, AND IT IS THE RULE AND NOT THE THREE INSTANCES (TRAPS 11): every
+# line here is a CLAIM, and a claim is read from the field that answers it.
+# Genesis keeps four evidence layers apart in one record and the panel is the
+# place they are printed together, so this is where reading the wrong one
+# costs something:
+#
+#   RESULT is the VALIDATION layer. "Valid dungeon" is a claim about the
+#     PROPOSAL, so `result` is the right field and it keeps it. What it may
+#     NOT do is name a world the record does not have - see below.
+#   The caveat and the REASON are the CONSTRUCTION layer. "not a built
+#     dungeon" is a claim about what was BUILT, and `construction` is the
+#     field that answers it. Both were driven from `result`.
+#
+# A record with no `construction` key is treated as NOT built, because that
+# is the direction PROTOCOL fixes: missing evidence must not become success.
+#
+# MEASURED, headless, before any of this was written:
+#
+#   a plan whose step 2 will not validate, step 1 a dungeon
+#     step 1's record   result=VALID  construction=FAILED  category=FAILED_SCENE
+#     the panel          RESULT "Valid dungeon" in GREEN, all ten measurement
+#                        lines of a dungeon that does not exist, NO caveat and
+#                        NO reason, because both asked `result`.
+#   two worlds in a plan with no "around" (the shape of the prompt's own PLAN
+#   skeleton): the same, twice, and the records are mutated to FAILED after
+#   they are emitted and appended to the ledger a second time under the same
+#   id - which is a separate finding, measured and left for its own commit.
+#
+# AND THE WORLD THAT WAS NAMED WHERE THERE WAS NONE, which is the half a
+# player meets without a plan. `record.get("world", "circuit")` stood a
+# Prototype 001 circuit in for any record whose `world` key is absent, and
+# `world` is written by WorldModule.record_fields() - so it is absent from
+# every record that is not a world. Measured, driven through GameController:
+#
+#   EQUIP a car   result=VALID  no `world` key  panel: "RESULT Valid circuit"
+#   ORDER go_to   result=VALID  no `world` key  panel: "RESULT Valid circuit"
+#   CLEAR_WORLD   result=VALID  no `world` key  panel: "RESULT Valid circuit"
+#
+# The last is the sharpest: a command whose whole job is to take a world
+# AWAY, reported in green as a valid circuit. A record that names no world
+# now names its COMMAND instead, which is the field it does have, and the
+# wording of that is "Human decision needed" 17 rather than a thing this
+# decided.
+#
+# Each line carries the ROLE it plays, so a suite can ask whether the caveat
+# is there without asserting a sentence (TRAPS 6, TRAPS 14): what is being
+# tested is whether the panel says a world was built, not which words it
+# chose to say it in.
+const PANEL_LABEL := "label"
+const PANEL_VALUE := "value"
+const PANEL_GOOD := "good"
+const PANEL_BAD := "bad"
+
+
+static func panel_built(record: Dictionary) -> bool:
+	return str(record.get("construction", "")) == "BUILT"
+
+
+# [{"role", "label", "value", "kind"}], in the order the panel prints them.
+static func panel_lines(record: Dictionary) -> Array:
+	var lines: Array = []
+	# 037's field, read exactly as main.gd read it: the style the model wrote
+	# on the request, or "not stated". An `intent` that is not an object is
+	# not a style, and says so rather than throwing.
+	var intent = record.get("intent", {})
+	var style := "not stated"
+	if typeof(intent) == TYPE_DICTIONARY and (intent as Dictionary).has("style"):
+		style = str((intent as Dictionary)["style"])
+	lines.append(_panel_line("requested", "REQUESTED", style, PANEL_VALUE))
+
+	# RESULT states the VALIDATION layer's verdict, so it is printed only when
+	# the record HAS one. `if valid ... else FAILED` printed a verdict for a
+	# record with no `result` key at all, and there is exactly one of those:
+	# record_load_check()'s. Measured, a load check whose outcome is "SAME"
+	# made the panel read "RESULT  FAILED: " - a successful verification of a
+	# reloaded world, reported in red as a failure, with an empty category
+	# where the reason should be. Pre-existing and identical before 051; what
+	# a load check's panel should say instead is "Human decision needed" 17,
+	# because its record carries an `outcome`, a `said` and a `differences`
+	# list and not one of them has ever been in the panel.
+	if record.has("result"):
+		if str(record["result"]) == "VALID":
+			lines.append(_panel_line("result", "RESULT", "Valid " + _panel_subject(record), PANEL_GOOD))
+		else:
+			lines.append(_panel_line("result", "RESULT", "FAILED: " + str(record.get("category", "")), PANEL_BAD))
+
+	var m: Dictionary = record.get("metrics", record.get("proposed_metrics", {}))
+	var reasons: Array = record.get("reasons", [])
+	if m.is_empty():
+		if not reasons.is_empty():
+			lines.append(_panel_line("reason", "REASON", str(reasons[0]), PANEL_BAD))
+		return lines
+
+	var module := find(str(record.get("command", "")))
+	if not panel_built(record):
+		lines.append(_panel_line("caveat", "",
+			"(measurements below describe the proposal, not a built %s)" % _panel_subject(record),
+			PANEL_LABEL))
+	if module:
+		for line in module.metric_lines(m, record):
+			lines.append(_panel_line("metric", str((line as Array)[0]), str((line as Array)[1]), PANEL_VALUE))
+	if not reasons.is_empty():
+		lines.append(_panel_line("reason", "REASON", str(reasons[0]), PANEL_BAD))
+	return lines
+
+
+# What this record is ABOUT, named by the one function that names a world.
+#
+# NOT from the record's `world` field first, and that is the whole point.
+# RacingModule.record_fields() deliberately omits `world` - racing records
+# have never carried it, record_proposal_test asserts they still don't, and
+# the owner's ledger is comparable across releases BECAUSE it is left alone
+# (TRAPS 14, in the direction that says check before changing). So the old
+# `record.get("world", "circuit")` was not a default that had never fired:
+# it fired on EVERY CIRCUIT, where it happened to be right, which is exactly
+# why nobody saw it standing a circuit in for a car.
+#
+# A world is named through display_name() - 032's rule, and the reason a
+# plan says "a circuit of four sections" and not "a race circuit". So the
+# module names it when there is one, which covers all three worlds without
+# reading a ledger field at all; `world` is the fallback for the one record
+# that sets it and has no module (a PLAN says "plan"); and anything else is
+# named by its `command`, which _new_record() always writes. Nothing is
+# invented and no world's name stands in for a record that has none.
+static func _panel_subject(record: Dictionary) -> String:
+	var module := find(str(record.get("command", "")))
+	if module and module.display_name() != "":
+		return module.display_name()
+	var world := str(record.get("world", ""))
+	if world != "":
+		return world
+	return str(record.get("command", "request"))
+
+
+static func _panel_line(role: String, label: String, value: String, kind: String) -> Dictionary:
+	return {"role": role, "label": label, "value": value, "kind": kind}

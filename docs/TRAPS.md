@@ -2809,7 +2809,88 @@ Genesis should have a door to a question at all is "Human decision needed"
 > draws anything against it, because a point fixed to where the edge USED to
 > be is not on the edge any more — and the number no line of the panel states
 > is the number nothing has ever checked.
+
+---
+
+## 45. The caveat that asked the wrong layer, and the default that was right for the one case it was written for
+
+**Signature:** a plan is refused, and the measurements panel shows a world
+that does not exist — ten lines of it, under **`RESULT  Valid dungeon`** in
+green, with no caveat and no reason. And, with no plan at all: ask for a car,
+and the panel says **`RESULT  Valid circuit`**.
+
+**Cause, and there are three members of one class.** A Genesis record keeps
+four evidence layers apart — interpretation, validation, construction,
+behaviour — and the measurements panel is the one place they are printed
+together. Every line of it is a claim, and each claim has exactly one field
+that answers it. `main.gd` read the wrong one three times:
+
+- **The caveat and the REASON asked `result`.** *"(measurements below
+  describe the proposal, not a built track)"* is a claim about the
+  CONSTRUCTION layer, and `construction` is the field that says BUILT or
+  FAILED. A plan works every world out before it builds any of them, so a
+  plan refused after a step is worked out emits that step's record with
+  `result: VALID` and `construction: FAILED`. Both the caveat and the reason
+  were behind `if not valid`, so both were skipped for exactly the record
+  they existed for. Measured headless: ten measurement lines of an unbuilt
+  dungeon, in green, with neither.
+- **The world's name came from a default.** `record.get("world", "circuit")`
+  — and `world` is written by `WorldModule.record_fields()`, so it is absent
+  from every record that is not a world. `EQUIP`, `ORDER` and `CLEAR_WORLD`
+  all reach the panel with `result: VALID`, and all three read *"Valid
+  circuit"*. The last is the sharpest: the command whose whole job is to take
+  a world away, reported in green as a valid circuit.
+- **A verdict was printed for a record that has none.** `record_load_check()`
+  writes the only emitted record with no `result` key — it carries an
+  `outcome`, because it judges a world that came back off disk rather than a
+  proposal. `if valid … else FAILED` has no case for an absent verdict, so a
+  load check whose outcome is SAME read **`RESULT  FAILED: `** in red, with an
+  empty category where the reason should be.
+
+**Why nothing found it.** Two reasons, and the second is the one worth
+carrying. The first is that all four of the panel's decisions were inline in
+`main.gd._on_track_measured`, which needs a `RichTextLabel` and a running UI:
+the MODULES' lines were reachable and had been measured against built
+geometry since 047 and 049, and the decision about WHICH WORLD THE PANEL IS
+DESCRIBING was reachable from nothing.
+
+The second is that **the default was never dormant.**
+`RacingModule.record_fields()` deliberately omits `world` — racing records
+have never carried it, `record_proposal_test` asserts they still don't, and
+the owner's ledger stays comparable across releases because it is left alone.
+So `"circuit"` fired on EVERY CIRCUIT, where it was right. A default that is
+correct for the one case it was written for cannot be found by reading that
+case, and the reader who checks it against a circuit comes away satisfied.
+
+**Do:**
+
+- A line that states a verdict names the LAYER it speaks for, and reads that
+  layer's field. "Was this built?" is `construction`, whatever `result` says
+  about the proposal. The two disagree on a real, reachable record.
+- A default in a reader is a claim that the field is optional. Ask which
+  records lack it and what the default says about each of them —
+  `record.get("world", "circuit")` was a claim that any record without a
+  world is a circuit, and seven commands falsified it.
+- Test a default against the case it is WRONG for, not the case it was
+  written for. Sweeping `CommandParser.allowed_commands()` found all three
+  members in one pass; reading the circuit found none of them.
+- Absent is not false. A record with no `construction` is not built and a
+  record with no `result` has no verdict to print: missing evidence must not
+  become success, and that holds for a panel line as much as for a delivery.
+- A decision taken inside a UI callback is a decision nothing can measure. If
+  a claim is worth caveating, the caveat belongs in a function a suite can
+  call, and each line carries the ROLE it plays so the suite can ask whether
+  the caveat is there without asserting a sentence.
+
+Found and fixed in 051, in one function: `WorldRegistry.panel_lines()`.
+`tests/panel_refused_test.gd` fails **11 times** against the old decisions.
+
 > And a net widened to catch a paraphrase of a lie will catch the truth that
 > is worded the same way, so the thing to say is what makes the true one
 > true — and the one limitation a prompt leaves out is the one its refusals
 > will have to invent.
+> And a line that states a verdict reads the layer it speaks for, so a caveat
+> about what was BUILT driven from whether the PROPOSAL was valid is skipped
+> for exactly the record it exists for — and a default in a reader is a claim
+> that the field is optional, right for the one case it was written for and
+> unexamined for every other.

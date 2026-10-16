@@ -24,9 +24,51 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **050**, the task this file named as
-  the next assistant task and as **the one that outranks everything else on
-  the list, because it is the OWNER'S**: *there is no way to ASK Genesis
+- Last commit at the time of writing: **051**, the task this file named as
+  the next assistant task: **the panel beside a REFUSAL**. It asked two
+  questions of it — does every line stay inside what the caveat covers, and
+  is the caveat shown in every case it is owed — and **both answers were no**.
+  The caveat *"(measurements below describe the proposal, not a built track)"*
+  is a claim about the CONSTRUCTION layer and was driven by the VALIDATION
+  layer, and the two disagree on a real record: a plan works every world out
+  before it builds any of them, so a plan refused after a step has been
+  worked out emits that step's record with `result: VALID` and
+  `construction: FAILED`. Measured headless, a plan whose step 2 will not
+  validate: **ten measurement lines of a dungeon that does not exist, under
+  `RESULT  Valid dungeon` in green, with no caveat and no reason** — both
+  skipped for exactly the record they exist for. Reachable also by two worlds
+  with no `"around"`, which is the shape of the prompt's own PLAN skeleton.
+  **And the world that was named where there was none**, which needs no plan:
+  `record.get("world", "circuit")` stood a Prototype 001 circuit in for every
+  record with no `world` key, and `world` is absent from every record that is
+  not a world — so `EQUIP` a car, `ORDER` a character and **`CLEAR_WORLD`**
+  all read *"RESULT Valid circuit"*, the last being the command whose whole
+  job is to take a world away. **The default had never been dormant**, which
+  is why reading the circuit would not have found it: racing's record
+  deliberately carries no `world` and `record_proposal_test` asserts it, so
+  `"circuit"` fired on every circuit, where it was right. **And a verdict was
+  printed for a record that has none**: `record_load_check()`'s record has no
+  `result` key, so a load check whose outcome was SAME read
+  `RESULT  FAILED: ` in red with an empty category. The fix is the rule and
+  not the three instances (TRAPS 11): every panel line names the layer it
+  speaks for and reads that layer's field, a record with no `construction` is
+  not built and one with no `result` has no verdict, and a world is named by
+  `display_name()` — so **nothing was added to the circuit's ledger record**,
+  which was checked before it was decided. All four decisions moved out of
+  `main.gd`'s UI callback into `WorldRegistry.panel_lines()`, which is why
+  nothing had ever asked. 57 suites passed before and 58 after, `--all` in
+  both, lists diffed; `panel_refused_test` has 90 assertions and **fails 11
+  times** against the old decisions; six panels were dumped and diffed before
+  and after and **the diff is one line**. **Not verified: no model sent any of
+  this, nothing was rendered on a screen, and the green panel of an unbuilt
+  world was never DWELT on** — another emit follows in the same frame — so
+  that half is latent, while the `EQUIP`/`ORDER`/`CLEAR_WORLD` naming is not.
+  **One fault was found and left for its own commit**: a plan refused in pass
+  3 appends **two ledger lines under the same id**, one `BUILT` and one
+  `FAILED`. See 051 below, TRAPS 45, and "Human decision needed" 17.
+- The commit before it: **050**, the task that file named as
+  the next assistant task and as **the one that outranked everything else on
+  the list, because it was the OWNER'S**: *there is no way to ASK Genesis
   anything*. His machine, 2026-10-16, live key, recorded in `5d36bfb`:
   *"show me the dungeon metrics"* came back a **SHUT** and *"where is the red
   key now"* came back **UNSUPPORTED**. **NO COMMAND WAS ADDED**, as this file
@@ -708,19 +750,28 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-59 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **57 suites**, counted with `ls tests/*.gd` rather than
+60 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **58 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites.
 
-Last full run (050, Godot 4.7.1 on Linux
+Last full run (051, Godot 4.7.1 on Linux
 — `4.7.1.stable.official.a13da4feb` — headless, in a cloud container):
-**suites with something to look at: 0** on all 57, with `--all`, so
+**suites with something to look at: 0** on all 58, with `--all`, so
 `drive_test`, `session_test`, 048's `outgoing_world_test`, 049's
-`panel_geometry_test` and 050's `asked_test` all ran and all passed. The
-baseline at 049, measured the same way in the same container minutes
-earlier, was the same on 56 suites, and the suite lists were **diffed**
-rather than eyeballed: the only difference is `asked_test`.
+`panel_geometry_test`, 050's `asked_test` and 051's `panel_refused_test` all
+ran and all passed. The baseline at 050, measured the same way in the same
+container minutes earlier, was the same on 57 suites, and the suite lists
+were **diffed** rather than eyeballed: the only difference is
+`panel_refused_test`.
+051's new suite is `panel_refused_test` (**90 assertions**; **11 failures**
+against the old decisions, measured by restoring the three pre-051 readings
+inside the new function and running the suite against them — which measures
+the FAULT and not the move. It does NOT parse against the pre-051 code
+entire, because `WorldRegistry.panel_lines()` and `panel_built()` do not
+exist there and the decisions it is about were inline in a UI callback;
+recorded that way rather than stubbed, and the restored-readings measurement
+is what stands in for a pre-code run);
 050's new suite is `asked_test` (**4 failures** against the pre-050 code,
 measured by stashing the two script changes and running it against the
 committed ones: three true refusals of a question flagged as understating
@@ -780,7 +831,12 @@ with `--fixed-fps 60` and without and passes either way (TRAPS 4).
 none of them either — checked by running every one of the `.bat`'s sixteen
 patterns against the name rather than by reading the list — so it runs there
 without `--fixed-fps` too, and it was run both with `--fixed-fps 60` and
-without and passes either way (TRAPS 4). `run_tests.bat` needed no edit. `physics_test` gained 038's car measurement and is already
+without and passes either way (TRAPS 4). `panel_refused_test` matches none of
+them either — checked the same way, by running every one of the `.bat`'s
+sixteen patterns against the name rather than by reading the list — so it
+runs there without `--fixed-fps` too, and it was run both with
+`--fixed-fps 60` and without and passes either way (TRAPS 4).
+`run_tests.bat` needed no edit. `physics_test` gained 038's car measurement and is already
 on both the Linux `TIMED` list and the `.bat`'s `physics` pattern, so it
 keeps `--fixed-fps` on both.
 
@@ -5328,6 +5384,203 @@ word excusing none of the five capabilities that CAN be asked for.
   that string is for. The records on the owner's disk are his and 050 did not
   touch them.
 
+## 051 — the panel beside a REFUSAL, and the layer each of its lines reads
+
+**Objective.** The task this file named as the next assistant task: *the panel
+beside a REFUSAL, and the fields no sentence reads*. 047 and 049 between them
+put every panel line of all three worlds beside the geometry it describes,
+**for a world that was BUILT**. `main.gd:996` draws the panel from a second
+place as well — `record.get("metrics", record.get("proposed_metrics", {}))` —
+so a request that was REFUSED gets a panel too, under the line *"(measurements
+below describe the proposal, not a built track)"*. This file said nothing in
+`tests/` had ever produced that panel, that the caveat is what makes it
+honest, and it asked two questions: **does every line stay inside what that
+caveat covers, and is the caveat shown in every case it is owed?**
+
+### Both had an answer and both answers were no
+
+**THE CAVEAT IS OWED ON A CONSTRUCTION FAULT AND WAS DRIVEN BY VALIDATION.**
+A record keeps Genesis's four evidence layers apart, and the caveat is a
+claim about the CONSTRUCTION layer: *"not a built track"*. It was behind
+`if not valid`, which is the VALIDATION layer. The two disagree on a real
+record: a plan works every world out before it builds any of them, so a plan
+refused after a step has been worked out emits that step's record with
+`result: VALID` — the proposal was fine — and `construction: FAILED` —
+nothing was built. Measured headless before anything changed, a plan whose
+step 2 will not validate, step 1 a dungeon of a hall and a vault:
+
+```
+RESULT      Valid dungeon                   <- in GREEN
+ROOMS       2   doors 1                     <- ten measurement lines of a
+SIZE        42 m by 20 m   (slots 26 m)        dungeon that does not exist
+ROOM FLOOR  544 m2
+...
+                                            <- NO caveat
+                                            <- NO reason either
+```
+
+Both were skipped for exactly the record they exist for. Reachable two ways:
+a step that will not validate, and **two worlds with no `"around"`, which is
+the shape of the prompt's own PLAN skeleton** — `game_controller.gd`'s own
+comment at the pass-3 clear says so.
+
+**AND THE WORLD THAT WAS NAMED WHERE THERE WAS NONE**, which is the half a
+player meets with no plan at all. `record.get("world", "circuit")` — and
+`world` is written by `WorldModule.record_fields()`, so it is absent from
+every record that is not a world. Measured, driven through `GameController`:
+
+```
+EQUIP a car   result=VALID   no `world` key   RESULT  Valid circuit
+ORDER go_to   result=VALID   no `world` key   RESULT  Valid circuit
+CLEAR_WORLD   result=VALID   no `world` key   RESULT  Valid circuit
+```
+
+The last is the sharpest: **the command whose whole job is to take a world
+AWAY, reported in green as a valid circuit.**
+
+**AND THE DEFAULT HAD NEVER BEEN DORMANT, which is why reading the circuit
+would never have found it.** `RacingModule.record_fields()` deliberately
+omits `world` — racing records have never carried it, `record_proposal_test`
+asserts they still don't, and the owner's ledger stays comparable across
+releases because it is left alone. So `"circuit"` fired on **every circuit**,
+where it was right. A default that is correct for the one case it was written
+for is satisfying to check and tells you nothing.
+
+**AND A VERDICT WAS PRINTED FOR A RECORD THAT HAS NONE.**
+`record_load_check()` writes the only emitted record with no `result` key: it
+carries an `outcome`, because it judges a world that came back off disk
+rather than a proposal. `if valid … else FAILED` has no case for an absent
+verdict, so a load check whose outcome was **SAME** read
+**`RESULT  FAILED: `** in red, with an empty category where the reason should
+be. Pre-existing and identical before 051.
+
+### Why nothing had asked, and it is the part worth keeping
+
+All four of the panel's decisions were inline in `main.gd._on_track_measured`,
+which needs a `RichTextLabel` and a running UI. The MODULES' lines were
+reachable — `panel_built_test` and `counted_said_test` call `metric_lines()`,
+and 047 and 049 measured every one of them against built geometry — and the
+decision about **which world the panel is describing** was reachable from
+nothing. The audit that found 049's gate asked *who reads this field?*; this
+one is the same question asked of a reader instead of a field: **who can
+reach this decision?**
+
+### What changed — the rule, not the three instances (TRAPS 11)
+
+`WorldRegistry.panel_lines(record)`, beside `readback()` for the reason
+`readback()` is there (`Readback` is a leaf and composing a panel needs the
+modules). It returns one entry per line, each carrying the **role** it plays,
+and `main.gd` maps a role's kind to a colour and prints. The rule it
+implements:
+
+- **RESULT is the validation layer.** *"Valid dungeon"* is a claim about the
+  PROPOSAL, so it keeps `result` — and is printed **only when the record has
+  one**.
+- **The caveat and the REASON are the construction layer**, so both read
+  `construction`, through the one function `panel_built()`.
+- **A record with no `construction` is not built**, and a record with no
+  `result` has no verdict. Missing evidence must not become success — the
+  direction PROTOCOL fixes, applied to a panel line.
+- **A world is named by `display_name()`**, the one function that names a
+  world (032's rule). That covers all three worlds without reading a ledger
+  field at all, which is what lets the circuit be named correctly while its
+  record still carries no `world`. `world` is the fallback for the one record
+  that sets it and has no module — a `PLAN` says *"plan"* — and anything else
+  is named by its `command`.
+
+**Nothing was added to the circuit's ledger record**, and that was checked
+before it was decided: the omission is deliberate, documented in
+`racing_module.gd` and asserted by `record_proposal_test`. Writing `world`
+there would have been the obvious fix and the wrong one (TRAPS 14, in the
+direction that says grep before changing).
+
+### Evidence — what was actually run
+
+Godot 4.7.1 headless on Linux (`4.7.1.stable.official.a13da4feb`), in a cloud
+container.
+
+- **Baseline at 050: 57 suites, `--all`, suites with something to look at: 0.**
+- **After 051: 58 suites, `--all`, suites with something to look at: 0**, so
+  `drive_test`, `session_test`, `outgoing_world_test`, `panel_geometry_test`,
+  `asked_test` and the new `panel_refused_test` all ran and all passed. The
+  suite lists were **diffed** rather than eyeballed; the only difference is
+  `panel_refused_test`.
+- **`tests/panel_refused_test.gd`: 90 assertions, and it fails 11 times
+  against the old decisions.** Measured by restoring the three pre-051
+  readings inside the new function and running the suite against them, which
+  measures the FAULT rather than the move: the caveat and the reason absent
+  on the unbuilt plan step, four rows of the construction truth table, the
+  absent-`construction` case, `CLEAR_WORLD`, `EQUIP` and `ORDER` all naming a
+  circuit, and the load check's invented verdict.
+- Run with `--fixed-fps 60` and without; passes either way (TRAPS 4).
+- `run_tests.bat` needed no edit: all **sixteen** of its `findstr` patterns
+  were RUN against the name `panel_refused_test` rather than read off the
+  list, and none matches — so it runs there without `--fixed-fps`, which is
+  what it got here.
+- README said 57 suites and there are 58, counted with `ls tests/*.gd` less
+  `replay` and `prompt_test`.
+- **Six panels were dumped line by line before and after — label, value and
+  colour kind — and DIFFED**: a dungeon, a farm and a circuit BUILT, and the
+  same three REFUSED. **The diff is one line.** Every built panel is
+  byte-identical and so are the two refusals that show no measurements; the
+  single difference is the refused circuit's caveat, which now reads *"not a
+  built circuit"* where it read *"not a built track"*, because the name comes
+  from `display_name()`. That is the only sentence 051 changes for a request
+  that could already reach the panel — everything else it changes is a line
+  that was previously absent, or present and false.
+
+### What the suite asserts, and what it does not (TRAPS 6, TRAPS 14)
+
+**Nothing in it asserts a sentence.** *"The caveat says the measurements
+describe a proposal"* tests nothing — it would pass against a panel that
+caveated every record and against one that caveated none. So every line
+carries its ROLE and the suite asks for roles: is there a caveat, is there a
+reason, is there a verdict. About the one thing the panel NAMES it asks
+whether the name belongs to this record, never how the sentence is phrased.
+
+It asserts the fault through the real pipeline and not from a record typed
+into it: the plan is executed by `GameController` and the unbuilt step's
+record is the one `GameController` emitted. The construction verdict is asked
+as a **truth table over both fields**, all eight combinations, so neither can
+be the one that decides by accident. The command sweep is over
+`CommandParser.allowed_commands()` and the worlds over
+`WorldRegistry.modules()`, so a twelfth command or a fourth world is asked
+the same questions without the file being edited — and a new command with no
+request in the suite **fails** rather than being skipped.
+
+### Not verified
+
+- **NO MODEL SENT ANY OF THIS.** Every request in the suite and every request
+  in the measuring was typed by hand; this harness has no key. Nothing was
+  reproduced from the owner's screen.
+- **NOTHING WAS SEEN ON A SCREEN.** The panel was measured through
+  `panel_lines()`, which is what `main.gd` now prints, but no `RichTextLabel`
+  was rendered and no colour was observed. That the roles map to the colours
+  they used to is read from a four-case `match` and asserted only to the
+  extent that every kind is one of the four `main.gd` has a branch for.
+- **The green panel of an unbuilt world was never DWELT on.** In the running
+  game the step records are emitted in the same frame as the plan's own
+  refusal, which clears the panel and redraws it, so a player would have seen
+  the wrong panel flash rather than sit there. 051 fixes it the way 047 fixed
+  a latent fault: the panel is now right whether or not something follows it.
+  **What is NOT latent is the EQUIP, ORDER and CLEAR_WORLD naming**, which is
+  the last thing drawn and sits there until the next request.
+- **A load check's panel now shows one line** — *"REQUESTED not stated"* —
+  and whether that is better than a false red FAILED is not a judgement a
+  test can make. "Human decision needed" 17(a).
+- **No record moved, no ledger field changed and no `prompt_version` moved.**
+  The AI prompt was not touched: 051 adds no capability and denies none, so
+  there is nothing for it to say. An audit by field across this commit is not
+  a before-and-after of anything.
+- **AND ONE FAULT WAS FOUND AND LEFT**, measured and written up rather than
+  fixed: a plan refused in pass 3 appends **two ledger lines under the same
+  id**, one saying `construction: BUILT` and one saying `FAILED`, because the
+  clean-up block mutates the same dictionary and appends it again. Four lines
+  for two worlds, measured. It breaks this project's own rule that history is
+  added to and not rewritten, and `ledger_audit_test` indexes by id so
+  nothing would catch it. The three options are "Human decision needed"
+  17(c), and the records on the owner's disk were not touched.
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -5762,6 +6015,57 @@ model sends back**:
   across this commit is a comparison of two different populations — which is
   what that string is for. The records are yours and 050 did not touch them.
 
+051 adds a twentieth, and it is two requests and one glance, because what
+changed is what the panel says about which world it is describing:
+
+- **Ask for a car, or type `/clear`, and look at the measurements panel.**
+  Before 051 it read **`RESULT  Valid circuit`**, in green, for a car, for an
+  `ORDER` and for `CLEAR_WORLD` — the command whose whole job is to take a
+  world away. It now reads *"Valid EQUIP"*, *"Valid ORDER"*, *"Valid
+  CLEAR_WORLD"*. **The judgement is whether naming the command reads better
+  than naming nothing**, since that is the half a test cannot answer: a raw
+  command name is already in player text elsewhere (*"EQUIP failed:
+  FAILED_SCHEMA"*, *"CREATE_DUNGEON built 3 rooms"*), which is why it was
+  chosen over inventing a phrase. If *"Valid"* alone reads better it is one
+  function — see "Human decision needed" 17(b) — and `panel_refused_test`
+  holds the line either way, because it asserts that no record names a world
+  it is not about and never what the sentence says.
+- **Type a plan whose second step cannot be built** — *"a dungeon with a hall
+  and a vault, inside a farm with a barn 500 m wide"* will do it, or any two
+  worlds with no *"inside"* or *"around"* between them — and **read the panel
+  as the plan is refused.** The panel now admits that the measurements are
+  not of a built world and gives the reason; before 051 a refused plan's step
+  showed ten measurement lines under a green *"Valid dungeon"* with neither.
+  **Worth knowing before you look for it: you probably will not see it
+  change**, because the plan's own refusal is drawn over it in the same frame,
+  so what was there was a flash. It is fixed for the same reason 047's was:
+  the panel should be right whether or not something follows it.
+- **And one worth typing because it used to be a red failure:** `/save` a
+  world, then `/load` it. A load check whose outcome is SAME read
+  **`RESULT  FAILED: `** in red, with an empty category where a reason should
+  be — a successful verification reported as a failure, measured. It now
+  prints no verdict line at all, which claims nothing, and that leaves the
+  panel showing a single line. **What a load check's panel SHOULD say is
+  yours**: the record already carries an `outcome`, a `said` and a
+  `differences` list, and not one of them has ever been in the panel. "Human
+  decision needed" 17(a).
+- And two worth knowing rather than typing. **The panel's title still reads
+  `TRACK MEASUREMENTS`** for a dungeon and a farm — a static label, not a
+  line read from a record, and the same Prototype 001 word the `"circuit"`
+  default was, one layer out; one word, yours. And **a refused CIRCUIT's
+  caveat now reads *"not a built circuit"*** where it read *"not a built
+  track"*, because a world is named by `display_name()`. Six panels were
+  dumped and diffed before and after and that is the **only** line that
+  changed for a request that could already reach the panel.
+- And one that is a FAULT and is being left for you to rule on rather than
+  fixed: **a plan refused when its worlds are placed writes two ledger lines
+  under the same id**, one saying `construction: BUILT` and one saying
+  `FAILED`. Measured, a plan of two dungeons gives four lines for two worlds.
+  It breaks this project's own rule that history is added to and not
+  rewritten, and nothing would catch it because `ledger_audit_test` indexes
+  by id. No record on your disk was touched. Three options, "Human decision
+  needed" 17(c).
+
 **Smallest useful assistant task next.** The ledger question (033), the
 container-door question (034), the prompt-bound question (035), the validator
 question (036), the intent-door question (037), the which-field question
@@ -5809,9 +6113,75 @@ all **done**. Candidates, in the order the assistant would take them:
   Prototype 001 stubs are the standing warning about what a whitelist entry
   that builds nothing costs.
 
-- **THE NEXT ONE, now that 050 has taken the owner's finding as far as it
-  goes without him: the panel beside a REFUSAL, and the fields no sentence
-  reads.** 047 and 049 between them have now put every panel line of all
+- **THE NEXT ONE, AND IT IS THE REMAINING HALF OF 051'S OWN ENTRY: the
+  layout keys nothing reads, enumerated world by world.** 051 answered the
+  PANEL half of the entry below and left the FIELD half, which the entry
+  itself called the cheapest thing on the list: **for every world, list the
+  keys its `solve()` writes into the layout, and ask of each one WHO READS
+  IT.** 049's fault was in the one key of the farm's layout that no panel
+  line states and was found that way. **The enumeration was begun in 051 and
+  is written down here rather than left to be redone**, measured by grep
+  across every `.gd` in the repository:
+
+  | world   | keys `solve()` writes into the layout                      | read by |
+  |---------|------------------------------------------------------------|---------|
+  | dungeon | `rooms`, `doors`, `pitch`, `slots`, `things`               | all five read, several places each |
+  | farm    | `zones`, `fence_min`, `fence_max`, `gate`, `lane_width`    | **`lane_width` by NOTHING** |
+  | circuit | `sections`, `target_turn`                                  | both read |
+
+  plus `min_extent`, which `WorldModule.grown()` adds to a layout a plan has
+  grown and which `grown()` itself reads.
+
+  So **the dungeon's and the circuit's layouts have now been enumerated and
+  every key of both is read**, which is a finding and not a blank: 049's
+  "expect at least one more dead or wrongly-read field" is answered NO for
+  those two. The farm's `lane_width` is the one dead key, written by
+  `FarmModule.solve()` and read by nothing — `grep` finds it in that one
+  line. `LANE_WIDTH` the constant IS used, in `solve()`'s own cursor
+  arithmetic, so the lanes really are 6 m; what nothing reads is the key.
+  **This is 049's gate one step further on: the gate was read from the wrong
+  place, and this is read from nowhere, so there is nothing to be wrong —
+  which is exactly why nobody would notice if the farm's lanes stopped being
+  6 m.**
+
+  **The work left, and it is small.** Three choices for `lane_width` and the
+  thing to do is ask which rule the repository already follows: drop the key
+  (the constant is the source of truth and the layout need not carry it), or
+  give it a reader (a panel line, or `_check_reachable()` reading the lane
+  width it is checking for rather than assuming it), or leave it and label
+  it. **Ask the class and not the member (TRAPS 11): the general question is
+  whether a layout is a RECORD of what was decided or an INPUT to the
+  builder**, because that decides whether a key with no reader is dead weight
+  or documentation — and the answer has to hold for all three worlds. Two
+  things to check before choosing: whether anything serialises a layout (if
+  `/save` or a plan writes one out, a key nothing reads is still in the
+  owner's file), and whether `_check_reachable()`'s 0.5 m flush test and the
+  lane width are two numbers that should be one.
+
+  **One of those two was checked in 051 and the answer is NO: nothing
+  serialises a layout.** `WorldStore` saves *"the description that made it"* —
+  `command`, `parameters` and `metrics` — and its own header says so; `grep`
+  for `layout` in `world_store.gd` and `track_log.gd` finds nothing. So a
+  dead layout key costs nothing in the owner's files today, and whichever way
+  `lane_width` goes, no saved world and no ledger line changes. The
+  `_check_reachable()` question is still open. And `LANE_WIDTH` the constant
+  is read by `limits_test.gd:318`, so the 6 m itself is asserted somewhere
+  even though the key is not.
+
+- ~~**The panel beside a REFUSAL, and the fields no sentence
+  reads.**~~ **THE PANEL HALF IS DONE IN 051, AND BOTH OF THIS ENTRY'S
+  QUESTIONS WERE ANSWERED NO.** The caveat was driven from the validation
+  layer and is a claim about the construction layer, so it was skipped for
+  exactly the record it exists for; and the panel named a world where the
+  record had none, in green, for `EQUIP`, `ORDER` and `CLEAR_WORLD`. The
+  field half is the entry above. Left struck rather than deleted because the
+  lesson is the one worth carrying: **the question that found it is this
+  entry's own question asked of a READER instead of a field — not who reads
+  this, but who can REACH this decision.** All four of the panel's decisions
+  were inline in a UI callback, which is why the modules' lines had been
+  measured against geometry twice and the decision about which world the
+  panel describes had never been asked at all. The entry as it stood:
+  047 and 049 between them have now put every panel line of all
   three worlds beside the geometry it describes, **for a world that was
   BUILT**. `main.gd:996` draws the panel from a second place as well:
 
@@ -7081,3 +7451,95 @@ decision, so it is his and not the assistant's.
     CANNOT list and `RefusalCheck`'s two `no_command_asks` marks.
 
 
+
+17. **Two things 051 found that are sentences and one that is a record, all
+    three measured and none of them an assistant's call.**
+
+    051 fixed the panel's three wrong READINGS — a caveat about what was
+    built driven from whether the proposal was valid, a world's name from a
+    default, and a verdict printed for a record that carries none. What it
+    could not fix is what the panel should SAY in the two places it now says
+    almost nothing, and a fault in the ledger that is yours because the
+    records are.
+
+    - **(a) What a load check's panel should say.** `record_load_check()`
+      writes the only emitted record with no `result` key, because it judges
+      a world that came back off disk rather than a proposal. Before 051 the
+      panel read **`RESULT  FAILED: `** in red with an empty category, for a
+      check whose outcome was SAME — measured. It now prints no verdict line
+      at all, which claims nothing and is the honest minimum, so a `/load`
+      shows a panel of one line: *"REQUESTED not stated"*. **The record
+      carries an `outcome`, a `said` and a `differences` list and not one of
+      them has ever been in the panel.** What it should show — `OUTCOME
+      SAME`, the differences, nothing at all — is a sentence about what
+      Genesis says, so it is yours. The fields are all there; this is not a
+      mechanism.
+    - **(b) How a record with no world should name itself.** A record that
+      is not a world now names its COMMAND: *"Valid EQUIP"*, *"Valid
+      ORDER"*, *"Valid CLEAR_WORLD"*, where all three said *"Valid
+      circuit"*. It is honest and it is clipped, and raw command names are
+      already in player text elsewhere (`_finish_failed` writes *"EQUIP
+      failed: FAILED_SCHEMA"*, and a build says *"CREATE_DUNGEON built 3
+      rooms"*), which is why it was chosen over inventing a phrase. If
+      *"Valid"* alone reads better, or if those commands should say
+      something of their own, the change is one function —
+      `WorldRegistry._panel_subject()` — and `panel_refused_test` holds the
+      line either way, because it asserts that no record names a world it is
+      not about and never what the sentence is.
+    - **And the panel's TITLE still reads `TRACK MEASUREMENTS`** for a
+      dungeon and a farm, in `main.gd._build_metrics_panel()`. It is a static
+      label and not a line read from a record, so 051 left it: it is the
+      same Prototype 001 word the `"circuit"` default was, one layer out.
+      One word, yours to choose.
+
+    - **(c) THE ONE THAT IS A RECORD, AND IT IS A FAULT: a plan refused in
+      pass 3 writes two ledger lines with the SAME id, saying different
+      things.** Found while measuring the panel, measured headless, and left
+      for its own commit because what to do about it is a decision about
+      YOUR evidence file. A plan that fails when its worlds are placed —
+      two worlds with no `"around"`, which is the shape of the prompt's own
+      PLAN skeleton — has already BUILT the earlier steps when it fails. So
+      each of those step records is appended by `_build_world()` with
+      `construction: BUILT`, and then the clean-up block at
+      `game_controller.gd:871` sets `construction: FAILED` **on the same
+      dictionary** and appends it **again**. Measured, a plan of two
+      dungeons:
+
+      ```
+      [3] id=…-5  CREATE_DUNGEON  result=VALID  construction=BUILT
+      [4] id=…-6  CREATE_DUNGEON  result=VALID  construction=BUILT
+      [5] id=…-5  CREATE_DUNGEON  result=VALID  construction=FAILED
+      [6] id=…-6  CREATE_DUNGEON  result=VALID  construction=FAILED
+      [7] id=…-4  PLAN            result=FAILED construction=FAILED
+      ```
+
+      Four lines for two worlds, two ids each used twice, and the two lines
+      under one id contradict each other on the construction layer.
+      `TrackLog.append()` only assigns an id when one is absent, which is
+      why. **This breaks the project's own stated rule** — *"the original
+      interpretation is never edited: history is added to, not rewritten"* —
+      and the convention that goes with it: evidence arriving later gets its
+      OWN id and points back with `about`, which is exactly what
+      `record_load_check()` does. **And nothing would catch it**:
+      `ledger_audit_test` builds its index with `orders[str(record["id"])] =
+      record`, so a duplicate id silently overwrites its twin.
+
+      Both lines are true of a different moment, which is why this is a
+      question and not just a bug:
+
+      - **(i) Leave it.** The second line is the later truth and the file is
+        in time order, so a reader taking the last line for an id gets the
+        right answer. Costs: any index by id is wrong, and the rule above is
+        not what the file does.
+      - **(ii) Give the second append its own id and an `about`**, like a
+        load check. The ledger then says what happened in the shape it
+        already has for later evidence, and an audit by id keeps working.
+        This ADDS records to your file.
+      - **(iii) Don't re-append — emit only.** One line per world, saying
+        `BUILT`, which is what happened before the plan was rolled back and
+        is then wrong about the world the player is left with.
+
+      **Not touched, and no record on your disk was changed.** The direction
+      that would be safe either way is a suite that fails on a duplicate id,
+      which is a guard and not a choice; say which of the three you want and
+      it goes in with the guard.
