@@ -305,7 +305,13 @@ func _plurals() -> void:
 		"largest_room": "hall", "largest_room_area": 144.0,
 		"deepest_room": "vault", "dead_ends": 1, "walk_reached": 1,
 	}
-	said.append(dungeon.summary(metrics, {}))
+	# 046: the summary states the room count from the BUILD REPORT, read off
+	# the tree, and never from the measurement beside it - so the fixture has
+	# to say how many rooms were built. Two, the same as the layout here
+	# measures: this suite is about the plural rule and not about a count
+	# that disagrees, and tests/built_count_test.gd is where the two are
+	# made to disagree on purpose.
+	said.append(dungeon.summary(metrics, {"pieces_built": 2}))
 	for row in dungeon.metric_lines(metrics, {"placement": {
 			"placed": 1, "room_count": 2, "furthest_ring": 1}}):
 		said.append(str((row as Array)[1]))

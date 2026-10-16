@@ -13,7 +13,50 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **045**, the task this file named as
+- Last commit at the time of writing: **046**, the task this file named as
+  the next assistant task and the last entry on its own list of rules with a
+  function left to count: **TRAPS 24's**, *a line that states a count reads it
+  from what was BUILT, not from what was asked*. The answer is **only where
+  the fault was found, for the sixth commit running**, and this file's own
+  starting point was right about where to look and wrong in one of its two
+  spot-checks. `stub_claims_test` has held the rule since 032 for the three
+  Prototype 001 stubs, **which place nothing**; it was never asked of the
+  lines that describe a world that IS built, and those are the lines a player
+  reads. Measured headless before anything changed: the dungeon's summary read
+  `measure(layout)["room_count"]`, the circuit's read `sections.size()` from
+  inside `CircuitBuilder.build()`, the dungeon's build REPORT carried
+  `rooms.size()`, and the farm states no count at all. **This file called
+  racing's clean** on the grounds that the builder "adds a road piece for
+  every section it loops over" — **a count of LOOP ITERATIONS is not a count
+  of placed nodes**, and `_add_collision()` in the same function returns early
+  on an empty face list, so the builder already has one way to place less than
+  it looped over. **And this file said `FarmModule` "overrides neither"
+  `summary()` nor `metric_lines()`: it overrides `metric_lines()` and has
+  since 003** — TRAPS 14 in this handover, found by grepping for the thing the
+  sentence denied. **NOTHING WAS WRONG ON ANY WORLD MEASURED** and 046 claims
+  nothing else: 3 rooms/3 slabs, 2 doors/2 corridors, 8 sections/8 road
+  pieces/8 collision bodies, 3 zones/3 zone nodes. What was missing was the
+  TIE. **Why no suite saw it**: `grep` found `.summary(` in three of the 52
+  suites and **in none of them was a world ever BUILT** — all three hand it a
+  dictionary typed into the suite, and `container_door_test`'s fixture states
+  `loops: 1` where `measure()` would compute 0. That is 044's axis — what
+  LAYER do the fixtures enter? — at the one layer whose answer was *none of
+  them*. **The fix is one reading on the base**: `WorldModule.mark_piece()`
+  marks a piece where it is placed and `WorldModule.placed_pieces()` counts
+  the marked nodes off the tree, so a world added later that forgets reports
+  **0** and fails rather than being quietly correct. **And the fix for false
+  lines nearly introduced one**: the controller `queue_free()`s the old world
+  and builds the new one on the next line, so for part of a frame both are in
+  the tree — **measured, four marked nodes for a two-room dungeon** — and a
+  count that ignored `is_queued_for_deletion()` would have said four rooms.
+  52 suites passed before and 53 after, `--all` included; the new suite fails
+  **4 times** against the pre-046 sentences and does not parse against the
+  pre-046 code at all, recorded that way rather than stubbed. The prompt is
+  byte-identical (15846 chars, sha256 `c6c2b955...`), so `PROMPT_VERSION` did
+  not move. **Not verified: no model sent any of this**, the farm's silence is
+  left as a silence, and the dungeon's DOOR count and the circuit's road
+  LENGTH still come from the layout. See 046 below and TRAPS 40.
+- The commit before it: **045**, the task that file named as
   the next assistant task — *ask every suite in `tests/` what IT cannot see* —
   and **this file's own prediction about where to look was right**: it said to
   expect the readback and the RECORD to be the layers nobody probed, "because
@@ -61,7 +104,7 @@ that the owner has not ruled on.** Do not promote one to the other.
   `c6c2b955...`), so `PROMPT_VERSION` did not move. **Not verified: no model
   sent any of this**, and `attempt` on a farm is latent because a farm cannot
   revise. See 045 below and TRAPS 39.
-- The commit before it: **044**, the task that file named as
+- Before 045: **044**, the task that file named as
   the next assistant task — *the same audit, carrying 043's question to the
   rules 043 did not ask*. The rule asked first was **TRAPS 20 and 30's**: *a
   value from the AI is converted through `Readback.as_number()`, never a bare
@@ -449,15 +492,19 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-53 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **51 suites**, counted with `ls tests/*.gd` rather than
+55 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **53 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites.
 
-Last full run (044, Godot 4.7.1 on Linux — `4.7.1.stable.official.a13da4feb`
+Last full run (046, Godot 4.7.1 on Linux — `4.7.1.stable.official.a13da4feb`
 — headless, in a cloud container): **suites with something to look at: 0**,
 both without `--all` and with it, `drive_test` and `session_test` included.
-044's new suite is `said_position_test` (63 failures against the pre-044
+046's new suite is `built_count_test` (30 assertions; 4 failures against the
+pre-046 sentences, and it does not parse against the pre-046 code at all,
+because the base functions it reads do not exist there);
+045's is `record_proposal_test` (8 failures against the pre-045 code);
+044's is `said_position_test` (63 failures against the pre-044
 code); 043's is `said_article_test` (27 failures against the pre-043 code);
 042's is `counted_said_test` (24 failures against the pre-042 code,
 61 assertions); 041's is `said_number_test` (146 failures against the pre-041
@@ -480,7 +527,7 @@ of them either, and `said_position_test` contains none of them (not
 `--fixed-fps`, which is what they get here too, and `command_schema_test`,
 `intent_door_test`, `claim_field_test`, `formula_test`, `procedure_test`,
 `said_number_test`, `counted_said_test`, `said_article_test` and
-`said_position_test` were each run
+`said_position_test` and `built_count_test` were each run
 both with it and
 without and pass either way — checked rather than assumed (TRAPS 4). `physics_test` gained 038's car measurement and is already
 on both the Linux `TIMED` list and the `.bat`'s `physics` pattern, so it
@@ -590,6 +637,25 @@ verified, and what remains uncertain.
   is rendered from a value that is checked. The same suite asserts that no
   example names a command the prompt withholds, after 034's own first
   attempt offered `MODIFY_TRACK`. See 034 and TRAPS 26.
+- **A count in a sentence about a built world is read off the TREE, and a
+  count read off a tree does not count what is leaving it.** 032 established
+  the first half for functions that place nothing (TRAPS 24) and 046 asked it
+  of the three worlds that build: all three read their counts from the
+  request or the solved layout, and the one HANDOVER had spot-checked as
+  "a count of pieces placed" was a count of **loop iterations**. The reading
+  is `WorldModule.mark_piece()` at the point a piece is placed and
+  `WorldModule.placed_pieces()` over the tree, on the base, so a world added
+  later that forgets reports 0 and fails rather than being quietly right. The
+  second half is not caution: the controller `queue_free()`s the old world and
+  builds the new one on the next line, so **both are in the tree for part of a
+  frame** — measured, four marked nodes for a two-room dungeon — and a count
+  that ignored `is_queued_for_deletion()` would have been a false line
+  introduced by the fix for false lines. The measurement layer keeps its own
+  count (`measure(layout)`, which is what the panel states) and
+  `tests/built_count_test.gd` fails if the two ever part without a sentence
+  moving with them. **And a suite that calls a sentence has not called the
+  thing the sentence is about**: `.summary(` was in three of 52 suites and
+  none of them had ever built a world. See TRAPS 40.
 - **A fact about a word lives in one function, at both ends of the noun —
   and the function has to be reachable from everywhere the fact holds.**
   034, widened in 043. TRAPS 10 and 23 established this for the article in
@@ -4284,6 +4350,234 @@ the QUESTION a suite asked — beside the four axes.
 
 ---
 
+## 046 — the sentence after a build counted the request
+
+**Objective.** The task this file named: **TRAPS 24's rule**, *a line that
+states a count reads it from what was BUILT, not from what was asked*, asked
+of every line that states one. This file called it "the last rule in that list
+with a function left to count" and "the one axis of the construction layer
+nobody has swept", and handed over a starting point marked **READ AND NOT
+MEASURED**. The reading was right about where to look.
+
+**Starting state.** Branch `prototype-002a` at 045, 52 suites, 0 with
+something to look at (measured, `--all` included, before anything changed).
+
+### The class, and the answer
+
+`stub_claims_test` has held TRAPS 24's rule since 032 — **for the three
+Prototype 001 stubs, which place nothing.** Every other line that states a
+count about a world that was built, measured headless before anything changed:
+
+```
+DungeonModule.summary()   plural(metrics["room_count"], "room")
+                          <- measure(layout)["room_count"] <- layout["rooms"].size()
+RacingModule.summary()    plural(report["section_count"], "section")
+                          <- CircuitBuilder.build(): sections.size()
+DungeonModule.build()     report["room_count"]: rooms.size()
+FarmModule                no summary of its own; states no count at all
+```
+
+**Only where the fault was found, for the sixth commit running** — and, as in
+041 through 045, the reason is sharper than the count.
+
+### Two readings in this file were wrong, and one of them is the trap itself
+
+**This file's spot-check called racing clean**, on the grounds that
+`CircuitBuilder` "adds a road piece for every section it loops over, so the
+count is of pieces placed". **A count of LOOP ITERATIONS is not a count of
+placed nodes**, however reliably the two agree — and in the same function
+`_add_collision()` returns early on an empty face list, so the builder already
+has one way to place less than it looped over, and `sections.size()` could not
+have seen it. This is TRAPS 24's own fault one level up: the asked-for number
+wearing a result's clothes, in a reading written down as a clean check.
+
+**And this file said `FarmModule` "overrides neither" `summary()` nor
+`metric_lines()`.** It overrides `metric_lines()`, and has since 003. TRAPS 14
+in this handover, found the way every other instance has been found — by
+grepping for the thing the sentence denied, before relying on it.
+
+### What it cost, which is nothing yet, and the commit says so
+
+Measured headless, one legal world per module, counting the nodes in the tree
+against the number the sentence states:
+
+```
+dungeon  3 rooms stated     3 Room_ slabs placed
+         2 doors stated     2 Corridor_ runs placed
+circuit  8 sections stated  8 Section_ pieces, 8 RoadBody_, 16 Barrier_
+farm     3 zones measured   3 zone nodes placed
+```
+
+**Nothing was wrong on any world measured, and 046 claims nothing else.** This
+is a latent fault. What was missing was not a correct number — it was any tie
+at all between the number in the sentence and the thing it counts, so a
+builder that ever stopped placing a piece would have gone on saying it had.
+
+### Why no suite saw it, which is the part worth keeping
+
+`grep` found `.summary(` in **three of the 52 suites, and in none of them was
+a world ever BUILT.** All three hand the function a dictionary typed into the
+suite:
+
+```
+container_door_test   dungeon.summary({"room_count": 2, "door_count": 1,
+                                       "loops": 1, ...}, {})
+counted_said_test     r.summary(measured, {"section_count": <from metrics>})
+capability_test       BootsTool.summary(spec)   — a tool, not a world
+```
+
+`container_door_test`'s fixture states `loops: 1` for a dungeon of two rooms
+and one door, where `measure()` computes `doors - rooms + 1 = 0`. That is not
+a fault in that suite — it asserts a plural rule and any numbers do — and it
+is the evidence: **the construction layer's sentence had never been put beside
+a construction**, so nothing could have noticed where its numbers came from.
+044's axis (what LAYER do the fixtures enter?) at the one layer whose answer
+was *none of them*, and a sixth entry for the table of blind spots:
+
+| axis | the question to ask a suite |
+|---|---|
+| **values** (041) | are its probes all whole, all mid-range, all the same shape? |
+| **direction** (042) | can its regex match only one of the two ways this goes wrong? |
+| **input shape** (043) | is every fixture taking the one branch that was already right? |
+| **layer** (044) | does every probe enter through the same layer of the four? |
+| **question** (045) | does it ask whether a thing EXISTS where what is IN it was owed? |
+| **was it RUN** (046) | does any fixture ever call the thing the sentence is about? |
+
+### Implementation — the class and not the two sentences (TRAPS 11)
+
+**One reading, on the base**, for the reason TRAPS 10, 23, 37 and 39 each
+produced: a fact written out per world drifts per world.
+
+- `WorldModule.mark_piece(node)` marks a node as one member of the list
+  `pieces()` names, **called by the builder on the node it has just added**.
+- `WorldModule.placed_pieces(root)` counts the marked nodes under `root`, off
+  the tree. The count is of nodes that exist, not of loop iterations.
+- Each world's `build()` report carries `"pieces_built": placed_pieces(root)`:
+  three one-line additions, plus `_slab()`, `_add_slab()` and `_add_building()`
+  returning the node they placed so the loop can mark it.
+- `DungeonModule.summary()` and `RacingModule.summary()` state that count.
+  The counts beside them — `metrics["room_count"]`, `report["section_count"]` —
+  **are left alone**: those are what the world was asked for, which is a
+  different fact and the one the measurement panel states. Collapsing them
+  would be the four layers merged.
+- **A world added later that places its pieces without marking them reports 0
+  and FAILS** `built_count_test`. That direction is deliberate: a world whose
+  sentence nobody has tied to its geometry is more useful loud than quietly
+  correct. This half is **LATENT — there is no fourth world.**
+
+### And the fix for false lines nearly introduced one
+
+`GameController._clear_world_node()` calls `queue_free()` on the old world's
+children and `_build_world()` calls `module.build(world_node, layout)` on the
+next line. `queue_free()` is deferred, so **for part of a frame both worlds
+are in the tree.** Measured rather than reasoned about, in the suite: build a
+two-room dungeon into a node, `queue_free()` its children, build again —
+**four marked nodes stand there.** A count that ignored
+`is_queued_for_deletion()` would have told the player a two-room dungeon had
+four rooms. `placed_pieces()` skips them; `built_count_test` measures the four
+so the reason the check exists cannot be mistaken for caution.
+
+### What the suite asserts, and what it does not (TRAPS 6, TRAPS 14)
+
+`tests/built_count_test.gd`.
+
+**FINDING, and the assertion that fails against the pre-046 sentences:** the
+count a world's summary states follows the TREE. A world is built, one marked
+piece is removed from the tree, the count is read again, and the sentence must
+state the smaller number — and must no longer state the number the layout
+declares. Before 046 the dungeon said *"2 rooms"* with one room standing and
+the circuit said *"8 sections"* with seven.
+
+**GUARD**, enumerated off `WorldRegistry.modules()` and each module's own
+`lists()` and `pieces()`, so a world added later is covered without this file
+being edited: a legal world reports `pieces_built`; that number equals the
+pieces counted independently off the tree by the suite's own walk; it equals
+the size of the list `pieces()` names; and it equals the count the measurement
+layer states. The last of those is the one that catches a silent skip: the two
+layers agree on every world today and the suite fails if they ever part.
+
+**GUARD, and not hypothetical:** the clear-then-build measurement above.
+
+**A request that validates is not a request that builds.** The circuit's
+declared sample is two straights — a legal list, and not a closed circuit, so
+the feasibility gate refuses it. The sample is right for what it is for (the
+example inside a refusal at the list door) and wrong here, so the suite
+declares a buildable `CREATE_TRACK` request keyed on the command, and **a
+module that builds from neither its samples nor a declared row is a FAIL and
+never a skip** — the shape `ledger_said_test` and `record_proposal_test` both
+use.
+
+**NOT ASSERTED.** Nothing here is about WORDING: every sentence in Genesis can
+be rewritten and this stays green, because what is compared is a number in the
+sentence against a number counted off the tree. Nothing asserts that the
+dungeon's DOOR count or the circuit's road LENGTH comes from the tree — they
+do not; see below. Nothing asserts the farm says a count: it says none.
+
+### Evidence — what was actually run
+
+Godot 4.7.1 (`4.7.1.stable.official.a13da4feb`) headless, Linux, in a cloud
+container, downloaded this session.
+
+- **Baseline before anything changed:** 52 suites, **0 with something to look
+  at**.
+- **After:** **53 suites, 0 with something to look at**, `--all` included, so
+  `drive_test` and `session_test` both ran and both passed. The only
+  difference between the two runs' suite lists is the new one (`diff` of the
+  two logs' first columns: one added line).
+- `tests/built_count_test.gd` **FAILS 4 TIMES** against the pre-046 sentences,
+  measured the way 035–045 measured their own: the two `summary()` readings
+  reverted to `metrics["room_count"]` and `report["section_count"]` with
+  everything else in place. Against the pre-046 code entire it does not parse,
+  because `PIECE_META`, `mark_piece()` and `placed_pieces()` do not exist
+  there — **recorded that way rather than stubbed**, so the number means the
+  sentence and not the scaffolding.
+- **THE SENTENCES DID NOT MOVE.** Measured before and after on the same
+  worlds: *"CREATE_DUNGEON built 3 rooms joined by 2 doors, one way round / 52
+  m of corridor, deepest room 2 doors in"* and *"CREATE_TRACK built a closed
+  clockwise circuit: 8 sections, 1114 m of road"*, word for word. Every panel
+  line is byte-identical too.
+- **THE PROMPT DID NOT MOVE:** 15846 characters, sha256
+  `c6c2b9555fa6283c1f4d379c925ba95a15db8000a2d8e3d7d26d4e9010c46e62`,
+  identical to 043's, 044's and 045's and measured again this session, so
+  `PROMPT_VERSION` is unchanged and designs stay comparable.
+- `run_tests.bat` needed no edit (TRAPS 4): `built_count_test` matches none of
+  its `findstr` patterns, checked against the file. README said 52 suites and
+  there are 53, counted with `ls`.
+- Two fixtures were updated, not weakened: `container_door_test` and
+  `counted_said_test` now pass a report carrying `pieces_built`. Without it
+  `summary()` throws on the missing key and `run_tests.sh` reports a SCRIPT
+  ERROR — **so a caller that does not say how many pieces were built is
+  loud**, which is why no default was added.
+
+### Not verified
+
+- **NO MODEL SENT ANY OF THIS.** Every request was built from the modules'
+  own declared samples or typed by hand; this harness has no key.
+- **Nothing ran on Windows and nothing ran in the editor.**
+- **The base's half is latent**: there is no fourth world, so "a world added
+  later reports 0 and fails" is read from the code and from the suite's
+  enumeration, not from a world that exists.
+- **The dungeon's DOOR count is still the layout's**, and so is the circuit's
+  road LENGTH. Both are deliberate and neither is quietly left: a door's
+  construction is a corridor, and whether *"joined by 2 doors"* should count
+  corridors or doors is a question about what the sentence means rather than
+  about where its number comes from. Measured incidentally and worth knowing:
+  with one section removed from the tree the circuit says *"7 sections, 1114 m
+  of road"* — the count follows the tree and the length does not. See "Human
+  decision needed" 13.
+- **The farm still states no count**, because it has no `summary()` of its
+  own. A sentence that states no count cannot state a wrong one, so this is a
+  silence and not a falsehood, and giving the farm a sentence is a change to
+  what Genesis says rather than to whether what it says is true. The tie is in
+  place either way: `FarmModule.build()` reports `pieces_built`, so a farm
+  that one day says what it built starts out tied.
+- **Whether a piece is the right unit** for every world is unasked. A dungeon
+  marks room slabs and not corridors, walls, doors or things; a circuit marks
+  road pieces and not barriers or collision bodies; a farm marks one node per
+  zone and not the roof of a building. Each follows that world's own
+  `pieces()` declaration, which is the list it is built from, and a world
+  whose interesting count is something else would need its own.
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -4583,21 +4877,84 @@ game, so it is a minute with a text editor rather than the editor:
   `proposed_` field; `raw_command` is the field that spans the boundary. The
   records are yours and 045 did not touch them.
 
+046 adds a fifteenth, and it is the shortest one on this list, because the
+sentences did not change:
+
+- **There is nothing to type and nothing to look at.** 046 changed where two
+  numbers come from, not what they say. *"CREATE_DUNGEON built 3 rooms joined
+  by 2 doors"* and *"CREATE_TRACK built a closed clockwise circuit: 8
+  sections"* are word for word what they were, measured before and after, and
+  every panel line is byte-identical. What changed is that those two counts
+  are now read off the built world instead of off the request, so a builder
+  that ever stopped placing a piece would say the smaller number instead of
+  going on saying it had.
+- **The one judgement in 046 is the farm's silence, and it is one line.** A
+  built farm says *"Farm built (full measurements in the panel)"* — it has no
+  sentence of its own, where a dungeon says what it built and a circuit says
+  what it built. A sentence that states no count cannot state a wrong one, so
+  this was left rather than invented: whether a farm should say *"CREATE_FARM
+  built 3 zones inside 320 m of fence"*, or whatever reads best, is a question
+  about what Genesis says and it is yours. The tie is already in place if you
+  want it — `FarmModule.build()` reports the count — so it is a sentence and
+  not a mechanism.
+- And one worth knowing rather than typing: **an audit by field across this
+  commit is not a before-and-after.** No record changed and no ledger field
+  moved; `pieces_built` lives in the build report, which is passed to the
+  sentence and is not written to the ledger. The records on your disk are
+  yours and 046 did not touch them.
+
 **Smallest useful assistant task next.** The ledger question (033), the
 container-door question (034), the prompt-bound question (035), the validator
 question (036), the intent-door question (037), the which-field question
 (038), the arithmetic question (039) and the five build-it claims (040) are
 all **done**. Candidates, in the order the assistant would take them:
 
-- **THE NEXT ONE: TRAPS 24 — a line that states a count reads it from what
-  was BUILT.** It is the last rule in the list below with a function left to
-  count, it is the one axis of the construction layer nobody has swept, and
-  **045 read enough of it to hand over a starting point rather than a
-  hunch.** `stub_claims_test` holds the rule for the three Prototype 001
-  stubs. Every other line that states a count is the class, and 042 touched
-  the WORDING of several of them without asking where their numbers came
-  from. **READ, NOT MEASURED, and the next session should measure it before
-  believing any of it:**
+- **THE NEXT ONE: the sixth axis, applied to `tests/` — which suites never RUN
+  the thing they make a claim about?** 046 added that axis to the table below
+  and found it by accident, in the one layer where the answer was *none of
+  them*. The method is the same as 042's and it is cheap: for every suite,
+  list the functions it calls and ask **where their arguments came from** — a
+  pipeline, or a dictionary typed into the suite. A typed fixture is not wrong
+  (a suite about a plural rule takes any numbers) and it is a place where
+  nothing is tying a sentence to a fact.
+
+  **MEASURED THIS SESSION, by grep, and it is a starting point and not a
+  finding — the next session should read each one before believing any of
+  it:**
+
+  - **`.build(` appears in THREE of the 53 suites**: `built_count_test` (new),
+    `stub_claims_test` (the three Prototype 001 stubs, which place nothing)
+    and `walker_test`. **Two suites in the repository actually place geometry**
+    — and `walker_test` builds a dungeon to walk a body through it, so it is
+    not looking at what was placed either.
+  - **`metric_lines(` appears in TWO**, and the split matters: the farm's
+    panel and the circuit's panel are fed `measure(solved["layout"])` in
+    `counted_said_test`, and **the dungeon's panel — nine lines, the longest
+    in Genesis — is fed a dictionary typed into `container_door_test`**, the
+    one whose `loops: 1` cannot occur. So the dungeon's panel has never been
+    produced from a measured dungeon.
+  - **`.solve(` and `.build(` together appear in TWO**: `built_count_test`
+    and `walker_test`. Everything else that looks at a world's output starts
+    from a layout or a dictionary, not from a request.
+
+  That is the reading. **What it costs is unmeasured** and that is the next
+  session's first job: a panel fed a typed dictionary is a sentence nobody has
+  checked against a world, and 046's whole finding was that such a gap hides
+  where a number comes from. Start at the dungeon's panel, because it is the
+  longest, and ask of each of its nine lines what the number is read from.
+
+- ~~**TRAPS 24 — a line that states a count reads it from what
+  was BUILT.**~~ **ASKED AND ANSWERED IN 046, and the answer was NO** — in
+  three worlds of three, with the rule held only for the stubs that place
+  nothing. Left struck rather than deleted, like 042's through 045's entries,
+  because **two of this list's own readings were wrong and the next reader
+  should see how**: it called racing's count clean because the builder "adds a
+  road piece for every section it loops over" (**a count of loop iterations is
+  not a count of placed nodes**, and `_add_collision()` in the same function
+  can return early), and it said `FarmModule` "overrides neither" `summary()`
+  nor `metric_lines()` when it has overridden `metric_lines()` since 003
+  (TRAPS 14, in this file). The entry as it stood, kept because its last
+  paragraph is the warning that proved true:
 
   - **`summary()` is the construction layer's sentence — the line a player
     reads when a world is built — and `grep` finds `.summary(` in THREE of
@@ -4620,10 +4977,10 @@ all **done**. Candidates, in the order the assistant would take them:
     nodes**, and whether those two can ever disagree is the question that
     was not answered this session.
 
-  **And carry the fifth blind spot with the four axes.** 041, 042, 043, 044
-  and 045 each found a correct check with a blind spot, and **none of the five
-  was found by reading the code under test** — each was found by asking what
-  the CHECK could not see:
+  **And carry the sixth blind spot with the five.** 041 through 046 each found
+  a correct check with a blind spot, and **none of the six was found by
+  reading the code under test** — each was found by asking what the CHECK
+  could not see:
 
   | axis | the question to ask a suite |
   |---|---|
@@ -4632,6 +4989,7 @@ all **done**. Candidates, in the order the assistant would take them:
   | **input shape** (043) | is every fixture taking the one branch that was already right? |
   | **layer** (044) | does every probe enter through the same layer of the four? |
   | **question** (045) | does it ask whether a thing EXISTS where what is IN it was owed? |
+  | **was it RUN** (046) | does any fixture ever call the thing the sentence is about? |
 
   045's was the last one: `ledger_said_test` asks whether every command leaves
   a record and says in its own header that it asks nothing about the contents,
@@ -4699,11 +5057,19 @@ all **done**. Candidates, in the order the assistant would take them:
     `/worlds`, nor `LoadCheck`, nor the feasibility gate's `(s)`. A list in
     this file of three places was a list of six files. Left struck rather than
     deleted for that reason.
-  - **TRAPS 24 — a count read from what was BUILT**: `stub_claims_test` holds
-    it for the three Prototype 001 stubs. Every other line that states a count
-    is the class, and 042 touched the WORDING of several such lines without
-    asking where their numbers came from — which is a different question and
-    is still open.
+  - ~~**TRAPS 24 — a count read from what was BUILT.**~~ **ASKED AND ANSWERED
+    IN 046, and the answer was NO.** `stub_claims_test` held it for the three
+    Prototype 001 stubs, which place nothing; of the three worlds that DO
+    build, none read its count from what it had placed — the dungeon's from
+    `measure(layout)`, the circuit's from `sections.size()` inside the
+    builder, the farm's not stated at all. **Nothing was wrong on any world
+    measured**: the fault was the missing tie, not a wrong number. The fix is
+    `WorldModule.mark_piece()` and `WorldModule.placed_pieces()` on the base,
+    a count read off the tree, and `tests/built_count_test.gd`, which fails 4
+    times against the pre-046 sentences. **With this the list is empty** — and
+    it ends the way it twice warned it would, with two of its own readings
+    wrong (see the struck entry above). The next task is the sixth axis asked
+    of `tests/`, at the top of this list.
   - ~~**TRAPS 25 — a command's record is part of the command.**~~ **ASKED
     AND ANSWERED IN 045, and the answer was NO.** Counted in the whitelist's
     own unit (TRAPS 31): of the ten commands that have anything to propose —
@@ -5534,3 +5900,47 @@ decision, so it is his and not the assistant's.
     `said_position_test`, which checks only that the sentence does not name a
     number the request never carried, because a suite that freezes an unmade
     decision is TRAPS 14.
+
+13. **The farm's silence, and the two numbers 046 left on the layout.** All
+    three come out of 046 and all three are about what a sentence should say
+    rather than about whether what it says is true, which is why they are
+    here and not in the commit.
+
+    **(a) Should a built farm say what it built?** It says *"Farm built (full
+    measurements in the panel)"* — `WorldModule.summary()`, the default —
+    where a dungeon says *"CREATE_DUNGEON built 3 rooms joined by 2 doors"*
+    and a circuit says *"CREATE_TRACK built a closed clockwise circuit: 8
+    sections, 1114 m of road"*. A sentence that states no count cannot state
+    a wrong one, so 046 left it: inventing a sentence for a world is a
+    product decision, and the shape is the one 032 found at
+    `SPAWN_OPPONENTS` — a silence beside two sentences that say something.
+    The mechanism is already there: `FarmModule.build()` reports
+    `pieces_built`, so this is a line of prose and not a change to anything
+    underneath it.
+
+    **(b) Should *"joined by 2 doors"* count doors or corridors?** The room
+    count in that sentence is now read off the tree and the DOOR count is
+    still read off the layout. They cannot disagree today — `_corridor()` is
+    the same function the builder and the measurement both call — and they
+    are not the same claim: a door is a thing in the design, a corridor is
+    the thing that gets placed, and `build()` already skips a door whose legs
+    come back empty (`if not legs.is_empty()`). Tying the sentence to
+    corridors would make it say what a player can walk through; leaving it
+    says what the dungeon was designed with. Also unanswered, and smaller:
+    **a SHUT door is counted as joining two rooms**, because `walkable()`
+    reports blocked doors separately and the summary does not read it.
+
+    **(c) Should *"1114 m of road"* be measured from the road?** It is summed
+    from `TrackGeometry.section_length()` per section — the design's length,
+    not the centreline that was actually sampled and laid. Measured in the
+    suite: with one section removed from the tree the sentence reads *"7
+    sections, 1114 m of road"*, so the count follows the construction and the
+    length does not. Nothing is wrong with the number today; the question is
+    whether a length in a construction sentence should be measured off the
+    built centreline, which `CircuitBuilder` already has in
+    `centreline`.
+
+    **The assistant has not chosen any of the three**, and no suite freezes
+    any of them: `built_count_test` asserts about the piece count and says in
+    its own header that it asserts nothing about doors, length or the farm's
+    sentence, because a suite that freezes an unmade decision is TRAPS 14.

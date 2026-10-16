@@ -376,17 +376,33 @@ func build(root: Node3D, layout: Dictionary) -> Dictionary:
 		if type == "crop":
 			colour = CROP_COLOURS.get(str(z.get("crop", "")), colour)
 
+		# 046: a zone is one of the pieces this world is made of (pieces()),
+		# marked where it is placed so a count stated about a built farm is
+		# taken off the tree and not off the request (TRAPS 24).
 		if type in BUILDINGS:
-			_add_building(root, "%s_%d" % [type, i + 1], from, to, colour, 14.0 if type == "silo" else 9.0)
+			mark_piece(_add_building(root, "%s_%d" % [type, i + 1], from, to, colour, 14.0 if type == "silo" else 9.0))
 		else:
-			_add_slab(root, "%s_%d" % [type, i + 1], from, to, POND_HEIGHT if type == "pond" else ZONE_HEIGHT, colour)
+			mark_piece(_add_slab(root, "%s_%d" % [type, i + 1], from, to, POND_HEIGHT if type == "pond" else ZONE_HEIGHT, colour))
 
 	_add_fence(root, fence_min, fence_max, layout["gate"])
 
-	return {"bounds_min": fence_min, "bounds_max": fence_max}
+	# 046: the farm states no count in its summary - it has no summary of its
+	# own and takes WorldModule's, which says "Farm built". A sentence that
+	# states no count cannot state a wrong one, so this is recorded and not
+	# a falsehood (HANDOVER 046, "Human decision needed"). The count is
+	# reported anyway, because the tie belongs to the module and not to the
+	# sentence: tests/built_count_test.gd holds every world to it, so a farm
+	# that one day says what it built starts out tied.
+	return {
+		"bounds_min": fence_min,
+		"bounds_max": fence_max,
+		"pieces_built": placed_pieces(root),
+	}
 
 
-func _add_slab(root: Node3D, name_for: String, from: Vector2, to: Vector2, height: float, colour: Color) -> void:
+# 046: returns the node it placed, so the zone loop can mark it as one of
+# this world's pieces. Every other caller ignores the return value.
+func _add_slab(root: Node3D, name_for: String, from: Vector2, to: Vector2, height: float, colour: Color) -> MeshInstance3D:
 	var slab := MeshInstance3D.new()
 	var box := BoxMesh.new()
 	box.size = Vector3(to.x - from.x, height, to.y - from.y)
@@ -395,9 +411,12 @@ func _add_slab(root: Node3D, name_for: String, from: Vector2, to: Vector2, heigh
 	slab.material_override = _material(colour)
 	slab.position = Vector3((from.x + to.x) * 0.5, height * 0.5, (from.y + to.y) * 0.5)
 	root.add_child(slab)
+	return slab
 
 
-func _add_building(root: Node3D, name_for: String, from: Vector2, to: Vector2, colour: Color, height: float) -> void:
+# 046: returns the WALLS, which is the one node per building - the roof is a
+# second node on the same zone and counting it would make a barn two pieces.
+func _add_building(root: Node3D, name_for: String, from: Vector2, to: Vector2, colour: Color, height: float) -> MeshInstance3D:
 	var walls := MeshInstance3D.new()
 	var box := BoxMesh.new()
 	box.size = Vector3(to.x - from.x, height, to.y - from.y)
@@ -414,6 +433,7 @@ func _add_building(root: Node3D, name_for: String, from: Vector2, to: Vector2, c
 	roof.material_override = _material(colour.darkened(0.35))
 	roof.position = Vector3((from.x + to.x) * 0.5, PAD_HEIGHT + height + 0.4, (from.y + to.y) * 0.5)
 	root.add_child(roof)
+	return walls
 
 
 func _add_fence(root: Node3D, from: Vector2, to: Vector2, gate: Vector2) -> void:

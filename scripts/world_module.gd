@@ -179,6 +179,57 @@ func build(_root: Node3D, _layout: Dictionary) -> Dictionary:
 	return {"bounds_min": Vector2.ZERO, "bounds_max": Vector2.ZERO}
 
 
+# --- 046: the one reading of what a build actually PLACED ---
+#
+# TRAPS 24's rule is that a line stating a count reads the count from what
+# was BUILT and never from what was asked. `stub_claims_test` has held it
+# since 032 for the three Prototype 001 stubs, which place nothing. Every
+# other line that states a count read its number from the SOLVED LAYOUT -
+# `measure(layout)` for the dungeon, `sections.size()` inside
+# `CircuitBuilder.build()` for the circuit - so no sentence a player reads
+# after a world is built was tied to the nodes that world is made of.
+#
+# These two functions are that tie, and they are one reading rather than
+# three, for the reason TRAPS 10, 23 and 39 each produced: a fact written out
+# per world drifts per world.
+#
+# A piece is marked where it is placed, by the builder that places it, and
+# counted off the TREE afterwards. The count is therefore of nodes that
+# exist, not of loop iterations - which is the whole distinction, because a
+# builder that returns early, skips a degenerate piece, or places a visible
+# mesh with no body is exactly what a count of its own input cannot see.
+#
+# A world added later that places its pieces WITHOUT marking them reports 0
+# and fails tests/built_count_test.gd. That direction is deliberate: a
+# missing mark is a world whose sentence nobody has tied to its geometry, and
+# a silent 0 is better than a number read from the request (TRAPS 24).
+const PIECE_META := "world_piece"
+
+
+# Mark a node as one of this world's pieces - one member of the list
+# pieces() names. Called by the builder, on the node it has just added.
+static func mark_piece(node: Node) -> void:
+	node.set_meta(PIECE_META, true)
+
+
+# How many of this world's pieces stand under root, read from the tree.
+#
+# Nodes already queued for deletion are NOT counted. This is not
+# hypothetical: GameController._clear_world_node() calls queue_free() on the
+# old world's children and build() adds the new world's children in the same
+# frame, so between those two lines world_node holds both. A count that
+# included the outgoing world would be larger than the world it describes.
+static func placed_pieces(root: Node) -> int:
+	if root == null:
+		return 0
+	var n := 0
+	if root.has_meta(PIECE_META) and not root.is_queued_for_deletion():
+		n += 1
+	for child in root.get_children():
+		n += placed_pieces(child)
+	return n
+
+
 func route(_layout: Dictionary, _from_room: int, _to_room: int) -> Array:
 	return []
 

@@ -242,12 +242,19 @@ func build(root: Node3D, layout: Dictionary) -> Dictionary:
 	return report
 
 
+# 046: the section count here is read off the BUILT tree
+# (report["pieces_built"], counted by CircuitBuilder once every road piece is
+# a child of it), not off the list the builder was handed. The two agree on
+# every circuit measured so far; they are still two different facts, and
+# TRAPS 24's rule is that the sentence after a build states the first one.
+# tests/built_count_test.gd fails if a builder ever places fewer pieces than
+# its layout declares and this sentence does not shrink with it.
 func summary(_metrics: Dictionary, report: Dictionary) -> String:
 	# MIN_SECTIONS is 2, so this count cannot be one today. Read through the
 	# one function anyway: a bound that moves must not take a sentence with
 	# it (042, TRAPS 36).
 	return "CREATE_TRACK built a closed %s circuit: %s, %.0f m of road\n(full measurements in the metrics panel)" % [
-		report["direction"], Readback.plural(int(report["section_count"]), "section"),
+		report["direction"], Readback.plural(int(report["pieces_built"]), "section"),
 		report["total_length"]]
 
 

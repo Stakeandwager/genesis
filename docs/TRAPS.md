@@ -2271,6 +2271,106 @@ against the pre-045 code.
 
 ---
 
+## 40. The sentence after a build counted the request, and no suite had ever built anything
+
+**Signature:** a world is built and the player is told what was made - *"
+CREATE_DUNGEON built 3 rooms joined by 2 doors"*, *"CREATE_TRACK built a
+closed clockwise circuit: 8 sections"*. Every number in both sentences is
+correct. Not one of them was read from the world. 53 suites are green,
+including the one written for exactly this rule.
+
+**Cause.** Trap 24's rule - *a line that states a count reads the count from
+what was BUILT, not from what was asked* - came out of 032, where two
+Prototype 001 builders had lost their bodies and kept their success strings.
+`tests/stub_claims_test.gd` has held it ever since **for the three functions
+that place nothing**. It was never asked of the lines that describe a world
+that IS built, and those are the lines a player actually reads.
+
+Read, then measured, before anything was changed:
+
+```
+DungeonModule.summary()   plural(metrics["room_count"], "room")
+                          <- measure(layout)["room_count"] <- layout["rooms"].size()
+RacingModule.summary()    plural(report["section_count"], "section")
+                          <- CircuitBuilder.build(): sections.size()
+DungeonModule.build()     report["room_count"]: rooms.size()
+FarmModule                no summary of its own; states no count at all
+```
+
+**HANDOVER had spot-checked racing and called it clean**, on the grounds that
+`CircuitBuilder` "adds a road piece for every section it loops over, so the
+count is of pieces placed". That reading is the trap in miniature: a count of
+LOOP ITERATIONS is not a count of placed nodes, however reliably the two have
+agreed. In the same function, `_add_collision()` returns early on an empty
+face list - so the builder already has one way to place less than it looped
+over, and the count could not have seen it.
+
+**And the same entry said `FarmModule` "overrides neither" `summary()` nor
+`metric_lines()`.** It overrides `metric_lines()`, and has since 003 - trap 14
+in this project's own handover, found the way every other instance of it was
+found, by grepping for the thing the sentence denied.
+
+**Nothing was wrong on any world measured.** Three rooms, three slabs; two
+doors, two corridors; eight sections, eight road pieces and eight collision
+bodies; three zones, three zone nodes. This is a latent fault and the fix
+claims nothing else: what was missing was not a correct number, it was any
+tie at all between the number and the thing it counts.
+
+**Why no suite saw it, which is the part worth keeping.** `grep` found
+`.summary(` in **three of the 52 suites, and in none of them was a world ever
+BUILT.** All three hand the function a dictionary typed into the suite.
+`container_door_test`'s fixture states `loops: 1` for a dungeon of two rooms
+and one door, where `measure()` computes `doors - rooms + 1 = 0`: not a fault
+in that suite, which asserts a plural rule and takes any numbers, and exactly
+the evidence - the construction layer's sentence had never been put beside a
+construction, so nothing could have noticed where its numbers came from. This
+is 044's axis (**what LAYER do the fixtures enter?**) at the one layer whose
+answer was *none of them*, and the sixth commit running to find a correct
+check with a blind spot.
+
+**Do:**
+
+- **A count in a sentence about a built world is read off the TREE.** Not off
+  the request, not off the solved layout, and not off the builder's own loop.
+  `WorldModule.mark_piece()` marks a piece where it is placed and
+  `WorldModule.placed_pieces()` counts the marked nodes under a node - one
+  reading on the base, for the reason traps 10, 23, 37 and 39 each produced:
+  a fact written out per world drifts per world. A world added later that
+  places its pieces without marking them reports **0** and fails
+  `tests/built_count_test.gd`, which is the right direction: a world whose
+  sentence nobody has tied to its geometry should be loud, not quietly
+  correct.
+- **A count read off a tree does not count what is leaving it.**
+  `GameController._clear_world_node()` calls `queue_free()` on the old
+  world's children and `module.build(world_node, layout)` adds the new
+  world's on the next line, so for part of a frame both worlds are in the
+  tree. **Measured, not reasoned about:** build a two-room dungeon into a
+  node, `queue_free()` its children, build again, and **four** marked nodes
+  stand there. A count that ignored `is_queued_for_deletion()` would have told
+  the player a two-room dungeon had four rooms - a false line introduced BY
+  the fix for false lines. `placed_pieces()` skips them and
+  `built_count_test` measures the four.
+- **The measurement layer and the construction layer are two facts and both
+  are kept.** `measure(layout)` still answers *how many rooms were worked
+  out*, which is what the metrics panel states; the build report answers *how
+  many rooms stand there*, which is what the summary states. They agree on
+  every world today and `built_count_test` fails if they ever part without a
+  sentence moving with them. Collapsing them into one number would be the
+  four layers merged, which is the one thing they are kept apart for.
+- **A suite that calls a sentence has not called the thing the sentence is
+  about.** The question to ask a fixture is not only which inputs it uses
+  (041), which direction it can match (042), which branch it takes (043),
+  which layer it enters (044) or which question it asks (045), but **whether
+  the thing under test was ever RUN**. Three suites called `summary()` with a
+  hand-typed dictionary and a fourth was needed to build a world.
+
+Found and fixed in 046. `tests/built_count_test.gd` fails **4 times** against
+the pre-046 sentences, and does not parse at all against the pre-046 code,
+because the base functions it reads do not exist there - recorded that way
+rather than stubbed, so the number means the sentence and not the scaffolding.
+
+---
+
 
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
@@ -2331,3 +2431,7 @@ against the pre-045 code.
 > read - and a fact every member of a class needs, written out in the members
 > instead of the base, is already missing from the one that did not write it.
 > And a suite that asked whether a thing EXISTS has not asked what is in it.
+> And a sentence about what was built counts the thing it is standing in front
+> of, not the list that asked for it - so a count off a loop is a count off
+> the request wearing a result's clothes, and a suite that calls the sentence
+> without building the world has measured the wording and nothing else.

@@ -199,7 +199,13 @@ func _the_circuits_panel() -> void:
 			_check(false, "%s: the panel has no SECTIONS line" % what)
 			continue
 		_remember([panel])
+		# 046: the sentence states the section count from the BUILD REPORT,
+		# counted off the built tree, so the fixture carries that count too.
+		# It is the measured one here because this suite is about the plural
+		# rule; tests/built_count_test.gd is where the two are made to
+		# disagree on purpose.
 		_remember([r.summary(metrics, {"direction": "clockwise",
+			"pieces_built": metrics["section_count"],
 			"section_count": metrics["section_count"], "total_length": metrics["total_length"]})])
 
 		# Every count present is said the way the one reading says it.

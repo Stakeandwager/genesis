@@ -1075,8 +1075,11 @@ func build(root: Node3D, layout: Dictionary) -> Dictionary:
 	for i in rooms.size():
 		var rect: Rect2 = rects[i]
 		var colour := ENTRANCE_COLOUR if i == 0 else ROOM_COLOUR
-		_slab(root, "Room_%d_%s" % [i + 1, str(rooms[i]["name"])],
-			rect.position, rect.position + rect.size, ROOM_HEIGHT, colour)
+		# 046: a room is one of the pieces this world is made of (pieces()),
+		# marked where it is placed so the count in the sentence a player
+		# reads can be taken off the tree rather than off the request.
+		mark_piece(_slab(root, "Room_%d_%s" % [i + 1, str(rooms[i]["name"])],
+			rect.position, rect.position + rect.size, ROOM_HEIGHT, colour))
 		_walls(root, i + 1, rect, openings[i])
 
 	# 018: a shut door is a slab across the corridor, with collision, so it
@@ -1112,6 +1115,11 @@ func build(root: Node3D, layout: Dictionary) -> Dictionary:
 	return {
 		"bounds_min": low,
 		"bounds_max": high,
+		# 046: read off the tree, after the slabs are in it. "room_count"
+		# beside it is the LAYOUT's count and is left alone: it is what the
+		# dungeon was asked for, which is a different fact and is what the
+		# measurement panel states. summary() states this one (TRAPS 24).
+		"pieces_built": placed_pieces(root),
 		"room_count": rooms.size(),
 		"door_count": (layout["doors"] as Array).size(),
 		"standable": {
@@ -1284,7 +1292,10 @@ func _thing(root: Node3D, label: String, at: Vector2) -> Node3D:
 	return mesh
 
 
-func _slab(root: Node3D, name_for: String, from: Vector2, to: Vector2, height: float, colour: Color) -> void:
+# 046: returns the node it placed, so the room loop can mark it as one of
+# this world's pieces. Nothing else changed; every existing caller ignores
+# the return value.
+func _slab(root: Node3D, name_for: String, from: Vector2, to: Vector2, height: float, colour: Color) -> MeshInstance3D:
 	var slab := MeshInstance3D.new()
 	var box := BoxMesh.new()
 	box.size = Vector3(to.x - from.x, height, to.y - from.y)
@@ -1294,6 +1305,7 @@ func _slab(root: Node3D, name_for: String, from: Vector2, to: Vector2, height: f
 	slab.position = Vector3((from.x + to.x) * 0.5, height * 0.5, (from.y + to.y) * 0.5)
 	_solid(slab, box.size)
 	root.add_child(slab)
+	return slab
 
 
 # --- 007: the dungeon becomes solid ---
@@ -1562,14 +1574,24 @@ func metric_lines(metrics: Dictionary, record: Dictionary) -> Array:
 	return lines
 
 
-func summary(metrics: Dictionary, _report: Dictionary) -> String:
+# 046: the room count in this sentence is the one read off the built tree
+# (report["pieces_built"]), not the one measured off the solved layout. The
+# two agree on every dungeon measured so far and they are still two different
+# facts: this is the CONSTRUCTION layer saying what it made, where
+# metric_lines() below is the MEASUREMENT layer saying what was worked out.
+# A builder that ever placed fewer rooms than the layout declares would now
+# say the smaller number here, which is TRAPS 24's rule, and
+# tests/built_count_test.gd fails if the two ever part without a sentence
+# changing with them.
+func summary(metrics: Dictionary, report: Dictionary) -> String:
+	var built := int(report["pieces_built"])
 	var loops := int(metrics["loops"])
 	# 034: "%d way%s" and "%d loop%s" above were the plural rule written out
 	# by hand, correctly, in two places - which is how the three counts
 	# beside them came to be written out by hand incorrectly. One reading.
 	var ways := "one way round" if loops <= 0 else "%s back round" % Readback.plural(loops, "way")
 	return "CREATE_DUNGEON built %s joined by %s, %s\n%.0f m of corridor, deepest room %s in\n(full measurements in the metrics panel)" % [
-		Readback.plural(int(metrics["room_count"]), "room"),
+		Readback.plural(built, "room"),
 		Readback.plural(int(metrics["door_count"]), "door"), ways,
 		float(metrics["corridor_length"]),
 		Readback.plural(int(metrics["deepest"]), "door")]

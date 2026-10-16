@@ -70,6 +70,12 @@ func build(sections: Array, mark_end := true) -> Dictionary:
 	start_heading = 0.0
 
 	last_report = {
+		# 046: read off the tree once every piece is in it. "section_count"
+		# beside it is the size of the list this function was GIVEN, which is
+		# a different fact: it is what the circuit was asked for, and it is
+		# what the measurement panel states. RacingModule.summary() states
+		# this one (TRAPS 24).
+		"pieces_built": WorldModule.placed_pieces(self),
 		"section_count": sections.size(),
 		"total_length": total_length,
 		"end_position": pos,
@@ -126,6 +132,10 @@ func _add_road_piece(index: int, type: String, samples: Array) -> void:
 	piece.mesh = st.commit()
 	piece.material_override = _material(SECTION_COLOURS.get(type, Color(0.1, 0.1, 0.12)))
 	add_child(piece)
+	# 046: a section is one of the pieces a circuit is made of (pieces()),
+	# marked here so the count in the sentence a player reads comes off the
+	# tree and not off the list this function was handed (TRAPS 24).
+	WorldModule.mark_piece(piece)
 	_add_collision("RoadBody_%d" % (index + 1), faces)
 
 
