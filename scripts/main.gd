@@ -630,7 +630,9 @@ func _list_worlds() -> void:
 		_record("/worlds", "No saved worlds yet. Build something and type /save a-name.", "unsupported")
 		return
 	var reply := "Saved worlds (%d): %s\nType /load followed by a name. Files are in %s" % [names.size(), ", ".join(names), WorldStore.location()]
-	status_label.text = "%d saved worlds: %s" % [names.size(), ", ".join(names)]
+	# 042: "1 saved worlds" the first time anybody types /save then /worlds.
+	# The sentence is WorldStore's, so a suite can read it (TRAPS 36).
+	status_label.text = WorldStore.saved_line(names)
 	_record("/worlds", reply, "ok")
 
 

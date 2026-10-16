@@ -65,7 +65,9 @@ static func check(sections: Array) -> Dictionary:
 	if straights < MIN_STRAIGHTS or turns < MIN_TURNS:
 		result["category"] = "FAILED_DEGREES_OF_FREEDOM"
 		result["reasons"] = [
-			"composition has %d straight(s) and %d corner(s)" % [straights, turns],
+			# 042: "(s)" is the plural written out by hand, wearing a dodge.
+			"composition has %s and %s" % [
+				Readback.plural(straights, "straight"), Readback.plural(turns, "corner")],
 			"closing a circuit needs at least %d straights and %d corners" % [MIN_STRAIGHTS, MIN_TURNS],
 		]
 		return result

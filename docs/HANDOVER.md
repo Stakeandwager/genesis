@@ -13,7 +13,38 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **041**, the question this file named as
+- Last commit at the time of writing: **042**, the task this file named as the
+  next assistant task — *the audit 041 began, continued through the rest of
+  TRAPS's rules*. The rule asked is **TRAPS 27's**: *a count and the noun
+  after it are one fact, read from `Readback.plural()` and never written out
+  again*. The answer is **only where the fault was found, AND THE SWEEP THAT
+  GUARDS IT CAN ONLY SEE HALF THE FAULT.** `container_door_test` does what
+  TRAPS 27 asked and sweeps the OUTPUT, with the regex `\b1 [a-z]+s\b` —
+  which is a count of ONE wearing a plural, and is blind by construction to a
+  count of TWO wearing a SINGULAR. **That is the half the two itemising
+  panels had**, and on a circuit it was unconditional: a closed circuit needs
+  at least two straights and two corners, so **every circuit Genesis has ever
+  built** read *"8  (4 straight, 4 corner, 0 hairpin, 0 chicane)"*. TRAPS 6 at
+  a correct assertion, exactly as 041 found it one commit earlier. Nine
+  sentences in six files were outside 034's sweep and seven were wrong,
+  measured headless: a session of ONE request — the commonest session a
+  first-time tester has — read *"1 minutes, 1 requests"*, *"1 seconds"*, *"1
+  readbacks"* and *"the 1 that bear on it"*, plus *"1 saved worlds"* at
+  `/worlds`, *"1 of 1 measurements match"* in `LoadCheck` and *"1
+  straight(s)"* in the feasibility gate. **Found in the same line and not
+  about plurals**: the SECTIONS panel named four of the ten types the
+  validator accepts, so a circuit holding an `uphill` measured *"8  (2
+  straights, 4 corners, 0 hairpins, 0 chicanes)"* — **a total of 8 over an
+  itemisation of 6**, a measurement panel whose own arithmetic is false. **And
+  the suite's own first draft walked into the fault it is about**: `contains()`
+  is a substring test, so *"1 requests"* contains *"1 request"*, and five
+  assertions passed against the pre-042 code they were written to catch. The
+  one reading is now `Readback.agrees(count, one, many)` — *is this count one*
+  — because the agreement is not only the noun's. 48 suites passed before and
+  49 after, `--all` included; the new suite fails **24 times** against the
+  pre-042 code. The prompt did not move, so `PROMPT_VERSION` is unchanged and
+  designs are comparable across this commit. See 042 below and TRAPS 36.
+- The commit before it: **041**, the question that file named as
   the next assistant task — *040's finding asked of every other place a FIX
   has already been written once*. Asked of TRAPS 34's own fifth rule — *"a
   number said back is said as the player wrote it"* — the answer is **only
@@ -285,16 +316,17 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-50 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **48 suites**, counted with `ls tests/*.gd` rather than
+51 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **49 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites.
 
-Last full run (041, Godot 4.7.1 on Linux — `4.7.1.stable.official.a13da4feb`
+Last full run (042, Godot 4.7.1 on Linux — `4.7.1.stable.official.a13da4feb`
 — headless, in a cloud container): **suites with something to look at: 0**,
 both without `--all` and with it, `drive_test` and `session_test` included.
-041's new suite is `said_number_test` (146 failures against the pre-041 code,
-312 assertions); 040's is `procedure_test` (38 failures against the pre-040 code);
+042's new suite is `counted_said_test` (24 failures against the pre-042 code,
+61 assertions); 041's is `said_number_test` (146 failures against the pre-041
+code, 312 assertions); 040's is `procedure_test` (38 failures against the pre-040 code);
 039's is `formula_test` (2 failures against the pre-039 prompt);
 038's is `claim_field_test` (9 failures against the pre-038 code);
 037's is `intent_door_test` (39 failures against the pre-037 code); 036's is
@@ -302,15 +334,16 @@ both without `--all` and with it, `drive_test` and `session_test` included.
 `prompt_bounds_test` (4 failures against the pre-035 prompt); 034's is
 `container_door_test` (30 failures against the pre-034 sentences). Not run on
 the owner's Windows machine. `run_tests.bat` needed no edit for any of the
-eight: no name matches any of its `findstr` patterns — `prompt_bounds_test`
+nine: no name matches any of its `findstr` patterns — `prompt_bounds_test`
 does not contain the literal `prompt_test`, `intent_door_test` contains none
 of the physics names, and `claim_field_test`, `formula_test` and
 `procedure_test` match nothing at all, and `said_number_test` contains none of
-them either — so all eight run there without `--fixed-fps`, which is what they
-get here too, and `command_schema_test`, `intent_door_test`,
-`claim_field_test`, `formula_test`, `procedure_test` and `said_number_test`
-were each run both with it and without and pass either way — checked rather
-than assumed (TRAPS 4). `physics_test` gained 038's car measurement and is already
+them either, and `counted_said_test` contains none of them (not `ledger`, not
+`session`, not `drive`, not `physics`) — so all nine run there without
+`--fixed-fps`, which is what they get here too, and `command_schema_test`,
+`intent_door_test`, `claim_field_test`, `formula_test`, `procedure_test`,
+`said_number_test` and `counted_said_test` were each run both with it and
+without and pass either way — checked rather than assumed (TRAPS 4). `physics_test` gained 038's car measurement and is already
 on both the Linux `TIMED` list and the `.bat`'s `physics` pattern, so it
 keeps `--fixed-fps` on both.
 
@@ -3236,6 +3269,181 @@ container.
   either way.
 - The records on the owner's disk are his and 041 did not touch them.
 
+## 042 — the sweep could only see one of the two ways a count goes wrong
+
+**Objective.** The task this file named next: *the audit 041 began, continued
+through the rest of TRAPS's rules* — take a rule, find the function the fix
+introduced, grep its call sites, count them against the places the rule
+holds, and measure what the difference costs before changing anything. The
+rule asked here is **TRAPS 27's**: *a count and the noun after it are one
+fact, read from `Readback.plural()` or `count_of()` and never written out
+again*. It was chosen because this file named it, with the places it thought
+were missed. The answer is **only where the fault was found — and the sweep
+that guards it can only see half the fault.**
+
+**Starting state.** Branch `prototype-002a` at 041. 48 suites, 0 with anything
+to look at, `--all` included — read by running them, not from this file.
+
+### The call-site count, and the two halves of the answer
+
+`Readback.plural()` has 23 call sites in `scripts/` and `count_of()` has 7.
+034 swept the validators and the dungeon's measurements. Enumerated against
+every sentence in `scripts/` that states a count and then a word (grepped,
+not recalled), **nine sentences in six files were outside that sweep and
+seven of them were wrong**, measured headless before anything was changed:
+
+```
+session summary, ONE request   "Session 'tester': 1 minutes, 1 requests."
+                               "First world after 1 seconds, from ..."
+                               "Understanding: 1 readbacks, 1 with evidence."
+                               "understood: 100% of the 1 that bear on it"
+the farm's ZONES panel         "3   (2 orchard, 1 barn)"
+the circuit's SECTIONS panel   "8  (4 straight, 4 corner, 0 hairpin, 0 chicane)"
+/worlds, one world saved       "1 saved worlds: farm1"
+LoadCheck, one measurement     "1 of 1 measurements match"
+the feasibility gate           "composition has 1 straight(s) and 1 corner(s)"
+```
+
+**WHY THE SWEEP COULD NOT SEE THE WORST OF IT.** `container_door_test` does
+what TRAPS 27 asked for and sweeps the OUTPUT rather than any sentence, with
+the regex `\b1 [a-z]+s\b`. **That is a count of ONE wearing a plural. A
+count of TWO wearing a SINGULAR is the same fault and the regex is blind to
+it by construction** — and that is the half the two itemising panels had.
+TRAPS 6 at a correct assertion, exactly as 041 found it one commit earlier:
+not an assertion that cannot fail, but one that cannot fail for half of what
+it covers.
+
+**The circuit's was unconditional.** A closed circuit needs at least two
+straights and two corners (`FeasibilityGate`), so those two counts can never
+be one — so **every circuit Genesis has ever built** read *"4 straight, 4
+corner"*. The farm's needs only two zones of a kind.
+
+**And the agreement is not only the noun's.** *"the 1 that bear on it"* is the
+same single fact — is this count one — decided a third time, by hand, at a
+VERB. So the one reading is now `Readback.agrees(count, one, many)`, which
+answers that question and nothing else, and `plural()` is a reader of it.
+
+### Found in the same line, and it is not about plurals
+
+The circuit's SECTIONS panel named **four of the ten types
+`SectionValidator` accepts**, written out by hand with no tie to
+`OFFERED_TYPES`. So a circuit holding an `uphill` measured:
+
+```
+SECTIONS   8  (2 straights, 4 corners, 0 hairpins, 0 chicanes)
+```
+
+**A total of 8 over an itemisation of 6**, with the two dropped pieces
+unnamed beside two printed zeros — a measurement panel whose own arithmetic
+is false in front of the player. Measured rather than inferred: the validator
+accepts that circuit (`ok=true`, no errors), it passes the gate, it closes
+and it measures, so it is reachable by any model that sends one. The prompt
+not offering the type is not enforcement (TRAPS 19, and the owner's decision
+1). `_counted()` now walks `SECTION_TYPES` and names a type when it is
+PRESENT or when it is one the prompt offers, which leaves today's line
+byte-identical — `OFFERED_TYPES` is in `SECTION_TYPES`'s own order — and
+makes a type the owner ever opens appear without that function being edited.
+
+### And the suite's own first draft walked into the fault it is about
+
+`String.contains()` is a substring test, so `"1 requests"` contains
+`"1 request"`. **Measured: with `contains()`, five assertions PASSED against
+the pre-042 code they were written to catch** — the same one-directional
+blindness, one layer up, in the suite auditing it. Every check is a
+whole-word one now. Beside it: the first draft ASSEMBLED `/worlds`'s sentence
+itself and asserted on its own output, because the sentence lived inline in
+`Main._list_worlds()`, a `Node3D` no suite can instantiate. It is
+`WorldStore.saved_line()` now and the suite reads it.
+
+### Implementation
+
+- `scripts/readback.gd` — `agrees(count, one, many)`, the one reading of *is
+  this count one*; `plural()` rewritten as a reader of it.
+- `scripts/session_report.gd` — the four counted sentences, plus the verb.
+- `scripts/farm_module.gd` — the ZONES panel's per-type counts.
+- `scripts/racing_module.gd` — the SECTIONS panel, through the new
+  `_counted()`; the `CREATE_TRACK` summary's section count (`MIN_SECTIONS` is
+  2 so it cannot be one today — read through the one function anyway, so a
+  bound that moves does not take a sentence with it).
+- `scripts/world_store.gd` — `saved_line()`, the one place that says how many
+  worlds are saved.
+- `scripts/main.gd` — calls it.
+- `scripts/load_check.gd` — the noun and the verb both agree with the count.
+- `scripts/feasibility_gate.gd` — `"1 straight(s)"` is the plural by hand
+  wearing a dodge.
+- `scripts/experiment_runner.gd` — four counted sentences. **Nothing in the
+  harness reaches them**: the experiment drives a live model. The rule
+  applied to its class, not a fault observed.
+- `tests/counted_said_test.gd` — new, 61 assertions.
+
+### What the suite asserts, and what it does not (TRAPS 6, TRAPS 14)
+
+- Every counted panel whose counts are enumerable from the code says exactly
+  what `Readback.plural()` renders, with the counts read from the measurement
+  and the types read from `FarmModule.ZONE_TYPES` and
+  `SectionValidator.SECTION_TYPES` — never typed into the suite. Reword
+  `plural()` and it still passes; write the agreement by hand again, in
+  either direction, and it fails.
+- The word after the count **differs** between a count of one and a count of
+  two. That is the two-directional property no regex for either direction
+  has.
+- The circuit's SECTIONS panel **itemises to its own total**, asserted by
+  summing the digits, not by reading the sentence.
+- `plural()` is a reader of `agrees()`, asserted as a round trip at 0, 1, 2,
+  3 and 11, with an irregular plural carried through.
+- 034's output sweep, applied to the places 034 did not reach.
+- **NOT asserted:** nothing here has been near a model. The experiment
+  runner's four sentences are in the class, were changed with it, and are
+  reached by nothing in this harness. Whether a save file can hold a single
+  measurement is not known here either, so `LoadCheck`'s line is the rule
+  applied and not a fault measured. And this covers sentences that state a
+  COUNT — it is not a sweep of every sentence containing a number
+  (`said_number_test` is that, for the numbers a request carried).
+
+### Evidence — what was actually run
+
+- Godot 4.7.1 (`4.7.1.stable.official.a13da4feb`) headless, Linux, in a cloud
+  container. **Baseline before anything changed: 48 suites, 0 with something
+  to look at**, both without `--all` and with it, `drive_test` and
+  `session_test` included. **After: 49 suites, 0 with something to look at**,
+  `--all` included.
+- `tests/counted_said_test.gd` (61 assertions, under a minute) **fails 24
+  times against the pre-042 code**, measured the way 035–041 measured their
+  own: the nine changed scripts reverted to 041 with the suite left in place,
+  and the two new functions stubbed at their pre-042 wording so the suite
+  parses. 8 of the 24 are the farm's panel, 7 the circuit's (one of them the
+  arithmetic), 5 the session summary, and one each `/worlds`, the gate's
+  `(s)`, `LoadCheck` and the output sweep.
+- **The prompt did not move.** Nothing in this commit touches
+  `AIInterpreter.assembled_prompt()` or any `prompt_section()`, so
+  `PROMPT_VERSION` is still `039-the-arithmetic-it-really-does-1` and designs
+  are comparable across this commit — checked by running
+  `prompt_bounds_test`, which fails if the fingerprint and the version
+  disagree.
+- `run_tests.bat` needed no edit (TRAPS 4): `counted_said_test` matches none
+  of its `findstr` patterns — not `ledger`, not `session`, not `drive`, not
+  `physics` — so it runs there without `--fixed-fps` as it does here, and it
+  was run both ways and passes either. README said 48 suites and there are
+  49, counted with `ls tests/*.gd` less the two tools.
+
+### Not verified
+
+- **No model has sent any of this.** Every count in the suite was typed by
+  hand. A model sending an `uphill` is what makes the SECTIONS arithmetic
+  fault reachable in play, and this harness has no key, so that path is
+  argued from the validator's own answer and not observed.
+- **Nothing ran on Windows**, and nothing ran in the editor. What was measured
+  is the string a function returns, not what a person reads on screen — and
+  these are panels, so what a person reads on screen is the whole point of
+  them.
+- The experiment runner's four sentences were changed and **not run**.
+- Whether a save file can hold exactly one measurement is unknown, so
+  `LoadCheck`'s sentence is unproven at the count that matters.
+- Nothing here asked the same question of the remaining TRAPS rules. See
+  "Next action": TRAPS 10 and 23's article rule and TRAPS 20 and 30's
+  `as_number()` are still unasked.
+- The records on the owner's disk are his and 042 did not touch them.
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -3476,8 +3684,63 @@ question (036), the intent-door question (037), the which-field question
 (038), the arithmetic question (039) and the five build-it claims (040) are
 all **done**. Candidates, in the order the assistant would take them:
 
-- **THE NEXT ONE: the audit 041 began, continued through the rest of TRAPS's
-  rules.** 041 asked the question this entry used to pose — *for every fix in
+- **THE NEXT ONE: the same audit, at the rules 042 did not ask.** 042 asked
+  TRAPS 27's rule and found that the answer was *only where the fault was
+  found* for the **second time running**, and that **the sweep guarding it
+  could see only one of the two directions the fault runs in** — a count of
+  one wearing a plural, never a count of two wearing a singular. Two rules
+  asked, two answers of "only where the fault was found", and in both cases
+  the suite that was supposed to hold the line was the thing that had the
+  blind spot. **Expect the third to be the same.** The remaining rules with a
+  function to count, in the order the assistant would take them:
+
+  - **TRAPS 10 and 23 — `Readback.is_label()` and `article()`.** Untouched by
+    042 and the oldest unasked rule: *a numbered name is a label and takes no
+    article*, found in `the`, fixed, found again in `a`. Counted against every
+    place a name is rendered with an article in front of it. `grep` for
+    `"a %s"`, `"the %s"` and `article(` and count the call sites against the
+    renderings. This is the one 042 would have taken next.
+  - **TRAPS 20 and 30 — `Readback.as_number()`.** Still as 041 left it: *a
+    value from the AI is converted through as_number(), never a bare int() or
+    float()*, handlers and builders included. 036 fixed four commands. Bare
+    `float()` calls on request-derived values remain in `closure_solver.gd`,
+    **all downstream of validation, which is why they are candidates and not
+    findings.** The question is whether any reader of an **unchecked** value
+    still does its own conversion. **NOT MEASURED**, and the two call sites
+    spot-checked in 041 were sound.
+  - ~~**TRAPS 27 — `Readback.plural()` and `count_of()`.**~~ **Done in 042**,
+    and it was wider than this list said: this entry named "the report, the
+    session summary and the farm's panels", and the circuit's panel — the one
+    that was wrong on every circuit ever built — was not on the list, nor was
+    `/worlds`, nor `LoadCheck`, nor the feasibility gate's `(s)`. A list in
+    this file of three places was a list of six files. Left struck rather than
+    deleted for that reason.
+  - **TRAPS 24 — a count read from what was BUILT**: `stub_claims_test` holds
+    it for the three Prototype 001 stubs. Every other line that states a count
+    is the class, and 042 touched the WORDING of several such lines without
+    asking where their numbers came from — which is a different question and
+    is still open.
+  - **TRAPS 25 — a command's record is part of the command**:
+    `ledger_said_test` enumerates the whitelist, so this one may well be
+    whole; worth confirming rather than assuming.
+  - **And a question 042 raises about the suites themselves, which may be
+    worth more than any single rule: for every sweep in `tests/`, what is the
+    sweep blind to?** 041 found a correct assertion fed the one input that
+    could not make it fail. 042 found a correct sweep whose regex could not
+    match half its class. Both were the same shape and neither was found by
+    reading the code under test — they were found by asking what the CHECK
+    cannot see. `grep` for `RegEx` and for `contains(` in `tests/` and ask of
+    each one: what passes this that should not?
+
+  The method, which has now worked twice: **take the rule, find the FUNCTION
+  the fix introduced, grep its call sites, and count them against the places
+  the rule holds.** Where the count differs, measure what the difference costs
+  before changing anything. Enumerate from TRAPS's own entries rather than
+  from this list, which is a reading and not the class (TRAPS 31) — 042 is the
+  second commit running to find that this file's own list of places was short.
+
+  The entry as 041 wrote it, kept because its last paragraph is the warning
+  that proved true twice: 041 asked the question this entry used to pose — *for every fix in
   TRAPS 1 to 34, is the rule it produced applied everywhere it holds?* — and
   it is the right question: asked of **one** rule it found eight unfixed
   doors and a fault in the fix itself. **It asked one rule of the

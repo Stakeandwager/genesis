@@ -519,7 +519,10 @@ func metric_lines(metrics: Dictionary, _record: Dictionary) -> Array:
 	var present := PackedStringArray()
 	for key in counts:
 		if int(counts[key]) > 0:
-			present.append("%d %s" % [int(counts[key]), str(key)])
+			# 042: ZONE_TYPES are SINGULAR words, so "%d %s" was right at a
+			# count of one and wrong at every other: "3   (2 orchard, 1
+			# barn)". One reading (TRAPS 36).
+			present.append(Readback.plural(int(counts[key]), str(key)))
 
 	var lines: Array = [
 		["ZONES", "%d   (%s)" % [int(metrics["zone_count"]), ", ".join(present)]],

@@ -1849,6 +1849,104 @@ built the rule for**.
 
 ---
 
+## 36. The sweep could only see one of the two ways a count goes wrong
+
+**Signature:** a measurement panel reads *"8  (4 straight, 4 corner, 0
+hairpin, 0 chicane)"*, and the suite written specifically to sweep for a
+hand-written plural is green. So is the panel that reads
+*"8  (2 straights, 4 corners, 0 hairpins, 0 chicanes)"* for a circuit of
+eight pieces.
+
+**Cause.** Trap 27 put the plural in `Readback.plural()` and said the right
+thing about how to guard it: *sweep the OUTPUT, not the sentence*, so a
+sentence added later is covered without editing the suite.
+`container_door_test` does that, with the regex `\b1 [a-z]+s\b`.
+
+**That regex is a count of ONE wearing a plural. A count of TWO wearing a
+SINGULAR is the same fault and the regex cannot see it.** It is trap 6 at a
+correct assertion, the way trap 35 found it one commit earlier: not an
+assertion that cannot fail, but one that cannot fail for half of what it
+covers. And the invisible half was the one that was broken, in both panels
+that itemise a world:
+
+```
+farm, two of a kind     "3   (2 orchard, 1 barn)"      ZONE_TYPES are singular
+circuit, any circuit    "8  (4 straight, 4 corner)"    four singular nouns
+```
+
+The circuit's was **unconditional**. A closed circuit needs at least two
+straights and two corners (`FeasibilityGate`), so those two counts can never
+be one, and every circuit Genesis has ever built read *"4 straight"*. The
+farm's needs only two zones of a type.
+
+**And the scope was the other half of it.** 034 swept the validators and the
+dungeon's measurements. The session summary was not in that sweep, and a
+session of ONE request - the commonest session a first-time tester has - read:
+
+```
+Session 'tester': 1 minutes, 1 requests.
+First world after 1 seconds, from "a farm with a barn".
+Understanding: 1 readbacks, 1 with evidence.
+  understood: 100% of the 1 that bear on it
+```
+
+Four hand-written plurals in the panel the owner reads after a test session,
+plus `"1 saved worlds"` at `/worlds`, `"1 of 1 measurements match"` in
+`LoadCheck`, and `"1 straight(s) and 1 corner(s)"` in the feasibility gate -
+which is the plural written by hand wearing a dodge.
+
+**Found in the same line, and it is not about plurals.** The circuit's
+SECTIONS panel named four of the ten types `SectionValidator` accepts, so a
+circuit holding an `uphill` measured *"8  (2 straights, 4 corners, 0
+hairpins, 0 chicanes)"*: **a total of 8 over an itemisation of 6**, with the
+two dropped pieces unnamed beside two printed zeros. A measurement panel
+whose own arithmetic is false. Measured: the validator accepts that circuit
+(`ok=true`), so it is reachable by any model that sends one, and the prompt
+not offering the type is not enforcement (trap 19).
+
+**And the suite's own first draft walked into the fault it is about.**
+`String.contains()` is a substring test, so `"1 requests"` contains
+`"1 request"`. Measured: with `contains()`, five assertions PASSED against
+the pre-042 code they were written to catch - the same one-directional
+blindness, one layer up, in the suite auditing it.
+
+**Do:**
+
+- **The one reading is "IS THIS COUNT ONE", not "what is the plural".**
+  `Readback.agrees(count, one, many)` answers it and `plural()` is a reader
+  of it, because the agreement is not only the noun's: *"the 1 that bear on
+  it"* is the same single fact decided a third time, by hand, at a verb.
+- **Assert the two counts take DIFFERENT words.** Render the sentence at one
+  and at two and fail if the word after the count is the same. That fails on
+  a hand-written singular and on a hand-written plural alike, which no regex
+  for either one can do.
+- **Tie the sentence to the function, not to its wording.** For a panel whose
+  counts are enumerable from the code, assert the output is exactly
+  `Readback.plural(n, type)` with `n` read from the measurement and the types
+  read from `ZONE_TYPES` / `SECTION_TYPES`. Reword `plural()` and it still
+  passes; write the agreement by hand again and it fails.
+- **A panel that states a total asserts arithmetic.** The counts it itemises
+  must sum to the total it prints, checked by summing them - not by reading
+  the sentence.
+- **Enumerate a panel's categories from the code that accepts them**, never
+  by hand. The four types were a copy of `OFFERED_TYPES` with no tie to it;
+  `_counted()` walks `SECTION_TYPES` and names a type when it is present or
+  offered, so today's line is byte-identical and a type the owner opens
+  appears without this function being edited.
+- **A whole-word check, never `contains()`, when the thing you are checking
+  is a word's ENDING.** The substring passes on the suffix that is the fault.
+- **A sentence a suite cannot reach is a sentence nothing is checking.**
+  `/worlds`'s line lived inline in `Main._list_worlds()`, a `Node3D` no suite
+  can instantiate, so the suite's first draft assembled the string itself and
+  asserted on its own output. It is `WorldStore.saved_line()` now.
+
+Found and fixed in 042. `tests/counted_said_test.gd` fails **24 times**
+against the pre-042 code: 8 at the farm's panel, 7 at the circuit's (one of
+them the arithmetic), 5 at the session summary, and one each at `/worlds`,
+the feasibility gate's `(s)`, `LoadCheck`, and the output sweep.
+
+---
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
 > A fluent sentence is not evidence that anything was understood.
@@ -1892,3 +1990,8 @@ built the rule for**.
 > And a number said back is said as the player wrote it, at every door that
 > says one and not only the ones the session that wrote the rule was looking
 > at.
+> And a count and the word after it agree, in both directions, so a sweep
+> that can only see one of them is a claim about half a class.
+> And a panel that prints a total is doing arithmetic in front of the player,
+> so the pieces it names add up to it or the panel is the thing that is
+> wrong.

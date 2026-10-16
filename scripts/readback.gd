@@ -264,7 +264,28 @@ static func join_capped(parts: PackedStringArray) -> String:
 # on. Both read the same plural, so a noun with an irregular one is given
 # once, here, at the call.
 static func plural(count: int, singular: String, many: String = "") -> String:
-	return "%d %s" % [count, singular if count == 1 else (many if many != "" else singular + "s")]
+	return "%d %s" % [count, agrees(count, singular, many if many != "" else singular + "s")]
+
+
+# --- 042: the one reading is "IS THIS COUNT ONE", not "what is the plural" ---
+#
+# 034 put the plural in plural() and swept the validators. The sweep that
+# went with it looks for "1 <word>s" in the output, which catches a count of
+# ONE wearing a plural - and is blind by construction to the other half of
+# the same fault, a count of TWO wearing a singular. That half was reachable
+# on every circuit Genesis has ever built ("8  (4 straight, 4 corner, 0
+# hairpin, 0 chicane)") and on any farm with two of a kind ("3  (2 orchard,
+# 1 barn)"), because a panel that writes "%d %s" with a singular key is
+# wrong at every count except one. TRAPS 6's shape at a correct assertion:
+# the regex could not fail for half its class.
+#
+# And the agreement is not only the noun's. "understood: 100% of the 1 that
+# bear on it" is the same single fact - count == 1 - decided a third time,
+# by hand, at a VERB. So the fact lives here, plural() is one reader of it,
+# and a verb or any other agreeing word is another. Anything that needs to
+# know whether a count is one asks this and never writes the test again.
+static func agrees(count: int, one: String, many: String) -> String:
+	return one if count == 1 else many
 
 
 # --- 034: a value out of a request, written back as the JSON it came as ---

@@ -74,6 +74,18 @@ static func remove_world(name_given: String) -> Dictionary:
     return {"ok": true, "message": "Deleted '%s'." % name}
 
 
+# --- 042: the one place that says how many worlds are saved ---
+#
+# This was two strings written inline in Main._list_worlds(), and the status
+# line said "1 saved worlds" the first time anybody typed /save and then
+# /worlds. Main is a Node3D that needs a scene tree, so no suite could reach
+# the sentence; moved here, it is a static function with the count read
+# through Readback.plural() and tests/counted_said_test.gd reads it. A
+# sentence a test cannot reach is a sentence nothing is checking (TRAPS 36).
+static func saved_line(names: Array) -> String:
+    return "%s: %s" % [Readback.plural(names.size(), "saved world"), ", ".join(PackedStringArray(names))]
+
+
 static func location() -> String:
     return ProjectSettings.globalize_path(FOLDER)
 

@@ -87,7 +87,13 @@ static func compare(recorded: Dictionary, measured: Dictionary) -> Dictionary:
 			"said": "Built it, but nothing in the file can be checked against this version of Genesis any more. %s" % _caveat(),
 		}
 
-	var said := "Measured it against the day it was saved: %d of %d measurements match." % [checked, recorded.size()]
+	# 042: the noun and the verb both agree with the count, through the one
+	# reading. Whether a save file can hold a single measurement is not known
+	# here, so this is the rule applied rather than a fault measured
+	# (TRAPS 36).
+	var said := "Measured it against the day it was saved: %d of %s %s." % [
+		checked, Readback.plural(recorded.size(), "measurement"),
+		Readback.agrees(recorded.size(), "matches", "match")]
 	if not not_measured.is_empty():
 		said += " %d could not be checked, because this version no longer measures %s." % [
 			not_measured.size(), _join(not_measured)]

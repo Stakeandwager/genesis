@@ -235,8 +235,12 @@ func build(root: Node3D, layout: Dictionary) -> Dictionary:
 
 
 func summary(_metrics: Dictionary, report: Dictionary) -> String:
-	return "CREATE_TRACK built a closed %s circuit: %d sections, %.0f m of road\n(full measurements in the metrics panel)" % [
-		report["direction"], report["section_count"], report["total_length"]]
+	# MIN_SECTIONS is 2, so this count cannot be one today. Read through the
+	# one function anyway: a bound that moves must not take a sentence with
+	# it (042, TRAPS 36).
+	return "CREATE_TRACK built a closed %s circuit: %s, %.0f m of road\n(full measurements in the metrics panel)" % [
+		report["direction"], Readback.plural(int(report["section_count"]), "section"),
+		report["total_length"]]
 
 
 # "a closed circuit with two 400 m straights and two 50 m corners, 90 deg
@@ -468,12 +472,44 @@ func _before(a: Dictionary, b: Dictionary) -> bool:
 # The panel racing has always shown, in the same order, moved here from
 # main.gd unchanged. The last three come from the record rather than the
 # measurements: they describe how the track came to be built.
+# --- 042: the SECTIONS panel, which disagreed with itself ---
+#
+# Two faults in one line, both measured headless before it was changed.
+#
+# THE PLURAL. It read "%d straight, %d corner, %d hairpin, %d chicane" with
+# four SINGULAR nouns, so it was wrong at every count but one - and a closed
+# circuit needs at least two straights and two corners (FeasibilityGate), so
+# the first two can never BE one. "8  (4 straight, 4 corner, 0 hairpin, 0
+# chicane)" on every circuit Genesis has ever built. 034 put that fact in
+# Readback.plural() and swept the validators; this panel was not in the
+# sweep, and the sweep looks for "1 <word>s", which cannot catch a count of
+# four wearing a singular. See TRAPS 36.
+#
+# THE FOUR OF TEN. The four types were written out here by hand.
+# SectionValidator accepts TEN and the prompt offers four (TRAPS 19, and the
+# owner's decision 1), so a circuit holding an uphill measured
+# "8  (2 straights, 4 corners, 0 hairpins, 0 chicanes)" - a total of 8 over
+# an itemisation of 6, with the two pieces it dropped unnamed beside two
+# zeros it printed. A measurement panel whose own arithmetic is false.
+#
+# So the list is enumerated from SectionValidator.SECTION_TYPES, and a type
+# is named when it is PRESENT or when it is one the prompt offers. That
+# keeps the line a player sees today byte-identical - OFFERED_TYPES is in
+# SECTION_TYPES's own order - and a type the owner ever opens appears here
+# without this function being edited.
+func _counted(counts: Dictionary) -> String:
+	var parts := PackedStringArray()
+	for type in SectionValidator.SECTION_TYPES:
+		var n := int(counts.get(type, 0))
+		if n > 0 or type in SectionValidator.OFFERED_TYPES:
+			parts.append(Readback.plural(n, str(type)))
+	return ", ".join(parts)
+
+
 func metric_lines(metrics: Dictionary, record: Dictionary) -> Array:
 	var counts: Dictionary = metrics.get("counts", {})
 	var lines: Array = [
-		["SECTIONS", "%d  (%d straight, %d corner, %d hairpin, %d chicane)" % [
-			int(metrics["section_count"]), int(counts.get("straight", 0)), int(counts.get("corner", 0)),
-			int(counts.get("hairpin", 0)), int(counts.get("chicane", 0))]],
+		["SECTIONS", "%d  (%s)" % [int(metrics["section_count"]), _counted(counts)]],
 		["LENGTH", "%.0f m" % float(metrics["total_length"])],
 		["STRAIGHT RATIO", "%.0f%%" % (float(metrics["straight_ratio"]) * 100.0)],
 		["LONGEST STRAIGHT", "%.0f m" % float(metrics["longest_straight"])],

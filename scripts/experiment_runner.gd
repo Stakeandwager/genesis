@@ -64,14 +64,21 @@ func start(count: int) -> String:
 	var total := trials_per_style * STYLES.size()
 	_next()
 	var feedback_note := "Closure feedback is ON (one correction per missed circuit)." if _controller.revision_enabled else "Closure feedback is OFF (baseline)."
-	return feedback_note + "\nExperiment %s started: %d tracks for each of %d styles, %d in total.\nAt about %d seconds each this takes roughly %d minutes. Type /stop to end it early." % [run_id, trials_per_style, STYLES.size(), total, int(delay_between) + 5, int(ceil(total * (delay_between + 5.0) / 60.0))]
+	# 042: counts read through the one function (TRAPS 36). Nothing here can
+	# be measured headless - the experiment drives a live model - so this is
+	# the rule applied to its class, not a fault observed.
+	return feedback_note + "\nExperiment %s started: %s for each of %s, %d in total.\nAt about %s each this takes roughly %s. Type /stop to end it early." % [
+		run_id, Readback.plural(trials_per_style, "track"),
+		Readback.plural(STYLES.size(), "style"), total,
+		Readback.plural(int(delay_between) + 5, "second"),
+		Readback.plural(int(ceil(total * (delay_between + 5.0) / 60.0)), "minute")]
 
 
 func stop() -> String:
 	if not running:
 		return "No experiment is running."
 	running = false
-	return "Experiment stopped after %d tracks. Type /experiment to start a new one." % results.size()
+	return "Experiment stopped after %s. Type /experiment to start a new one." % Readback.plural(results.size(), "track")
 
 
 func status() -> String:
@@ -158,7 +165,7 @@ func _summarise() -> void:
 	running = false
 
 	var lines := PackedStringArray()
-	lines.append("EXPERIMENT %s COMPLETE: %d tracks" % [run_id, results.size()])
+	lines.append("EXPERIMENT %s COMPLETE: %s" % [run_id, Readback.plural(results.size(), "track")])
 
 	var summary := {"run_id": run_id, "type": "experiment_summary", "trials_per_style": trials_per_style, "revision_enabled": _controller.revision_enabled, "styles": {}}
 	lines.append("Closure feedback: " + ("on" if _controller.revision_enabled else "off"))

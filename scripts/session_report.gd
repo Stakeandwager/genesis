@@ -226,7 +226,15 @@ static func _understanding(readbacks: Array, judged: Dictionary) -> Dictionary:
 # The summary as a few plain lines for the history panel.
 static func describe(name: String, s: Dictionary) -> String:
 	var lines := PackedStringArray()
-	lines.append("Session '%s': %.0f minutes, %d requests." % [name, float(s["minutes"]), int(s["requests"])])
+	# 042: the count and the noun after it are one fact, read from
+	# Readback.plural() and never written out again. A session of ONE request
+	# - the commonest session a first-time tester has - said "1 minutes, 1
+	# requests" here, "1 seconds" below, and "1 readbacks" in the
+	# understanding block. 034 swept the validators and the dungeon's
+	# measurements; this file was not in that sweep. See TRAPS 36.
+	lines.append("Session '%s': %s, %s." % [name,
+		Readback.plural(int(roundf(float(s["minutes"]))), "minute"),
+		Readback.plural(int(s["requests"]), "request")])
 	if float(s["seconds_to_first_world"]) >= 0.0:
 		lines.append("First world after %s, from \"%s\"." % [_duration(float(s["seconds_to_first_world"])), s["first_world_request"]])
 	else:
@@ -258,7 +266,8 @@ static func describe(name: String, s: Dictionary) -> String:
 	if not u.is_empty():
 		var c: Dictionary = u["counts"]
 		lines.append("")
-		lines.append("Understanding: %d readbacks, %d with evidence." % [int(u["readbacks"]), int(u["judged"])])
+		lines.append("Understanding: %s, %d with evidence." % [
+			Readback.plural(int(u["readbacks"]), "readback"), int(u["judged"])])
 		lines.append("  for:     confirmed %d (strong), accepted by use %d (medium)" % [
 			int(c["CONFIRMED"]), int(c["ACCEPTED_BY_USE"])])
 		lines.append("  against: said Genesis misread them %d (strong)" % int(c["CORRECTED"]))
@@ -269,10 +278,14 @@ static func describe(name: String, s: Dictionary) -> String:
 		if float(u["rate_worst"]) < 0.0:
 			lines.append("  nothing bears on understanding: no score can be given")
 		elif int(c["DISPUTED"]) == 0:
-			lines.append("  understood: %.0f%% of the %d that bear on it" % [float(u["rate_worst"]) * 100.0, int(u["bearing"])])
+			lines.append("  understood: %.0f%% of the %s that %s on it" % [
+				float(u["rate_worst"]) * 100.0, Readback.plural(int(u["bearing"]), "readback"),
+				Readback.agrees(int(u["bearing"]), "bears", "bear")])
 		else:
-			lines.append("  understood: between %.0f%% and %.0f%% of the %d that bear on it" % [
-				float(u["rate_worst"]) * 100.0, float(u["rate_best"]) * 100.0, int(u["bearing"])])
+			lines.append("  understood: between %.0f%% and %.0f%% of the %s that %s on it" % [
+				float(u["rate_worst"]) * 100.0, float(u["rate_best"]) * 100.0,
+				Readback.plural(int(u["bearing"]), "readback"),
+				Readback.agrees(int(u["bearing"]), "bears", "bear")])
 			lines.append("    (the %s could be a misreading or a change of mind; read %s below)" % [
 				"one bare \"no\"" if int(c["DISPUTED"]) == 1 else "%d bare \"no\"s" % int(c["DISPUTED"]),
 				"it" if int(c["DISPUTED"]) == 1 else "them"])
@@ -335,5 +348,5 @@ static func _seconds_between(from: String, to: String) -> float:
 
 static func _duration(seconds: float) -> String:
 	if seconds < 60.0:
-		return "%d seconds" % int(seconds)
+		return Readback.plural(int(seconds), "second")
 	return "%d min %02d s" % [int(seconds) / 60, int(seconds) % 60]
