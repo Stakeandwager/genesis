@@ -43,17 +43,75 @@ func prompt_section() -> String:
 
 
 # What this world adds to its log record before any checking: what was
-# proposed, in the module's own field names. They follow time, request,
-# raw_command, source and experiment, in the order given here.
+# proposed, in the module's own field names. They join time, request,
+# raw_command, source and experiment, which _new_record() puts there first.
 # attempt is {"attempt": 1}, or {"attempt": 2, "revision_of": {...}}.
-func record_fields(parameters: Dictionary, _attempt: Dictionary) -> Dictionary:
-	return {
+# 045: this used to say "in the order given here", which was a claim about
+# something no reader of the ledger can see - TrackLog.append() writes a
+# record through JSON.stringify(), which SORTS KEYS. Measured, and it is why
+# the fields moved into proposal_record() below leave every written line
+# byte-identical.
+func record_fields(parameters: Dictionary, attempt: Dictionary) -> Dictionary:
+	var fields := {
 		"world": display_name(),
 		# 037: Readback.intent_of(), which is this line and RacingModule's
 		# copy of it, in one place.
 		"intent": Readback.intent_of(parameters),
 		"command": command(),
 	}
+	fields.merge(proposal_record(parameters, attempt))
+	return fields
+
+
+# --- 045: what was PROPOSED, read from the world's own declared lists ---
+#
+# Every world record carried the command and the intent and, for two of the
+# three worlds, the lists the request arrived with - "proposed_rooms",
+# "proposed_sections". Those were written out BY HAND in DungeonModule and
+# RacingModule and in neither case in the base they both extend, so a FARM
+# record carried no proposal at all: measured headless, a CREATE_FARM record
+# has "world", "intent" and "command" and nothing else, accepted or refused.
+# Eight other commands record theirs - counted in the whitelist's own unit
+# (TRAPS 31): eleven commands, CLEAR_WORLD takes no fields, eight of the
+# remaining ten recorded a proposal and CREATE_FARM and PLAN did not.
+#
+# The proposal is not LOST - "raw_command" holds the whole JSON answer for
+# every command, so the zones are in the ledger as a string - and the claim
+# here is about SHAPE, not about data: an auditor reading the ledger by field
+# meets a farm that proposed nothing, which is the argument 036 and 037 both
+# made about "intent" and the owner accepted. Nothing in the repository reads
+# a "proposed_" field except "proposed_metrics", so the cost today is to a
+# reader of the file rather than to Genesis.
+#
+# IT IS READ FROM lists(), which is the module's own declaration of what a
+# request may carry and the list container_door_test already enumerates. So
+# this is one reading for every world, a world's proposal is recorded in the
+# fields the world itself names, and a world added later records its proposal
+# WITHOUT ITS AUTHOR WRITING A LINE - which is the half of this that is
+# latent rather than measurable (TRAPS 11: the fault is the class, and the
+# class includes the world that does not exist yet).
+#
+# "attempt" and "revision_of" came out of the same two hand-written copies
+# and are here for the same reason. A farm's record carried no attempt
+# number, and tests/replay.gd reads one off the record with a default of 1.
+# Latent today: FarmModule has no correction_feedback(), so _may_revise() is
+# false for a farm and no farm has ever had a second attempt. Said rather
+# than fixed quietly.
+func proposal_record(parameters: Dictionary, attempt: Dictionary) -> Dictionary:
+	var fields := {}
+	for entry in lists():
+		var key := str((entry as Dictionary).get("key", ""))
+		if key == "":
+			continue
+		# The value AS SENT, never resolved or defaulted: a record of what was
+		# proposed is the one place the unvalidated request survives, which is
+		# why an absent list is recorded as the empty list the two
+		# hand-written copies recorded it as and not as a missing key.
+		fields["proposed_%s" % key] = parameters.get(key, [])
+	fields["attempt"] = int(attempt.get("attempt", 1))
+	if attempt.has("revision_of"):
+		fields["revision_of"] = attempt["revision_of"]
+	return fields
 
 
 # Check what the AI proposed. Returns ok, errors, content.

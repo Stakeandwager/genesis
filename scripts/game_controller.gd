@@ -716,6 +716,17 @@ static func plan_example_step() -> Dictionary:
 func _execute_plan(parameters: Dictionary) -> void:
 	var record := _new_record("PLAN")
 	record["world"] = "plan"
+	# --- 045: the steps a plan was ASKED for ---
+	# PLAN was the second of the two commands whose record said nothing about
+	# what was proposed. It wrote record["steps"] on the way out, and that is
+	# the steps it DID - a construction-layer field - so a plan refused at
+	# step 2 of 3 left a ledger entry naming the problem and never the plan.
+	# Written here, above every refusal below, so a plan refused for its
+	# intent, its list shape, its length or a bad step records its steps like
+	# any other command. Read through plan_list(), which is the one place that
+	# names this key (Readback.list_error() and the refusals below read the
+	# same entry), and said AS SENT: this is what arrived, not what survived.
+	record["proposed_%s" % str(plan_list()["key"])] = parameters.get(str(plan_list()["key"]), [])
 	# 036: all three world validators and SectionValidator refuse an "intent"
 	# that is not an object, and name it. PLAN read the same field, checked
 	# nothing, and wrote whatever arrived into the ledger - so a record could

@@ -138,22 +138,16 @@ Every room must be reachable from room 1 by following doors, or the design is re
 	]
 
 
-func record_fields(parameters: Dictionary, attempt: Dictionary) -> Dictionary:
-	var intent = parameters.get("intent", {})
-	var fields := {
-		"world": display_name(),
-		"intent": intent if typeof(intent) == TYPE_DICTIONARY else {},
-		"command": command(),
-		"proposed_rooms": parameters.get("rooms", []),
-		"proposed_doors": parameters.get("doors", []),
-		"proposed_things": parameters.get("things", []),
-		"attempt": int(attempt.get("attempt", 1)),
-	}
-	if attempt.has("revision_of"):
-		fields["revision_of"] = attempt["revision_of"]
-	return fields
-
-
+# --- 045: this module's record_fields() has gone ---
+# It wrote "world", "intent" and "command" exactly as WorldModule does, the
+# three "proposed_" fields that WorldModule.proposal_record() now reads off
+# lists(), and the attempt that came with them - so the base produces the
+# same record, key for key and value for value (measured, and asserted in
+# tests/record_proposal_test.gd). It also read "intent" BY HAND, under
+# Readback.intent_of()'s own comment claiming "both readers are now this one":
+# there were three readers and this was the third, so the claim was false
+# from the commit that wrote it (TRAPS 14, where 043 and 044 each found one).
+#
 # --- what the AI proposed ---
 
 func validate(parameters: Dictionary) -> Dictionary:

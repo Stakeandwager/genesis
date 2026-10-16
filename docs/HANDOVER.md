@@ -13,7 +13,55 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **044**, the task this file named as
+- Last commit at the time of writing: **045**, the task this file named as
+  the next assistant task — *ask every suite in `tests/` what IT cannot see* —
+  and **this file's own prediction about where to look was right**: it said to
+  expect the readback and the RECORD to be the layers nobody probed, "because
+  they return strings rather than verdicts". 044 was the readback. This is the
+  record. The rule asked is **TRAPS 25's**, *a command's record is part of the
+  command*, which this file listed as *"may well be whole; worth confirming
+  rather than assuming"* — **confirmed, and it was not whole**. Measured
+  headless before anything changed, one request per whitelisted command read
+  back off disk, and counted in the whitelist's own unit (TRAPS 31): eleven
+  commands, of which `CLEAR_WORLD` takes no fields and has nothing to propose;
+  **of the remaining ten, EIGHT record what they were asked for in a
+  `proposed_` field and two record nothing**, with a ninth door — the
+  sectionless `CREATE_TRACK` — recording one without being a separate entry on
+  the list. A `CREATE_FARM` record carried
+  `world`, `intent` and `command` and nothing else, accepted or refused, so
+  the ledger entry for *"zone 1 (barn): width 500 m is outside 5–60 m"* did
+  not carry the zone. **`PLAN` is the sharper one** because it has a field
+  that looks like the missing one: `record["steps"]` is the steps it **did**,
+  so a plan refused at step 2 of 3 named the problem and never the plan — a
+  construction-layer field where an interpretation-layer one was owed.
+  **THE DATA WAS NEVER LOST AND THE COMMIT DOES NOT CLAIM IT WAS**:
+  `raw_command` holds the whole JSON answer for every command, checked before
+  the claim was written (TRAPS 14), so this is a fault of SHAPE — a reader
+  going by field met a farm that proposed nothing — and nothing in the
+  repository reads a `proposed_` field except `proposed_metrics`. **Why no
+  suite saw it**: `ledger_said_test` asks the right question of the right list
+  and **its own header says what it does not ask** — *"This asserts that the
+  record EXISTS"* — and `proposed_` appears in exactly one file under `tests/`
+  before this commit, as a fixture. **TRAPS 6 for the fifth commit running,
+  and this one is not one of the four axes**: 041's blind spot was the probe's
+  VALUES, 042's the sweep's DIRECTION, 043's the input's SHAPE, 044's the
+  LAYER, and this one is the **QUESTION** — existence asked where content was
+  owed. **The fix is the class**: the `proposed_` fields were written out by
+  hand in `DungeonModule` and `RacingModule` and in neither case in
+  `WorldModule`, the base both extend, which is exactly why the third world
+  had none. The reading is now `WorldModule.proposal_record()`, off `lists()`,
+  so a world added later records its proposal without its author writing a
+  line — **latent, there is no fourth world**. `DungeonModule.record_fields()`
+  is deleted and the records are byte-identical; `RacingModule`'s survives for
+  the one key it does not write (racing records carry no `world`).
+  **A false code comment is now true**: `Readback.intent_of()` claimed "both
+  readers are now this one" and there were three. 51 suites passed before and
+  52 after, `--all` included; the new suite fails **8 times** against the
+  pre-045 code. The prompt is byte-identical (15846 chars, sha256
+  `c6c2b955...`), so `PROMPT_VERSION` did not move. **Not verified: no model
+  sent any of this**, and `attempt` on a farm is latent because a farm cannot
+  revise. See 045 below and TRAPS 39.
+- The commit before it: **044**, the task that file named as
   the next assistant task — *the same audit, carrying 043's question to the
   rules 043 did not ask*. The rule asked first was **TRAPS 20 and 30's**: *a
   value from the AI is converted through `Readback.as_number()`, never a bare
@@ -61,7 +109,7 @@ that the owner has not ruled on.** Do not promote one to the other.
   byte-identical to 043's (15846 chars, sha256 `c6c2b955...`), so
   `PROMPT_VERSION` did not move and designs stay comparable. See 044 below and
   TRAPS 38.
-- The commit before it: **043**, the task that file named as
+- And before that: **043**, the task that file named as
   the next assistant task — *the same audit, at the rules 042 did not ask*,
   taking the one 042 said it would have taken next. The rule asked is
   **TRAPS 10 and 23's**: *a fact about a WORD lives in one function and
@@ -4055,6 +4103,187 @@ container.
 
 ---
 
+## 045 — the record that said nothing about what was proposed
+
+**Objective.** The task this file named: *ask every suite in `tests/` what IT
+cannot see*, with the four axes 041–044 produced, and with this file's own
+prediction that **the readback and the RECORD would be the layers nobody had
+probed, "because they return strings rather than verdicts"**. The readback was
+044's. This is the record, and the prediction holds.
+
+**Starting state.** Branch `prototype-002a` at **044** (`ed75bbc`). 51 suites,
+0 with something to look at, `--all` included, measured before anything was
+changed. Godot 4.7.1 (`4.7.1.stable.official.a13da4feb`) headless, Linux,
+cloud container, no API key.
+
+**The rule asked, and this file named it as unconfirmed.** TRAPS 25's — *a
+command's record is part of the command*. The candidate list said of it:
+*"`ledger_said_test` enumerates the whitelist, so this one may well be whole;
+worth confirming rather than assuming."* **Confirmed, and it was not whole.**
+
+**What it cost, measured headless before anything was changed** — one request
+per whitelisted command through `main._handle_request`, reading the ledger back
+off disk as an outsider would:
+
+```
+CREATE_DUNGEON           proposed_rooms, proposed_doors, proposed_things, attempt
+CREATE_TRACK             proposed_sections, proposed_metrics, attempt
+ORDER                    proposed_goal
+SHUT / OPEN              proposed_door
+EQUIP                    proposed_spec
+MODIFY_TRACK             proposed_change
+SPAWN_OPPONENTS          proposed_grid
+CREATE_TRACK (ringless)  proposed_ring
+CREATE_FARM              (nothing)
+PLAN                     (nothing)
+```
+
+A farm's record carried `world`, `intent` and `command` and **nothing else,
+accepted or refused** — so the ledger entry for *"zone 1 (barn): width 500 m is
+outside 5–60 m"* did not carry the zone. **`PLAN` is the sharper one**, because
+it has a field that looks like the missing one: it writes `record["steps"]` on
+the way out, and that is the steps it **did**. A plan refused at step 2 of 3
+left an entry naming the problem and never the plan — a construction-layer
+field standing where an interpretation-layer one was owed, which is the four
+layers merged (PROTOCOL section 2).
+
+**AND THE DATA WAS NEVER LOST, WHICH IS WHY THIS IS A CLAIM ABOUT SHAPE.**
+`raw_command` holds the whole JSON answer for every command, so a farm's zones
+have always been in the ledger **as a string**. What a reader going BY FIELD
+met was a farm that proposed nothing beside eight commands that proposed
+something — the same argument 036 and 037 both made about `intent` carrying
+three shapes, and the one the owner accepted then. **Nothing in the repository
+reads a `proposed_` field except `proposed_metrics`**, so the cost today falls
+on a person reading the file and not on Genesis. Checked before it was written
+(TRAPS 14): the claim that the proposal was "nowhere" would have been false,
+and `grep` for `raw_command` is what said so.
+
+**Why no suite saw it, which is the part worth keeping.** `ledger_said_test`
+asks the right question of the right list — does every command in
+`CommandParser.allowed_commands()` leave a record whose id the ledger
+resolves? — and **its own header says what it does not ask**: *"NOT ASSERTED,
+deliberately: no wording anywhere… This asserts that the record EXISTS."* It
+is correct, its list is the whole list, and the record's CONTENTS were owed to
+nobody: `grep` finds `proposed_` in exactly one file under `tests/` before
+this commit, and there it is a fixture in `session_test`. **TRAPS 6 for the
+fifth commit running, and this one is not one of the four axes**: 041's blind
+spot was the probe's VALUES, 042's the sweep's DIRECTION, 043's the input's
+SHAPE, 044's the LAYER, and this one is the **QUESTION** — existence asked
+where content was owed.
+
+**Implementation — the class, not the two doors (TRAPS 11).** The three
+`proposed_` fields were written out by hand in `DungeonModule.record_fields()`
+and the fourth in `RacingModule`'s copy of the same lines, and in neither case
+in `WorldModule`, **the base both of them extend**. So the third world
+inherited a `record_fields()` that recorded nothing the request arrived with.
+
+- `scripts/world_module.gd` — new `proposal_record(parameters, attempt)`. It
+  reads **`lists()`**, the module's own declaration of what a request may
+  carry and the list `container_door_test` already enumerates, and writes
+  `proposed_<key>` for each entry, plus `attempt` and `revision_of`.
+  `record_fields()` merges it. **A world added later records its proposal
+  without its author writing a line** — and that half is LATENT, because there
+  is no fourth world yet.
+- `scripts/dungeon_module.gd` — `record_fields()` **deleted**. The base
+  produces the same record, key for key and value for value.
+- `scripts/racing_module.gd` — `record_fields()` kept and reduced to the one
+  key it still exists for: racing records have never carried `world` and still
+  do not. The proposal and the attempt are the shared reading's.
+- `scripts/game_controller.gd` — `_execute_plan` writes `proposed_steps`,
+  read through `plan_list()` (the one place that names the key), **above every
+  refusal below it**, so a plan refused for its intent, its list shape, its
+  length or a bad step records its steps like any other command.
+
+**It also made a false comment true.** `Readback.intent_of()` said *"what
+`WorldModule.record_fields()` and `RacingModule.record_fields()` each did by
+hand… Both readers are now this one."* There were **three**:
+`DungeonModule.record_fields()` read `intent` by hand with its own `typeof()`
+test. Behaviourally identical, which is how it survived, and false from the
+commit that wrote it — TRAPS 14 at a code comment, where 043 and 044 each
+found one. The hand-written reader is gone.
+
+**Evidence.** Godot 4.7.1 headless, Linux, cloud container.
+
+- **Baseline: 51 suites, 0 with something to look at**, `--all` included,
+  before anything was changed. **After: 52 suites, 0 either way**,
+  `drive_test` and `session_test` included. The only difference in the two
+  runs' suite lists is `record_proposal_test`.
+- **`tests/record_proposal_test.gd` fails 8 times against the pre-045 code**,
+  measured the way 035–044 measured their own: the four changed scripts
+  reverted to `ed75bbc` with the suite in place. No stub was needed — the
+  suite calls `record_fields()`, which exists either way. The failures are
+  CREATE_FARM's and PLAN's proposals, CREATE_FARM's attempt and revision, and
+  the three "as sent" assertions about a farm.
+- **The dungeon's and the circuit's records are unchanged.** Measured as JSON
+  before and after, for four cases each (first attempt, revision, empty
+  parameters, non-object intent): `dungeon` and `racing` are **byte-identical
+  in both runs**; `farm` gains `proposed_zones`, `attempt` and, on a revision,
+  `revision_of`. Godot's `JSON.stringify` sorts keys, so insertion order
+  cannot change a written line.
+- **The prompt did not move**: 15846 characters, sha256
+  `c6c2b9555fa6283c1f4d379c925ba95a15db8000a2d8e3d7d26d4e9010c46e62` —
+  identical to 043's and 044's, measured again this session. `PROMPT_VERSION`
+  is unchanged and designs stay comparable.
+- `record_proposal_test` was run **both with `--fixed-fps 120` and without**
+  and passes either way, so it is in neither runner's timed list.
+  `run_tests.bat` needed no edit (TRAPS 4): the name matches none of its
+  `findstr` patterns.
+- README said 51 suites and there are **52**, counted with `ls tests/*.gd`
+  less `replay` and `prompt_test`.
+
+**What the suite asserts.** That every command on the whitelist leaves a record
+carrying its proposal in a `proposed_` field whose value holds what the request
+sent — keyed on `CommandParser.allowed_commands()`, so a command added later
+with no row **fails** and is never skipped (the guard 033 put in
+`ledger_said_test`, which is the suite this one stands beside), with
+`CLEAR_WORLD` the single declared exception, named in the table with its
+reason rather than left out of it. That for every module in
+`WorldRegistry.modules()` and every entry in its `lists()`, `record_fields()`
+carries `proposed_<key>` — so a world that declares a list and forgets to
+record it fails without this file being edited. That the value is **as sent**:
+a 500 m zone, a room number of 2.9, a `zones` that is the string `"a barn"`,
+each in the record exactly as it arrived, and an absent list recorded as an
+empty list rather than a missing key. And, in both directions, that the
+dungeon's seven fields and the circuit's four are the ones they have always
+been, typed out here as facts rather than read from the function under test.
+
+**Limitations — what this does NOT prove, asked in the same breath as writing
+the suite.**
+
+- **NO MODEL SENT ANY OF THIS.** Every request was typed by hand; this harness
+  has no key. No log in this repository records a model proposing a farm that
+  was then audited, so whether the new field is ever *read* is unmeasured.
+- **It asserts nothing about `raw_command`**, which carried this data all
+  along. A suite proving the zones were "in the ledger" would pass against the
+  pre-045 code and prove nothing (TRAPS 6).
+- **`attempt` on a farm record is latent.** `FarmModule` has no
+  `correction_feedback()`, so `_may_revise()` is false and no farm has ever
+  had a second attempt. It is asserted as present and correct, which is a fact
+  about the record's shape and not a demonstration that a farm can revise.
+  `tests/replay.gd` reads `attempt` off a record with a default of 1, so a
+  farm's attempt was previously unrecorded and un-replayable — also latent,
+  for the same reason.
+- **Whether a field helps a person reading the ledger is not a thing a test
+  can answer.** The owner reads these files; see "Next action".
+- **The base's half is for a world that does not exist.** A fourth world
+  getting its proposal recorded for free is read from the code, not measured.
+- `CLEAR_WORLD` records no proposal **deliberately**: it takes no fields, so
+  there is no value a record could carry. That is a row in the suite's table,
+  not a gap.
+- Nothing ran on Windows and nothing ran in the editor. What was measured is
+  the record a function returns and the line the ledger holds, not what a
+  person reads on screen.
+- The records on the owner's disk are his and 045 did not touch them. **Every
+  `CREATE_FARM` and `PLAN` record in the ledger before this commit carries no
+  `proposed_` field**, so an audit by field across this commit is not a
+  before-and-after for those two commands; `raw_command` is the field that
+  spans it.
+
+TRAPS 39 records the fault and the rules, including the fifth blind spot —
+the QUESTION a suite asked — beside the four axes.
+
+---
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -4331,18 +4560,70 @@ faithful:
   glance too at *"with a key in room 99"* for a thing placed out of range —
   before 044 the room vanished from the sentence and it read *"with a key"*.
 
+045 adds a fourteenth, and it is a line in a file rather than a line in the
+game, so it is a minute with a text editor rather than the editor:
+
+- **Open your ledger and find a `CREATE_FARM` record made after this commit.**
+  It now carries `proposed_zones` — the zones as the model sent them — and
+  `attempt`, which it never did. Every other command has recorded its proposal
+  since 003 and a farm recorded none, so a refused farm's entry named the
+  problem (*"zone 1 (barn): width 500 m is outside 5–60 m"*) without naming the
+  design. **The judgement is whether the field is worth having**, because this
+  is the one change in 045 that a test cannot weigh: the zones were always in
+  `raw_command` as a string, so what the new field buys is a ledger that
+  answers the same question the same way for every command, and what it costs
+  is the proposal stored twice. If you would rather read `raw_command` and have
+  the field dropped, say so and it comes out of
+  `WorldModule.proposal_record()` in one place. A `PLAN` record now carries
+  `proposed_steps` for the same reason, and that one is the sharper case: a
+  plan refused at step 2 of 3 used to leave no record of the plan at all.
+- And one worth knowing rather than typing: **an audit by field across this
+  commit is not a before-and-after for those two commands.** Every
+  `CREATE_FARM` and `PLAN` record already in your ledger carries no
+  `proposed_` field; `raw_command` is the field that spans the boundary. The
+  records are yours and 045 did not touch them.
+
 **Smallest useful assistant task next.** The ledger question (033), the
 container-door question (034), the prompt-bound question (035), the validator
 question (036), the intent-door question (037), the which-field question
 (038), the arithmetic question (039) and the five build-it claims (040) are
 all **done**. Candidates, in the order the assistant would take them:
 
-- **THE NEXT ONE: ask every suite in `tests/` what IT cannot see.** This was
-  the last item on 042's list and four commits have now earned it the first
-  place. 041, 042, 043 and 044 each found a correct check with a blind spot,
-  and **none of the four was found by reading the code under test** — each was
-  found by asking what the CHECK could not see. The four blind spots are a
-  taxonomy now and it is the thing to sweep with:
+- **THE NEXT ONE: TRAPS 24 — a line that states a count reads it from what
+  was BUILT.** It is the last rule in the list below with a function left to
+  count, it is the one axis of the construction layer nobody has swept, and
+  **045 read enough of it to hand over a starting point rather than a
+  hunch.** `stub_claims_test` holds the rule for the three Prototype 001
+  stubs. Every other line that states a count is the class, and 042 touched
+  the WORDING of several of them without asking where their numbers came
+  from. **READ, NOT MEASURED, and the next session should measure it before
+  believing any of it:**
+
+  - **`summary()` is the construction layer's sentence — the line a player
+    reads when a world is built — and `grep` finds `.summary(` in THREE of
+    the 52 suites (`capability_test`, `container_door_test`,
+    `counted_said_test`) and `metric_lines(` in TWO.** That is the thinnest
+    layer coverage in `tests/` and it is the layer TRAPS 24's rule is about.
+  - **`FarmModule` overrides neither.** A built farm says *"Farm built (full
+    measurements in the panel)"* from `WorldModule.summary()`, where a dungeon
+    says what it built and a circuit says what it built. A sentence that
+    states no count cannot state a wrong one, so this is a silence rather
+    than a falsehood — which is exactly the shape 032 found at
+    `SPAWN_OPPONENTS` before the false line beside it.
+  - **Two spot-checks came back clean and are recorded so nobody re-does
+    them.** `RacingModule.summary()` reads `report["section_count"]` from
+    `CircuitBuilder.build()`, which adds a road piece for every section it
+    loops over, so the count is of pieces placed. `DungeonModule.build()`
+    places a slab for every room in the layout unconditionally. Neither is
+    the fault; **`DungeonModule.summary()` and `metric_lines()` read
+    `measure(layout)`, which measures the SOLVED LAYOUT and not the built
+    nodes**, and whether those two can ever disagree is the question that
+    was not answered this session.
+
+  **And carry the fifth blind spot with the four axes.** 041, 042, 043, 044
+  and 045 each found a correct check with a blind spot, and **none of the five
+  was found by reading the code under test** — each was found by asking what
+  the CHECK could not see:
 
   | axis | the question to ask a suite |
   |---|---|
@@ -4350,6 +4631,13 @@ all **done**. Candidates, in the order the assistant would take them:
   | **direction** (042) | can its regex match only one of the two ways this goes wrong? |
   | **input shape** (043) | is every fixture taking the one branch that was already right? |
   | **layer** (044) | does every probe enter through the same layer of the four? |
+  | **question** (045) | does it ask whether a thing EXISTS where what is IN it was owed? |
+
+  045's was the last one: `ledger_said_test` asks whether every command leaves
+  a record and says in its own header that it asks nothing about the contents,
+  and the contents were owed to nobody for twelve commits. **Existence, shape,
+  value and wording are four questions about one field**, and a suite that
+  answers one of them says nothing about the other three.
 
   The method: `grep` for `RegEx` and `contains(` in `tests/` as 042 proposed,
   **and** for each suite list which of the four evidence layers its fixtures
@@ -4416,9 +4704,19 @@ all **done**. Candidates, in the order the assistant would take them:
     is the class, and 042 touched the WORDING of several such lines without
     asking where their numbers came from — which is a different question and
     is still open.
-  - **TRAPS 25 — a command's record is part of the command**:
-    `ledger_said_test` enumerates the whitelist, so this one may well be
-    whole; worth confirming rather than assuming.
+  - ~~**TRAPS 25 — a command's record is part of the command.**~~ **ASKED
+    AND ANSWERED IN 045, and the answer was NO.** Counted in the whitelist's
+    own unit (TRAPS 31): of the ten commands that have anything to propose —
+    `CLEAR_WORLD` takes no fields — **eight recorded it and two did not**.
+    This entry's own guess, *"may well be whole"*, was wrong, and the reason
+    it looked whole is the entry worth keeping: `ledger_said_test` enumerates
+    the whitelist correctly and asks only whether the record EXISTS. The two
+    commands that recorded nothing were `CREATE_FARM` and `PLAN`, the fix went
+    into `WorldModule.proposal_record()` off `lists()` rather than into the two
+    doors, and `DungeonModule.record_fields()` is gone because the base now
+    produces it. Left struck rather than deleted, like 042's, 043's and 044's
+    entries, because the next reader should see that a list in this file called
+    a rule whole and it was short by two.
   - **And a question 042 raises about the suites themselves, which may be
     worth more than any single rule: for every sweep in `tests/`, what is the
     sweep blind to?** 041 found a correct assertion fed the one input that

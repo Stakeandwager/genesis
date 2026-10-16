@@ -2162,6 +2162,115 @@ against the pre-044 code.
 
 ---
 
+## 39. The record that said nothing about what was proposed
+
+**Signature:** a player asks for a farm. It is refused - *"zone 1 (barn):
+width 500 m is outside 5-60 m"* - and the ledger entry for the refusal carries
+`world`, `intent` and `command` and nothing else. No zones. The design that
+was refused is not in any field of the record of its refusal. Every suite is
+green, including the one written specifically to ask whether every command the
+whitelist admits leaves a record.
+
+**Cause.** Trap 25's rule is right and it was applied at every door but two.
+**Counted in the unit the whitelist uses** (trap 31, because a count stated in
+the wrong unit is how this file's own lists have been short twice): eleven
+commands, of which `CLEAR_WORLD` takes no fields and so has nothing to
+propose. **Of the remaining ten, EIGHT recorded their proposal and two did
+not** - and a ninth door, the sectionless `CREATE_TRACK` that routes to
+Prototype 001's ring, recorded `proposed_ring` without being a separate entry
+on the list.
+The three `proposed_` fields a dungeon record carries were written out BY HAND
+in `DungeonModule.record_fields()`, the fourth in `RacingModule`'s copy of the
+same lines, and in neither case in `WorldModule` - **the base both of them
+extend**. So the third world inherited a `record_fields()` that records the
+command and the intent and nothing the request arrived with. Measured headless,
+one request per whitelisted command, reading the ledger back off disk:
+
+```
+CREATE_DUNGEON           proposed_rooms, proposed_doors, proposed_things, attempt
+CREATE_TRACK             proposed_sections, proposed_metrics, attempt
+ORDER                    proposed_goal
+SHUT / OPEN              proposed_door
+EQUIP                    proposed_spec
+MODIFY_TRACK             proposed_change
+SPAWN_OPPONENTS          proposed_grid
+CREATE_TRACK (ringless)  proposed_ring
+CREATE_FARM              (nothing)
+PLAN                     (nothing)
+```
+
+`PLAN` is the second and it is the sharper one, because it has a field that
+looks like the missing one: it writes `record["steps"]` on the way OUT, and
+that is the steps it **did**. A plan refused at step 2 of 3 left an entry
+naming the problem and never the plan. A construction-layer field standing
+where an interpretation-layer one was owed is the four layers merged, which is
+the one thing they are kept apart for (PROTOCOL section 2).
+
+**And the data was never lost, which is why this is a claim about SHAPE.**
+`raw_command` holds the whole JSON answer for every command, so a farm's zones
+have always been in the ledger as a string. What a reader going BY FIELD met
+was a farm that proposed nothing, next to eight commands that proposed
+something - the same argument 036 and 037 both made about `intent` carrying
+three shapes, and the one the owner accepted then. Nothing in the repository
+reads a `proposed_` field except `proposed_metrics`, so the cost today falls
+on a person reading the file. Said that way rather than dressed up as data
+loss: a trap entry is a claim too.
+
+**Why nothing saw it, which is the part worth keeping.**
+`tests/ledger_said_test.gd` asks the right question of the right list - does
+every command in `CommandParser.allowed_commands()` leave a record whose id
+the ledger resolves? - and **its own header says what it does not ask**:
+*"NOT ASSERTED, deliberately: no wording anywhere... This asserts that the
+record EXISTS and that its id ties the ledger together."* It is correct, its
+list is the whole list, and the record's CONTENTS were owed to nobody: `grep`
+finds `proposed_` in exactly one file under `tests/` before 045, and there it
+is a fixture in `session_test`. **Trap 6 for the fifth commit running, and
+this one is not one of the four axes 041-044 produced**: 041's blind spot was
+the probe's VALUES, 042's the sweep's DIRECTION, 043's the input's SHAPE,
+044's the LAYER, and this one is the **QUESTION** - existence asked where
+content was owed. A suite that asks whether a thing exists has not asked what
+is in it, and the gap is invisible from inside because the suite is right.
+
+**Do:**
+
+- **A record carries what was PROPOSED, in a field, for every command the
+  whitelist admits.** `raw_command` is the answer as it arrived and is not a
+  substitute: a ledger read by field has to answer the same question for every
+  command, or the field is not a field.
+- **A fact shared by every member of a class belongs in the base they extend,
+  not written out in each one that happens to need it today.** Two
+  hand-written copies and an empty base is the shape that produced this, and
+  the cost was paid by the one member that did not write its own. The reading
+  is `WorldModule.proposal_record()` now, off `lists()` - **the module's own
+  declaration of what a request may carry** - so a world added later records
+  its proposal without its author writing a line. That half is LATENT: there
+  is no fourth world yet, and the fix is for the world that does not exist
+  (trap 11, where the class includes the member not yet written).
+- **A record of a request is the request as sent, never as resolved.** A 500 m
+  zone, a fractional room number, a `zones` that is a string - each is in the
+  record exactly as it arrived, because a record that cleaned up the request
+  would be evidence of a request nobody made (trap 8, one layer along).
+- **An absent list is recorded as an empty list, not as a missing key.** It is
+  the shape the two hand-written readers wrote and it is what lets a reader
+  meet one shape in a field across every record in the file.
+- **Ask of a suite what QUESTION it asked, not only what inputs it used.**
+  Existence, shape, value and wording are four questions about one field, and
+  a suite that answers one of them says nothing about the other three. This
+  suite's own header names the question it asks for the same reason.
+- **A code comment that counts its readers is a claim and gets checked like
+  one.** `Readback.intent_of()` read *"what WorldModule.record_fields() and
+  RacingModule.record_fields() each did by hand... Both readers are now this
+  one."* There were three: `DungeonModule.record_fields()` read the field by
+  hand with its own `typeof()` test. Behaviourally identical, which is how it
+  survived, and false from the commit that wrote it - trap 14 at a code
+  comment, where 043 and 044 each found one. The hand-written reader is gone
+  and the comment is now true.
+
+Found and fixed in 045. `tests/record_proposal_test.gd` fails **8 times**
+against the pre-045 code.
+
+---
+
 
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
@@ -2217,3 +2326,8 @@ against the pre-044 code.
 > And a rule reaches every LAYER it holds at and not only every door, because
 > a one reading whose return type serves the validator is no reading at all to
 > the sentence the player is asked to check.
+> And a record of a request is part of the request, so a command whose record
+> says nothing about what was proposed has been measured in a field nobody can
+> read - and a fact every member of a class needs, written out in the members
+> instead of the base, is already missing from the one that did not write it.
+> And a suite that asked whether a thing EXISTS has not asked what is in it.

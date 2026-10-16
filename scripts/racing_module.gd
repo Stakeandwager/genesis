@@ -93,18 +93,26 @@ RULES FOR A CLOSED CIRCUIT
 	]
 
 
-# The record fields racing has always written, in the same order. Racing
-# records never had a "world" field, so they still don't.
+# The record fields racing has always written. Racing records never had a
+# "world" field, so they still don't.
+# 045: and "in the same order" has gone from the line above, because it was
+# a claim about something nobody can see. TrackLog.append() writes a record
+# through JSON.stringify(), which SORTS KEYS, so the order these are built in
+# has never reached the file - measured, and it is why moving four of them
+# into a merge below leaves every written line byte-identical (TRAPS 14: a
+# sentence in a comment is a claim and this one was about the wrong thing).
+# 045: the proposal and the attempt are WorldModule.proposal_record()'s, read
+# off lists() - which for racing is SectionValidator.list_entry(), so the key
+# is still "proposed_sections" and comes from the one place that names it.
+# This override survives only for the key it does NOT write: racing records
+# have never carried "world" and still do not.
 func record_fields(parameters: Dictionary, attempt: Dictionary) -> Dictionary:
 	var fields := {
 		# 037: Readback.intent_of(), shared with WorldModule.record_fields().
 		"intent": Readback.intent_of(parameters),
 		"command": "CREATE_TRACK",
-		"proposed_sections": parameters.get("sections", []),
-		"attempt": int(attempt.get("attempt", 1)),
 	}
-	if attempt.has("revision_of"):
-		fields["revision_of"] = attempt["revision_of"]
+	fields.merge(proposal_record(parameters, attempt))
 	return fields
 
 
