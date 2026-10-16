@@ -1495,20 +1495,37 @@ func _things_said(parameters: Dictionary, names: PackedStringArray) -> String:
 		var label := str(thing.get("name", "")).replace("_", " ").strip_edges()
 		if label == "":
 			continue
-		# The readback resolves a name the same way the validator does, or it
-		# quietly drops the room and says "a lamp" - which is how the first
-		# version read, and is exactly the half-silence this line exists to
-		# prevent.
+		# --- 044: the resolution, and what it said when it could not ---
+		#
+		# The comment that stood here read "the readback resolves a name the
+		# same way the validator does". It was TRUE when it was written and
+		# 040 made it false three commits ago: the validator refuses a thing
+		# whose "in" is not a whole number in range, and this line went on
+		# taking int() to it. So "in": 2.9 read back as "with a key in the
+		# vault" - room 2 named, a room the request did not ask for - beside
+		# a refusal reading "thing 1: 'key' is in room 2.9". TRAPS 14 at a
+		# claim in a code comment, which is where 043 found one too.
+		#
+		# A number is now resolved through the validator's own reading, so
+		# the two cannot drift again, and a reference that reading cannot use
+		# is SAID BACK AS IT WAS SENT instead of being dropped or truncated
+		# (Readback.position_said()). An out-of-range number used to drop the
+		# room altogether and say "a key", which is the half-silence this
+		# line exists to prevent and was the other half of the same fault.
 		var where := -1
+		var said_where := ""
 		var given = thing.get("in", null)
 		if typeof(given) == TYPE_INT or typeof(given) == TYPE_FLOAT:
-			where = int(given) - 1
-		else:
+			where = Readback.ordinal_index(given, names.size())
+			said_where = Readback.position_said(given, "room")
+		elif typeof(given) == TYPE_STRING:
 			var wanted := str(given).to_lower().strip_edges().replace(" ", "_")
 			for i in names.size():
 				if str(names[i]).to_lower().replace(" ", "_") == wanted:
 					where = i
 					break
+			if where < 0 and str(given).strip_edges() != "":
+				said_where = Readback.the(str(given))
 		if where >= 0 and where < names.size():
 			# 043: the indefinite article here has read is_label() since
 			# 031 and the definite one three words later was written by
@@ -1516,6 +1533,8 @@ func _things_said(parameters: Dictionary, names: PackedStringArray) -> String:
 			# the rule applied to one of them - which is TRAPS 23 again, in
 			# the same line TRAPS 23 fixed.
 			said.append("%s in %s" % [Readback.article(label), Readback.the(str(names[where]))])
+		elif said_where != "":
+			said.append("%s in %s" % [Readback.article(label), said_where])
 		else:
 			said.append(Readback.article(label))
 	if said.is_empty():

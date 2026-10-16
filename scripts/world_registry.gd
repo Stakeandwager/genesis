@@ -56,6 +56,18 @@ static func around_of(step: Dictionary) -> int:
 	var number := Readback.as_number(raw)
 	if is_nan(number):
 		return 0
+	# 044: and a value that is a number but not a WHOLE one is not a step
+	# either. around_problem() has refused 1.5 since 036 and this read it as
+	# step 1, so the one function written so the check and the placement
+	# could not disagree about "around" disagreed with the check about the
+	# only value 040 taught the check to refuse. NOT REACHABLE by a player:
+	# the schema pass runs around_problem() on every step and returns before
+	# anything is prepared or placed, so no plan carrying a fraction gets
+	# this far. It is a divergence rather than a fault, and it is closed here
+	# because the whole reason this function exists is that two readings of
+	# one field drifted apart once already (036).
+	if Readback.is_fraction(raw):
+		return 0
 	return int(number)
 
 
@@ -221,9 +233,26 @@ static func _plan_readback(parameters: Dictionary) -> String:
 		var module := find(step_command)
 		if module != null:
 			places.append(module.readback_short(step_parameters))
-			# The same reading the builder uses, so the line cannot promise a
-			# relationship the placement will not deliver.
-			if around_of(step) >= 1:
+			# --- 044: the readback asks what was ASKED FOR, not what resolves ---
+			#
+			# This read around_of(step) >= 1, under a comment saying it was
+			# "the same reading the builder uses, so the line cannot promise
+			# a relationship the placement will not deliver". That claim was
+			# false in both directions. For "around": 1.5 around_of() gave 1,
+			# so the line read "one inside the other" for a plan the schema
+			# pass then refused - a promise no placement would deliver. For
+			# "around": null it gave 0, so the line read "side by side" for a
+			# request that plainly asked for containment - the dropped clause
+			# a readback exists to make visible (TRAPS 8).
+			#
+			# A readback is the interpretation layer and the question here is
+			# whether this step asked to sit inside an earlier one. That is a
+			# fact about the REQUEST, so it is read off the request. Whether
+			# the step number is usable is the validation layer's question and
+			# around_problem() answers it, in its own sentence, naming the
+			# value (041) and the range. Keeping the two layers apart is
+			# PROTOCOL section 2 and it is what this line was getting wrong.
+			if _has_around(step):
 				related = true
 		else:
 			doings.append(_doing(step_command, step_parameters))

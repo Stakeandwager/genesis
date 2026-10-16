@@ -181,6 +181,36 @@ static func whole_number_rule(noun: String, count: int) -> String:
 	return "a %s number is a whole number, 1 to %d" % [noun, count]
 
 
+# --- 044: the same reference, at the layer that SAYS it back ---
+#
+# ordinal_index() above is the validation layer's reading: it answers "which
+# position is this, or is it none", and it returns a resolved INDEX or -1.
+# A READBACK cannot use that answer at all. Its whole job is to show a player
+# what Genesis heard so a dropped or misread clause is visible (TRAPS 8), so
+# it must say the value the request CARRIED and never the thing that value
+# resolves to. 040 carried ordinal_index() to all five reference doors and
+# every one of those doors is a validator or a handler; the six readbacks
+# beside them went on calling int() by hand, because the one reading's RETURN
+# TYPE made it unusable where they stood. That is 043's question - can
+# everything that needs this function reach it? - answered by the shape of
+# the answer rather than by the scope of the file.
+#
+# What it cost, measured headless before anything was changed: "room": 2.9
+# read back as "to send someone to room 2" next to a refusal reading "there
+# is no room 2.9", and "room": 0.5 as "room 0", a room no dungeon has. Two
+# sentences about one request, printed in the same exchange, disagreeing
+# about the number - and the one the player is invited to check is the one
+# that was wrong.
+#
+# So this is the readback's reading of the same fact: the noun and the value
+# exactly as sent, through number_said() (041), whole or not, in range or
+# not. It states no range and refuses nothing - the refusal beside it does
+# both, and in its own words (TRAPS 34's rule that each door keeps its own
+# locator sentence).
+static func position_said(value: Variant, noun: String) -> String:
+	return "%s %s" % [noun, number_said(value)]
+
+
 # --- one reading, applied to the article in front of a name (TRAPS 10) ---
 #
 # "Got to the room 2." "Fetching the red key to the chamber 3." A numbered

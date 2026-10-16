@@ -131,7 +131,9 @@ static func readback(parameters: Dictionary) -> String:
 		if asked_room == null:
 			where = "somewhere"
 		elif typeof(asked_room) == TYPE_INT or typeof(asked_room) == TYPE_FLOAT:
-			where = "room %d" % int(asked_room)
+			# 044: said as it was sent, never as the room it would index.
+			# This was `"room %d" % int(asked_room)`.
+			where = Readback.position_said(asked_room, "room")
 		else:
 			where = _place(str(asked_room))
 		if thing == "":
@@ -143,7 +145,9 @@ static func readback(parameters: Dictionary) -> String:
 	if asked == null:
 		return "to send someone somewhere"
 	if typeof(asked) == TYPE_INT or typeof(asked) == TYPE_FLOAT:
-		return "to send someone to room %d" % int(asked)
+		# 044: the same reading as the carry branch above, and as every other
+		# readback that says a reference back - see Readback.position_said().
+		return "to send someone to %s" % Readback.position_said(asked, "room")
 	return "to send someone to %s" % _place(str(asked))
 
 
@@ -217,7 +221,24 @@ static func door_readback(parameters: Dictionary, closed: bool) -> String:
 		return "to %s a door" % ("shut" if closed else "open")
 	return "to %s the door between %s and %s" % [
 		"shut" if closed else "open",
-		_place(str((raw as Array)[0])), _place(str((raw as Array)[1]))]
+		_side_said((raw as Array)[0]), _side_said((raw as Array)[1])]
+
+
+# --- 044: a room NUMBER at this door was said as though it were a NAME ---
+#
+# The prompt offers either at "between", and this readback put both through
+# _place(), which is the definite article's reader. is_label() says - rightly,
+# and says so in its own comment - that a bare number is not a label, because
+# there is no name in front of it to label. So "between": [1, 2] read back as
+# "the door between the 1 and the 2", and [1, 2.9] as "the 1 and the 2.9":
+# the number was said faithfully and then dressed as a room's name, at the one
+# reference door where the sides are not resolved before the sentence is
+# written. A number is a POSITION and is said as one, which is the reading the
+# other five doors use (Readback.position_said()).
+static func _side_said(side: Variant) -> String:
+	if typeof(side) == TYPE_INT or typeof(side) == TYPE_FLOAT:
+		return Readback.position_said(side, "room")
+	return _place(str(side))
 
 
 static func door_line(door: Dictionary, closed: bool, changed: bool) -> String:

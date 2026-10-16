@@ -27,6 +27,17 @@ static func readback(parameters: Dictionary) -> String:
 	var asked := Readback.as_number(parameters.get("count", null))
 	if is_nan(asked) or asked < 1.0:
 		return "to put opponents on the track"
+	# 044: a count that is not a WHOLE number is said as it was sent, not
+	# taken to the number below it. count_of() spells a count in words - "two
+	# opponents", "an opponent" - and int() handed it 2 for 2.9 and 1 for
+	# 1.5, so a request for 1.5 opponents read back as "an opponent". The
+	# words are only right about a whole count, so a fractional one is said
+	# as the number it was (Readback.position_said(), the same reading as the
+	# five reference doors; this one is a quantity rather than a position and
+	# the rule it shares is TRAPS 34's fifth - a number said back is said as
+	# the player wrote it).
+	if asked != floor(asked):
+		return "to put %s opponents on the track" % Readback.number_said(asked)
 	return "to put %s on the track" % Readback.count_of(int(asked), "opponent")
 
 

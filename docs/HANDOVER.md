@@ -13,7 +13,55 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **043**, the task this file named as
+- Last commit at the time of writing: **044**, the task this file named as
+  the next assistant task — *the same audit, carrying 043's question to the
+  rules 043 did not ask*. The rule asked first was **TRAPS 20 and 30's**: *a
+  value from the AI is converted through `Readback.as_number()`, never a bare
+  `int()` or `float()`*. **That one holds.** Every bare conversion left in
+  `scripts/` is either downstream of a validator that rewrote the value as a
+  float — `SectionValidator` returns a `clean` array, so `TrackGeometry`'s
+  float() calls never see a request — or reads Genesis's own bookkeeping. The
+  prediction in this file was that the fourth rule would have the same shape
+  as the first three, and **it does, but at the rule one door along**:
+  **TRAPS 34's**, *a reference by position is a whole number and one that is
+  not is refused with the range named*, put into `Readback.ordinal_index()`
+  and carried by 040 to all five doors the prompt names. **The answer is
+  "only where the fault was found" FOR THE FOURTH COMMIT RUNNING** — and the
+  reason is again sharper than the count. **All five of 040's doors are
+  validators or handlers.** Six READBACKS stand beside them saying the same
+  reference back, and all six called `int()` by hand. **The one reading was
+  unreachable through its RETURN TYPE**, not through its file: `ordinal_index()`
+  gives a resolved index or −1, which is what a validator needs and what a
+  readback must never have, because a readback says what was HEARD (TRAPS 8).
+  Measured headless before anything changed: *"to send someone to room 2"* for
+  `"room": 2.9`, *"room 0"* for 0.5 — a room no dungeon has — *"to make corner
+  2 hard"* for 2.9, *"an opponent"* for `"count": 1.5`, *"with a key in the
+  vault"* for `"in": 2.9`, *"between the 1 and the 2.9"* at SHUT, and *"one
+  inside the other"* for a plan refused for its `"around"`. **Next to every
+  one of those, in the same exchange, the refusal 040 and 041 built says the
+  number exactly** — two sentences about one request disagreeing, and the one
+  the player is invited to check is the wrong one. **Why no suite saw it**:
+  `procedure_test` probes 1.5, 2.9 and 0.5 at all five doors and asserts each
+  is refused with the range named — seven assertions a door, green since 040 —
+  and **every one goes through `_resolve()`, which is the validator**. TRAPS 6
+  for the fourth commit running and in a fourth costume: 041's blind spot was
+  the probe's VALUES, 042's the sweep's DIRECTION, 043's the input's SHAPE,
+  this one the **LAYER**. **A claim in a code comment had been false for three
+  commits**: `_things_said()` resolved a thing's `"in"` under *"the readback
+  resolves a name the same way the validator does"*, true when written and
+  made false by 040 (TRAPS 14, as 043 found one). **Found in the same
+  reading**: a room NUMBER at SHUT/OPEN went through `_place()` and came out
+  dressed as a name (*"the 1"*); a corner below 1 was left out of
+  `MODIFY_TRACK`'s sentence, so `"corner": 0.5` read back identically to a
+  request naming no corner; and `around_of()` disagreed with `around_problem()`
+  about 1.5, in the one function written because two readings of that field
+  drifted once already — **not reachable**, the schema pass refuses first, and
+  closed anyway. 50 suites passed before and 51 after, `--all` included; the
+  new suite fails **63 times** against the pre-044 code. The prompt is
+  byte-identical to 043's (15846 chars, sha256 `c6c2b955...`), so
+  `PROMPT_VERSION` did not move and designs stay comparable. See 044 below and
+  TRAPS 38.
+- The commit before it: **043**, the task that file named as
   the next assistant task — *the same audit, at the rules 042 did not ask*,
   taking the one 042 said it would have taken next. The rule asked is
   **TRAPS 10 and 23's**: *a fact about a WORD lives in one function and
@@ -50,7 +98,7 @@ that the owner has not ruled on.** Do not promote one to the other.
   with a LETTER is still decided by that letter, so *"an hour"* and *"a
   unicorn"* come out wrong — that needs pronunciation, which Genesis does
   not have. See 043 below and TRAPS 37.
-- The commit before it: **042**, the task that file named as the
+- And before that: **042**, the task that file named as the
   next assistant task — *the audit 041 began, continued through the rest of
   TRAPS's rules*. The rule asked is **TRAPS 27's**: *a count and the noun
   after it are one fact, read from `Readback.plural()` and never written out
@@ -353,15 +401,16 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-52 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **50 suites**, counted with `ls tests/*.gd` rather than
+53 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **51 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites.
 
-Last full run (043, Godot 4.7.1 on Linux — `4.7.1.stable.official.a13da4feb`
+Last full run (044, Godot 4.7.1 on Linux — `4.7.1.stable.official.a13da4feb`
 — headless, in a cloud container): **suites with something to look at: 0**,
 both without `--all` and with it, `drive_test` and `session_test` included.
-043's new suite is `said_article_test` (27 failures against the pre-043 code);
+044's new suite is `said_position_test` (63 failures against the pre-044
+code); 043's is `said_article_test` (27 failures against the pre-043 code);
 042's is `counted_said_test` (24 failures against the pre-042 code,
 61 assertions); 041's is `said_number_test` (146 failures against the pre-041
 code, 312 assertions); 040's is `procedure_test` (38 failures against the pre-040 code);
@@ -378,10 +427,12 @@ of the physics names, and `claim_field_test`, `formula_test` and
 `procedure_test` match nothing at all, and `said_number_test` contains none of
 them either, and `counted_said_test` contains none of them (not `ledger`, not
 `session`, not `drive`, not `physics`), and `said_article_test` contains none
-of them either — so all ten run there without
+of them either, and `said_position_test` contains none of them (not
+`order_test`, not `physics`, not `session`) — so all eleven run there without
 `--fixed-fps`, which is what they get here too, and `command_schema_test`,
 `intent_door_test`, `claim_field_test`, `formula_test`, `procedure_test`,
-`said_number_test`, `counted_said_test` and `said_article_test` were each run
+`said_number_test`, `counted_said_test`, `said_article_test` and
+`said_position_test` were each run
 both with it and
 without and pass either way — checked rather than assumed (TRAPS 4). `physics_test` gained 038's car measurement and is already
 on both the Linux `TIMED` list and the `.bat`'s `physics` pattern, so it
@@ -3747,6 +3798,263 @@ verb; one word is the narrower claim and it is the one that is true.
 - The experiment runner was not run; it drives a live API.
 - The records on the owner's disk are his and 043 did not touch them.
 
+## 044 — the reading the readbacks could not use
+
+**Objective.** The task this file named as the next assistant task: *the same
+audit, at the rules 043 did not ask, carrying 043's own question to each of
+them — can everything that needs this function actually reach it?*
+
+**Starting state.** Branch `prototype-002a` at **043** (`abe38dc`), 50 suites,
+0 with something to look at, measured in this session before anything was
+changed.
+
+### The rule the file named first, and why it is not the finding
+
+**TRAPS 20 and 30 — `Readback.as_number()`.** *A value from the AI is
+converted through as_number(), never a bare int() or float(), handlers and
+builders included.* **This one holds.** The call sites were counted and every
+bare conversion left in `scripts/` is one of two things:
+
+- **Downstream of a validator that rewrote the value.**
+  `SectionValidator.validate()` returns a `clean` array built from
+  `_number()`'s floats, and `RacingModule.validate()` hands that array on as
+  `content["sections"]`, so `TrackGeometry`, `TrackMetrics`, `ClosureSolver`,
+  `FeasibilityGate` and `SeparationCheck` never see a request's value at all.
+  The ~60 `float(s["radius"])`-shaped calls in those files are reading
+  Genesis's own numbers.
+- **Reading Genesis's own bookkeeping**, not a request:
+  `int(attempt.get("attempt", 1))`, the session report's counters, a
+  dictionary this code just built.
+
+The tools are the one place worth naming, because they are *not* protected by
+a validator on every path: `ToolRegistry.readback()` describes a REFUSED spec
+through `asked_spec()`, which lays the asked-for fields over the defaults and
+drops any whose type differs from the default's (`_same_kind()`). So
+`float(spec.get("power", DEFAULT))` in `car_tool` and `boots_tool` reads a
+value that has been type-checked — by a hand-written `typeof()` test rather
+than by `as_number()`, which is a second reading of the same fact and is
+recorded here rather than changed, because the fact it decides is *"is this
+the same kind as the default"* and not *"is this a number"*.
+
+**So the predicted shape arrived at the rule one door along.**
+
+### THE CLASS: a reference by position, at the layer that SAYS it back
+
+TRAPS 34's rule — *a reference by position is a whole number, and one that is
+not is refused with the range named rather than truncated in silence* — went
+into `Readback.ordinal_index()` and 040 carried it to all five doors the
+prompt names. **Every one of those five is a validator or a handler.** Six
+readbacks stand beside them saying the same reference back to the player, and
+all six called `int()` by hand. Measured headless before anything was
+changed:
+
+```
+ORDER go_to       "room": 2.9     "to send someone to room 2"
+ORDER go_to       "room": 0.5     "to send someone to room 0"
+ORDER go_to       "room": 99.9    "to send someone to room 99"
+ORDER carry       "room": 2.9     "to have the key carried to room 2"
+SHUT / OPEN       [1, 2.9]        "between the 1 and the 2.9"
+MODIFY_TRACK      "corner": 2.9   "to make corner 2 hard"
+SPAWN_OPPONENTS   "count": 1.5    "to put an opponent on the track"
+CREATE_DUNGEON    "in": 2.9       "with a key in the vault"
+PLAN              "around": 1.5   "one inside the other"
+```
+
+**And next to every one of those, in the same exchange, the refusal says the
+number exactly**: *"there is no room 2.9: a room number is a whole number, 1
+to 3"*, *"thing 1: 'key' is in room 2.9"*, *"'around' must be a whole step
+number (1 to 1), not 1.5"*. Two sentences about one request, disagreeing about
+the number — and **the one the player is invited to check is the wrong one**,
+which turns the readback from the layer that catches a misread clause into the
+layer that hides one.
+
+### Why the one reading could not reach them, which is sharper than the count
+
+**The return type, not the file.** 043 found a one reading only one file could
+call. `ordinal_index()` is `static` on `Readback` and every file can reach it —
+and six callers still could not use it, because it returns a **resolved index,
+or −1**. That is exactly what a validator needs and exactly what a readback
+must not have: a readback's job is to show what Genesis HEARD so a dropped or
+misread clause is visible (TRAPS 8), so it must say the value the request
+CARRIED and never the thing that value resolves to. `Readback.position_said()`
+is the readback's reader of the same fact, and the two now sit beside each
+other with a comment saying why one function cannot serve both.
+
+### Why no suite saw it, which is the part worth keeping
+
+`tests/procedure_test.gd` does exactly what 040 set out to do. It probes 1.5,
+2.9, `count + 0.5` and 0.5 at all five reference doors and asserts each is
+refused, with *"whole"* said and the range named — seven assertions a door,
+green every run since 040. **Every one of them goes through `_resolve()`,
+which is the validator.** The suite is correct, its values are the right
+values (041's lesson, applied), its class is the whole class (040's) — and the
+**LAYER** beside it was never asked.
+
+TRAPS 6 for the **fourth commit running**, in a fourth costume:
+
+| commit | the check was correct, and blind to |
+|---|---|
+| 041 | the probe's **values** — whole numbers only |
+| 042 | the sweep's **direction** — one of two ways a count goes wrong |
+| 043 | the input's **shape** — every room it asked about had a `null` size |
+| 044 | the **layer** — every probe went through the validator |
+
+Genesis keeps four evidence layers apart on purpose (PROTOCOL section 2). A
+suite that asks one of them has not asked the others, and none of these four
+was found by reading the code under test.
+
+### And a claim in a code comment had been false for three commits
+
+`DungeonModule._things_said()` resolved a thing's `"in"` under a comment
+reading *"the readback resolves a name the same way the validator does"*. It
+was **true when it was written**; 040 taught the validator to refuse a
+fraction and left this line taking `int()` to it, so the comment became false
+and stayed false for three commits. TRAPS 14 at a claim in the code rather
+than in a document, which is where 043 found one too. The comment is corrected
+in place and says what was false about it. The same line **dropped the room
+altogether** for an out-of-range number — *"a key"* for `"in": 99` — which is
+the half-silence its own comment said it existed to prevent.
+
+### Found in the same reading, and not about positions
+
+- **`NpcGoals.door_readback()` said a room NUMBER as a NAME.** Both sides went
+  through `_place()`, the definite article's reader, and `is_label()` says —
+  rightly, and says so in its own comment — that a bare number is not a label,
+  because there is no name in front of it to label. So `[1, 2]` read back as
+  *"between the 1 and the 2"*. `_side_said()` now sends a number through
+  `position_said()` and a name through `_place()`.
+- **`TrackBuilder.readback()` left a corner below 1 out of the sentence.** So
+  `"corner": 0.5` read back **identically** to a request naming no corner at
+  all — two different requests, one sentence, which is 031's fault and the one
+  thing a readback must never do. A corner that was not GIVEN is still left
+  out (TRAPS 8); one that was given is said, whatever number it was.
+- **`around_of()` and `around_problem()` disagreed about 1.5.** `around_of()`
+  read it as step 1, in the one function written *because* two readings of
+  that field drifted apart once already (036). **Not reachable by a player**:
+  the schema pass runs `around_problem()` on every step and returns before
+  anything is prepared or placed, so no plan carrying a fraction gets that
+  far. Closed anyway, and recorded as a divergence rather than a fault.
+- **The plan readback read the resolved position and should read the
+  request.** Its comment claimed it used *"the same reading the builder uses,
+  so the line cannot promise a relationship the placement will not deliver"*,
+  and that was false in both directions: *"one inside the other"* for
+  `"around": 1.5`, which the schema pass then refused, and *"side by side"*
+  for `"around": null`, which plainly asked for containment. Whether a step
+  asked to sit inside an earlier one is a fact about the REQUEST, so it is
+  read off the request; whether the step number is usable is the validation
+  layer's question and `around_problem()` still answers it.
+
+### Implementation
+
+| file | what changed |
+|---|---|
+| `readback.gd` | **new** `position_said(value, noun)` — the readback layer's reader of the same fact `ordinal_index()` answers for the validator, deferring to `number_said()` (041) |
+| `npc_goals.gd` | `readback()` go_to and carry say the room as sent; **new** `_side_said()` so a numbered door side is a position and a named one a name |
+| `track_builder.gd` | `readback()` says the corner as sent, and the `corner < 1.0` guard that merged two requests into one sentence is gone |
+| `opponent_builder.gd` | a count that is not whole is said as the number it was, instead of spelled as the one below it |
+| `dungeon_module.gd` | `_things_said()` resolves through `ordinal_index()`, says an unusable reference as sent rather than dropping it, and its false comment is corrected |
+| `world_registry.gd` | `_plan_readback()` reads whether containment was ASKED for; `around_of()` no longer disagrees with `around_problem()` about a fraction |
+| `tests/said_position_test.gd` | **new**, 63 failures against the pre-044 code |
+| `README.md` | 50 suites → 51, counted with `ls` |
+
+### What the suite asserts, and what it does not (TRAPS 6, TRAPS 14)
+
+- Each readback names the reference **exactly as sent** AND **does not name
+  the position below it** — both directions, because a check for what should
+  be there cannot see what should not (TRAPS 36, and 043's own first draft).
+  The absence test is a regex with a boundary on both sides: *"room 2.9"*
+  contains *"room 2"*.
+- **The readback and the refusal for the same request name the same number.**
+  This is the property that was broken and it is independent of both
+  sentences' wording, so either may be rephrased freely and neither may
+  quietly change the value.
+- **The legal case did not move**: a room name still reads as the name, a
+  whole number still resolves to the room's name at a thing's `"in"`, `2.0`
+  still reads *"room 2"* and not *"room 2.0"*, a whole count is still spelled
+  in words. Saying a reference back as sent is what is owed for a value that
+  cannot be used, not a licence to stop resolving.
+- `position_said()` against **facts about numbers typed into the suite**, and
+  its agreement with `number_said()`, so neither can be changed alone.
+- A **sweep** over all six doors and 29 fractional values apiece, independent
+  of every assertion above.
+
+**What this suite's own sweep is blind to**, asked in the same breath as
+writing it, which is the question 042 raised about every sweep in `tests/`:
+the sweep matches *"<noun> <truncated>"*, so it can only see a door whose
+pre-044 sentence used the NOUN. SHUT and OPEN did not — they dressed the
+number as a name — so the sweep reports 81 truncations against the pre-044
+code and **not one of them is at those two doors**. They are caught by the
+assertion that the sentence names the reference *with its noun*, which is why
+that assertion is there as well as the sweep.
+
+**And this suite's own first draft measured its fixture**, for the third
+commit running that a new suite walked into the fault it is about. The SHUT
+and OPEN probes put room 1 on the other side of the door and then asserted
+*"room 1"* absent, so nine values a door reported a fault that was the
+fixture's: **5 failures against the POST-044 code**, which is a suite
+reporting on itself. The other side is a name now.
+
+### Evidence — what was actually run
+
+Godot 4.7.1 (`4.7.1.stable.official.a13da4feb`), headless, Linux, in a cloud
+container.
+
+- **Baseline, before any change:** 50 suites, **0 with something to look at**.
+- **After:** 51 suites, **0 with something to look at**, both without `--all`
+  and with it — `drive_test` and `session_test` included.
+- `tests/said_position_test.gd` **fails 63 times against the pre-044 code**,
+  measured the way 035–043 measured their own: the six changed scripts
+  reverted to `abe38dc` with the suite left in place and `position_said()`
+  stubbed at exactly what the six doors did by hand (`"%s %d" % [noun,
+  int(number)]`) so it parses.
+- `said_position_test` was run **both with `--fixed-fps 120` and without** and
+  passes either way (TRAPS 4). `run_tests.bat` needed no edit: the name
+  matches none of its `findstr` patterns — not `order_test`, not `physics`,
+  not `session`, not `ledger`, not `drive`, not `carry_test` — so it runs
+  there without `--fixed-fps`, which is what it gets here.
+- **THE PROMPT DID NOT MOVE.** Nothing here touches `assembled_prompt()` or
+  any `prompt_section()`. Measured at **15846 characters, sha256
+  `c6c2b9555fa6283c1f4d379c925ba95a15db8000a2d8e3d7d26d4e9010c46e62`** — the
+  same string 041, 042 and 043 recorded, and measured again against `abe38dc`
+  in this session to confirm it. `PROMPT_VERSION` is unchanged at
+  `039-the-arithmetic-it-really-does-1`, so designs stay comparable across
+  this commit.
+- README said 50 suites and there are 51, counted with `ls tests/*.gd` less
+  `replay` and `prompt_test`.
+
+### Not verified
+
+- **NO MODEL SENT ANY OF THIS.** Every value was typed by hand. This harness
+  has no API key. A model writing a fractional room number is not something
+  any log in this repository has observed — what 040 observed is that the
+  code accepted one — so the *reachability* of these sentences from a live
+  model is unmeasured, and that is the honest limit of the whole class.
+- **Nothing ran on Windows and nothing ran in the editor.** What was measured
+  is the string a function returns, not what a person reads on screen.
+- **Whether the new sentences are better PROSE is not asserted and cannot be.**
+  *"to put 2.9 opponents on the track"* is faithful and odd. What the suite
+  asserts is that it does not name a count the request never carried. If the
+  owner would rather such a request were simply refused, that is a change to
+  what Genesis DOES and it is his — see "Human decision needed" 12.
+- **The `MODIFY_TRACK` door still has no refusal to agree with.** It has no
+  validator (036 established that four of eleven commands do not), so the
+  suite records a note rather than an assertion there, and the handler still
+  truncates the same value and acts on it — `modify_corner(2, ...)` for 2.9,
+  which changes nothing because there is no Prototype 001 ring. That the
+  handler should refuse instead is "Human decision needed" 12 as well.
+- **`around_of()`'s divergence was latent, and that is a claim about the
+  schema pass** — read from the code and from `around_problem()` being called
+  for every step before anything is prepared, not from a driven plan carrying
+  a fraction past it.
+- The two `GameController` paths that read `pending_order["room"]` were not
+  driven: `GameController` is a `Node3D` no suite can instantiate. They read
+  Genesis's own validated goal dictionary, not a request, so they are outside
+  this rule — read from the diff, not measured.
+- The experiment runner was not run; it drives a live API.
+- The records on the owner's disk are his and 044 did not touch them.
+
+---
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -4006,14 +4314,56 @@ comes back, because what changed is prose and the owner is the editor:
   article will be wrong — that needs pronunciation, Genesis does not have it,
   and it is recorded rather than quietly left (TRAPS 37).
 
+044 adds a tenth, and it is the only part of 044 a person has to judge,
+because what changed is a sentence and the suite can only prove it is
+faithful:
+
+- *"send the character to room 2.5"* — or anything that makes the model write
+  a fractional room number; typing the JSON by hand is quicker if nothing
+  does. Before 044 the readback said *"to send someone to room 2"* and the
+  refusal underneath it said *"there is no room 2.5"*. It now says *"to send
+  someone to room 2.5"*, so the two lines agree. **The judgement is whether
+  the odd cases read as honest or as clumsy.** The sharp one is
+  `SPAWN_OPPONENTS`: *"to put 2.9 opponents on the track"* is faithful and
+  strange, where the old line said *"two opponents"* and was simply wrong. If
+  a request like that should be REFUSED rather than said back, that is a
+  change to what Genesis does and it is "Human decision needed" 12. Worth one
+  glance too at *"with a key in room 99"* for a thing placed out of range —
+  before 044 the room vanished from the sentence and it read *"with a key"*.
+
 **Smallest useful assistant task next.** The ledger question (033), the
 container-door question (034), the prompt-bound question (035), the validator
 question (036), the intent-door question (037), the which-field question
 (038), the arithmetic question (039) and the five build-it claims (040) are
 all **done**. Candidates, in the order the assistant would take them:
 
-- **THE NEXT ONE: the same audit, at the rules 043 did not ask — and the
-  prediction above came true, so make it again.** 042 expected the third
+- **THE NEXT ONE: ask every suite in `tests/` what IT cannot see.** This was
+  the last item on 042's list and four commits have now earned it the first
+  place. 041, 042, 043 and 044 each found a correct check with a blind spot,
+  and **none of the four was found by reading the code under test** — each was
+  found by asking what the CHECK could not see. The four blind spots are a
+  taxonomy now and it is the thing to sweep with:
+
+  | axis | the question to ask a suite |
+  |---|---|
+  | **values** (041) | are its probes all whole, all mid-range, all the same shape? |
+  | **direction** (042) | can its regex match only one of the two ways this goes wrong? |
+  | **input shape** (043) | is every fixture taking the one branch that was already right? |
+  | **layer** (044) | does every probe enter through the same layer of the four? |
+
+  The method: `grep` for `RegEx` and `contains(` in `tests/` as 042 proposed,
+  **and** for each suite list which of the four evidence layers its fixtures
+  actually enter. 044's finding was that `procedure_test` — a correct suite,
+  the right class, the right values — reached only the validator, and the
+  readback beside it had never been asked by anything. **Expect that to be
+  true of more than one suite**, and expect the readback and the record to be
+  the layers nobody probed, because they are the two that return strings
+  rather than verdicts.
+
+- **THE RULES WITH A FUNCTION LEFT TO COUNT, and one of them is now closed.**
+  042 expected the third rule to have the same shape as the first two and it
+  did; 043 expected the fourth to be the same and **it was, at the rule one
+  door along from the one this list named.** 042 expected the third
   rule to have the same shape as the first two, and it did. 043 asked
   TRAPS 10 and 23's and the answer was *only where the fault was found* for
   the **third time running**, with the blind spot in the CHECK for the third
@@ -4032,14 +4382,28 @@ all **done**. Candidates, in the order the assistant would take them:
     none of them has been asked. The same commit found `article()` deciding
     between *a* and *an* by the first LETTER when the sound decides it. Left
     struck rather than deleted, like 042's entry above.
-  - **TRAPS 20 and 30 — `Readback.as_number()`.** Still as 041 left it: *a
-    value from the AI is converted through as_number(), never a bare int() or
-    float()*, handlers and builders included. 036 fixed four commands. Bare
-    `float()` calls on request-derived values remain in `closure_solver.gd`,
-    **all downstream of validation, which is why they are candidates and not
-    findings.** The question is whether any reader of an **unchecked** value
-    still does its own conversion. **NOT MEASURED**, and the two call sites
-    spot-checked in 041 were sound.
+  - ~~**TRAPS 20 and 30 — `Readback.as_number()`.**~~ **ASKED AND ANSWERED
+    IN 044, and the answer is that the rule HOLDS** — the first rule in this
+    list to come back clean, so nobody need ask again. Every bare conversion
+    left in `scripts/` is downstream of a validator that rewrote the value
+    (`SectionValidator` returns a `clean` float array, so `TrackGeometry`,
+    `TrackMetrics`, `ClosureSolver`, `FeasibilityGate` and `SeparationCheck`
+    never see a request) or reads Genesis's own bookkeeping. **One thing was
+    noted and not changed:** the tools' readback path for a REFUSED spec
+    type-checks through `ToolRegistry._same_kind()` — a hand-written
+    `typeof()` test rather than `as_number()` — which is a second reading of
+    a neighbouring fact. It decides *"is this the same kind as the default"*,
+    not *"is this a number"*, so it is a different question and is left
+    alone; a session that wants a sixth door to this rule should start there.
+  - ~~**TRAPS 34 — `Readback.ordinal_index()`.**~~ **Done in 044**, and this
+    list did not name it: it was reached by carrying 043's question to the
+    rule above and finding that the rule above was sound. The finding was not
+    a call-site count but that **all five of 040's doors are validators or
+    handlers** and the six readbacks beside them could not use the one
+    reading **because of its RETURN TYPE** — an index, where a readback needs
+    the value as sent. Left struck rather than deleted, like 042's and 043's
+    entries, because the next reader should see that the rule which looked
+    finished was finished at one layer of four.
   - ~~**TRAPS 27 — `Readback.plural()` and `count_of()`.**~~ **Done in 042**,
     and it was wider than this list said: this entry named "the report, the
     session summary and the farm's panels", and the circuit's panel — the one
@@ -4831,3 +5195,44 @@ decision, so it is his and not the assistant's.
     TRAPS 35 saying so, so the next audit does not re-open it. Either way the
     assertion stays out of `said_number_test` until the owner says which,
     because a suite that freezes an unmade decision is TRAPS 14.
+
+12. **A fractional count or corner: say it back, or refuse it?** 044 made the
+    readbacks faithful, which was the half that was plainly wrong — a sentence
+    naming a room the request never named. It did not decide the other half,
+    because that half is about what Genesis DOES.
+
+    Three doors stand differently now and the difference is visible to a
+    player:
+
+    ```
+    ORDER "room": 2.9         said back as room 2.9, and REFUSED, naming the range
+    CREATE_DUNGEON "in": 2.9  said back as room 2.9, and REFUSED, naming the range
+    SHUT [1, 2.9]             said back as room 2.9, and REFUSED, naming the range
+    MODIFY_TRACK "corner":2.9 said back as corner 2.9, and ACTED ON as corner 2
+    SPAWN_OPPONENTS 2.9       said back as 2.9 opponents, and ACTED ON as 2
+    ```
+
+    The first three go through a validator and refuse, which is what the
+    prompt says Genesis does: *"it REFUSES rather than clamping"*. The last
+    two have **no validator** — 036 established that four of eleven commands
+    do not, and said at the time that "no validator" means something different
+    for a command that builds nothing whatever it is sent. Both of them
+    currently truncate in the handler and neither builds anything today
+    (`TrackBuilder.corner_nodes` is never filled, so `MODIFY_TRACK` changes
+    nothing and `SPAWN_OPPONENTS` places nothing).
+
+    So the question is **whether these two commands should refuse a value the
+    other three refuse, while they are still Prototype 001 stubs that do
+    nothing**. Refusing costs two small checks and makes Genesis consistent
+    about its own stated rule. Not refusing leaves two sentences that say a
+    number back faithfully and then act on a different one — honest in the
+    readback, inconsistent one layer down.
+
+    **The assistant has not chosen**, because it is a question about what
+    Genesis does on a path the owner may be about to delete (both commands are
+    "Human decision needed" 2's subject), and because the same reasoning
+    decides whether *"to put 2.9 opponents on the track"* should exist as a
+    sentence at all. Either answer is a few lines; neither is asserted in
+    `said_position_test`, which checks only that the sentence does not name a
+    number the request never carried, because a suite that freezes an unmade
+    decision is TRAPS 14.

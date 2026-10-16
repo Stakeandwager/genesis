@@ -61,7 +61,19 @@ func build(parameters: Dictionary) -> String:
 # in from the handler's default (trap 8).
 static func readback(parameters: Dictionary) -> String:
 	var corner := Readback.as_number(parameters.get("corner", null))
-	var named := "a corner" if is_nan(corner) or corner < 1.0 else "corner %d" % int(corner)
+	# 044: said as it was sent. This was `"corner %d" % int(corner)`, so a
+	# request for corner 2.9 read back as "to make corner 2 hard" - a corner
+	# the request never named, at a door with no refusal in front of it at
+	# all (game_controller._modify_track truncates the same value and acts on
+	# it). See Readback.position_said().
+	# And the `corner < 1.0` guard that stood here went with it. It made a
+	# request for corner 0.5 read back IDENTICALLY to a request that named no
+	# corner at all - "to change a corner" - so two different requests had
+	# one sentence, which is 031's fault and the one thing a readback must
+	# never do. A corner that was not GIVEN is still left out rather than
+	# filled in from the handler's default of 1 (TRAPS 8); a corner that was
+	# given is said, whatever number it was.
+	var named := "a corner" if is_nan(corner) else Readback.position_said(corner, "corner")
 	var difficulty := str(parameters.get("difficulty", "")).to_lower().strip_edges()
 	if difficulty == "":
 		return "to change %s" % named

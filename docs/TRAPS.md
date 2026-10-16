@@ -2042,6 +2042,127 @@ against the pre-043 code.
 
 ---
 
+## 38. The reading the readbacks could not use
+
+**Signature:** a player types a request naming room 2.9. Genesis prints *"to
+send someone to room 2"* and, underneath it, *"there is no room 2.9: a room
+number is a whole number, 1 to 3"*. Two sentences about one request,
+disagreeing about the number, in the same exchange - and the one the player is
+invited to check is the wrong one. Every suite is green, including the one
+written specifically to assert that this value is refused rather than
+truncated.
+
+**Cause.** Trap 34's rule is right and was applied to one layer. The fact -
+*a reference by position is a whole number, and one that is not is refused
+with the range named* - went into `Readback.ordinal_index()`, and 040 carried
+it to all five of the doors the prompt names. **Every one of those five is a
+validator or a handler.**
+
+There are six READBACKS standing beside them that say the same reference back
+to the player, and all six went on calling `int()` by hand:
+
+```
+ORDER go_to       "room": 2.9     "to send someone to room 2"
+ORDER go_to       "room": 0.5     "to send someone to room 0"  (no dungeon
+                                   has a room 0)
+ORDER carry       "room": 2.9     "to have the key carried to room 2"
+SHUT / OPEN       [1, 2.9]        "between the 1 and the 2.9"
+MODIFY_TRACK      "corner": 2.9   "to make corner 2 hard"
+SPAWN_OPPONENTS   "count": 1.5    "to put an opponent on the track"
+CREATE_DUNGEON    "in": 2.9       "with a key in the vault"     (room 2,
+                                   named, as though it had been asked for)
+PLAN              "around": 1.5   "one inside the other"
+```
+
+**And the reason is the SHAPE OF THE ANSWER, not the scope of the file.**
+Trap 37 found a one reading that only one file could reach. This one every
+file can reach and six callers still could not use: `ordinal_index()` returns
+a **resolved index, or -1**, which is precisely what a validator needs and
+precisely what a readback must not have. A readback's whole job is to show
+what Genesis HEARD, so a dropped or misread clause is visible (trap 8). It has
+to say the value the request CARRIED and never the thing that value resolves
+to. The one reading was unreachable at the layer that needed it most, and it
+was unreachable through its return type.
+
+**Why nothing saw it, which is the part worth keeping.**
+`tests/procedure_test.gd` does exactly what 040 set out to do: it probes 1.5,
+2.9, `count + 0.5` and 0.5 at all five reference doors and asserts each is
+refused, with *"whole"* said and the range named. Seven assertions a door,
+green every run since 040. **Every one of them goes through `_resolve()`,
+which is the validator.** The suite is correct, its values are the right
+values, its class is the whole class - and the LAYER beside it was never
+asked. Trap 6 for the fourth commit running, in a fourth costume: 041's blind
+spot was the probe's VALUES, 042's was the sweep's DIRECTION, 043's was the
+input's SHAPE, and this one is the LAYER. Genesis keeps four evidence layers
+apart on purpose (PROTOCOL section 2), and a suite that asks one of them has
+not asked the others.
+
+**And a claim in a code comment had been false for three commits.**
+`DungeonModule._things_said()` resolved a thing's `"in"` under a comment
+reading *"the readback resolves a name the same way the validator does"*. It
+was true when it was written. 040 taught the validator to refuse a fraction
+and left this line truncating, so the comment became false and stayed false.
+Trap 14 at a claim in the code, which is where 043 found one too. The same
+line dropped the room altogether for an out-of-range number - *"a key"* for
+`"in": 99` - which is the half-silence its own comment said it existed to
+prevent.
+
+**Found in the same reading, and not about positions.**
+
+- `NpcGoals.door_readback()` put a room NUMBER through `_place()`, the
+  definite article's reader. `is_label()` says - rightly, and says so in its
+  own comment - that a bare number is not a label, because there is no name in
+  front of it to label. So `[1, 2]` read back as *"between the 1 and the 2"*:
+  the number said faithfully and then dressed as a room's name, at the one
+  reference door whose sides are not resolved before the sentence is written.
+- `TrackBuilder.readback()` left a corner below 1 out of the sentence
+  entirely, so `"corner": 0.5` read back **identically** to a request naming
+  no corner at all. Two different requests, one sentence, which is trap 31's
+  fault and the one thing a readback must never do.
+- `WorldRegistry.around_of()` and `around_problem()` disagreed about 1.5 -
+  `around_of()` read it as step 1 - and `around_of()` exists **because** two
+  readings of that one field drifted apart once already (036). Not reachable
+  by a player: the schema pass runs `around_problem()` and returns before
+  anything is prepared. Closed anyway, and recorded as a divergence rather
+  than a fault.
+
+**Do:**
+
+- **A rule reaches every LAYER it holds at, not only every door.** Trap 35
+  asked where a project had already been right once and counted call sites.
+  This is the same question with the unit raised: interpretation, validation,
+  construction and behaviour are four places a fact can be said, and a fix
+  applied in one of them is a quarter of a fix. Enumerate the layers the way
+  040 enumerated the doors.
+- **A one reading whose RETURN TYPE serves one caller is not one reading.**
+  `ordinal_index()` answers "which position is this" and a readback cannot ask
+  that question. Where two layers need the same fact in different shapes, each
+  gets its own reader of it - `ordinal_index()` and
+  `Readback.position_said()` - and neither writes the fact out by hand.
+- **A readback says a reference back exactly as it was sent, and resolves it
+  only when the value is one the validator would accept.** Said as sent is
+  what is owed for a value that cannot be used; the resolved name is the more
+  useful sentence for one that can, and both must survive.
+- **A value a readback cannot use is said, never dropped.** An out-of-range
+  room that disappears from the sentence is the dropped clause the readback
+  exists to make visible.
+- **Ask of a new suite what its own sweep is blind to, in the same breath as
+  writing it.** This suite's sweep matches *"<noun> <truncated>"*, so it
+  cannot see the SHUT and OPEN door, whose pre-044 fault wore a name instead
+  of a noun. 81 truncations found and not one of them at those two doors. They
+  are caught by a different assertion, which is why there are both.
+- **A probe whose fixture can collide with its assertion measures the
+  fixture.** The first draft put room 1 on the other side of the door and then
+  asserted *"room 1"* absent, failing five times against the code it had just
+  been written to pass. Third commit running that a new suite walked into the
+  fault it is about.
+
+Found and fixed in 044. `tests/said_position_test.gd` fails **63 times**
+against the pre-044 code.
+
+---
+
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
 > A fluent sentence is not evidence that anything was understood.
@@ -2093,3 +2214,6 @@ against the pre-043 code.
 > And the article in front of a name is one fact with two words, so a
 > function only one file can reach is not the one reading it was written to
 > be - and a rule written about the letter is a guess at the sound.
+> And a rule reaches every LAYER it holds at and not only every door, because
+> a one reading whose return type serves the validator is no reading at all to
+> the sentence the player is asked to check.
