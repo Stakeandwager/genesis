@@ -139,6 +139,30 @@ func _refusals_that_understate() -> void:
 	_check(not RefusalCheck.quarrel_with(muddled).is_empty(),
 		"caught: the contradiction test refused by denying verification")
 
+	# 048: the first false refusal this checker ever met on real hardware, and
+	# it printed nothing. It was looking for "inspect the world" and "world
+	# state"; the model wrote "inspect or report the current state of the
+	# world". Same claim, different word order. Matched as a pair of ideas now
+	# - an act and a thing, in any order - rather than as a phrase.
+	for reworded in [
+		"Genesis cannot inspect or report the current state of the world or character, as it only builds the world and processes commands",
+		"this game cannot report on the position of an object",
+		"there is no way to read the current state of the world",
+		"Genesis does not know where things are once they have been placed",
+	]:
+		_check(not RefusalCheck.quarrel_with(reworded).is_empty(),
+			"caught however it is worded: '%s...'" % reworded.substr(0, 46))
+
+	# And the honest neighbours the pair rule must not catch. Each names
+	# something Genesis really has not got, using the same vocabulary.
+	for honest_neighbour in [
+		"there is no lock to inspect, because nothing in this game is locked",
+		"no zone of a farm is checked against the road",
+		"there is no command for asking where a thing is; the panel shows it",
+	]:
+		_check(RefusalCheck.quarrel_with(honest_neighbour).is_empty(),
+			"left alone: '%s'" % honest_neighbour)
+
 	# 025: and the one the PROMPT was telling it to say. This was in the
 	# honest list above until /save was looked at properly.
 	for persistence_lie in [

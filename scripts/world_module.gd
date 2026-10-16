@@ -219,12 +219,42 @@ static func mark_piece(node: Node) -> void:
 # old world's children and build() adds the new world's children in the same
 # frame, so between those two lines world_node holds both. A count that
 # included the outgoing world would be larger than the world it describes.
+#
+# --- 048: AND THE WHOLE SUBTREE GOES, NOT JUST THE NODE ---
+#
+# The line above was right about the hazard and wrong about the shape of it.
+# queue_free() marks the node it is called on; `is_queued_for_deletion()` is
+# FALSE for every child of that node. _clear_world_node() frees world_node's
+# direct children - one holder per world - so the pieces are always one level
+# below the mark, and this function walked straight past the holder's flag and
+# counted every piece under it.
+#
+# The owner's machine said it in one line. Asked for a dungeon of four rooms,
+# with a live key, on real hardware:
+#
+#   READBACK: a dungeon of four rooms joined by four doors ...
+#   Controller: CREATE_DUNGEON built 14 rooms joined by 4 doors
+#
+# Fourteen. The readback, the doors, the corridor length and the depth were
+# all correct; only the count of what was BUILT was wrong, and it was wrong by
+# the ten road pieces of the starter circuit that Main puts there to drive
+# before anything has been asked for (`show_unrecorded`), on its way out in
+# that same frame. Four rooms plus ten outgoing pieces.
+#
+# WHY NO SUITE SAW IT, which is the part worth keeping
+# Every test built a world into a FRESH holder. The starter circuit only
+# exists in the running game, so the harness never had an outgoing world to
+# miscount - and 046 moved this sentence onto this count six commits ago on
+# the strength of "the two agree on every dungeon measured so far". They did,
+# here. They did not on the machine with a screen.
 static func placed_pieces(root: Node) -> int:
 	if root == null:
 		return 0
-	var n := 0
-	if root.has_meta(PIECE_META) and not root.is_queued_for_deletion():
-		n += 1
+	# A subtree whose root is going away is going away entire, so nothing
+	# inside it stands. Return before the recursion, not during it.
+	if root.is_queued_for_deletion():
+		return 0
+	var n := 1 if root.has_meta(PIECE_META) else 0
 	for child in root.get_children():
 		n += placed_pieces(child)
 	return n

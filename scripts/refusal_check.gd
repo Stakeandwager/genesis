@@ -112,14 +112,35 @@ const CAPABILITIES := [
 		"but": "Genesis does measure what it builds, and moves bodies with forces on a mass against drag. A boots spec is given a predicted stopping distance from its own numbers before anything moves. What no command does is measure a real stop and report it beside the prediction - a refusal about THAT part is right.",
 	},
 	{
+		# --- 048: matched as a PAIR of ideas, not as a phrase ---
+		#
+		# The owner's machine, first real outing of this checker, 2026-10-16:
+		#
+		#   "Genesis cannot inspect or report the current state of the world
+		#    or character, as it only builds the world and processes commands"
+		#
+		# False - a delivery is decided by reading the thing's position - and
+		# this file printed NOTHING. It was looking for "inspect the world" and
+		# "world state"; the model wrote "inspect or report the current state
+		# of the world". Same claim, different word order, straight through the
+		# net. Third time word order has beaten a phrase list here, after
+		# "actually" (022) and "instead" (023).
+		#
+		# So this capability is matched as a pair: one word for the ACT and one
+		# for the THING, anywhere in the same sentence, after a negation. No
+		# order, no adjacency, so the paraphrase space a model can reach does
+		# not have to be guessed in advance. Still three conditions deep -
+		# negation, act, subject - plus the number rule, which is what keeps it
+		# from firing on everything.
 		"name": "verification from the world",
-		"words": [
-			"verify", "verification", "verified", "verifying",
-			"runtime inspection", "inspect the world", "world state",
-			"world-state", "query the world",
+		"words": ["verify", "verification", "verified", "verifying"],
+		"pairs": [
+			["inspect", "inspection", "report", "query", "check", "read",
+				"tell you", "know"],
+			["state", "world", "position", "location", "where", "attribute"],
 		],
 		"denials": [],
-		"but": "Genesis does verify from the world. A delivery is decided by reading the thing's position afterwards, and a character has no way to report its own success.",
+		"but": "Genesis does read the world and report what it finds. A delivery is decided by reading the thing's position afterwards - that is the whole of how it answers - and a character has no way to report its own success. What it has no command for is being ASKED, in so many words, where something is; a refusal about THAT is right, and the answer is to look at the panel or to give an order and read what it reports.",
 	},
 	{
 		"name": "the record",
@@ -244,6 +265,28 @@ static func _denial_in(whole: String, sentences: Array, capability: Dictionary) 
 			var where := one.find(str(word), negated_from)
 			if where > negated_from:
 				return str(word)
+
+		# 048: and the pair form. One word for the ACT and one for the THING,
+		# both after the negation, in either order and not necessarily near
+		# each other - because the thing being matched is a claim, and a claim
+		# survives being reworded while a phrase does not.
+		var pairs = capability.get("pairs", [])
+		if typeof(pairs) == TYPE_ARRAY and (pairs as Array).size() == 2:
+			var act := _first_of((pairs as Array)[0], one, negated_from)
+			var thing := _first_of((pairs as Array)[1], one, negated_from)
+			if act != "" and thing != "":
+				return "%s ... %s" % [act, thing]
+	return ""
+
+
+# The first of these words to appear after `from`, or "".
+static func _first_of(words: Variant, sentence: String, from: int) -> String:
+	if typeof(words) != TYPE_ARRAY:
+		return ""
+	for word in (words as Array):
+		var at := sentence.find(str(word), from)
+		if at > from:
+			return str(word)
 	return ""
 
 
