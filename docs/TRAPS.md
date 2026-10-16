@@ -2455,6 +2455,179 @@ from different sources look, on the screen, exactly like two facts.
 
 ---
 
+## 42. A flag on the holder, and a net that only caught one word order
+
+**Written from commit `5d36bfb` ("048: fourteen rooms, four rooms, and a net
+with a hole in it") and its diff, both read; neither fault was reproduced by
+the session that wrote this entry.** It is here because TRAPS is the
+project's ledger of what the work has cost and that commit left the documents
+untouched, so its own account — which is fuller than this one — lives in
+`git log 5d36bfb`. Both faults came off the owner's editor on real hardware
+with a live key, 2026-10-16, minutes apart, in code every suite had passed.
+
+**Signature one:** *"CREATE_DUNGEON built 14 rooms joined by 4 doors"*, for a
+request of four. The readback said four, and the doors, the corridor length
+and the depth in that same sentence were all right. **Only the count of what
+was BUILT was wrong.**
+
+**Cause.** `WorldModule.placed_pieces()` walks the tree counting marked nodes
+and skips any that is queued for deletion. `queue_free()` marks **only the
+node it is called on** — `is_queued_for_deletion()` is false for every child
+of that node. `_clear_world_node()` frees `world_node`'s direct children, one
+holder per world, so the pieces are always one level BELOW the mark, and the
+count walked past the holder's flag and counted everything under it. The ten
+extra were the starter circuit `Main` puts in the world so there is something
+to drive before anything has been asked for, on its way out in the same
+frame: four rooms plus ten outgoing road pieces. `placed_pieces()` now returns
+0 for a subtree whose root is going, **before** the recursion rather than
+during it.
+
+**Why no suite saw it, which is the part worth keeping.** Every test built
+into a FRESH holder. The starter circuit exists only in the running game, so
+the harness never had an outgoing world to miscount — and 046 moved this
+player-facing sentence onto this count on the strength of *"the two agree on
+every dungeon measured so far"*. They did agree, in a harness that could not
+disagree. `tests/outgoing_world_test.gd` is the first suite that puts a world
+there first, clears it the way the controller clears it, and only then builds.
+
+**Signature two:** the model wrote *"Genesis cannot inspect or report the
+current state of the world or character, as it only builds the world and
+processes commands"* — false, because a delivery is decided by reading the
+thing's position — and `RefusalCheck` printed **nothing**.
+
+**Cause.** It was looking for the phrases *"inspect the world"* and *"world
+state"*. The model wrote the same claim in a different word order. That is the
+**third** time word order has beaten a phrase list on this project, after
+*"actually"* (022) and *"instead"* (023), so a fourth phrase was not the fix:
+that capability is now matched as a PAIR of ideas — one word for the act
+(inspect, report, query, read, know) and one for the thing (state, world,
+position, location, where) — anywhere in the same sentence after a negation,
+in either order and not necessarily adjacent. Still negation + act + thing +
+not-about-a-number, which is what keeps it quiet: the commit records all 15
+honest refusals in `log_023_test` still left alone, including three new
+neighbours that use the same vocabulary truthfully.
+
+**The rules.** *A subtree whose root is going away is going away entire, so a
+flag on the holder says nothing about the children unless somebody reads it
+before the recursion.* And: *a claim survives being reworded and a phrase does
+not, so a net made of phrases is a net with the paraphrases missing.* And the
+one both halves share, which is 046's lesson arriving from the other
+direction: **a harness that cannot reproduce the condition is not evidence
+that the condition is handled** — "they agree on everything measured so far"
+is a statement about what was measurable.
+
+---
+
+## 43. The farm a plan grew, and the gate that stayed where it was
+
+**Signature:** *"a dungeon with a hall and a vault, inside a farm with a
+barn"* — a request this project records as working. The farm comes out 260 m
+across instead of 64, because a world asked to hold another puts more ground
+round what it holds. Everything in the panel is right. Every zone is where
+the player asked for it. **And the farm has no way in.**
+
+**Cause.** `FarmModule.solve()` lays the zones out, puts a fence round the
+lot and cuts a gate into the south side, recording the gate as a point in the
+layout. `_fence()` exists because that fence can MOVE: a plan calls
+`grow_to()`, and `grown()` pushes the boundary out about the middle, so
+`build()` must ask where the fence actually goes rather than where
+`solve()` put it. The gate was not asked about. `build()` passed `layout["gate"]`
+straight to `_add_fence()`, which skips the posts within half a gate's width
+of it — and on a farm that had grown, the gate's y was the OLD fence line,
+several tens of metres inside the new one, so no post was within half a
+gate's width of anything and none was skipped.
+
+Measured headless, a farm of a barn and a wheat field, before anything was
+changed:
+
+```
+as solved             fence -32..32 by -45..45    gate (0, 45)
+                      10 posts on the gate's line, a 16.0 m gap in them
+grown to 260 x 260    fence -130..130 both ways   gate (0, 45)
+                      0 posts on that line, and no gap anywhere in its 132
+```
+
+**This one is not latent.** `grow_to()` is called by
+`GameController._prepare()` for any plan that puts one world inside another,
+and the farm is the world that grows — racing opts out through `can_grow()`,
+so for *"a circuit in a farm"* or *"a dungeon in a farm"* the farm is always
+the container. A player who typed either got a farm fenced in on four sides.
+What makes it a quiet fault rather than a loud one is that the fence carries
+no collision: nothing is physically stopped, so the gate is a thing you can
+see and not a thing you pass through. The way in was missing from the
+picture, not from the physics.
+
+**And a comment was still claiming it.** The line over `solve()` said *"the
+fence is put round the lot and a gate cut into the south side"*, which had
+been true of every farm until 003 made the farm a container and false for a
+plan's farm ever since — trap 14 again, in a code comment this time, and
+found the way trap 14 says to find them: by measuring the thing the sentence
+asserts.
+
+**Why no suite saw it.** `capability_test` calls `grow_to()` and checks the
+farm reports the bigger extent; nothing built the grown farm and looked at it.
+This is trap 40's axis — *does any fixture ever call the thing the sentence is
+about?* — at the one thing in the farm's layout that no panel line states.
+The audit that found it was the audit of the panel: every line of the farm's
+panel and the circuit's panel was put beside a number walked out of the built
+tree, all of them agreed, and the question *"what fact does this line read"*
+had one answer left over. **The gate is the number nothing in the panel
+states, which is exactly why nothing had ever checked it.**
+
+**The fix is the class and not the gate (trap 11).** `_gate()` beside
+`_fence()`, and the rule it enforces: *anything a world positions against its
+own boundary is read from the boundary that is BUILT.* Audited across both
+worlds that can grow — the farm's zones are deliberately left where they are
+and never touch the fence, and the dungeon positions its rooms and corridors
+against each other and only its `Ground` pad against the grown bounds,
+through `grown()` already — so the gate was the one place the rule was
+broken, and that audit is the part worth keeping: the class has one member
+today and it is written down so a third world does not add a second.
+
+On a farm nobody has grown, `_gate()` returns `layout["gate"]` itself, so no
+farm anybody has ever built changes by a centimetre. `tests/panel_geometry_test.gd`
+holds it by walking the posts in the tree and measuring the distance between
+them — it never asks the module where it put the gate — and it holds the
+ungrown farm to the same rule, so a fix to the grown case cannot be bought
+with the one that was already right.
+
+**Found in the same reading, and it is a one-reading fault rather than a
+wrong number.** `TrackMetrics` carried its own copy of `STRAIGHT_FAMILY` and
+`YAW_TYPES`, and the closure solver, the feasibility gate and two suites all
+read `TrackGeometry`'s — the feasibility gate's own comment says *"the type
+lists come from TrackGeometry, so the gate, the solver and the metrics
+agree"*, and the metrics were the one that did not. The copies were
+byte-identical, so **nothing was ever mismeasured and 049 claims nothing
+else**; what was wrong is that the four panel readings that depend on which
+sections are straight and which turn — the straight ratio, the longest and
+shortest straight, the direction change — were decided by a list nothing else
+in Genesis obeyed, in the file whose own header warns that a new section type
+has to be added in four places. One reading (trap 36), and the suite asserts
+the CONSEQUENCE rather than the list: enumerated from
+`SectionValidator.SECTION_TYPES`, a section of every type is measured on its
+own and the panel's classification of it is checked against the geometry's, so
+a type added to one list and not the other fails.
+
+**And the fourth copy in the same file was the one with teeth**, which is why
+trap 11 says take the class and not the instances you found. `measure()`'s
+`counts` dictionary was a literal of all ten types, and `counts.has(t)`
+decides whether a section is counted at all — while
+`RacingModule._counted()`, which renders the parenthetical after `SECTIONS`,
+already enumerates from `SectionValidator.SECTION_TYPES` and reads
+`counts.get(type, 0)`. A type added to the validator and not to that literal
+would have made the panel say *"0 loop_segments"* on a circuit with one, **on
+the same line as a SECTIONS count that included it** — one panel line
+disagreeing with itself. It enumerates from `SECTION_TYPES` now, and the
+numbers are byte-identical because the literal held all ten.
+
+**The rule.** *A world that can be made bigger re-reads its own boundary
+before it draws anything against it.* And, one level up: *the thing nothing
+states is the thing nothing has checked* — the farm's panel has eight lines
+and every one of them was right; the fault was in the one number in the
+layout that no line prints.
+
+---
+
 > A successful build is not evidence of successful understanding.
 > A passing test is not evidence that anything was tested.
 > A fluent sentence is not evidence that anything was understood.
@@ -2524,3 +2697,14 @@ from different sources look, on the screen, exactly like two facts.
 > And one list holds one type, because a list whose entries mean the same
 > thing in two shapes is read correctly only by the reader written beside the
 > shape its author had in mind.
+> And a subtree whose root is going away is going away entire, so a flag read
+> during the walk instead of before it counts a world on its way out.
+> And a claim survives being reworded where a phrase does not, so a net made
+> of phrases is missing exactly the paraphrases nobody thought of.
+> And a harness that cannot reproduce the condition is not evidence that the
+> condition is handled, so "they agree on everything measured so far" is a
+> statement about what was measurable.
+> And a world that can be made bigger re-reads its own boundary before it
+> draws anything against it, because a point fixed to where the edge USED to
+> be is not on the edge any more — and the number no line of the panel states
+> is the number nothing has ever checked.

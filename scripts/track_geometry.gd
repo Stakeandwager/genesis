@@ -22,9 +22,24 @@ class_name TrackGeometry
 
 const SAMPLE_SPACING := 4.0
 
+# --- which section types are which, in ONE place (049) ---
+#
+# The closure solver, the feasibility gate and two suites already read these
+# from here, and the gate's own comment says so: "the type lists come from
+# TrackGeometry, so the gate, the solver and the metrics agree". TrackMetrics
+# did not - it carried its own copy of STRAIGHT_FAMILY and YAW_TYPES, and it
+# is the file that produces every number in the measurements panel. The two
+# copies were byte-identical, so no circuit was ever mismeasured, and the
+# file whose own header says "adding a type means touching the validator, the
+# geometry, the builder AND this file" was the one with the second copy
+# (TRAPS 36, TRAPS 11).
 const SLOPE_TYPES := ["uphill", "downhill", "crest", "dip"]
 const STRAIGHT_FAMILY := ["straight", "uphill", "downhill", "crest", "dip"]
 const YAW_TYPES := ["corner", "hairpin", "banked_corner"]
+# Every type whose shape is set by a radius. section_length() below is the
+# function that has to agree with this one: a chicane is two arcs of it and a
+# loop segment is an arc of it standing on end.
+const CURVED_TYPES := ["corner", "hairpin", "banked_corner", "chicane", "loop_segment"]
 
 
 static func forward(heading: float) -> Vector3:

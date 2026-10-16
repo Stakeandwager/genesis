@@ -24,6 +24,10 @@ const FIELD_SIDE := Vector2(20.0, 300.0)      # metres, for fields and water
 const BUILDING_SIDE := Vector2(5.0, 60.0)     # metres, for buildings
 const LANE_WIDTH := 6.0
 const MARGIN := 12.0                          # between the fence and the zones
+# 049: the gap left in the fence for the gate. A const rather than a local in
+# _add_fence(), so tests/panel_geometry_test.gd can assert that the gap in
+# the posts is the gate's width without typing the number (TRAPS 31).
+const GATE_WIDTH := 12.0
 
 # Heights. A farm can be viewed from a long way up, where older graphics chips
 # cannot separate two surfaces a few centimetres apart, so everything is given
@@ -186,6 +190,10 @@ func validate(parameters: Dictionary) -> Dictionary:
 
 # Zones are laid out in rows with lanes between them, largest first, then the
 # fence is put round the lot and a gate cut into the south side.
+#
+# 049: the gate point recorded here is where the gate goes on the fence THIS
+# function computes. A plan can move that fence (see _fence() and _gate()),
+# and build() reads the gate from _gate() for that reason.
 func solve(content: Dictionary) -> Dictionary:
 	var zones: Array = (content["zones"] as Array).duplicate(true)
 	if zones.is_empty():
@@ -352,6 +360,42 @@ func _fence(layout: Dictionary) -> Array:
 	return grown(layout["fence_min"], layout["fence_max"], layout)
 
 
+# --- 049: where the gate actually goes ---
+#
+# solve() cuts the gate into the south side of the fence IT computed, and
+# records the point in the layout. _fence() above draws the fence somewhere
+# else the moment a plan asks this farm to hold another world: grown() pushes
+# the boundary out about the middle. The gate was not pushed out with it.
+#
+# Measured headless, a farm of a barn and a wheat field, before this
+# function existed: as solved, the gate's line carried 10 posts with a 16 m
+# gap in the middle of them; the same farm grown to 260 x 260 m by
+# grow_to() - which is what GameController calls for "a dungeon inside a
+# farm" - carried NO post on the gate's line at all and had no gap anywhere
+# in its 132. The way in was gone, and the comment over solve() went on
+# saying "a gate cut into the south side".
+#
+# So the gate is read from the fence that is BUILT and not from the one that
+# was solved, which is the same rule _fence() is here for. The x stays as
+# solve() proposed it: growth is about the middle and solve() centres the
+# farm on the origin, so a gate in the middle of the south side stays in the
+# middle of it. On a farm that has not grown this returns layout["gate"]
+# itself, so no farm anybody has ever built changes shape.
+#
+# The general rule, and the reason this is a function rather than two lines
+# in build(): ANYTHING A WORLD POSITIONS AGAINST ITS OWN BOUNDARY IS READ
+# FROM THE BOUNDARY THAT IS BUILT. Audited across both worlds that can
+# grow - the farm's zones are deliberately left where they are and never
+# touch the fence, and the dungeon positions its rooms and corridors against
+# each other and only its Ground pad against the grown bounds, through
+# grown() already - so the gate was the one place the rule was broken, and
+# tests/panel_geometry_test.gd now holds it (TRAPS 11, TRAPS 43).
+func _gate(layout: Dictionary) -> Vector2:
+	var gate: Vector2 = layout["gate"]
+	var fence := _fence(layout)
+	return Vector2(gate.x, (fence[1] as Vector2).y)
+
+
 func extent(layout: Dictionary) -> Vector2:
 	var fence := _fence(layout)
 	return (fence[1] as Vector2) - (fence[0] as Vector2)
@@ -384,7 +428,9 @@ func build(root: Node3D, layout: Dictionary) -> Dictionary:
 		else:
 			mark_piece(_add_slab(root, "%s_%d" % [type, i + 1], from, to, POND_HEIGHT if type == "pond" else ZONE_HEIGHT, colour))
 
-	_add_fence(root, fence_min, fence_max, layout["gate"])
+	# 049: the gate comes off the fence that is being drawn here, not off the
+	# one solve() computed. See _gate().
+	_add_fence(root, fence_min, fence_max, _gate(layout))
 
 	# 046: the farm states no count in its summary - it has no summary of its
 	# own and takes WorldModule's, which says "Farm built". A sentence that
@@ -439,7 +485,7 @@ func _add_building(root: Node3D, name_for: String, from: Vector2, to: Vector2, c
 func _add_fence(root: Node3D, from: Vector2, to: Vector2, gate: Vector2) -> void:
 	var colour := Color(0.46, 0.38, 0.28)
 	var post_gap := 8.0
-	var gate_width := 12.0
+	var gate_width := GATE_WIDTH
 
 	for side in 4:
 		var start := Vector2.ZERO

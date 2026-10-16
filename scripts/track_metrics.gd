@@ -9,16 +9,31 @@ class_name TrackMetrics
 # silently mismeasured. Adding a type means touching the validator, the
 # geometry, the builder AND this file.
 
-const STRAIGHT_FAMILY := ["straight", "uphill", "downhill", "crest", "dip"]
-const YAW_TYPES := ["corner", "hairpin", "banked_corner"]
-const CURVED_TYPES := ["corner", "hairpin", "banked_corner", "chicane", "loop_segment"]
+# 049: these three lists were declared HERE as well as in TrackGeometry, and
+# every other reader in Genesis - the closure solver, the feasibility gate and
+# two suites - reads TrackGeometry's. The copies were byte-identical, so
+# nothing was ever mismeasured; what was wrong is that the panel decided which
+# sections are straight and which turn from a list nothing else obeyed, in the
+# one file whose header warns that a new type has to be added in four places.
+# One reading (TRAPS 36). tests/panel_geometry_test.gd asserts the
+# consequence rather than the list: for every type the validator accepts, the
+# panel's classification is the geometry's.
 
 
 static func measure(sections: Array) -> Dictionary:
-	var counts := {
-		"straight": 0, "uphill": 0, "downhill": 0, "crest": 0, "dip": 0,
-		"corner": 0, "hairpin": 0, "banked_corner": 0, "chicane": 0, "loop_segment": 0,
-	}
+	# 049: enumerated from the validator's own list, not written out here.
+	# This was the fourth copy of a section-type list in this file, and the
+	# one with teeth: `counts.has(t)` below decides whether a section is
+	# counted at all, and RacingModule._counted() - which renders the
+	# parenthetical after SECTIONS - already enumerates from
+	# SectionValidator.SECTION_TYPES and reads counts.get(type, 0). So a type
+	# added to the validator and not to this literal would have made the
+	# panel say "0 loop_segments" on a circuit with one, on the same line as a
+	# SECTIONS count that included it. Byte-identical today: the literal held
+	# all ten (TRAPS 11, TRAPS 31).
+	var counts := {}
+	for type in SectionValidator.SECTION_TYPES:
+		counts[type] = 0
 	var total := 0.0
 	var straight_total := 0.0
 	var straights: Array = []
@@ -43,12 +58,12 @@ static func measure(sections: Array) -> Dictionary:
 		var length := TrackGeometry.section_length(s)
 		total += length
 
-		if t in STRAIGHT_FAMILY:
+		if t in TrackGeometry.STRAIGHT_FAMILY:
 			straight_total += length
 			straights.append(length)
-		if t in CURVED_TYPES:
+		if t in TrackGeometry.CURVED_TYPES:
 			min_radius = minf(min_radius, float(s.get("radius", INF)))
-		if t in YAW_TYPES:
+		if t in TrackGeometry.YAW_TYPES:
 			var angle := float(s["angle"])
 			net_turn += angle
 			direction_change += absf(angle)

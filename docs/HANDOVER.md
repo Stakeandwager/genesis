@@ -13,7 +13,82 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **047**, the task this file named as
+- **TWO RUNS OF THE UNATTENDED TASK OVERLAPPED ON 2026-10-16**, which is
+  worth knowing because it is the first time it has happened and it will
+  happen again. The task fires every two hours and starts a fresh session
+  with no memory of any other, so both runs read 047 as the last commit and
+  both numbered themselves 048. `5d36bfb` pushed first and **keeps 048**; the
+  second run rebased onto it and **renumbered itself 049** throughout — its
+  subject, its code comments, TRAPS 43 and this file — because its commit had
+  not been pushed and nothing shared had to be rewritten. Nothing was
+  force-pushed and nothing was lost. The two touched no file in `scripts/` in
+  common.
+
+- Last commit at the time of writing: **049**, the task this file named as
+  the next assistant task: **the farm's panel and the circuit's panel,
+  against the geometry they describe** — 047 asked 046's axis at the
+  dungeon's panel and left the other two half asked, and this file said the
+  method was 047's and cheap: build the world, walk the tree, count the
+  pieces, add up the areas and lengths, and put each number beside the panel
+  line that states it. It predicted that the numbers would probably agree and
+  that the thing to ask of each line was **what fact it reads**.
+  **THE PREDICTION WAS RIGHT ABOUT THE NUMBERS AND 049 CLAIMS NOTHING
+  ELSE.** Measured headless before anything changed, **every line of both
+  panels agrees with the geometry actually placed.** The circuit's `LENGTH`,
+  the line this file singled out as *"known not to follow the world"*, was
+  measured off the road surface itself — the centre of every quad of every
+  `Section_` mesh in the tree, added up — and came to **1176.91 m** where the
+  panel said **1177 m** and `measure()` said 1176.99 m; the 8 cm is the road
+  being drawn as chords between samples 4 m apart, and it is a
+  discretisation and not a line disagreeing with its world. The farm's eight
+  lines agree exactly: 9 zone pieces, 141 × 126 m of `Ground` slab, 0.64 ha
+  of worked slab, 484 m² of building, 500 m² of pond, 2400 m² largest, 534 m
+  of rail.
+  **THE FAULT IS NOT IN EITHER PANEL. IT IS IN THE FARM THE PANEL
+  DESCRIBES**, and it was found by asking the audit's own question of the one
+  number in the farm's layout that **no panel line states**: the GATE.
+  `solve()` cuts the gate into the south side of the fence IT computed and
+  records the point; `_fence()` exists precisely because a plan can MOVE that
+  fence, and `build()` passed `layout["gate"]` straight through. Measured, a
+  farm of a barn and a wheat field: as solved, **10 posts on the gate's line
+  with a 16.0 m gap in them**; the same farm grown to 260 × 260 m by
+  `grow_to()` — which is what `GameController` calls for *"a dungeon with a
+  hall and a vault, inside a farm with a barn"*, a request this file records
+  as working — **0 posts on that line and no gap anywhere in its 132.** A
+  farm with no way in, with the comment over `solve()` still saying *"a gate
+  cut into the south side"* (TRAPS 14, in a code comment).
+  **NOT LATENT**, unlike 047's: the farm is the world that grows, because
+  racing opts out through `can_grow()`, so every plan that puts a world
+  inside a farm got one. What makes it quiet rather than loud is that **the
+  fence carries no collision at all** — checked by grep, no `StaticBody3D`
+  and no `CollisionShape3D` anywhere in the module — so the way in was
+  missing from the picture and not from the physics.
+  **The fix is the class**: `_gate()` beside `_fence()`, and the rule
+  *anything a world positions against its own boundary is read from the
+  boundary that is BUILT*, audited across both worlds that can grow — the
+  farm's zones are deliberately left where they are and never touch the
+  fence, and the dungeon positions its rooms and corridors against each other
+  and only its `Ground` pad against the grown bounds, through `grown()`
+  already. **One member today, and written down so a third world does not add
+  a second.** On a farm nobody has grown `_gate()` returns `layout["gate"]`
+  itself, so **no farm anybody has ever built changes by a centimetre**.
+  **Found in the same reading and it is a one-reading fault, not a wrong
+  number**: `TrackMetrics` carried its own copy of `STRAIGHT_FAMILY` and
+  `YAW_TYPES` where the closure solver, the feasibility gate and two suites
+  all read `TrackGeometry`'s — and the feasibility gate's own comment says
+  *"the type lists come from TrackGeometry, so the gate, the solver and the
+  metrics agree"*. The copies were **byte-identical, so nothing was ever
+  mismeasured**; what was wrong is that the four panel readings that depend
+  on which sections are straight and which turn were decided by a list
+  nothing else obeyed, in the file whose header warns a new type needs four
+  files. 54 suites passed before and 55 after, `--all` included; the new
+  suite `panel_geometry_test` (119 assertions) **fails twice** against the
+  pre-049 gate and **does not parse** against the pre-049 code entire,
+  recorded that way rather than stubbed. The prompt is byte-identical, so
+  `PROMPT_VERSION` did not move. **Not verified: no model sent any of this**,
+  and the rail still runs across the gate on every farm — that is "Human
+  decision needed" 15. See 049 below and TRAPS 43.
+- The commit before it: **047**, the task that file named as
   the next assistant task: **the sixth axis applied to `tests/` — which
   suites never RUN the thing they make a claim about?** This file handed over
   a starting point marked MEASURED BY GREP AND NOT A FINDING, and said to
@@ -68,7 +143,45 @@ that the owner has not ruled on.** Do not promote one to the other.
   model sent any of this**, and the dungeon's DOOR count still counts a shut
   door as joining two rooms, which is deliberate and is "Human decision
   needed". See 047 below and TRAPS 41.
-- The commit before it: **046**, the task that file named as
+- Beside it, pushed by the other run of the same task minutes earlier:
+  **`5d36bfb`, subject "048: fourteen rooms, four rooms, and a net with a
+  hole in it"** — and it is the one to read first, because **both its faults
+  came off the OWNER'S editor**, on real hardware with a live key,
+  2026-10-16, in code the suite had passed. **READ FROM THE COMMIT AND ITS
+  DIFF, NOT REPRODUCED BY THE SESSION WRITING THIS**, and that commit changed
+  no documents, so its own account — fuller than this one — is in
+  `git log 5d36bfb`:
+  - *"CREATE_DUNGEON built **14** rooms joined by 4 doors"* for a request of
+    four. The readback, the doors, the corridor length and the depth in that
+    same sentence were all right; only the count of what was BUILT was wrong.
+    `queue_free()` marks only the node it is called on, and
+    `_clear_world_node()` frees `world_node`'s direct children — one holder
+    per world — so the pieces are a level BELOW the mark and
+    `placed_pieces()` walked past the holder's flag. The ten extra were the
+    starter circuit, on its way out in the same frame.
+    `placed_pieces()` now returns 0 for a subtree whose root is going, before
+    the recursion. **This is 046's count, which this file has been quoting
+    since 046 on the strength of "the two agree on every dungeon measured so
+    far"** — and they did, in a harness where every world is built into a
+    fresh holder and nothing is ever on its way out.
+    `tests/outgoing_world_test.gd` is the first suite that puts a world there
+    first and clears it the way the controller does.
+  - `RefusalCheck` met its first real false refusal and said nothing:
+    *"Genesis cannot inspect or report the current state of the world or
+    character"*, where it was looking for *"inspect the world"* and *"world
+    state"*. Third time word order has beaten a phrase list here, after
+    022's *"actually"* and 023's *"instead"*, so that capability is matched as
+    a PAIR of ideas — an act word and a thing word, anywhere in a sentence
+    after a negation, in either order — rather than as a fourth phrase.
+  - **And it records something NOT fixed, as a feature rather than a fault:
+    there is still no way to ASK Genesis anything.** The owner asked twice in
+    that session — *"show me the dungeon metrics"* and *"where is the red key
+    now"* — and got a `SHUT` and an `UNSUPPORTED`. That commit names it as the
+    next thing worth building and leaves it for the owner. **It is not written
+    up anywhere in these documents yet**, which is the first thing the next
+    session should fix: it is an owner finding and it outranks anything on the
+    candidate list below.
+- Before 047: **046**, the task that file named as
   the next assistant task and the last entry on its own list of rules with a
   function left to count: **TRAPS 24's**, *a line that states a count reads it
   from what was BUILT, not from what was asked*. The answer is **only where
@@ -547,17 +660,28 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-56 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **54 suites**, counted with `ls tests/*.gd` rather than
+58 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **56 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites.
 
-Last full run (047, Godot 4.7.1 on Linux — `4.7.1.stable.official.a13da4feb`
-— headless, in a cloud container): **suites with something to look at: 0**,
-both without `--all` and with it, `drive_test` and `session_test` included.
-The baseline before 047 was the same on 53 suites, and the only difference
-between the two runs' suite lists is the new one.
-047's new suite is `panel_built_test` (7 failures and two thrown
+Last full run (049 **on the merged tree, 048 included**, Godot 4.7.1 on Linux
+— `4.7.1.stable.official.a13da4feb` — headless, in a cloud container):
+**suites with something to look at: 0** on all 56, with `--all`, so
+`drive_test`, `session_test`, 048's `outgoing_world_test` and 049's
+`panel_geometry_test` all ran and all passed. The baseline at 047, measured
+the same way in the same container, was the same on 54 suites, and the suite
+lists were **diffed** rather than eyeballed: the only two differences are
+048's new suite and 049's.
+049's new suite is `panel_geometry_test` (**119 assertions**; 2 failures
+against the pre-049 gate, with the rest of 049 in place, and it does NOT
+parse against the pre-049 code entire, because `FarmModule.GATE_WIDTH` and
+`TrackGeometry.CURVED_TYPES` do not exist there — recorded that way rather
+than stubbed);
+048's is `outgoing_world_test`, which passes here and whose failure count
+against the pre-048 code was not measured by the 049 session — see
+`git log 5d36bfb` for what that commit measured;
+047's is `panel_built_test` (7 failures and two thrown
 `SCRIPT ERROR`s against the pre-047 readings, with the 047 scaffolding in
 place; it does not parse against the pre-047 code at all, because
 `DungeonModule.loop_count()` does not exist there);
@@ -595,7 +719,11 @@ without and pass either way — checked rather than assumed (TRAPS 4).
 not `ledger`, not `session`, not `drive`, not `physics`, not `walker`, not
 `order_test`, not `explore` — checked against the file, so it runs there
 without `--fixed-fps`, which is what it got here, and it was run both with
-`--fixed-fps 60` and without and passes either way. `physics_test` gained 038's car measurement and is already
+`--fixed-fps 60` and without and passes either way. `panel_geometry_test` matches
+none of them either — checked by running every one of the `.bat`'s sixteen
+patterns against the name rather than by reading the list — so it runs there
+without `--fixed-fps` too, and it was run both with `--fixed-fps 60` and
+without and passes either way (TRAPS 4). `run_tests.bat` needed no edit. `physics_test` gained 038's car measurement and is already
 on both the Linux `TIMED` list and the `.bat`'s `physics` pattern, so it
 keeps `--fixed-fps` on both.
 
@@ -4805,6 +4933,212 @@ it that this commit only half asked.
 
 ---
 
+## 049 — the panel was right, and the gate was not
+
+**Objective.** The task this file named: the farm's panel and the circuit's
+panel, against the geometry they describe. 047 tied the dungeon's nine lines
+to the slabs in the tree and left the other two panels checked against
+nothing — `counted_said_test` feeds both `measure(solved["layout"])`, a
+layout and not a construction.
+
+**Starting state.** `prototype-002a` at 047. 54 suites, 0 with something to
+look at, `--all` included, measured in this container before anything was
+changed. **048 (`5d36bfb`) landed from another run of the same task while
+this work was in progress**; 049 was rebased onto it, renumbered, and the
+whole suite re-run on the merged tree — 56 suites, 0 with something to look
+at. The two commits touch no file in `scripts/` in common.
+
+**What the audit found: both panels are true about the world they describe.**
+Measured headless before any change, by building each world and walking the
+tree — counting the pieces, adding up the slab areas, and measuring the road
+surface from the committed mesh vertices rather than from any function under
+test:
+
+```
+FARM (9 zones, every zone type)       panel            walked out of the tree
+  ZONES                               9                9 marked pieces
+  SIZE                                141 m by 126 m   141.0 x 126.0 Ground slab
+  ENCLOSED                            1.8 hectares     1.78 ha of that slab
+  WORKED LAND                         0.6 ha  (36%)    0.64 ha, 36.0% of it
+  CROPS            wheat 0.2, barley 0.2 ha            0.40 ha of crop_ slab
+  BUILDINGS                           484 m2           484 m2 of building slab
+  WATER                               500 m2           500 m2 of pond slab
+  FENCE                               534 m            534 m of rail
+
+CIRCUIT (8 sections, vertical + banked)
+  SECTIONS                            8                8 marked road pieces
+  LENGTH                              1177 m           1176.91 m of road surface
+  STRAIGHT RATIO                      68%              68.0%
+  LONGEST STRAIGHT                    200 m            200.02 m
+  SHORTEST STRAIGHT                   200 m            199.98 m
+```
+
+The circuit's `LENGTH` is the line this file singled out as **read and not
+measured** — *"known not to follow the world"*, on the strength of 046's
+record that it comes from the layout. **Measured, it follows the world**:
+1176.91 m of road surface against 1176.99 m stated, an 8 cm gap in 1177 m.
+That is the road being drawn as chords between samples `SAMPLE_SPACING` = 4 m
+apart; the arc is always a little longer than the chords that approximate it.
+It is a discretisation, not a disagreement, and `panel_geometry_test` states
+the tolerance as a fraction with that reason beside it rather than hiding it
+in an `is_equal_approx`.
+
+**THE FAULT IS NOT IN EITHER PANEL.** It is in the farm the panel describes,
+and the audit's own question is what found it: *what fact does this line
+read?* — asked of every line, and then of the one number in the farm's
+layout that **no line reads at all**.
+
+**The finding: a farm a plan has grown has no gate.** `FarmModule.solve()`
+lays out the zones, fences the lot and cuts a gate into the south side,
+recording the gate as a point. `_fence()` exists because that fence can move:
+a plan calls `grow_to()` and `grown()` pushes the boundary out about the
+middle, so `build()` asks where the fence actually goes. **It did not ask
+where the gate goes.** `build()` handed `layout["gate"]` to `_add_fence()`,
+which skips the posts within half a gate's width of it — and on a grown farm
+that point is the OLD fence line, tens of metres inside the new one, so no
+post is near it and none is skipped.
+
+```
+a farm of a barn and a wheat field, before 049
+
+  as solved            fence -32..32 by -45..45     gate (0, 45)
+                       10 posts on the gate's line, widest gap 16.0 m
+  grown to 260 x 260   fence -130..130 both ways    gate (0, 45)
+                       0 posts on that line, widest gap 0.0 m in all 132
+```
+
+**Reachable by typing, which is why it is a finding and not a note.**
+`grow_to()` is called by `GameController._prepare()` for any plan that puts
+one world inside another, and the farm is always the container, because
+racing opts out through `can_grow()`. *"a dungeon with a hall and a vault,
+inside a farm with a barn"* is a request this file records as working (032,
+036). What keeps it quiet rather than loud: **the fence carries no
+collision** — no `StaticBody3D`, no `CollisionShape3D` anywhere in the
+module, checked by grep — so the way in was missing from the picture and not
+from the physics. And the comment over `solve()` was still saying *"a gate
+cut into the south side"*, false for a plan's farm since 003 made the farm a
+container (TRAPS 14, in a code comment).
+
+**Why no suite saw it.** `capability_test` calls `grow_to()` and asserts the
+farm reports the bigger extent. **Nothing built the grown farm and looked at
+it.** That is 046's axis — *does any fixture ever call the thing the sentence
+is about?* — at the one thing in the farm's layout that no sentence states.
+Which is the general lesson and it is sharper than the fault: **the number no
+panel line prints is the number nothing has ever checked.** The farm's panel
+has eight lines, every one of them right.
+
+**Implementation.**
+
+- `scripts/farm_module.gd`: `_gate(layout)` beside `_fence(layout)`, returning
+  the gate on the south side of the fence that is being **built**, with the x
+  as `solve()` proposed it — growth is about the middle and `solve()` centres
+  the farm on the origin, so a gate in the middle of the south side stays in
+  the middle of it. `build()` reads it. On a farm nobody has grown it returns
+  `layout["gate"]` itself, so **no farm anybody has ever built changes by a
+  centimetre** — measured, the ungrown case is unchanged in post count and in
+  gap width. The gate's width is now `GATE_WIDTH` on the module rather than a
+  local in `_add_fence()`, so the suite can assert the gap is the gate's width
+  without typing 12 (TRAPS 31).
+- **The rule is the class and not the gate (TRAPS 11):** *anything a world
+  positions against its own boundary is read from the boundary that is BUILT.*
+  Audited across both worlds that can grow. The farm's zones are deliberately
+  left where they are and never touch the fence (that is what growth is for,
+  and `panel_geometry_test` asserts it). The dungeon positions its rooms and
+  corridors against each other, and only its `Ground` pad against the grown
+  bounds — through `grown()` already. **So the gate is the one member, and
+  the audit is written into `_gate()`'s comment so a third world does not add
+  a second.**
+- `scripts/track_metrics.gd` and `scripts/track_geometry.gd`: `TrackMetrics`
+  carried its own `STRAIGHT_FAMILY` and `YAW_TYPES`, where
+  `closure_solver.gd`, `feasibility_gate.gd` and two suites all read
+  `TrackGeometry`'s — and `feasibility_gate.gd`'s own comment says *"the type
+  lists come from TrackGeometry, so the gate, the solver and the metrics
+  agree"*. **The copies were byte-identical, so nothing was ever mismeasured
+  and 049 claims nothing else.** What was wrong is that the four panel
+  readings that depend on which sections are straight and which turn — the
+  straight ratio, the longest and shortest straight, the direction change —
+  were decided by a list nothing else in Genesis obeyed, in the file whose own
+  header warns that a new section type has to be added in four places. One
+  reading (TRAPS 36). `CURVED_TYPES`, which only `TrackMetrics` had, moved to
+  `TrackGeometry` beside the others, because which sections curve is a
+  question about geometry. **And a fourth copy in the same file was the one
+  with teeth** (TRAPS 11 — the class, not the three it was found at):
+  `measure()`'s `counts` dictionary was a literal of all ten types, and
+  `counts.has(t)` decides whether a section is counted at all, while
+  `RacingModule._counted()` — which renders the parenthetical after
+  `SECTIONS` — already enumerates from `SectionValidator.SECTION_TYPES` and
+  reads `counts.get(type, 0)`. A type added to the validator and not to that
+  literal would have made the panel say *"0 loop_segments"* on a circuit with
+  one, **on the same line as a SECTIONS count that included it.** It now
+  enumerates from `SECTION_TYPES`. Byte-identical today: the literal held all
+  ten.
+- `tests/panel_geometry_test.gd`, new, 119 assertions.
+- `docs/TRAPS.md` trap 43. `README.md`: 54 suites → 55, counted with `ls`.
+
+**Evidence.**
+
+- **Baseline, before any change**, Godot 4.7.1 headless
+  (`4.7.1.stable.official.a13da4feb`), Linux, cloud container, `--all`:
+  **54 suites, 0 with something to look at**, `drive_test` and `session_test`
+  included.
+- **After: 55 suites, 0 with something to look at**, `--all`, both slow
+  suites included. The two runs' suite lists were **diffed** and the only
+  difference is `panel_geometry_test`.
+- `panel_geometry_test` **fails twice** against the pre-049 gate with the rest
+  of 049 in place — *"the gap in those posts is at least the gate's width
+  (8.1 m, gate is 12.0 m)"* and *"the gap is where the gate was cut, across
+  the middle (-125.9 vs 0.0)"*, which is one post spacing on the far corner of
+  a 260 m side rather than a gateway. Against the **pre-049 code entire it
+  does not parse**, because `FarmModule.GATE_WIDTH` and
+  `TrackGeometry.CURVED_TYPES` do not exist there; recorded that way rather
+  than stubbed, as 046's and 047's were.
+- Run with `--fixed-fps 60` and without, and passes either way (TRAPS 4).
+  `run_tests.bat` needed no edit: every one of its sixteen `findstr` patterns
+  was run against the name `panel_geometry_test` and none matches, so it runs
+  on Windows without `--fixed-fps` as it does here — checked by running the
+  patterns, not by reading the list.
+- **No sentence moved.** The farm's eight panel lines and the circuit's nine
+  are byte-identical before and after, measured on the same worlds, and so is
+  the circuit's build sentence (*"CREATE_TRACK built a closed clockwise
+  circuit: 8 sections, 1177 m of road"*). **The prompt is byte-identical**, so
+  `PROMPT_VERSION` is unchanged — held by `prompt_bounds_test` rather than by
+  a measurement of mine.
+
+**Limitations.**
+
+- **NO MODEL SENT ANY OF THIS.** Every request in the new suite is typed into
+  it and labelled as such, or read off the module's own `lists()`. This
+  harness has no key. Nothing ran on Windows and nothing ran in the editor.
+- **The ungrown farm was already right**, and 049 does not claim to have
+  fixed anything a player has seen in a single-world farm. What is fixed is
+  the farm a PLAN builds, and no plan was run end to end through
+  `GameController` in this session: the growth was done through
+  `grow_to()`, which is the module API the controller calls, and that is one
+  layer in from the request.
+- **The rail still runs across the gate**, on every farm, grown or not —
+  measured, the rails of a 44 × 44 m farm add up to 176 m, exactly its
+  perimeter. So a gate is a gap in a row of posts with a rail through the
+  middle of it. What a gate should look like is a sentence about the world and
+  it is "Human decision needed" 15, not a commit.
+- **The one-reading fix changed no number**, and a before-and-after of any
+  circuit measurement across this commit is therefore not a before-and-after
+  of anything: the two lists were identical. It is a guard against a type
+  added in one place, and the suite asserts the consequence rather than the
+  lists.
+- **The chord tolerance is a real looseness.** `panel_geometry_test` holds the
+  circuit's lengths to 0.5% because the road is drawn as chords. A builder
+  that placed a road 0.4% short of the length the panel states would pass. The
+  alternative — measuring the arc the way the panel does — would be the suite
+  recomputing the thing under test, which is what 046 and 047 were about.
+- No record changed and no ledger field moved. The records on the owner's
+  disk are his and 049 did not touch them.
+
+**Next action.** See "Next action" below, and note that the first entry there
+is no longer 049's: **048 brought an owner finding with it** — there is no
+way to ASK Genesis anything — and that outranks the panel work. 049's own
+follow-on, the panel beside a REFUSAL and the layout fields no sentence
+reads, is the entry under it.
+
 ## Next action
 
 **Still the owner's, and still a minute's work.** The proxy is built (020):
@@ -5156,14 +5490,154 @@ not change either:
   doorway"* would say why. Adding it is adding a sentence, so it is "Human
   decision needed" 14 rather than a commit.
 
+048 adds a seventeenth, and it is **the one to do first, because it is your
+own finding and the fix is to a frame of the running game that no harness
+can stand in for.** From `git log 5d36bfb`, not measured here:
+
+- **Ask for a dungeon of four rooms, in a fresh session, and read the
+  sentence under the readback.** It said *"CREATE_DUNGEON built 14 rooms
+  joined by 4 doors"* on your machine, and the 14 was four rooms plus the ten
+  road pieces of the starter circuit on its way out in the same frame. It
+  should now say four. **That sentence is the only thing that settles it**:
+  what 048 tested is a tree assembled to look like that frame, not the frame.
+- And the thing 048 did NOT fix, which it records as a feature rather than a
+  fault: **there is still no way to ASK Genesis anything.** *"show me the
+  dungeon metrics"* came back `SHUT` and *"where is the red key now"* came
+  back `UNSUPPORTED`. That is yours to rule on and it is at the top of the
+  assistant's list below.
+
+049 adds an eighteenth, and this one IS worth typing too, because it is the
+first fault in several commits that a player could have met:
+
+- **Type a plan that puts one world inside another** — *"a dungeon with a
+  hall and a vault, inside a farm with a barn"* — and **look at the farm's
+  fence, along the south side.** Before 049 there was no gate: `solve()` cut
+  one into the fence it computed, the plan then pushed the fence out to make
+  room for the dungeon, and the gate stayed where it was, tens of metres
+  inside the new boundary. The farm came out fenced on all four sides. It
+  should now have a 16 m gap in the posts, in the middle of the south side,
+  on a grown farm as it always had on a plain one. **Nothing else about that
+  farm changes**, and a farm with one world in it is byte-identical to what
+  it was — measured.
+- **The judgement, and it is the only part of 049 a person has to make: the
+  RAIL still runs across that gap.** `_add_fence()` puts one rail per side,
+  spanning the whole side, and skips only posts near the gate. So a gate is a
+  gap in a row of posts with a rail through the middle of it, and that has
+  been true of every farm since 003 — 049 did not change it, because what a
+  gate should look like is a sentence about the world and not a fix. See
+  "Human decision needed" 15: leave it, break the rail at the gate, or build
+  an actual gate. **The one thing worth knowing before deciding:** the fence
+  has no collision at all, so none of this stops anybody walking in today.
+  If the fence is ever given collision, a rail across the only gap is a farm
+  nothing can drive into — which is the thing the farm's own header says it
+  refuses.
+- And one worth knowing rather than typing: **nothing in the panel changed
+  and no record moved.** 049 measured both remaining panels against the
+  geometry they describe and every line was already right, the circuit's
+  road LENGTH included — the line this file had flagged as *"known not to
+  follow the world"*. It follows it to within 8 cm in 1177 m, which is the
+  road being drawn as chords. An audit by field across this commit is not a
+  before-and-after of anything; the records on your disk are yours and 049
+  did not touch them.
+
 **Smallest useful assistant task next.** The ledger question (033), the
 container-door question (034), the prompt-bound question (035), the validator
 question (036), the intent-door question (037), the which-field question
 (038), the arithmetic question (039) and the five build-it claims (040) are
 all **done**. Candidates, in the order the assistant would take them:
 
-- **THE NEXT ONE: the farm's panel and the circuit's panel, against the
-  geometry they describe.** 047 asked 046's axis at the dungeon's panel and
+- **THE NEXT ONE, AND IT OUTRANKS EVERYTHING BELOW IT BECAUSE IT IS THE
+  OWNER'S: there is no way to ASK Genesis anything.** Found on his machine on
+  2026-10-16 and recorded in `5d36bfb`'s message, which is the only place it
+  is written down: *"show me the dungeon metrics"* came back `SHUT` and
+  *"where is the red key now"* came back `UNSUPPORTED`. Both are honest
+  refusals of commands that do not exist — the measurements are already in
+  the panel and a thing's position is already how a delivery is decided, so
+  **Genesis has the facts and has no door to them.**
+
+  **The first job is to write it up properly**, because it is an owner
+  finding sitting in a commit message rather than in these documents, and the
+  second is that **what to build is not the assistant's to decide**: a new
+  whitelisted command is a change to what Genesis IS. So the shape of the
+  work is: read the two refusals and what produced them, measure which facts
+  are already reachable without a new command (the panel's lines, `room_of()`,
+  `walkable()`, a thing's position), and write the options into "Human
+  decision needed" for the owner — a `LOOK`-style query command, a widening
+  of an existing one, or nothing at all. **Do not add a command.** 032's three
+  Prototype 001 stubs are the standing warning about what a whitelist entry
+  that builds nothing costs.
+
+- **The panel beside a REFUSAL, and the fields no sentence
+  reads.** 047 and 049 between them have now put every panel line of all
+  three worlds beside the geometry it describes, **for a world that was
+  BUILT**. `main.gd:996` draws the panel from a second place as well:
+
+  ```
+  var m := record.get("metrics", record.get("proposed_metrics", {}))
+  ```
+
+  — so a request that was REFUSED gets a panel too, drawn from
+  `proposed_metrics`, under the line *"(measurements below describe the
+  proposal, not a built track)"*. **Nothing in `tests/` has ever produced
+  that panel**, and it is the one case where the numbers describe, by
+  construction, a world that does not exist. The caveat line is what makes it
+  honest, so the questions are: does every line stay inside what that caveat
+  covers, and is the caveat shown in every case it is owed?
+
+  **MEASURED BY GREP THIS SESSION, AND IT IS A STARTING POINT AND NOT A
+  FINDING — read it before believing it:**
+
+  - **`proposed_metrics` is put into a world's record in exactly one
+    place**, `racing_module.gd:130`, inside `pre_check()`. The dungeon writes
+    none and the farm writes none. (`main.gd:408` copies it into a revision's
+    `revision_of`, which is a reader and not a second producer.) So a refused CIRCUIT shows a full panel of
+    measurements and **a refused dungeon or farm shows none at all** — the
+    `m.is_empty()` branch prints the REASON and returns. That is 046's shape
+    exactly: one world states the thing, the others are silent, and a silence
+    cannot state a wrong number. Whether the silence is right is the
+    question; `record_proposal_test` already notes that `proposed_metrics` is
+    the only `proposed_` field anything reads.
+  - **The racing panel's last four lines are not in `proposed_metrics` at
+    all.** `CLOSURE ERROR`, `SELF-INTERSECTIONS`, `MIN SEPARATION` and
+    `SOLVER CHANGE` are appended by `metric_lines()` only `if record.has(...)`
+    — so on a refusal they appear or vanish depending on how far the request
+    got, and which of those a player sees is a fact about where it failed
+    that no line states. Worth asking what each one means when the thing it
+    measures was never built.
+  - **And the field nothing reads at all.** `FarmModule.solve()` writes
+    `"lane_width": LANE_WIDTH` into the layout, and `grep` across every
+    `.gd`, `.md`, `.html`, `.cfg`, `.toml`, `.bat` and `.sh` in the
+    repository finds `lane_width` in **one place — that line** (and now in
+    this paragraph). No panel line, no sentence, no suite, no reader. That is the same class as 049's
+    gate one step further on: the gate was at least read by `build()` and
+    merely read from the wrong place. This one is read by nothing, so there is
+    nothing to be wrong — which is exactly why nobody would notice if the
+    farm's lanes ever stopped being 6 m.
+
+  **The method is 049's own lesson, and it is the cheapest thing on this
+  list: for every world, list the keys its `solve()` writes into the layout,
+  and ask of each one WHO READS IT.** 049's fault was in the one key of the
+  farm's layout that no panel line states, and it was found that way and not
+  by reading `build()`. The farm's layout has six keys (`zones`,
+  `fence_min`, `fence_max`, `gate`, `lane_width`, and `min_extent` when a plan
+  has grown it); the dungeon's and the circuit's have not been enumerated.
+  **Expect at least one more dead or wrongly-read field**, because the two
+  found so far were both in the first layout anyone looked at.
+
+- ~~**The farm's panel and the circuit's panel, against the
+  geometry they describe.**~~ **ASKED AND ANSWERED IN 049, AND BOTH PANELS
+  WERE RIGHT.** Every line of both agrees with the geometry placed —
+  including the circuit's road LENGTH, which this entry called out as *"known
+  not to follow the world"* on the strength of 046's note: measured off the
+  road surface in the tree it is 1176.91 m against 1177 m stated, and the
+  8 cm is chord sampling. **This entry's own prediction was right in both
+  halves** — that the numbers would agree, and that the thing to ask was what
+  fact each line reads. The fault it turned up was the GATE: the one number
+  in the farm's layout that no panel line states, left behind when a plan
+  moves the fence. Left struck rather than deleted, like 042's through 046's
+  entries, because the lesson is the one worth carrying: **the number no line
+  prints is the number nothing has checked.** The entry as it stood:
+  047 asked 046's axis at the dungeon's panel and
   left the other two half asked, and the half it left is the numeric half.
   `panel_built_test` now produces **every** module's panel from a world that
   was solved and BUILT, which closes the gap as far as SHAPE goes — no line
@@ -6257,3 +6731,36 @@ decision, so it is his and not the assistant's.
     unchanged by shutting one. That is deliberate — a shut door still joins
     two rooms — and it is left where 046 left the same question about a
     door's construction being a corridor.
+
+15. **What a farm's gate should LOOK like, now that it is in the right
+    place.** 049 fixed the gate's position: a farm a plan has grown has a
+    16 m gap in its fence posts on the south side again, where before it had
+    none. What 049 did **not** touch is that the RAIL runs straight across
+    that gap. `_add_fence()` places one rail per side, spanning the whole
+    side, and skips only POSTS near the gate — so on every farm Genesis has
+    ever built, grown or not, the gate is a gap in a row of posts with a rail
+    through the middle of it. Measured, not read: the rails of a 44 × 44 m
+    farm add up to **176 m**, which is exactly its perimeter — four rails,
+    one per side, each as long as the side it runs, with no break anywhere.
+    And the farm places no `StaticBody3D` and no `CollisionShape3D` at all,
+    checked by grep across the module.
+
+    Nothing is physically blocked either way — the fence carries no collision
+    at all, so a gate is a thing a player sees and not a thing they pass
+    through. So this is a question about what a farm should look like, which
+    is yours:
+
+    - **(a) Leave it.** A gap in the posts reads as a gateway well enough,
+      and it is what every farm has looked like since 003.
+    - **(b) Break the rail at the gate** — two rail segments per side on the
+      side the gate is in. A few lines in `_add_fence()`, and it is the thing
+      that would make a gate look like a gate.
+    - **(c) Put a gate THERE** — two posts and a crossbar — which is new
+      geometry rather than a fix.
+
+    And one thing worth knowing whichever way it goes: **if the fence is ever
+    given collision**, (a) stops being cosmetic. A rail across the only gap
+    would be a farm nothing can drive into, which is the thing the farm's
+    own header says it refuses — *"A farm you cannot drive a tractor around
+    is refused"*. Recorded here rather than guarded, because nothing drives
+    on a farm today.
