@@ -173,6 +173,14 @@ func execute(command: String, parameters: Dictionary) -> void:
 				# than counted as a measurement (TRAPS 6). It records anyway,
 				# because the day it does fire is the day somebody needs to
 				# know it did.
+				# 054: and that is now ASSERTED rather than stated.
+				# controller_reach_test walks CommandParser.allowed_commands()
+				# against the case list READ OFF this match statement, so a
+				# twelfth command admitted without a case fails the suite; and
+				# it hands execute() a command no case matches, which is the
+				# one door this branch has, and reads the category back. A
+				# guard nothing can reach is also a guard nothing can prove is
+				# still wired in (TRAPS 47) - this one can be.
 				_finish_nothing(_new_record(command), NO_HANDLER,
 					"No handler for: " + command)
 
@@ -232,6 +240,21 @@ func _order(parameters: Dictionary) -> void:
 	var goal: Dictionary = checked["goal"]
 	var module := WorldRegistry.find(str(standable.get("command", "")))
 	if module == null:
+		# 054: A GUARD, no legal request reaches it, and nothing said so
+		# before. Two facts put it out of reach, both asserted in
+		# controller_reach_test. The first: DungeonModule is the only module
+		# that reports a standable at all - grepped across scripts/, where
+		# WorldModule only documents the key - and it puts its own command()
+		# in it, which the registry knows, so find() never comes back null
+		# for a world that is standing. (_rebuild_standable sets the same
+		# value again on the SHUT/OPEN path; the suite asserts every
+		# registered module's command() is one the registry knows, so a
+		# second standable-reporting world is asked the question too.) The
+		# second: an ORDER sent when nothing is standing is refused one step
+		# EARLIER, by NpcGoals, which answers "there is nobody to order
+		# about: build a dungeon first" as FAILED_SCHEMA - measured, not
+		# reasoned about. It fires when handed a standable whose command no
+		# module answers to.
 		_finish_failed(record, "FAILED_SCENE", ["there is nobody to order about here"])
 		return
 
@@ -252,6 +275,14 @@ func _order(parameters: Dictionary) -> void:
 	if str(goal.get("thing", "")) != "":
 		var found := _thing_node(str(goal["thing"]))
 		if found == null:
+			# 054: A GUARD. It needs a thing LISTED in standable.things whose
+			# node is dead, and no request leaves one: a thing is listed by
+			# the module that placed it, _rebuild_standable replaces the whole
+			# list when a door is shut, and _clear_world_node empties
+			# standable altogether. Asserted in controller_reach_test as the
+			# invariant it guards - over a build, a SHUT, an OPEN, an errand
+			# in progress and a SHUT during one, every thing in the list has a
+			# valid node - and fired by freeing a node and leaving it listed.
 			_finish_failed(record, "FAILED_SCENE", [
 				NpcGoals.missing_thing_line(str(goal["thing"]), "gone")])
 			return
@@ -259,6 +290,15 @@ func _order(parameters: Dictionary) -> void:
 		var local_thing: Vector3 = (standable["node"] as Node3D).to_local(found.global_position)
 		var thing_room := module.room_of(layout, Vector2(local_thing.x, local_thing.z))
 		if thing_room < 0:
+			# 054: REACHABLE, and it took physics to find, which is why it is
+			# written down here. A thing is placed in a room and a room is
+			# where it ends, so this reads like the guard its neighbour above
+			# is - but a thing being CARRIED spends part of the errand in a
+			# corridor, where room_of() is -1. Measured over one errand: the
+			# lamp was sampled in room 1, in room 2 and in no room at all. So
+			# a SECOND order sent at that moment reaches this line, and
+			# controller_reach_test produces exactly that - it waits for a
+			# roomless frame and sends one.
 			_finish_failed(record, "FAILED_SCENE", [
 				NpcGoals.missing_thing_line(str(goal["thing"]), "roomless")])
 			return
@@ -655,8 +695,19 @@ const MAX_PLAN_STEPS := 4
 # NOTHING_BUILT is not FAILED_SCHEMA and not FAILED_SCENE. The request was
 # well formed and the world was the right kind; there is simply no
 # implementation behind the name. The three Prototype 001 paths are the only
-# ones that answer to it, and the day one of them is rebuilt or taken out of
-# the whitelist, nothing answers to it at all.
+# ones that answer to it, and the day the last of them is rebuilt or taken out
+# of the whitelist, nothing answers to it at all.
+#
+# 054: AND ONLY TWO OF THOSE THREE CAN BE REACHED, which this comment did not
+# say and a reader counting live answers off it would have got wrong.
+# MODIFY_TRACK's and the sectionless CREATE_TRACK's are reachable and
+# controller_reach_test sends one of each. SPAWN_OPPONENTS' is a GUARD: it
+# stands after the has_track() refusal, and TrackBuilder.corner_nodes is
+# appended to nowhere in scripts/, so has_track() is always false and the
+# refusal above returns first. The comment at _spawn_opponents' SCHEMA check
+# has said exactly that since 036 - about the line four above this one's
+# sibling - and the same label was never put on the NOTHING_BUILT line
+# itself, which is TRAPS 11 at the scale of two adjacent branches.
 const NOTHING_BUILT := "FAILED_NOTHING_BUILT"
 # A whitelisted command with no case in execute(). See the _ branch there.
 const NO_HANDLER := "FAILED_NO_HANDLER"
@@ -1345,6 +1396,15 @@ func _restore_view() -> void:
 func _modify_track(parameters: Dictionary) -> void:
 	var record := _new_record("MODIFY_TRACK")
 	record["proposed_change"] = parameters
+	# 054: MEASURED, and worth knowing before reading the branches below.
+	# main.gd stands an UNRECORDED starter circuit in the world at launch
+	# (show_unrecorded, main.gd:135) so there is something to drive before
+	# anything has been asked for, and that sets `drivable`. So has_drivable()
+	# is TRUE on a fresh session and this is the answer a player's FIRST
+	# MODIFY_TRACK gets - about a track he never asked for. The two branches
+	# below are reached only after the world has been cleared. Nothing is
+	# changed here: what that refusal should SAY is in HANDOVER under "Human
+	# decision needed" 2, with the rest of the three stubs' future.
 	if has_drivable():
 		_finish_nothing(record, "FAILED_SCENE",
 			"MODIFY_TRACK failed: composed tracks are changed with MODIFY_SECTION, which comes in a later step")
@@ -1396,6 +1456,19 @@ func _spawn_opponents(parameters: Dictionary) -> void:
 			["'count' must be a number, how many opponents to put on the grid"])
 		return
 	var count: int = 1 if is_nan(asked_count) else int(asked_count)
+	# 054: UNREACHABLE TODAY for the same reason as the check above it, and
+	# labelled now rather than only in the sentence next door (TRAPS 11, TRAPS
+	# 6). has_track() is always false, so the guard above returns first and no
+	# request gets here. stub_claims_test has asserted the reachability half
+	# since 032 - corner_nodes empty before and after a build, has_track()
+	# false, and its header says that is "the reason SPAWN_OPPONENTS can never
+	# run" - so this line was already known to be out of reach from the
+	# BUILDER's side. What 054 adds is the other two halves: that nothing
+	# anywhere in scripts/ appends to corner_nodes (grepped by the suite, not
+	# asserted on one instance after one build), and that handed a track this
+	# branch FIRES - controller_reach_test puts two corner nodes into
+	# TrackBuilder.corner_nodes and reads FAILED_NOTHING_BUILT back. A guard,
+	# then, and not dead code.
 	_finish_nothing(record, NOTHING_BUILT, opponent_builder.spawn(
 		count,
 		track_builder.get_start_position(),

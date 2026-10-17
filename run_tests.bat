@@ -39,7 +39,7 @@ for %%f in (tests\*.gd) do (
   )
 
   REM Suites that step physics need a fixed rate.
-  echo !NAME! | findstr /c:"carry_test" /c:"false_delivery" /c:"ledger" /c:"order_test" /c:"explore" /c:"walker" /c:"physics" /c:"behaviour" /c:"interference" /c:"repeat_test" /c:"drive" /c:"session" >nul && set ARGS=--fixed-fps 120
+  echo !NAME! | findstr /c:"carry_test" /c:"false_delivery" /c:"ledger" /c:"order_test" /c:"explore" /c:"walker" /c:"physics" /c:"behaviour" /c:"interference" /c:"repeat_test" /c:"drive" /c:"session" /c:"controller_reach" >nul && set ARGS=--fixed-fps 120
 
   if defined SKIP (
     echo !NAME!  --  skipped ^(!SKIP!^)

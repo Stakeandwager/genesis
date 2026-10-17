@@ -24,7 +24,67 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **053**, the task this file named as
+- Last commit at the time of writing: **054**, the task this file named as
+  the next assistant task: **053's two questions asked of the refusals the
+  CONTROLLER returns** — can a legal request reach each one, and does each
+  one fire when handed a violation?
+  **THE SEVEN NAMES ARE TWENTY-EIGHT BRANCHES, AND THAT IS THE FIRST
+  ANSWER.** `FAILED_SCHEMA` alone is returned from eleven places,
+  `FAILED_SCENE` from nine. 053's hardest lesson was that a table with one
+  row per NAME hid two of `FAILED_LAYOUT`'s three branches, so every row in
+  the new suite is a BRANCH and the enumeration counts refusal CALL SITES in
+  the source rather than distinct names (TRAPS 11).
+  **TWENTY-TWO ARE REACHABLE, FIVE ARE GUARDS, AND ALL FIVE FIRE.** No dead
+  refusal in the controller either. The guards are `FAILED_NO_HANDLER`
+  (every whitelisted command has an unguarded case in `execute()` or a
+  module in `WorldRegistry`, walked against the case list READ OFF the
+  source), `SPAWN_OPPONENTS`' `FAILED_SCHEMA` and its
+  `FAILED_NOTHING_BUILT` (both stand after the `has_track()` refusal, and
+  `TrackBuilder.corner_nodes` is appended to nowhere in `scripts/` — grepped,
+  not remembered), and two of `ORDER`'s `FAILED_SCENE` branches (no module
+  owns the standable world; the thing is not in the world any more).
+  **One of the five was already half-asserted and this file says so rather
+  than claiming the discovery**: `stub_claims_test` has held since 032 that
+  `corner_nodes` is empty before and after a build and that `has_track()` is
+  false, and its header calls that *"the reason `SPAWN_OPPONENTS` can never
+  run"*. So the project already knew. What 054 adds there is the grep across
+  `scripts/` rather than one instance after one build, and the second
+  question — handed a track, both of those branches fire.
+  **Unlike 053's farm guard, every one of the five can be proved CONNECTED**:
+  each has a door that takes the thing it checks, so each was wired out one
+  at a time and the suite caught it.
+  **THE FINDING IS A COUNT IN A COMMENT.** `FAILED_NOTHING_BUILT`'s own
+  header in `game_controller.gd` names *"the three Prototype 001 paths"* as
+  the ones that answer to it. Measured: **only two of the three can be
+  reached.** `SPAWN_OPPONENTS`' is a guard, for exactly the reason the
+  comment four lines above its SCHEMA sibling has given since 036 — and that
+  label was put on one member of the pair and never on the other, which is
+  TRAPS 11 at the scale of two adjacent branches. Nothing is wrong on any
+  request today; what was wrong is that a reader counting live answers off
+  the comment got three.
+  **AND THE FIRST READING GOT THREE BRANCHES WRONG, WHICH IS TRAPS 48.**
+  `main.gd` stands an **unrecorded starter circuit** in the world at launch
+  (`show_unrecorded`, `main.gd:135`) so there is something to drive before
+  anything is asked for, and that sets `drivable` — so on a fresh session
+  `has_drivable()` is TRUE, both `MODIFY_TRACK` and `SPAWN_OPPONENTS` answer
+  with their composed-track refusal, and their other branches are reachable
+  only after a clear. Measured, not read: **a player's first `MODIFY_TRACK`
+  of a session is refused for a track he never asked for**, which is a
+  sentence and is now noted under "Human decision needed" 2. And
+  `FAILED_SCENE`'s *"the thing is not in any room"* was read as a guard and
+  is **reachable**: a carried thing is in a corridor for part of the errand
+  — sampled over one errand, the lamp was in room 1, in room 2 and in no
+  room at all — so a second order sent at that moment reaches it. It took
+  stepped physics to find.
+  60 suites passed before and 61 after, `--all` in both, lists **diffed**:
+  the only difference is `controller_reach_test`, **136 assertions**, which
+  fails against **sixteen** deliberate breakages made one at a time.
+  **Not verified: no model sent any of this, nothing was rendered on a
+  screen, and no world, record or saved file changes** — the prompt is
+  byte-identical and `PROMPT_VERSION` did not move. `FAILED_AI`'s first
+  question is **not answered**: it needs a live key and an API that fails.
+  See 054 below and TRAPS 48.
+- The commit before it: **053**, the task that file named as
   the next assistant task: **052's question asked of a LIST instead of a
   key — which refusal categories can no legal request reach, and does each
   of those checks fire when handed an input that does violate it?**
@@ -73,7 +133,7 @@ that the owner has not ruled on.** Do not promote one to the other.
   screen, and no world, record or saved file changes** — the prompt is
   byte-identical and `PROMPT_VERSION` did not move. See 053 below, "Human
   decision needed" 18, and TRAPS 47.
-- The commit before it: **052**, the task that file named as
+- Before that: **052**, the task that file named as
   the next assistant task: **the layout keys nothing reads, enumerated world
   by world** — and the class question it set with it, *is a layout a RECORD
   of what was decided or an INPUT to the builder?*
@@ -856,12 +916,38 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-62 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **60 suites**, counted with `ls tests/*.gd` rather than
+63 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **61 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites.
 
-Last full run (053, Godot 4.7.1 on Linux —
+Last full run (054, Godot 4.7.1 on Linux —
+`4.7.1.stable.official.a13da4feb` — headless, in a cloud container):
+**suites with something to look at: 0** on all 61, with `--all`. The
+baseline at 053, measured the same way in the same container, was the same
+on 60 suites, and the lists were **diffed**: the only difference is
+`controller_reach_test`.
+054's new suite is `controller_reach_test` (**136 assertions**). It changes
+no behaviour either, so what stands in place of a "failures against the
+pre-054 code" count is **sixteen deliberate breakages, made one at a time
+and the suite re-run against each**: a twelfth whitelisted command with no
+case in `execute()` (2 failures), the `NO_HANDLER` branch wired out (3), a
+node put into `TrackBuilder.corner_nodes` (1), **each of the five guards
+wired out of the step that calls it** — `NO_HANDLER` (3),
+`SPAWN_OPPONENTS`' SCHEMA (2) and its `NOTHING_BUILT` (3), `ORDER`'s
+no-module (2) and its thing-gone (2) — the `FAILED_AI` row wired out (3),
+`FAILED_PARSE` renamed in the source (7), a branch ADDED to a category that
+already had rows (1), the starter circuit taken away (2), and five of the
+reachable branches wired out one at a time (1 to 2 failures each). **It is in the
+fixed-rate list in BOTH runners**, because it steps physics to carry a
+thing: added to `TIMED` in `run_tests.sh` and to the `findstr` line in
+`run_tests.bat`, where none of the twelve existing patterns matched the new
+name — RUN against it, not eyeballed. It passes with `--fixed-fps 120` and
+without (TRAPS 4); it is listed anyway, because what it measures should not
+depend on the frame rate it got. README said 60 suites and there are 61,
+counted with `ls`.
+
+The run before it (053, Godot 4.7.1 on Linux —
 `4.7.1.stable.official.a13da4feb` — headless, in a cloud container):
 **suites with something to look at: 0** on all 60, with `--all`. The
 baseline at 052, measured the same way in the same container, was the same
@@ -6527,8 +6613,21 @@ all **done**. Candidates, in the order the assistant would take them:
   Prototype 001 stubs are the standing warning about what a whitelist entry
   that builds nothing costs.
 
-- **THE NEXT ONE: the same two questions asked of the SIX the controller
-  returns.** 053 answered them for the ten categories the world modules
+- ~~**THE NEXT ONE: the same two questions asked of the SIX the controller
+  returns.**~~ **DONE IN 054: THE SEVEN NAMES ARE TWENTY-EIGHT BRANCHES —
+  TWENTY-TWO REACHABLE, FIVE GUARDS, ALL FIVE FIRE, AND ALL FIVE CAN BE
+  PROVED CONNECTED.** `FAILED_AI`'s first question needs a key this harness
+  does not have and is left unanswered rather than guessed. **The finding
+  was a count in a comment**: `FAILED_NOTHING_BUILT`'s header names three
+  Prototype 001 paths and only two can be reached. **And this entry's own
+  prediction below was right about `FAILED_NO_HANDLER` and wrong about where
+  the blind spot would be** — it was not in the check, it was in reading
+  reachability off the code instead of the running scene, which is TRAPS 48:
+  the starter circuit `main.gd` stands up at launch makes `has_drivable()`
+  true before any request, and a carried thing spends part of its errand in
+  no room. Left struck rather than deleted, because the prediction is worth
+  reading beside what actually happened. The entry as it stood:
+  053 answered them for the ten categories the world modules
   return and enumerated these six without asking either:
   `FAILED_SCHEMA`, `FAILED_SCENE`, `FAILED_NOTHING_BUILT`,
   `FAILED_NO_HANDLER`, `FAILED_PARSE` and the AI runner's `FAILED_AI` — plus
@@ -7533,6 +7632,223 @@ next to it that it did not mention at all.
 **Next action.** The same two questions asked of the six controller
 categories — see the candidate list.
 
+## 054 — the refusals the controller returns, and the count a comment got wrong
+
+**Objective.** HANDOVER named the next assistant task as 053's two questions
+asked of the categories `GameController`, `main.gd` and `ExperimentRunner`
+return, which 053 enumerated and declared `NOT_ASKED`: *can any request a
+player can send produce this refusal, and handed an input that does violate
+it, does the check fire?* 053 said they "need a scene tree and a whitelist
+walk rather than a module sweep". They do.
+
+**Starting state.** Branch `prototype-002a` at `ce8050d` (053). 60 suites,
+`--all`, 0 with something to look at. `refusal_reach_test` carried six rows
+marked `NOT_ASKED`.
+
+### The first answer is the SIZE of the list
+
+Seven names. **Twenty-eight branches.** `FAILED_SCHEMA` is returned from
+eleven places, `FAILED_SCENE` from nine, `FAILED_UNWALKABLE` from two (and
+those two are the controller's, not the dungeon's — the same name has three
+branches across the project), `FAILED_NOTHING_BUILT` from three,
+`FAILED_NO_HANDLER`, `FAILED_PARSE` and `FAILED_AI` from one each.
+
+053's hardest-won lesson was that `FAILED_LAYOUT` is returned from three
+places for three reasons and *"a table with one row per name would have
+hidden two of them"*. So every row in the new suite is a BRANCH, and the
+enumeration counts refusal CALL SITES in the three controller files rather
+than distinct names — which is also what makes it fail closed: a
+twenty-ninth branch added to a category that already has rows is caught by a
+count, not by a name.
+
+### The answer: 22 reachable, 5 guards, all 5 fire, 1 needs a key
+
+| | |
+|---|---|
+| REACHABLE | 22 branches, each driven by a named request through `main.gd` |
+| GUARD | 5 branches, no legal request reaches them, all 5 fire when violated |
+| NEEDS_KEY | `FAILED_AI` — question 1 cannot be answered in this harness |
+
+**No dead refusal in the controller either.** And unlike 053's farm guard,
+**every one of the five can be proved CONNECTED**: each has a door that takes
+the thing it checks, so each was wired out of the step that calls it, one at
+a time, and the suite caught every one. The five, with the fact that puts
+each out of reach:
+
+- **`FAILED_NO_HANDLER`** — `execute()`'s `_` branch. Every command
+  `CommandParser.allowed_commands()` admits has either an unguarded case in
+  `execute()` or a module in `WorldRegistry`, so `find()` never comes back
+  null. Walked over the whitelist against the case list **read off
+  `execute()`'s own source**, so a twelfth command admitted without a case
+  fails the suite — measured by adding one. `CREATE_TRACK`'s case is
+  *guarded* (`when not parameters.has("sections")`), so a sectioned one
+  falls through to the `_` branch and is answered by the registry; the walk
+  counts a guarded case as no case, which is the only reading that is safe.
+  Fired by handing `execute()` a command no case matches.
+- **`FAILED_SCHEMA` at `SPAWN_OPPONENTS`** — *"count must be a number"*. It
+  stands after the `has_track()` refusal, and `TrackBuilder.corner_nodes` is
+  appended to nowhere in `scripts/` — **grepped by the suite, not
+  remembered** — so `has_track()` is always false and the refusal above
+  returns first. The comment at that line has said so since 036, and
+  `stub_claims_test` has asserted the builder's half since 032 — see the
+  finding below. Fired by putting two nodes into `corner_nodes`.
+- **`FAILED_NOTHING_BUILT` at `SPAWN_OPPONENTS`** — the same reason, four
+  lines further down, **and it was not labelled.** See the finding below.
+- **`FAILED_SCENE`, `ORDER`'s *"there is nobody to order about here"*** — it
+  needs `WorldRegistry.find(standable.command)` to be null while rooms
+  exist. Two facts, both asserted. **`DungeonModule` is the only module that
+  reports a standable at all** — grepped across `scripts/`, where
+  `WorldModule` merely documents the key — and it puts its own `command()`
+  in it, which the registry knows; the suite asserts that property of every
+  registered module, so a second standable-reporting world is asked too. And
+  an `ORDER` sent with nothing standing is refused one step EARLIER by
+  `NpcGoals`, as `FAILED_SCHEMA` — *"there is nobody to order about: build a
+  dungeon first"*, measured. Fired by setting the standable's command to a word no
+  module answers to.
+- **`FAILED_SCENE`, `ORDER`'s *"the thing is not in the world any more"*** —
+  it needs a thing LISTED in `standable.things` whose node is dead. Asserted
+  as the invariant it guards: over a build, a SHUT, an OPEN, an errand in
+  progress and a SHUT during one, every thing in the list has a valid node.
+  Fired by freeing a node and leaving it listed.
+
+### The finding is a count in a comment
+
+`FAILED_NOTHING_BUILT`'s own header in `game_controller.gd` names **"the
+three Prototype 001 paths"** as the ones that answer to it. Measured: **only
+two of the three can be reached.** `MODIFY_TRACK`'s and the sectionless
+`CREATE_TRACK`'s are reachable and the suite sends one of each.
+`SPAWN_OPPONENTS`' is a guard — and the comment at its SCHEMA sibling, four
+lines above it, has given exactly that reason since 036. **The label was put
+on one member of a pair and never on the other**, which is TRAPS 11 at the
+scale of two adjacent branches, and TRAPS 14 in a comment that states a
+count.
+
+**And the sharper version of the finding is that the repository already
+disagreed with itself.** `stub_claims_test` has said since 032, in its own
+header, that `corner_nodes` is never filled and that this is *"the reason
+`SPAWN_OPPONENTS` can never run"* — and it asserts it, on the builder.
+So one file knew the branch was unreachable while another file's comment
+counted it among three live answers, for twenty-two commits. Neither was
+reading the other. **The label is not new information; it is the information
+arriving where a reader of that category would meet it.** Found by grepping
+`tests/` for the thing this file's own first draft denied — it said "nothing
+asserted it", and something did (TRAPS 14, in this handover).
+
+**Nothing is wrong on any request today.** The category still has two live
+answers and both say what they should. What was wrong is that a reader
+counting live answers off that comment would have got three — and the day
+someone takes `SPAWN_OPPONENTS` out of the whitelist under "Human decision
+needed" 2, the comment would have predicted a change to this category that
+would not happen.
+
+### And the first reading got three branches wrong (TRAPS 48)
+
+Each of the three was read off the functions correctly and was wrong about
+the running program.
+
+- **The starter circuit.** `main.gd` stands an **unrecorded** circuit in the
+  world at launch (`controller.show_unrecorded`, `main.gd:135`) so there is
+  something to drive before anything has been asked for, and that sets
+  `drivable`. So on a fresh session `has_drivable()` is **TRUE before any
+  request**, and both `MODIFY_TRACK` and `SPAWN_OPPONENTS` answer with their
+  composed-track branch. Their other branches — `MODIFY_TRACK`'s *"corner
+  must be a number"* and *"nothing to change"*, `SPAWN_OPPONENTS`' *"build a
+  track first"* — are reachable only after the world has been cleared. All
+  of them are REACHABLE rows; the fixtures clear first and say why.
+  **What it means for a player is a sentence and not a mechanism**: his
+  first `MODIFY_TRACK` of a session is refused for a track he never asked
+  for. Noted under "Human decision needed" 2, with the rest of the three
+  stubs' future. Not changed.
+- **A carried thing stands in no room.** `FAILED_SCENE`'s *"the lamp is not
+  in any room"* was read as a guard, on the reasoning that a thing is placed
+  in a room and delivered to a room. It is **reachable**: a thing being
+  CARRIED is in a corridor for part of the errand. Sampled every 20 frames
+  over one errand, the lamp was in room 1 (43 samples), in room 2 (69) and
+  **in no room at all (8)**. A second `ORDER` sent at that moment reaches
+  the line, and the suite produces exactly that — it waits for a roomless
+  frame and sends one. It took stepped physics to find, not a closer read.
+- **`SPAWN_OPPONENTS`' count check** was read as the refusal a bad count
+  gets. It is a guard, as above.
+
+### Implementation
+
+- **`tests/controller_reach_test.gd`**, new, **136 assertions**. One row per
+  branch; the enumeration read off the source; a named request at each
+  reachable branch; a violation handed to each guard.
+- **Comments at the five guards and at the two branches that were read
+  wrong**, in `scripts/game_controller.gd` — TRAPS 6's *"worth keeping,
+  worth labelling"*, applied to the rest of the list rather than to the two
+  members that already said so (TRAPS 11). `FAILED_NOTHING_BUILT`'s header
+  now says which two of its three paths are live. **No behaviour changes
+  anywhere.**
+- **`tests/refusal_reach_test.gd`**: the six `NOT_ASKED` rows become
+  `ASKED_IN_054`, which says where the per-branch answer is rather than
+  stating a verdict one row per NAME cannot hold — `FAILED_LAYOUT`'s problem
+  one layer out. Its out-of-scope paragraph now points at the new suite, and
+  both suites assert from their own side that every `FAILED_` name in
+  `scripts/` is answered for by one of them, so a category cannot sit
+  between them unanswered.
+- **`run_tests.sh` and `run_tests.bat`**: the new suite joins the fixed-rate
+  list in both. It steps physics to carry a thing, and none of
+  `run_tests.bat`'s twelve `findstr` patterns matched the new name — RUN
+  against it, not eyeballed.
+- **`README.md`**: said 60 suites; there are 61, counted with `ls`.
+
+### Evidence — what was actually run
+
+- Godot 4.7.1 headless on Linux (`4.7.1.stable.official.a13da4feb`), in a
+  cloud container. **Baseline at 053: 60 suites, `--all`, 0 with something
+  to look at. After: 61 suites, `--all`, 0 with something to look at.** The
+  lists were **diffed**; the only difference is `controller_reach_test`.
+- **It was run against broken code before it was believed** (052's lesson,
+  053's practice). **Sixteen deliberate breakages, one at a time**, every
+  one caught — the list and the failure counts are under "Run the tests
+  first" above. The ones worth naming here: a branch ADDED to a category
+  that already had rows (caught by the count, not the name), the starter
+  circuit taken away, and each of the five guards wired out.
+- Run with `--fixed-fps 120` and without; passes either way (TRAPS 4).
+
+### What the tests did NOT prove
+
+- **No model sent any of this.** Every request in the suite and in the
+  measuring was typed as raw JSON through `main.gd`'s own typed door; this
+  harness has no key, and nothing was reproduced from the owner's screen.
+- **Nothing was rendered on a screen** and no world was looked at.
+- **No world, record or saved file changes.** The prompt is byte-identical,
+  `PROMPT_VERSION` did not move, and nothing on the owner's disk was
+  touched. The only `scripts/` changes are comments.
+- **`FAILED_AI`'s first question is not answered.** It needs a live API key
+  and an API that fails, and this harness has neither. Nothing claims it is
+  reachable or that it is not. Its second question IS answered:
+  `ExperimentRunner` handed `MAX_RETRIES + 1` failures writes the category.
+- **Two pairs of branches share a category AND a command**, and the suite
+  cannot tell them apart beyond the scene state that selects them.
+  `MODIFY_TRACK` and `SPAWN_OPPONENTS` each have branches chosen by
+  `has_drivable()` and `has_track()`; the fixtures set that state and assert
+  it beside the category, and do not read a line number. Said here rather
+  than left to look like full resolution.
+- **"Unreachable" is a statement about today's lists**, not a theorem — the
+  whitelist, the registry, the case list and `corner_nodes`. Each is read
+  off the source by the suite, so a change to any of them moves the suite,
+  which is the most a suite can do.
+- **The duplicate-id fault is reproduced and not fixed.** Driving the plan
+  that fails when its worlds are placed produces it again: two step records
+  appended `BUILT` and then the same two dictionaries appended `FAILED`
+  under the same ids. It is "Human decision needed" 17(c) and it is the
+  owner's. The suite reads records by POSITION in the ledger rather than by
+  id for exactly that reason, and says so.
+
+**Next action.** The class question behind "Human decision needed" 18, asked
+of the whole project: **which checks in Genesis are called on input the same
+function produced, and therefore cannot be proved connected?** 053 found one
+(`FarmModule._check_reachable()`); 054 found that all five controller guards
+have a door and none has the problem. Nobody has asked it of the rest —
+tool validators, `SectionValidator`, `SeparationCheck`, `LoadCheck`,
+`RefusalCheck`, the readbacks. The question is mechanical: for each check,
+is there a caller that can be handed a violating input, or is its only input
+built by the function that calls it? The answer for each is either a fixture
+or a row in the owner's column.
+
 ## Human decision needed
 
 1. **The six section types the prompt withholds — the owner's call, and there
@@ -7611,6 +7927,20 @@ categories — see the candidate list.
      `SPAWN_OPPONENTS` put cars on a real circuit's grid and `MODIFY_TRACK`
      become the `MODIFY_SECTION` its guard already promises. The most work and
      the only option that makes the commands mean anything.
+
+   **054 measured one more thing about them and it bears on the choice.**
+   `main.gd` stands an unrecorded starter circuit in the world at launch
+   (`show_unrecorded`, `main.gd:135`) so there is something to drive before
+   anything has been asked for, and that sets `drivable`. So on a fresh
+   session `has_drivable()` is TRUE, and **a player's first `MODIFY_TRACK` is
+   refused with *"composed tracks are changed with MODIFY_SECTION, which
+   comes in a later step"* — about a track he never asked for and cannot see
+   the request for.** The same holds for `SPAWN_OPPONENTS`. The *other*
+   refusals, the ones that name the Prototype 001 ring, are reached only
+   after the world has been cleared. That makes option (a) cleaner than it
+   looked (the misleading sentence goes with the commands) and it gives
+   option (b) a second thing to fix. Measured, not changed: what a refusal
+   should SAY is yours.
 
    This is product direction and the assistant has not chosen. What it did
    choose, and would undo on request, is that the three now report what they

@@ -3028,3 +3028,71 @@ reports.
 
 > A check cannot be measured through a door that cannot be made to carry the
 > thing it checks.
+
+---
+
+## 48. A reachability answer read off the code instead of the running scene
+
+**Signature:** a branch is called unreachable, or a refusal is called the one
+a command gives, and a single request in the state a player is actually in
+says otherwise. The reading of the code was right about the code.
+
+**Cause:** 054 asked 053's two questions — *can a legal request reach this
+refusal, and does it fire when handed a violation?* — of the twenty-eight
+branches `GameController`, `main.gd` and `ExperimentRunner` return. The first
+pass answered them by reading the functions, and got three wrong, all in the
+same direction:
+
+- **`MODIFY_TRACK` and `SPAWN_OPPONENTS` were read as taking their "nothing
+  built" branch, and on a fresh session they do not.** `main.gd` stands an
+  unrecorded starter circuit in the world at launch so there is something to
+  drive before anything has been asked for, and that sets `drivable`. So
+  `has_drivable()` is TRUE before any request, both commands answer with
+  their composed-track refusal, and their other branches are reachable only
+  after the world has been cleared. Nothing in the two functions says this;
+  the fact is in a different file, in a call made at startup.
+- **`FAILED_SCENE`'s *"the thing is not in any room"* was read as a guard**,
+  on the reasoning that a thing is placed in a room and delivered to a room.
+  It is reachable. A thing being CARRIED is in a corridor for part of the
+  errand — sampled over one errand, the lamp was in room 1, in room 2 and in
+  no room at all — and a second order sent at that moment reaches the line.
+  It took stepped physics to find, not a closer reading.
+- **`SPAWN_OPPONENTS`' count check was read as the refusal a bad count
+  gets.** It is unreachable: `has_track()` is always false, so the refusal
+  above it returns first. The comment at that line had said so since 036 —
+  and the `FAILED_NOTHING_BUILT` line four below it is unreachable for
+  exactly the same reason and was never labelled, so a reader counting live
+  answers off `NOTHING_BUILT`'s own header got three where two is right.
+  That is TRAPS 11 at the scale of two adjacent branches, and TRAPS 14 in a
+  comment that states a count. **And the repository already disagreed with
+  itself about it**: `stub_claims_test` has asserted since 032 that nothing
+  fills `corner_nodes` and says in its header that this is *"the reason
+  `SPAWN_OPPONENTS` can never run"*. One file knew; another file's comment
+  counted the branch among three live answers, for twenty-two commits.
+
+**Do:**
+
+- A controller branch's reachability is a claim about the SCENE STATE a
+  request meets, not about the lines above it. Answer it by sending a
+  request, from the state a player is actually in — including the state the
+  program puts itself in before any request — and assert the state beside the
+  category, because for branches that share a category and a command it is
+  the state that selects one.
+- Where physics, a timer or an errand in flight can change the state between
+  two requests, *unreachable* has to be measured across that, not at rest.
+  Sample the state over the whole errand and look for the moment it differs.
+- When one member of a pair of adjacent branches is labelled unreachable, ask
+  the same of its sibling in the same sitting. The label is cheap; the
+  reader's wrong count is not.
+- A comment that states how many paths answer to something is a claim about
+  the code, and gets checked by reaching each of them (TRAPS 14).
+
+Found in 054, by driving requests through `main.gd` rather than reading
+`game_controller.gd`. `tests/controller_reach_test.gd` is 136 assertions and
+fails against sixteen deliberate breakages, one at a time — among them a
+twelfth whitelisted command with no handler, each of the five guards wired
+out of the step that calls it, a branch ADDED to a category that already had
+rows, and the starter circuit taken away.
+
+> The code says what a branch does. Only the running program says whether
+> anything can get there.

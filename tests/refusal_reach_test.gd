@@ -113,6 +113,15 @@ extends SceneTree
 # caught. The parser's UNSUPPORTED is a refusal too and is not a FAILED_
 # category at all; it is out of this file's scope entirely and named here so
 # that is a statement rather than an omission.
+#
+# 054 DID THAT HALF, in tests/controller_reach_test.gd, which is where those
+# answers live: it stands up main.gd, drives a named request at each
+# reachable branch and hands each guard a violation. Twenty-eight branches
+# under seven names - twenty-two reachable, five guards that all fire, and
+# FAILED_AI, whose first question needs an API key this harness does not
+# have. This file still owns the module pipeline and still enumerates every
+# name, so the two suites together cannot leave a category unanswered; 054's
+# own enumeration asserts that from the other side.
 
 var asserted := 0
 var bad := 0
@@ -136,6 +145,12 @@ func _check(ok: bool, what: String) -> void:
 # REACHABLE  a legal request produces it, and there is a named one below.
 # GUARD      no legal request produces it, and it fires when violated.
 # NOT_ASKED  neither question has been asked of it yet.
+# ASKED_IN_054  both questions have been asked, in controller_reach_test, and
+#            the verdict is PER BRANCH rather than per name - the six
+#            controller names are twenty-eight branches, FAILED_SCHEMA alone
+#            eleven, so one row here cannot carry the answer. It says where
+#            the answer is instead of stating a verdict it cannot hold. This
+#            is FAILED_LAYOUT's problem one layer out: see the note above.
 #
 # FAILED_LAYOUT is a GUARD in all three of its branches, but only two of the
 # three can be shown to be CONNECTED to the pipeline - see the header. The
@@ -151,12 +166,12 @@ const DECLARED := {
 	"FAILED_INFEASIBLE": ["MODULE", "REACHABLE"],
 	"FAILED_CLOSURE": ["MODULE", "REACHABLE"],
 	"FAILED_SEPARATION": ["MODULE", "REACHABLE"],
-	"FAILED_SCHEMA": ["CONTROLLER", "NOT_ASKED"],
-	"FAILED_SCENE": ["CONTROLLER", "NOT_ASKED"],
-	"FAILED_NOTHING_BUILT": ["CONTROLLER", "NOT_ASKED"],
-	"FAILED_NO_HANDLER": ["CONTROLLER", "NOT_ASKED"],
-	"FAILED_PARSE": ["CONTROLLER", "NOT_ASKED"],
-	"FAILED_AI": ["CONTROLLER", "NOT_ASKED"],
+	"FAILED_SCHEMA": ["CONTROLLER", "ASKED_IN_054"],
+	"FAILED_SCENE": ["CONTROLLER", "ASKED_IN_054"],
+	"FAILED_NOTHING_BUILT": ["CONTROLLER", "ASKED_IN_054"],
+	"FAILED_NO_HANDLER": ["CONTROLLER", "ASKED_IN_054"],
+	"FAILED_PARSE": ["CONTROLLER", "ASKED_IN_054"],
+	"FAILED_AI": ["CONTROLLER", "ASKED_IN_054"],
 }
 
 # FAILED_UNWALKABLE is returned by DungeonModule.post_check AND by
@@ -164,6 +179,10 @@ const DECLARED := {
 # per NAME and this name has two owners: the dungeon's is swept here, the
 # controller's is not, and a table that quietly covered both would be the
 # thing this file is about.
+# 054: the controller's two - an errand with no way through, walking and
+# carrying - are now asked in controller_reach_test and both are REACHABLE,
+# by shutting a door and ordering a body through it. The dungeon's stays a
+# GUARD, swept here. Same name, three branches, three answers.
 const SHARED_WITH_CONTROLLER := ["FAILED_UNWALKABLE"]
 
 # The three branches that share FAILED_LAYOUT. Each is fired separately
