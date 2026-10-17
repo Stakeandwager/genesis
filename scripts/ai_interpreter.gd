@@ -134,6 +134,33 @@ static func on_web() -> bool:
 static func where_to() -> String:
 	return PROXY_PATH if on_web() else ENDPOINT
 
+
+# The name of the environment variable the Netlify function reads. Stated here
+# so the sentence a player is shown can name the real thing rather than a
+# guess; proxy_test reads the function's own source and checks they agree.
+const KEY_ENV_NAME := "GEMINI_API_KEY"
+
+
+# --- 057: must a request be refused here for want of a key? ---
+#
+# 020 moved the key to the server for the web build, and FOUR places already
+# knew it: where_to() sends to the proxy, is_available() answers true, _post()
+# attaches no key header, and _load_key() does not look for a file. The guard
+# inside _send() did NOT, and it stands in front of all four. On the web
+# api_key is always "" by design - _load_key() returns before reading anything
+# and nothing else in the project assigns it - so that guard refused EVERY web
+# request before _post() could reach the proxy, and told the player to check a
+# file a web build must never carry. The proxy built in 020 could not be
+# reached at any price.
+#
+# One function answers the question now and both readers call it, so a sixth
+# place cannot get it wrong on its own. It takes the build as an ARGUMENT
+# rather than calling on_web() itself, because a headless harness cannot flip
+# OS.has_feature("web") - passing it in is what makes the web case measurable
+# here at all.
+static func key_missing_for(web: bool, key: String) -> bool:
+	return key == "" and not web
+
 const SYSTEM_PROMPT := """You turn a player's request into exactly ONE command for Genesis, a game that builds worlds in Godot.
 
 Return ONLY the JSON: no explanations, no markdown, no code fences. Never return a list of commands. If the request has several steps, return the single command for the final result; a new world replaces whatever was there before, whichever kind it was.
@@ -241,7 +268,7 @@ func _ready() -> void:
 # that is missing or unconfigured answers with Genesis's ordinary AI FAILED
 # message instead, which is the honest place for that news.
 func is_available() -> bool:
-	return true if on_web() else api_key != ""
+	return not key_missing_for(on_web(), api_key)
 
 
 # The settings behind every AI-made track, stored in the experiment record.
@@ -318,7 +345,7 @@ func _send(contents: Array) -> void:
 		interpretation_failed.emit("Still thinking about the last request.")
 		return
 
-	if api_key == "":
+	if key_missing_for(on_web(), api_key):
 		interpretation_failed.emit("No API key found in api_key.txt.")
 		return
 
@@ -522,7 +549,17 @@ func _friendly_http_error(code: int) -> String:
 		400:
 			return "The AI did not accept the request format. (HTTP 400)"
 		401, 403:
-			return "The API key was refused. Check api_key.txt. (HTTP %d)" % code
+			return key_refused_message(on_web(), code)
 		404:
 			return "The AI model name is out of date. (HTTP 404)"
 	return "The AI returned an unexpected error. (HTTP %d)" % code
+
+
+# 057: the same rule, applied to what the player is TOLD. On the web there is
+# no api_key.txt to check, so naming one sends them to a file that must never
+# exist there; what a refused key means on the web is that the environment
+# variable the function reads is wrong or absent.
+static func key_refused_message(web: bool, code: int) -> String:
+	if web:
+		return "The AI key on the server was refused. Check %s in the site's environment. (HTTP %d)" % [KEY_ENV_NAME, code]
+	return "The API key was refused. Check api_key.txt. (HTTP %d)" % code

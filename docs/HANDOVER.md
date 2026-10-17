@@ -24,6 +24,56 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
+- Last commit at the time of writing: **057**, the task this file named as
+  the next assistant task: **the sweep of `main.gd`'s sixteen `connect()`
+  calls**, of which 056 had measured two. Seven more were measured and the
+  sweep was stopped there — **and asking its question of the third one found
+  a fault that stops the web build working at all**, which is what this
+  commit is about.
+  **ON THE WEB, NO AI REQUEST HAS EVER BEEN SENT.** `_send()` refused every
+  one of them at `if api_key == ""`, a guard with no `on_web()` exemption,
+  and **on the web `api_key` is always `""` by design** — `_load_key()`
+  returns before reading anything and nothing else in the project assigns it
+  (grepped). `is_available()` answers **true** on the web, so `main.gd` let
+  the request through and `_send()` then killed it **before `_post()` could
+  run**. The proxy 020 built was unreachable at any price, and the player was
+  told to check `api_key.txt`, a file a web build must never carry.
+  **THIS IS THE OWNER'S OWN "Next action".** Setting `GEMINI_API_KEY` in the
+  Netlify environment would **not** have made the site work, and the error
+  would have pointed at the desktop build's key file.
+  **FOUR PLACES ALREADY KNEW THE RULE AND THE FIFTH DID NOT** — `where_to()`,
+  `is_available()`, `_post()` and `_load_key()`, which are all four of
+  `on_web()`'s call sites. The fix is therefore **one function both readers
+  call**, `key_missing_for(web, key)`, taking the build as an argument so the
+  web case can be measured in a harness that cannot flip
+  `OS.has_feature("web")` — not a second `and not on_web()`, which would fix
+  the instance and leave the class (TRAPS 11). The same rule applied to the
+  401/403 sentence, which named `api_key.txt` on the web too; it now names
+  `GEMINI_API_KEY`, **checked against `interpret.js`'s own source**.
+  **Why twelve releases of a green suite missed it:** `proxy_test` asserts
+  where a request *would* go and what the function does with it, and never
+  that a request is **made**. Destination, thoroughly; departure, never.
+  **TRAPS 53.**
+  62 suites passed before and 62 after, `--all` both times, lists **diffed**
+  and **identical** — `proxy_test`'s result line carries no assertion count,
+  so the diff cannot show this change; the assertions were counted off the
+  printed PASS lines instead, **11 before and 24 after**. The suite fails
+  against **eight** deliberate faults made one at a time.
+  **NOT VERIFIED: no browser ran and no web export was made.** What is proved
+  is the decision for both builds and that the desktop guard still fires
+  through the real `interpret()` door. **That a web build now reaches the
+  proxy and gets an answer is NOT verified and cannot be here** — it needs
+  the owner's machine, a deployed site and the key set. The fix removes a
+  blocker that was provably in the way; it does not show that nothing else
+  is. See 057 below and TRAPS 53.
+  **The sweep's own answers: seven of sixteen measured, five held by
+  nothing.** `ordered` is held hard and `log_message` is held by one failure
+  in one suite that only `--all` runs; `track_measured`, `equipped`,
+  `interpretation_ready`, `interpretation_failed` and `retrying` are held by
+  nothing. The pattern is one layer — the handlers that turn a verdict into
+  **what the player sees**. `main.gd:993` is the only production caller of
+  `WorldRegistry.panel_lines()`, so every panel suite passes with the
+  measurements panel permanently blank. Nine rows remain `NOT_ASKED`.
 - Last commit at the time of writing: **056**, the task this file named as
   the next assistant task: **055's question asked of the two rows 055 left
   `NOT_ASKED`** — *if this call stopped working tomorrow, would any suite say
@@ -1017,6 +1067,32 @@ runs at once, on one machine, read and write each other's ledger and saved
 worlds, and suites fail for reasons that have nothing to do with the code.
 055 took four answers off such a run before noticing. If a run is being used
 as a measurement, clear `user://` before it, baseline included (TRAPS 50).
+
+Last full run (057, Godot 4.7.1 on Linux —
+`4.7.1.stable.official.a13da4feb` — headless, in a cloud container, every
+run sequential with `user://` cleared first):
+**suites with something to look at: 0** on all 62, with `--all`. The
+baseline at 056, measured the same way in the same container, was the same,
+and the lists were **diffed: they are identical, line for line.** Said
+plainly because it reads like a stronger claim than it is — `proxy_test`'s
+result line is `PROXY TEST failures=0` and carries **no assertion count**,
+unlike `check_wiring_test`'s, so the diff cannot show 057's new assertions
+at all. They were counted by running that suite alone and counting the PASS
+lines: **11 before, 24 after**.
+057 changes behaviour in exactly one place — the web build's key guard — and
+no harness here can run a web build, so what stands in place of a "failures
+against the pre-057 code" count is **eight deliberate faults, made one at a
+time and the suite re-run against each**: the pre-057 logic restored in
+`key_missing_for` (1 failure, and it is the row that is the finding), the
+guard re-inlined in `_send` (1), `key_refused_message` losing its web branch
+(1), `KEY_ENV_NAME` drifted off the function's own name (1), the key guard
+removed from `_send` entirely (2, caught through the real `interpret()`
+door), `is_available()` inverted so it disagrees with the function it calls
+(1), the desktop sentence no longer naming `api_key.txt` (1), and the guard
+emitting its refusal and then posting anyway (1). **It is in neither
+runner's fixed-rate list**: it steps no physics, and its name was already in
+`run_tests.bat`'s patterns because the file is not new. No file was added,
+so neither runner needed an edit.
 
 Last full run (056, Godot 4.7.1 on Linux —
 `4.7.1.stable.official.a13da4feb` — headless, in a cloud container, every
@@ -6182,12 +6258,26 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
-**Still the owner's, and still a minute's work.** The proxy is built (020):
+**Still the owner's, and still a minute's work — but it would NOT have
+worked before 057, and that is new information.** The proxy is built (020):
 set `GEMINI_API_KEY` in the Netlify site's environment variables, and set
 `NETLIFY_AUTH_TOKEN` and `NETLIFY_SITE_ID` as GitHub secrets so a push
 deploys. After that, a stranger with the link can type a sentence and get a
 world, which is the first time that has ever been true. Nothing the assistant
 can do moves this: the key must not be in the repository.
+
+**What 057 changed about this entry.** Until 057 the browser never sent the
+request at all: `_send()` refused it at `if api_key == ""`, and on the web
+`api_key` is always `""` by design, so the key in the Netlify environment
+would have gone unused and the player would have been told to check
+`api_key.txt`. **Setting the variable would have appeared to do nothing.**
+That blocker is gone and the request now reaches `/api/interpret`. **It is
+still not proved that the round trip works** — no browser ran here and no
+web export was made — so the first deploy is a test, not a confirmation, and
+the thing to watch is whether a sentence comes back as a world or as an
+"AI FAILED" line. If the variable is unset, the function answers 503 with
+*"This Genesis has no AI configured"*; see "Human decision needed" 19 for
+what Genesis currently does with that, which is not show it.
 
 **For the owner's next editor session, and it is two sentences' worth of
 typing.** 027 narrowed two limitations specifically to stop the model refusing
@@ -8415,6 +8505,259 @@ Three of them (`interpretation_ready`, `interpretation_failed`, `retrying`)
 may well be TRAPS 52's shape again, and the honest thing is to measure rather
 than predict.
 
+## 057 — the guard in front of the proxy, and the sweep that found it
+
+**Objective.** The task this file named as the next assistant task: **the
+class behind 056's finding, swept** — `main.gd` makes sixteen `connect()`
+calls, 056 measured two of them, and the other fourteen had never been asked
+whether wiring them out would fail anything. One wire-out each, every suite,
+`--all`, the result lines diffed against a baseline taken the same way.
+
+**What it turned into.** Seven of the fourteen were measured and the sweep
+was stopped there (below). Asking the sweep's question of the third one —
+*why is `main._on_interpretation_failed` held by nothing?* — walked back into
+`ai_interpreter.gd` and found **a fault that stops the web build working at
+all**. That is this commit's subject; the sweep is how it was found and its
+seven answers are recorded here.
+
+### THE FAULT: ON THE WEB, NO REQUEST WAS EVER SENT
+
+`_send()`, `ai_interpreter.gd`, before 057:
+
+```gdscript
+	if api_key == "":
+		interpretation_failed.emit("No API key found in api_key.txt.")
+		return
+```
+
+**On the web `api_key` is always `""`, by design.** `_load_key()` returns
+before reading anything (*"a web build has no key by design"*, its own
+comment) and **nothing else in the project assigns `api_key`** — grepped
+across `scripts/` and `scenes/`, not remembered. 020 put the key in the
+Netlify function on purpose, because anything under `res://` is packed into
+`index.pck` and can be downloaded.
+
+So on every web request there has ever been: `is_available()` answered
+**true** (it knows about the web), `main.gd` let the request through, and
+then `_send()` refused it **before `_post()` could run**. The proxy 020 built
+was unreachable at any price, and the player was told to check a file that a
+web build must never carry.
+
+**The guard was reachable ONLY on the web, and on the web it was always
+true.** On the desktop it cannot be reached at all: `main.gd:193` and
+`experiment_runner.gd:53` both stop at `is_available()` first, so a desktop
+build with no key never gets as far as `_send()`. A guard that fires exactly
+when it must not, and never when it should.
+
+**FOUR PLACES ALREADY KNEW THE RULE AND THE FIFTH DID NOT.** `where_to()`
+returns the proxy path; `is_available()` returns true; `_post()` attaches no
+key header; `_load_key()` looks for no file. Counted by grepping `on_web()`,
+which has exactly those four call sites. `_send()`'s guard is the fifth
+decision about the same subject and it is the one standing in front of the
+other four. **TRAPS 35's shape, and now TRAPS 53.**
+
+**This is the owner's own "Next action".** That entry says setting
+`GEMINI_API_KEY` in the Netlify site's environment is a minute's work and
+then *"a stranger with the link can type a sentence and get a world, which is
+the first time that has ever been true"*. **It would not have been.** The
+request would have died in the browser before reaching the function, and the
+error would have named `api_key.txt` — pointing at the desktop build's file
+rather than at anything to do with the deployment.
+
+### WHY NOTHING CAUGHT IT
+
+`proxy_test` has existed since 020 and passes. It asserts where a request
+**would** go, that only the desktop build attaches a key, that the function
+reads the key from the environment, that it forwards three fields, that it
+caps the body, that it refuses non-POST, and that the web preset carries no
+key. **It never asserted that a request is made.** Destination, thoroughly;
+departure, never. That is TRAPS 49's lesson one layer up, and it is why the
+sweep found this and twelve releases of a green suite did not.
+
+### THE FIX, AND WHY IT IS A FUNCTION AND NOT A SECOND `and`
+
+Adding `and not on_web()` to the guard would have fixed the instance and left
+the class: a sixth place deciding the same thing on its own (TRAPS 11). One
+function answers it now and **both** readers call it:
+
+```gdscript
+static func key_missing_for(web: bool, key: String) -> bool:
+	return key == "" and not web
+```
+
+`is_available()` is `not key_missing_for(on_web(), api_key)` — which is
+exactly what it computed before, so **the desktop build's behaviour is
+unchanged** — and `_send()`'s guard is the same call. It takes the build as
+an **argument** rather than calling `on_web()` itself, because a headless
+harness cannot flip `OS.has_feature("web")`: passing it in is the only reason
+the web case can be measured here at all.
+
+The same rule applied to **what the player is told**, which was the second
+member of the class: `_friendly_http_error()`'s 401/403 said *"Check
+api_key.txt"*, which on the web names a file that does not and must not
+exist there. It is now `key_refused_message(web, code)`, and the web sentence
+names `GEMINI_API_KEY` — **checked against `interpret.js`'s own source**
+rather than typed out twice, so the two cannot drift apart.
+
+**One consequence, stated rather than left to be found:** after 057 the key
+guard inside `_send()` is unreachable in production, because both callers
+stop at `is_available()` first. It is kept as a safety net for a direct call,
+and `proxy_test` walks it that way.
+
+### Evidence
+
+- **62 suites, `--all`, Godot 4.7.1 headless on Linux
+  (`4.7.1.stable.official.a13da4feb`) in a cloud container, every run
+  sequential with `user://` cleared first (TRAPS 50): 0 with something to
+  look at**, before and after. The baseline was taken the same way in the
+  same container and the two lists were **diffed**: they are **identical,
+  line for line**. That is not the usual result here and it is worth saying
+  why rather than letting it read as a stronger claim than it is —
+  `proxy_test`'s result line is `PROXY TEST failures=0` and carries **no
+  assertion count**, unlike `check_wiring_test`'s, which is what made 055's
+  and 056's single-line diffs visible. So the diff cannot show this commit's
+  new assertions at all. They were counted by running the suite alone and
+  **counting the PASS lines it printed**: 11 before, **24** after.
+- `proxy_test` goes from 11 assertions to **24**, counted that way rather
+  than from the source.
+- **Run against broken code before it was believed (TRAPS 51): eight
+  deliberate faults, made one at a time, every one caught, and the FAIL lines
+  READ rather than counted.** The pre-057 logic restored in
+  `key_missing_for` (1 failure — and it is the row that is the finding, *"WEB
+  with no local key: SENT"*); the guard re-inlined in `_send` as
+  `api_key == ""` (1, the guard assertion); `key_refused_message` losing its
+  web branch (1); `KEY_ENV_NAME` drifted to a name the function does not read
+  (1); the key guard removed from `_send` entirely (2, through the real
+  `interpret()` door); `is_available()` inverted so it disagrees with the
+  function it calls (1); the desktop sentence no longer naming `api_key.txt`
+  (1); and the guard emitting its refusal and then posting anyway (1).
+- The **fourth and fifth** matter most: the fourth proves the env-var
+  assertion is not a literal compared with itself, and the fifth proves the
+  behavioural half is not vacuous — with the guard gone, a desktop build with
+  no key puts a keyless request on the wire and the suite says so.
+
+### What this does NOT prove
+
+- **NO BROWSER RAN AND NO WEB EXPORT WAS MADE.** What is proved is the
+  **decision**, for both builds, and that the desktop guard still fires
+  through the real `interpret()` door. **That a web build now reaches the
+  proxy and gets an answer back is NOT verified and cannot be here.** It
+  needs the owner's machine, a deployed site and `GEMINI_API_KEY` set. The
+  fix is the removal of a blocker that was provably in the way, not a
+  demonstration that nothing else is.
+- **NO MODEL SENT ANYTHING.** This harness has no key. No request left the
+  container at any point in this commit's work, deliberately: the one suite
+  that drives `interpret()` does so with an empty key, which refuses before
+  anything is posted, and `proxy_test` asserts `busy` is still false
+  afterwards.
+- **NOTHING WAS RENDERED ON A SCREEN** and no world was looked at.
+- **NO WORLD, RECORD OR SAVED FILE OF THE OWNER'S CHANGES.** The prompt is
+  byte-identical and `PROMPT_VERSION` did not move.
+- **`is_available()`'s agreement with `key_missing_for()` is asserted for one
+  row of four** — the build this run is, desktop with no key. The web rows
+  are the function's alone. Written into the assertion's own text rather than
+  left to look like more than it is.
+
+### THE SWEEP: SEVEN OF SIXTEEN CONNECTS MEASURED, AND FIVE OF THE SEVEN ARE HELD BY NOTHING
+
+Method is 056's and unchanged: one `connect()` wired out at a time in a
+throwaway copy, every suite run with `--all`, the result lines **diffed**
+against a baseline taken the same way, every run sequential with `user://`
+cleared first (TRAPS 50). Nothing in this repository was edited to measure
+it. The sixteen sites were enumerated by grepping `.connect(` in `main.gd`
+rather than copied from this file.
+
+| # | line | signal → handler | verdict |
+|---|------|------------------|---------|
+| 1 | 70 | `log_message` → `_on_controller_log` | **HELD, BY ONE SLOW SUITE** |
+| 2 | 75 | `interpretation_ready` → `_on_interpretation_ready` | **NOT HELD — needs a key** |
+| 3 | 76 | `interpretation_failed` → `_on_interpretation_failed` | **NOT HELD — and a fixture could reach it** |
+| 4 | 77 | `retrying` → `_on_ai_retrying` | **NOT HELD — needs a key** |
+| 5 | 79 | `track_measured` → `_on_track_measured` | **NOT HELD** |
+| 6 | 80 | `revision_requested` → `_on_revision_requested` | CONNECTED_056 (056) |
+| 7 | 81 | `equipped` → `_on_equipped` | **NOT HELD** |
+| 8 | 82 | `ordered` → `_on_ordered` | **HELD HARD** |
+| 9 | 83 | `door_changed` → `_on_door_changed` | NOT_ASKED |
+| 10 | 88 | experiment `progress` | NOT_ASKED |
+| 11 | 89 | experiment `finished` | NOT_ASKED |
+| 12 | 93 | `lap_completed` | NOT_ASKED |
+| 13 | 98 | race `announced` | NOT_ASKED |
+| 14 | 100 | `pressed` → `_on_build_pressed` | NOT_ASKED |
+| 15 | 101 | `text_submitted` → `_on_text_submitted` | NOT_ASKED |
+| 16 | 659 | `stopped_walking` → `_on_npc_stopped` | CONNECTED (056, seven suites) |
+
+The answers, with what each one costs the player if the wire is lost:
+
+- **`log_message` (70) is held, but by ONE failure in ONE suite that most
+  runs skip.** `drive_test` — which is in `SLOW`, so it runs only under
+  `--all`. This handler writes the status line, writes every entry in the
+  history panel, records whether the thing waiting for evidence was actually
+  built, describes what an edit changed, re-initialises the checkpoints for a
+  new circuit and stops a race on a track that has gone. Wire it out and
+  **61 of 62 suites still pass**. TRAPS 49's "held only by a slow suite",
+  again, on the handler that writes most of what the player reads.
+- **`track_measured` (79) is held by nothing, and `main.gd:993` is the ONLY
+  production caller of `WorldRegistry.panel_lines()`** — grepped. That is the
+  measurements panel: the thing 046, 047, 049, 051 and 052 were all about.
+  051 moved its four decisions into `panel_lines()` *"which is what this
+  suite can call"*, and `panel_refused_test`, `panel_built_test` and
+  `panel_geometry_test` all call it directly. **Every one of them passes with
+  the panel permanently blank.** The decisions are held; the drawing is not.
+- **`equipped` (81) is held by nothing**, and it is the only place a tool
+  spec reaches a body that is already standing — `car.equip()`,
+  `walker.equip()`, `walker.wear()`, `npc.wear()`. `boots_test`, `tool_test`
+  and `look_test` test the tool modules at their own door. Note **why**
+  nothing caught it: the handler's four branches are each guarded on a node
+  being non-null, and in the harness there is usually no car and no walker,
+  so even a suite that reached it would do nothing observable. A fixture here
+  has to stand a body up first.
+- **`interpretation_ready` (75) and `retrying` (77) are held by nothing and
+  are TRAPS 52's shape again** — exactly as the last session predicted and
+  said should be measured rather than predicted. Both are emitted only from
+  inside the HTTP response path (`ai_interpreter.gd:509` and `:409`), which
+  no harness without a key can reach.
+- **`interpretation_failed` (76) is held by nothing and is NOT TRAPS 52's
+  shape, which is the distinction worth keeping.** `interpretation_failed` has
+  an emit that needs no key — the one in `_send()` this commit is about — so
+  **a fixture can reach this handler with no key and nothing faked**, unlike
+  056's, which had to set a provenance field by hand. The handler sets the
+  status line, writes a history entry and writes an `ai_unavailable` event to
+  the ledger, so the ledger makes it observable. Not written in this commit;
+  named as the next task below.
+- **`ordered` (82) is held hard.** `carry_test` throws, `interference_test`
+  throws, `ledger_audit_test` throws, `false_delivery_test` throws and
+  `controller_reach_test` fails 1 — and several delivery suites then sit at
+  `run_tests.sh`'s 600 s timeout waiting for a walk that never starts.
+  **This run was STOPPED at 23 of 64 suites**, because the answer was not in
+  doubt and the timeouts were costing more than the remaining rows were
+  worth. Recorded as partial rather than as a complete sweep.
+
+**Seven of the sixteen are now measured and five of the seven are held by
+nothing.** The pattern across them is one layer: the handlers that turn a
+controller verdict into **what the player sees** — the status line, the
+history panel, the measurements panel, the kit on the body. The suite holds
+the verdicts and the decisions behind those lines thoroughly, and holds
+almost nothing about whether any of it is ever shown.
+
+**Next action.** Two, in this order.
+
+1. **The nine rows still unmeasured** — seven `NOT_ASKED` above plus nothing
+   else. Same method, a few at a time; budget for it properly, because one
+   wire-out that breaks delivery costs 20 minutes of 600 s timeouts rather
+   than the 4 minutes a clean run takes. `door_changed` (83) and the two
+   racing rows are the interesting ones; `pressed` (100) and `text_submitted`
+   (101) are probably held by nothing, since every suite calls
+   `_handle_request` directly rather than through a button.
+2. **A fixture for `_on_interpretation_failed`, which needs no key and fakes
+   nothing.** Stand `main` up as `check_wiring_test._make_main()` does, set
+   `main.interpreter.api_key = ""`, call `main.interpreter.interpret(...)`,
+   and assert what the handler leaves behind: the status line, the history
+   entry, and the `ai_unavailable` event in the ledger with its `request`,
+   `reason` and `attempts` keys. It would be the first fixture in this
+   project to hold one of these handlers through a real emit on a real
+   signal with nothing set by hand — and it should be written against the
+   wire-out first (TRAPS 51), or it proves nothing.
+
 ## Human decision needed
 
 1. **The six section types the prompt withholds — the owner's call, and there
@@ -9135,3 +9478,43 @@ than predict.
     `tests/check_wiring_test.gd` asserts the two structural facts that make
     it one (the function is private, and it is called from `farm_module.gd`
     alone), so the day it is given a door the suite says the row has moved.
+
+19. **What a player should be told when the site has no key configured.**
+    Found in 057 and deliberately NOT changed, because it is a sentence and
+    a retry policy rather than a fault, and both are yours.
+
+    The Netlify function already answers this case well. With
+    `GEMINI_API_KEY` unset it returns **503** with its own message —
+    *"This Genesis has no AI configured. Raw JSON commands still work."* —
+    and its comment says why: *"a build without a key is a deployment
+    mistake, not a player's"*. `is_available()`'s comment agrees, and says
+    that such a function *"answers with Genesis's ordinary AI FAILED message
+    instead, which is the honest place for that news"*.
+
+    **Genesis never shows it.** 503 is in `WORTH_RETRYING`, so Genesis tries
+    three times over several seconds, and then `_friendly_http_error(503)`
+    says *"The AI service is busy. Genesis tried 3 times over a few seconds
+    and it was busy every time. Worth another go in a minute."* The body is
+    printed to the console and dropped. So a site with no key configured
+    tells the player to wait a minute, for ever, and the one sentence that
+    would have told the owner what is actually wrong is the one thrown away.
+
+    Three things could change and they are not the same size:
+
+    - **(a) Read the function's message when the body carries one.** The
+      smallest. It changes what is shown for any error whose body has a
+      `message`, which is most of Google's too, so it is a change to every
+      AI error sentence and not just this one.
+    - **(b) Take 503 out of `WORTH_RETRYING`.** Smallest in code and the
+      worst trade: 503 from Google really is worth retrying, and that is
+      what 026 put it there for. A 503 from the function and a 503 from
+      Google would need telling apart, which means (a).
+    - **(c) Give the function a code of its own** for "no key configured"
+      — 501, say — and a sentence for it. Honest and narrow, but it is a
+      change to a deployed function, which is yours and not the
+      assistant's.
+
+    **Nothing was changed.** 057 touched only what stopped the request being
+    sent at all. This is the next thing a player on the live site would
+    meet, and which of the three is right depends on what you want the site
+    to say about itself.

@@ -3300,3 +3300,72 @@ other one, `GameController.finish_order`, turned out to be the opposite case:
 wiring out its call failed **seven** suites.
 
 > The test could not reach it because production holds the key.
+
+---
+
+## 53. The rule four doors knew, in front of the one door that mattered
+
+**Signature:** a feature is built, tested, documented and deployed, and the
+one line that decides whether it runs at all was written before the feature
+existed and never revisited. Every test of the feature passes, because every
+test asks what it would do and none asks whether it is reached.
+
+**Cause:** 020 moved the API key off the web build. Anything under `res://`
+is packed into `index.pck` and can be downloaded, so a web build carrying
+`api_key.txt` publishes the key; the browser asks a Netlify function on its
+own origin instead, and the function adds the key. Four places in
+`ai_interpreter.gd` were taught the rule:
+
+- `where_to()` returns the proxy path on web,
+- `is_available()` returns **true** on web whatever the local key is,
+- `_post()` attaches no `x-goog-api-key` header on web,
+- `_load_key()` does not even look for the file on web.
+
+The fifth place was `_send()`, and it stands **in front of all four**:
+
+```gdscript
+	if api_key == "":
+		interpretation_failed.emit("No API key found in api_key.txt.")
+		return
+```
+
+On the web `api_key` is **always** `""` — that is the design, not a fault:
+`_load_key()` returns before reading anything, and nothing else in the
+project assigns it (grepped, not remembered). So the guard was true on every
+web request that has ever been made. `is_available()` said yes, `main.gd`
+let the request through, and `_send()` killed it before `_post()` could run.
+**The proxy could not be reached at any price**, and the player was told to
+check a file that a web build must never carry.
+
+The guard was reachable **only** on the web — on the desktop `main.gd` and
+`experiment_runner.gd` both stop at `is_available()` first — and on the web
+it was always true. A guard that fires exactly when it must not, and never
+when it should.
+
+**Why nothing caught it.** `proxy_test` has existed since 020 and passes. It
+asserts where a request *would* go, that only the desktop build attaches a
+key, and what the function does with what it receives. **It never asserted
+that a request is made.** That is TRAPS 49's lesson at the layer above the
+one 49 was about: the suite proved the destination and never the departure.
+
+**Do:**
+
+- When a rule is carried to several places, count them and then grep for the
+  thing they have in common. Four call sites of `on_web()` and a fifth
+  decision about the same subject is a list with one member missing, and the
+  missing one is the one nobody thought of as being about that subject.
+- A guard written before a feature existed does not know about the feature.
+  When a build target, a transport or a credential moves, read every
+  condition that mentions it — including the ones that mention only its
+  absence.
+- Put the decision in one function that both readers call, and give it the
+  thing it branches on as an **argument**. `key_missing_for(web, key)` can be
+  asked all four questions in a headless harness; `on_web()` inside the guard
+  can be asked only the one the harness happens to be.
+- A test that proves where something would go is not a test that it goes.
+  Ask the departure question of every path that has a destination test.
+
+Found in 057, while sweeping `main.gd`'s sixteen `connect()` calls and asking
+why `_on_interpretation_failed` is held by nothing.
+
+> Four doors knew the rule. The fifth was the one in front.
