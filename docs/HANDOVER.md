@@ -24,7 +24,56 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **054**, the task this file named as
+- Last commit at the time of writing: **055**, the task this file named as
+  the next assistant task: **the class question behind "Human decision
+  needed" 18, asked of the whole project** — which checks are called on
+  input the same function produced, and therefore cannot be proved
+  connected?
+  **ASKED STRUCTURALLY IT IS DULL; ASKED 053'S WAY IT IS NOT.** Almost every
+  check in Genesis has a public door, and the farm's is the only one that
+  does not. The question with answers in it is about the CALL: *if this call
+  stopped refusing tomorrow, would any suite say so?* Fourteen call sites,
+  each wired out alone in a throwaway copy, every suite run, the result
+  lines diffed.
+  **TEN HELD, FOUR NOT, AND ONLY ONE OF THE FOUR IS THE FARM'S PROBLEM.**
+  `FarmModule._check_reachable()` is 053's and still has no door. The other
+  three have a door that nothing walked: **`LoadCheck.compare`** at
+  `main.gd:618` — replace the verdict with a constant `RESTORED` and all 61
+  suites pass, `--all` included, because `load_check_test` calls it fourteen
+  times and never through `/load`; **`RefusalCheck.quarrel_with`** at
+  `main.gd:298`, the same shape; and **`ToolRegistry.readback`'s validated
+  branch**, where the door WAS walked with inputs that could not show the
+  difference — `{"weight": 130.0}` reads back identically either way, while
+  five of eight sampled legal specs do not (*"the ordinary RED car"*).
+  **And one held only by a suite most runs skip**: the controller's solve
+  step is caught by `session_test` and nothing else, and `session_test` runs
+  only under `--all`.
+  **THE FIRST SET OF ANSWERS WAS WRONG AND THAT IS THE PART TO READ.** The
+  runs were done two and three at a time in separate copies, and **every
+  copy of this project shares one Godot `user://`** — one ledger, one
+  `worlds` folder. Each run was reading another run's ledger; `ledger_test`
+  and `intent_door_test` failed under nearly every change and were read as
+  *"the guard is held"*. `LoadCheck` and `RefusalCheck` both looked
+  connected and are not. Everything was re-measured one at a time with
+  `user://` cleared first. **Run the suite one at a time** (TRAPS 50).
+  **AND THE NEW SUITE, RUN AGAINST BROKEN CODE, FOUND A FAULT IN 053'S
+  WORK.** `Script.get_script_method_list()` includes INHERITED methods, so
+  053's *"all three modules override `solve()`"* could not fail — every
+  module answered yes to every `WorldModule` method. The fact is still true;
+  nothing was holding it, for twelve releases, and `WorldModule.solve()`'s
+  own comment named it as the guarantee. It was hiding a smaller fact:
+  **`FarmModule` defines neither `pre_check()` nor `post_check()`** and runs
+  the base's, which refuse nothing. Corrected in both suites by reading the
+  module's own source (TRAPS 51).
+  61 suites passed before and 62 after, `--all` in both, lists **diffed**:
+  the only difference is `check_wiring_test`, **179 assertions**, which
+  fails against **thirteen** deliberate faults made one at a time.
+  **Not verified: no model sent any of this, nothing was rendered on a
+  screen, and no world, record or saved file of the owner's changes** — the
+  only `scripts/` change is comments. Nothing in Genesis behaved wrongly at
+  any point: what was found is what the suite was holding, not what the code
+  does. See 055 below and TRAPS 49, 50 and 51.
+- The commit before it: **054**, the task that file named as
   the next assistant task: **053's two questions asked of the refusals the
   CONTROLLER returns** — can a legal request reach each one, and does each
   one fire when handed a violation?
@@ -84,7 +133,7 @@ that the owner has not ruled on.** Do not promote one to the other.
   byte-identical and `PROMPT_VERSION` did not move. `FAILED_AI`'s first
   question is **not answered**: it needs a live key and an API that fails.
   See 054 below and TRAPS 48.
-- The commit before it: **053**, the task that file named as
+- Before that: **053**, the task that file named as
   the next assistant task: **052's question asked of a LIST instead of a
   key — which refusal categories can no legal request reach, and does each
   of those checks fire when handed an input that does violate it?**
@@ -916,12 +965,44 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-63 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **61 suites**, counted with `ls tests/*.gd` rather than
+64 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **62 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites.
 
-Last full run (054, Godot 4.7.1 on Linux —
+**RUN THEM ONE AT A TIME.** Every copy of this project has the same
+`config/name` in `project.godot`, and Godot derives `user://` from it — so
+every copy shares one `user://track_log.jsonl` and one `user://worlds`. Two
+runs at once, on one machine, read and write each other's ledger and saved
+worlds, and suites fail for reasons that have nothing to do with the code.
+055 took four answers off such a run before noticing. If a run is being used
+as a measurement, clear `user://` before it, baseline included (TRAPS 50).
+
+Last full run (055, Godot 4.7.1 on Linux —
+`4.7.1.stable.official.a13da4feb` — headless, in a cloud container, every
+run sequential with `user://` cleared first):
+**suites with something to look at: 0** on all 62, with `--all`. The
+baseline at 054, measured the same way in the same container, was the same
+on 61 suites, and the lists were **diffed**: the only difference is
+`check_wiring_test`.
+055's new suite is `check_wiring_test` (**179 assertions**). It changes no
+behaviour, so what stands in place of a "failures against the pre-055 code"
+count is **thirteen deliberate faults, made one at a time and the suite
+re-run against each**: the `LoadCheck` call wired out (3 failures),
+`LoadCheck` made to always say `RESTORED` (2), the `RefusalCheck` call wired
+out (1), `RefusalCheck` made to quarrel with everything (1), the controller's
+solve refusal wired out (1), the tool readback's validated branch switched
+off (3), the tool readback made to fall back to the defaults (6), the farm's
+check made public (3), a new verdict-returning function added to a script
+with no row (1), a row naming a function that is gone (1), `CarTool.validate`
+renamed (3), the farm given a `pre_check` (2), and the farm's `solve` renamed
+(3). **It is in neither runner's fixed-rate list**: it steps no physics and
+passes with `--fixed-fps 120`, with `--fixed-fps 30` and without any
+(TRAPS 4), and its name matches none of `run_tests.bat`'s findstr patterns —
+the patterns were RUN against the name, not eyeballed. README said 61 suites
+and there are 62, counted with `ls`.
+
+The run before it (054, Godot 4.7.1 on Linux —
 `4.7.1.stable.official.a13da4feb` — headless, in a cloud container):
 **suites with something to look at: 0** on all 61, with `--all`. The
 baseline at 053, measured the same way in the same container, was the same
@@ -6566,11 +6647,50 @@ at**, because nothing a player can reach changed:
   to X"* can never be about a doorway too narrow, at any room size.
   The only thing that makes a body's route fail is a **shut door**.
 
+055 adds a twenty-third, and it is **one request and one glance**, because
+what changed is a suite and not a behaviour:
+
+- **Nothing a player can reach changed.** The only `scripts/` change is
+  comments in `world_module.gd`. 055 asked which checks can be proved
+  CONNECTED, found that four of fourteen call sites were not held by any
+  suite, and wrote the fixtures that hold them. Nothing in Genesis behaved
+  wrongly at any point.
+- **The one thing worth a glance, and it is a sentence rather than a bug.**
+  Type a request that gives a tool a named value in the wrong case — a red
+  car asked for as `RED`, or black boots as `BLACK`. Genesis says it back
+  **normalised**: *"the ordinary red car"*. That is the validator's spec
+  being read back, which is right for an accepted request — what will be
+  built is a red car — and it is the one readback in Genesis that does not
+  say a value back exactly as it was sent. The other four say back what was
+  heard, which is 044's rule. If the normalised version reads wrong to you,
+  it is `ToolRegistry.readback()` and it is one line;
+  `check_wiring_test` holds whichever way it goes, because it asserts which
+  spec the sentence was built from and never what the sentence says.
+- And one worth knowing rather than typing: **do not run the test suite
+  twice at once on the same machine.** Every copy of the project shares one
+  Godot `user://`, so the two runs write over each other's ledger and
+  saved worlds. 055 took four wrong answers off exactly that before
+  noticing (TRAPS 50).
+
 **Smallest useful assistant task next.** The ledger question (033), the
 container-door question (034), the prompt-bound question (035), the validator
 question (036), the intent-door question (037), the which-field question
 (038), the arithmetic question (039) and the five build-it claims (040) are
 all **done**. Candidates, in the order the assistant would take them:
+
+- ~~**THE NEXT ONE: the class question behind "Human decision needed" 18 —
+  which checks cannot be proved connected?**~~ **DONE IN 055: FOURTEEN CALL
+  SITES, TEN HELD, FOUR NOT, AND ONLY ONE OF THE FOUR HAS NO DOOR.** The
+  farm's is still the only check in Genesis that nothing can hand a
+  violating input. The other three — `LoadCheck.compare`,
+  `RefusalCheck.quarrel_with` and `ToolRegistry.readback`'s validated
+  branch — had a door that nothing walked, and `tests/check_wiring_test.gd`
+  walks it. Left struck rather than deleted because the lesson is the one
+  worth carrying: **a unit test proves a check FIRES; only a request through
+  the game's own door proves it is REACHED**, and every one of the three had
+  a thorough suite of its own. TRAPS 49. Two rows are left `NOT_ASKED` and
+  are the next task: `GameController.finish_order` and
+  `main._on_revision_requested`.
 
 - ~~**THE NEXT ONE, AND IT OUTRANKS EVERYTHING BELOW IT BECAUSE IT IS THE
   OWNER'S: there is no way to ASK Genesis anything.**~~ **DONE IN 050, AS
@@ -7849,6 +7969,227 @@ is there a caller that can be handed a violating input, or is its only input
 built by the function that calls it? The answer for each is either a fixture
 or a row in the owner's column.
 
+## 055 — the checks that fire and the checks that are reached, which are not the same list
+
+**Objective.** The task this file named as the next assistant task: the class
+question behind "Human decision needed" 18, asked of the whole project —
+*which checks in Genesis are called on input the same function produced, and
+therefore cannot be proved connected?* 053 found one
+(`FarmModule._check_reachable()`); 054 found that all five controller guards
+have a door. Nobody had asked it of the rest.
+
+**Starting state.** Branch `prototype-002a` at `09824fd` (054). 61 suites,
+`--all`, 0 with something to look at, measured before anything was changed.
+
+### The question turned out to be two questions, and the second is the one with answers in it
+
+HANDOVER asked it structurally: *is there a caller that can be handed a
+violating input, or is its only input built by the function that calls it?*
+Asked that way the answer is dull — almost every check in Genesis has a
+public door, and the farm's is the only one that does not.
+
+The useful question is 053's operational one, and it is about the CALL rather
+than about the check: **if this call stopped refusing tomorrow, would any
+suite say so?** A check that fires and is not wired in refuses nothing. A
+check that is wired in and that no test reaches through the game's own door
+is a check the suite is not holding. From the green line at the bottom of a
+run those two look identical, and so does a check that is working.
+
+**The method is 053's, fourteen times.** Take one call site, make it stop
+refusing — force its `ok`, or drop the branch that returns the refusal — in a
+throwaway copy of the repository, run every suite, diff the result lines
+against a baseline taken the same way, put the copy back. Nothing in this
+repository was edited to measure it and no guard was removed from Genesis.
+
+### The answer: fourteen call sites, ten held, four not — and only one of the four is the farm's problem
+
+| | call site | wiring it out |
+|---|---|---|
+| W01 | `LoadCheck.compare` at `main.gd:618` | **NOT CAUGHT**, `--all` included |
+| W02 | `RefusalCheck.quarrel_with` at `main.gd:298` | **NOT CAUGHT**, `--all` included |
+| W03 | `FeasibilityGate.check` in racing's `pre_check` | `refusal_reach_test` |
+| W04 | `SeparationCheck.check` in racing's `post_check` | `refusal_reach_test` |
+| W05 | `SectionValidator.validate` in racing's `validate` | `container_door_test`, `intent_door_test`, `plan_said_test`, `prompt_bounds_test` |
+| W06 | `FarmModule._check_reachable` in `solve()` | **NOT CAUGHT** — and **no door**: 053's |
+| W07 | `NpcGoals.validate` at `game_controller.gd:235` | `controller_reach_test` |
+| W08 | `NpcGoals.validate_door` at `game_controller.gd:476` | `controller_reach_test`, `interference_test`, `panel_refused_test` |
+| W09 | `tool.validate` at `game_controller.gd:601` | `controller_reach_test` |
+| W10 | `module.validate` at `game_controller.gd:1148` | `controller_reach_test`, `intent_door_test`, `procedure_test` |
+| W11 | `module.pre_check` at `game_controller.gd:1153` | `controller_reach_test` |
+| W12 | `module.post_check` at `game_controller.gd:1171` | `controller_reach_test` |
+| W13 | `module.solve` at `game_controller.gd:1158` | `session_test` **and nothing else** — `--all` only |
+| W14 | `tool.validate` at `tool_registry.gd:47` | **NOT CAUGHT**, `--all` included |
+
+**The three that have a door nobody walked**, which is the finding:
+
+- **`LoadCheck.compare`.** 025 built it because *"Loaded 'vault'"* was a claim
+  about a file being opened dressed as a claim about a world coming back —
+  *"the project's own rule, unapplied in the one place it was cheapest to
+  apply"*, in its own header. Replace the verdict with a constant `RESTORED`
+  and all 61 suites pass. `load_check_test` is 236 lines and calls
+  `LoadCheck.compare()` fourteen times, and never once through `/load`.
+- **`RefusalCheck.quarrel_with`.** 023's answer to a refusal that denies
+  something Genesis does. Hand the caller an empty array and all 61 suites
+  pass. `asked_test`, `limits_test` and `log_023_test` all call it directly.
+- **`ToolRegistry.readback`'s validated branch.** Sharper than the other two,
+  because the door WAS walked — with inputs that could not show the
+  difference. `boots_test` reads back `{"weight": 130.0}`, which is identical
+  whether it comes from the validator or from what was merely heard;
+  `log_022_test` reads back a REFUSED look, which is the other branch. Of
+  eight sampled legal specs, five differ between the two paths: *"the
+  ordinary RED car"* against *"the ordinary red car"*.
+
+**And one held so thinly it is worth its own line.** The controller's solve
+step (W13) is caught by `session_test` — which sends a track that misses the
+start line and counts it as a failed request — and by nothing else.
+`session_test` takes minutes and runs only under `--all`, so on an ordinary
+run the controller's passing-through of a module's refusal is held by
+nothing. `controller_reach_test` counts those three sites as PASSTHROUGH and
+leaves them to `refusal_reach_test`; `refusal_reach_test` asks the modules
+directly. The passing-through itself was between the two of them.
+
+### The first set of answers was wrong, and why is worth more than the answers
+
+The fourteen runs were first done two and three at a time, in separate copies
+of the repository, to save wall-clock. **Every copy of this project shares
+one Godot `user://` directory** — `config/name` is the same in all of them —
+so all of them write one `user://track_log.jsonl` and one `user://worlds`.
+Every run was reading another run's ledger. `ledger_test` and
+`intent_door_test` duly failed under nearly every change, and were read as
+*"the guard is held"*: **`LoadCheck` and `RefusalCheck` both looked connected
+and are not.** Four of the fourteen answers were wrong, all in the flattering
+direction.
+
+It was found by noticing that the two suites catching everything are not in
+the slow list, so a `--all` run and a fast run should have agreed about them
+and did not. Every measurement above was re-taken **one at a time, with
+`user://` cleared before every run including the baseline**. TRAPS 50, and
+the README now says to run the suite one at a time.
+
+### What changed
+
+- **`tests/check_wiring_test.gd`**, new: 179 assertions. One row per
+  verdict-returning function in `scripts/` (35 of them), fail-closed in both
+  directions; the structural facts behind the one NO_DOOR row; and the four
+  doors nothing walked, walked. Each fixture reads the LEDGER or the
+  readback, not a status line.
+  - a world saved, one measurement in the save file made false on disk, and
+    `/load`: the load record must say `DIFFERENT` and name the measurement.
+    The honest load is asserted first, because a check that always says
+    `DIFFERENT` is no better than one that always says `RESTORED`.
+  - an `UNSUPPORTED` answer whose reason denies a capability, sent through
+    the door an AI answer comes through: the ledger's record must carry the
+    quarrel. The lie is built from `RefusalCheck.CAPABILITIES` rather than
+    typed out, and the suite asserts it really is a lie first. An honest
+    refusal must leave no note.
+  - a circuit the solver cannot close, through `main.gd`: `FAILED_CLOSURE`
+    and no valid world.
+  - a tool spec the validator normalises, asked of every tool in the registry
+    and built from each tool's own defaults (TRAPS 11), so a fourth tool is
+    asked without the file being edited. The refused half — said back from
+    what was heard, never from the defaults (TRAPS 8) — is asserted beside
+    it, so the pair is held in one place.
+- **`tests/refusal_reach_test.gd`**: one assertion corrected. See below.
+- **`scripts/world_module.gd`**: comments only. The note at `solve()` pointed
+  at an assertion that could not fail, and said nothing about the farm.
+- **`README.md`**: 61 suites to 62, and run them one at a time.
+- **`docs/TRAPS.md`**: traps 49, 50 and 51.
+
+### Running the new suite against broken code found a fault in 053's work
+
+Thirteen deliberate faults, one at a time, every one caught. The eleventh was
+renaming `CarTool.validate()` — and the suite's own reflection check stayed
+green.
+
+**`Script.get_script_method_list()` includes the methods a script INHERITS.**
+053 declared `WorldModule.solve()`'s `FAILED_LAYOUT` unreachable because all
+three modules override `solve()`, and wrote that assertion by reflection
+rather than by listing the three, explicitly so a fourth world would be asked
+without the file being edited. Every module reported every `WorldModule`
+method as its own. The assertion could not fail, and a fourth world that
+overrode nothing would have passed it.
+
+**The fact is unchanged** — all three modules really do define `solve()`,
+re-read off their source. What was not true is that anything was holding it,
+for twelve releases, and `WorldModule.solve()`'s own comment named the
+assertion as the guarantee.
+
+**And it was hiding a smaller fact worth having: `FarmModule` defines neither
+`pre_check()` nor `post_check()`.** A farm runs the base's, which refuse
+nothing. Nothing is wrong today — they are defaults, not stubs — but the
+project believed every module had its own, because the only thing it asked
+had answered yes. `check_wiring_test` now writes down which module defines
+which step and fails if that changes; both suites read the module's own
+source instead of asking the engine. TRAPS 51.
+
+### Evidence — what was actually run
+
+Godot 4.7.1 headless on Linux (`4.7.1.stable.official.a13da4feb`), in a cloud
+container, every run **sequential** with `user://` cleared first.
+
+- **Baseline at 054**: 61 suites, `--all`, 0 with something to look at.
+  Re-taken clean before the measurement.
+- **After**: 62 suites, `--all`, 0 with something to look at. The suite lists
+  were diffed and the only difference is `check_wiring_test`.
+- **`check_wiring_test` is 179 assertions** and fails against **thirteen**
+  deliberate faults, one at a time: the `LoadCheck` call wired out (3
+  failures), `LoadCheck` made to always say `RESTORED` (2), the
+  `RefusalCheck` call wired out (1), `RefusalCheck` made to quarrel with
+  everything (1), the solve refusal wired out (1), the tool readback's
+  validated branch switched off (3), the tool readback made to fall back to
+  the defaults (6), the farm's check made public (3), a new verdict-returning
+  function added to a script with no row (1), a row naming a function that
+  does not exist (1), `CarTool.validate` renamed (3), the farm given a
+  `pre_check` (2), and the farm's `solve` renamed (3).
+- **`refusal_reach_test`'s corrected assertion was run against the case it
+  exists for**: rename `FarmModule.solve()` and it now fails. It could not
+  before.
+- **It passes with `--fixed-fps 120`, with `--fixed-fps 30` and without any**
+  (TRAPS 4), so it is in neither runner's fixed-rate list. Its name matches
+  none of `run_tests.bat`'s findstr patterns — checked by running them
+  against the name, not by eye.
+- **62 suites counted with `ls`**, and the README said 61.
+
+### What the tests did NOT prove
+
+- **No model sent any of this.** Every request was typed as raw JSON through
+  `main.gd`'s own typed door; this harness has no key, and nothing was
+  reproduced from the owner's screen.
+- **Nothing was rendered on a screen** and no world was looked at.
+- **No world, record or saved file of the owner's changes.** The prompt is
+  byte-identical and `PROMPT_VERSION` did not move. The only `scripts/`
+  change is comments in `world_module.gd`, verified mechanically: every `+`
+  and `-` line in `scripts/` is a comment.
+- **Four of the fourteen call sites are now held by a suite that did not
+  exist yesterday**, which is coverage and not a fix: nothing in Genesis
+  behaved wrongly at any point. The faults found are in what the suite was
+  holding, not in what the code does.
+- **The farm's check is not fixed.** It is still the only check in Genesis
+  that cannot be proved connected, and where it should live is "Human
+  decision needed" 18 and the owner's. Nothing was moved.
+- **Three call sites were NOT asked**, and are declared `NOT_ASKED` rather
+  than left looking covered: `GameController.finish_order` (the delivery
+  verdict, called from `main.gd:692`), `main._on_revision_requested`, and
+  `ExperimentRunner._on_ai_failed`, which needs a live key (054's row).
+- **The enumeration's rule has a hole and the suite says so.** It collects
+  functions that return `"ok"`, `"errors"`, `"category"` or `"outcome"`.
+  `RefusalCheck.quarrel_with()` answers with an Array of quarrels and is
+  declared by hand; a check written tomorrow in a third shape would be
+  missed. The honest size of that hole is one function today.
+- **"Wiring it out" is one model of a check going wrong**, not all of them. A
+  check that stops refusing is caught by the fixtures above; a check that
+  refuses the wrong thing is a different question, and `refusal_reach_test`
+  and `controller_reach_test` are where that one lives.
+
+**Next action.** `GameController.finish_order` is the one row in the table
+that is both `NOT_ASKED` and a verdict a player acts on: it is the delivery
+judgement, the thing PROTOCOL's *"never accept the carrier's claim as proof
+of delivery"* is about, and the measurement above never touched its call at
+`main.gd:692`. Ask it 055's question — wire out the call, run everything, and
+read the diff — and then the same of `main._on_revision_requested`. Both are
+one probe each in a throwaway copy, and the answer for each is either a
+fixture or a row in the owner's column.
+
 ## Human decision needed
 
 1. **The six section types the prompt withholds — the owner's call, and there
@@ -8559,3 +8900,13 @@ or a row in the owner's column.
 
     **Nothing was moved.** The guard is labelled where it stands and the
     measurement is in `tests/refusal_reach_test.gd` and in the 053 section above.
+
+    **055 asked the same question of every other check in Genesis and this
+    is still the only one.** Fourteen call sites were wired out one at a
+    time: ten are held by a suite, three more have a door that nothing had
+    walked and now do, and this one has no door at all. So (a) is no longer
+    "the farm keeps the one check nothing can hold to account" by accident —
+    it is the only one left, deliberately, and the choice is yours.
+    `tests/check_wiring_test.gd` asserts the two structural facts that make
+    it one (the function is private, and it is called from `farm_module.gd`
+    alone), so the day it is given a door the suite says the row has moved.

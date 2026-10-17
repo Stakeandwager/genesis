@@ -130,12 +130,25 @@ func pre_check(content: Dictionary, _record: Dictionary) -> Dictionary:
 # Returns ok, category, reasons, layout.
 #
 # 053: a guard, and the only one of the seven whose reach is decided by the
-# REGISTRY rather than by arithmetic. All three modules override solve(), so
+# REGISTRY rather than by arithmetic. All three modules define solve(), so
 # nothing a player can send is answered by the line below.
-# tests/refusal_reach_test.gd asks that by reflection over
-# WorldRegistry.modules() rather than by listing the three, so a fourth
-# world is asked the same question without that file being edited - and it
-# asserts that this refusal still comes back when the base is called direct.
+# tests/refusal_reach_test.gd asks that of WorldRegistry.modules() rather
+# than by listing the three, so a fourth world is asked the same question
+# without that file being edited - and it asserts that this refusal still
+# comes back when the base is called direct.
+#
+# 055: that question used to be asked with get_script_method_list(), WHICH
+# COULD NOT ANSWER IT. The list includes inherited methods, so every module
+# reported every method here as its own. The fact is unchanged - all three
+# really do define solve(), re-read off their source - but this comment
+# named a guarantee that was not one for twelve releases. Both suites now
+# read the module's own file. See TRAPS 51.
+#
+# And the two steps below it are NOT in the same position, which the broken
+# reading hid: FarmModule defines no pre_check() and no post_check(), so a
+# farm runs the defaults on this page. They refuse nothing, which is why
+# nothing is wrong today. tests/check_wiring_test.gd writes down which
+# module defines which step and fails if that changes.
 func solve(_content: Dictionary) -> Dictionary:
 	return {"ok": false, "category": "FAILED_LAYOUT", "reasons": ["this module has no solver"], "layout": {}}
 

@@ -3096,3 +3096,156 @@ rows, and the starter circuit taken away.
 
 > The code says what a branch does. Only the running program says whether
 > anything can get there.
+
+---
+
+## 49. A check tested at its own door and never at the game's
+
+**Signature:** a check has a thorough suite of its own, every assertion
+passes, and deleting the line that calls it changes nothing anywhere.
+
+**Cause:** 055 asked HANDOVER's class question — *which checks are called on
+input the same function produced, and therefore cannot be proved connected?*
+— and measured it the only way it can be measured: take one call site, make
+it stop refusing, run every suite, and see whether anything says so.
+Fourteen call sites, one at a time.
+
+Ten were held. Four were not, and **only one of the four is the farm's
+problem**. `FarmModule._check_reachable()` is 053's: it is called inside
+`solve()` on the layout `solve()` has just built, so there is no input that
+tells the wired-in guard from the wired-out one, and that is "Human decision
+needed" 18. The other three all have a door. Nothing walked it.
+
+- **`LoadCheck.compare()` at `main.gd:618`.** 025 built it because
+  *"Loaded 'vault'"* was a claim about a file being opened dressed as a
+  claim about a world coming back. Replace the verdict with a constant
+  `RESTORED` and all 61 suites pass, `--all` included. `load_check_test` is
+  236 lines and calls `LoadCheck.compare()` fourteen times — never once
+  through `/load`.
+- **`RefusalCheck.quarrel_with()` at `main.gd:298`.** 023's answer to a
+  refusal that denies something Genesis does. Hand the caller an empty
+  array and all 61 suites pass. `asked_test`, `limits_test` and
+  `log_023_test` all call `quarrel_with()` directly.
+- **`ToolRegistry.readback()`'s validated branch at `tool_registry.gd:47`.**
+  This one is sharper, because a door existed AND the suite walked it — with
+  inputs that could not show the difference. `boots_test` reads back
+  `{"weight": 130.0}`, which is identical whether it comes from the
+  validator or from what was merely heard. Of eight sampled legal specs,
+  five differ: *"the ordinary RED car"* against *"the ordinary red car"*.
+
+And one more was held so thinly it is worth its own line: the controller's
+**solve step** at `game_controller.gd:1158` is caught by `session_test` and
+by nothing else — a suite that takes minutes and runs only under `--all`.
+
+**Do:**
+
+- A unit test proves a check FIRES. Only a request through the door the game
+  uses proves it is REACHED. Write both, and do not let the first stand in
+  for the second.
+- The measurement is cheap and it is the only honest one: delete the call,
+  run everything, read the diff. Do it when a check is written, not twenty
+  commits later.
+- When a check has a door but the inputs sent through it are already in the
+  form the check would produce, the door is walked and nothing is tested.
+  Choose an input where the two paths visibly differ, and assert that such
+  an input exists, or the assertion goes quietly vacuous the day the
+  normalisation changes.
+- A guard held only by a slow suite is held only on the runs that use
+  `--all`.
+
+Found in 055. `tests/check_wiring_test.gd` carries one row per
+verdict-returning function in `scripts/`, fails closed on a new one, and
+walks the four doors nothing walked.
+
+> A green suite proves the checks fire. It does not prove anything calls
+> them.
+
+---
+
+## 50. A measurement taken while another run was writing the same file
+
+**Signature:** a suite fails under a change that cannot possibly affect it,
+the same two suites fail under every change, and the failures vanish when
+the measurement is repeated.
+
+**Cause:** 055's fourteen wire-outs were first run two and three at a time,
+in separate copies of the repository, to save wall-clock. Every copy has the
+same `config/name` in `project.godot`, and Godot derives `user://` from it —
+so all of them share **one** `user://track_log.jsonl` and **one**
+`user://worlds`. Every run was reading another run's ledger.
+
+`ledger_test` and `intent_door_test` duly failed under nearly every change,
+and were read as *"the guard is held"*. Four of the fourteen answers were
+wrong because of it, all in the flattering direction: `LoadCheck` and
+`RefusalCheck` looked connected and are not. The confound was found by
+noticing that the two suites catching everything were not in the slow list,
+so a `--all` run and a fast run should have agreed about them, and did not.
+
+**Do:**
+
+- Run the suite one at a time. `run_tests.sh` is not safe to run twice at
+  once on one machine, and nor is the Windows runner.
+- Clear `user://` before every run in a measurement, baseline included. A
+  world left over from the previous run is state the next run inherits.
+- A result that is the same under every treatment is not a strong signal, it
+  is a suspicious one. Ask what the treatments have in common before
+  believing it.
+- Separating copies of a project does not separate their `user://`. Change
+  `config/name` as well, or do not overlap them.
+
+Found in 055, after the first set of answers was thrown away and all
+fourteen were re-measured one at a time.
+
+> Two runs of the same project are one ledger.
+
+---
+
+## 51. An override asserted by reflection, which answers for the base class too
+
+**Signature:** an assertion written precisely so that a future case would be
+caught passes for a case that should fail it, and has always passed.
+
+**Cause:** 053 declared `WorldModule.solve()`'s `FAILED_LAYOUT` unreachable
+because all three world modules override `solve()`, and wrote the assertion
+by reflection rather than by listing the three — explicitly so that a fourth
+world would be asked the same question without the file being edited:
+
+```gdscript
+for entry in (module as Object).get_script().get_script_method_list():
+    if str(entry["name"]) == "solve":
+        overrides = true
+```
+
+`Script.get_script_method_list()` includes the methods a script
+**inherits**. Every module reported every `WorldModule` method as its own.
+`BootsTool`'s list contains `validate`, `readback`, `defaults` and four more
+names twice over — once from the tool, once from the base. The assertion
+could not fail, and a fourth world that overrode nothing would have passed
+it.
+
+The fact is still true: all three modules really do define `solve()`. What
+was not true is that anything was holding it, for twelve releases, and the
+comment at `WorldModule.solve()` pointed at the assertion as the guarantee.
+
+**And it was hiding a smaller fact worth having.** `FarmModule` defines
+neither `pre_check()` nor `post_check()`: a farm runs the base's, which
+refuse nothing. Nothing is wrong today — they are defaults, not stubs — but
+the project believed every module had its own, because the only thing it
+asked had answered yes.
+
+**Do:**
+
+- To ask whether a script defines a method itself, read the script. The
+  reflection list cannot tell an override from a fall-through.
+- When an assertion exists to catch a future case, break the present case on
+  purpose and watch it fail. Renaming one method found this in a minute.
+- An assertion that covers four things with one loop is worth one run with
+  each of the four taken away, not one run with all four present.
+
+Found in 055, by running the new suite against thirteen deliberate faults —
+the eleventh was renaming `CarTool.validate()`, and the reflection check
+stayed green. Corrected in `tests/refusal_reach_test.gd` and
+`tests/check_wiring_test.gd` in the same commit (TRAPS 11), and the farm's
+two fall-throughs are now written down and asserted.
+
+> Reflection answers for the whole family. It was asked about one member.

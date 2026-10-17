@@ -531,15 +531,32 @@ func _why_out_of_reach() -> void:
 		"the narrowest gap between two zones anywhere in the sweep was %.4f m, against a lane of %.1f m" % [
 			narrowest_zone_gap, fm.LANE_WIDTH])
 
-	# FAILED_LAYOUT, branch 3: by reflection, so a fourth world is asked too.
+	# FAILED_LAYOUT, branch 3: read off each module's own source, so a fourth
+	# world is asked too.
+	#
+	# 055: THIS WAS WRITTEN WITH get_script_method_list() AND COULD NOT FAIL.
+	# That list includes the methods a script INHERITS, so every module
+	# reported every WorldModule method as its own: FarmModule, which defines
+	# no pre_check() and no post_check() at all, came back true for both.
+	# The fact asserted here is still true - all three modules really do
+	# define solve() - but for twelve releases nothing was holding it, and a
+	# fourth world that overrode nothing would have passed. Found in 055 by
+	# renaming a method and watching the assertion stay green; the same
+	# pattern is corrected the same way in tests/check_wiring_test.gd
+	# (TRAPS 11). See TRAPS 51.
 	var worlds := 0
 	for module in WorldRegistry.modules():
 		worlds += 1
-		var overrides := false
-		for entry in (module as Object).get_script().get_script_method_list():
-			if str(entry["name"]) == "solve":
-				overrides = true
-		_check(overrides, "%s overrides solve(), so the base's refusal cannot be its answer" % (module as WorldModule).display_name())
+		var path := str((module as Object).get_script().resource_path)
+		var file := FileAccess.open(path, FileAccess.READ)
+		_check(file != null, "read %s to see what it defines" % path)
+		if file == null:
+			continue
+		var text := file.get_as_text()
+		file.close()
+		_check(text.contains("\nfunc solve("),
+			"%s defines solve() in %s, so the base's refusal cannot be its answer" % [
+				(module as WorldModule).display_name(), path.get_file()])
 	_check(worlds == 3, "asked every world in the registry (%d)" % worlds)
 
 
