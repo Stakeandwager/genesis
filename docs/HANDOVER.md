@@ -24,7 +24,47 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **055**, the task this file named as
+- Last commit at the time of writing: **056**, the task this file named as
+  the next assistant task: **055's question asked of the two rows 055 left
+  `NOT_ASKED`** — *if this call stopped working tomorrow, would any suite say
+  so?*
+  **THE TWO ANSWERS ARE OPPOSITE.** `GameController.finish_order` — the
+  delivery verdict, the thing PROTOCOL's *"never accept the carrier's claim
+  as proof of delivery"* is about — is held **hard**: wire out its call at
+  `main.gd:692` and **seven** suites say so (`false_delivery_test` 5,
+  `interference_test` 2, `carry_test`, `ledger_test`, `order_test`,
+  `repeat_test`, and `ledger_audit_test` throws). `false_delivery_test`
+  reaches it through `main.npc.halt()`, the NPC's own `stopped_walking`
+  signal, which is the door the game walks. Nobody had written that down.
+  **`main._on_revision_requested` is held by NOTHING** — wire out the
+  connect at `main.gd:80` and all 62 suites pass, `--all` included, and the
+  diff against the baseline is **empty**.
+  **AND IT COULD NOT HAVE BEEN REACHED, which is the finding.** The door is
+  locked from the production side, not merely unwalked (TRAPS 49's shape).
+  The emit stands behind `_may_revise()`, which requires
+  `current_source["source"] == "ai"` — a string written in **one** place in
+  Genesis, `AIInterpreter.describe()`, reachable only after
+  `interpreter.is_available()` passes. Raw JSON, which is how every suite
+  and every measurement in this repository sends a request, is stamped
+  `{"source": "typed"}`. **A harness with no key cannot produce that gate's
+  input at any price.** Asked of the class and grepped rather than
+  remembered: `current_source` has two readers and one is a record field, so
+  the closure revision is the **only** behaviour in Genesis gated on a
+  request's provenance. The honest size of that class is one. **TRAPS 52.**
+  62 suites passed before and 62 after, `--all` both times, lists
+  **diffed**: the only difference is `check_wiring_test`'s own line, 179
+  assertions to **188**. The new fixture fails against **ten** deliberate
+  faults made one at a time, including the one that matters — the handler
+  reading the proposal's distance where the closure's belongs, which proves
+  the number assertions are not vacuous.
+  **What the fixture fakes is one field**, the provenance label; everything
+  downstream is the real refusal, the real `_may_revise`, the real emit and
+  the real handler. **Not verified: no model sent any of this, and that the
+  AI is actually ASKED for a correction is still unverified and cannot be
+  checked here** — the handler calls `interpreter.revise()` after a 4 s
+  timer and the fixture asserts the state set before that await. **No change
+  to anything in `scripts/`.** See 056 below and TRAPS 52.
+- The commit before it: **055**, the task that file named as
   the next assistant task: **the class question behind "Human decision
   needed" 18, asked of the whole project** — which checks are called on
   input the same function produced, and therefore cannot be proved
@@ -978,7 +1018,28 @@ worlds, and suites fail for reasons that have nothing to do with the code.
 055 took four answers off such a run before noticing. If a run is being used
 as a measurement, clear `user://` before it, baseline included (TRAPS 50).
 
-Last full run (055, Godot 4.7.1 on Linux —
+Last full run (056, Godot 4.7.1 on Linux —
+`4.7.1.stable.official.a13da4feb` — headless, in a cloud container, every
+run sequential with `user://` cleared first):
+**suites with something to look at: 0** on all 62, with `--all`. The
+baseline at 055, measured the same way in the same container, was the same
+on 62 suites, and the lists were **diffed**: the only difference is
+`check_wiring_test`'s own line, **179 assertions to 188**. 056 adds no file,
+so neither runner needed an edit, and `run_tests.bat`'s `findstr` patterns
+were RUN against the name again rather than assumed unchanged.
+056's nine new assertions are a fixture in `check_wiring_test`, and what
+stands in place of a "failures against the pre-056 code" count — it changes
+no behaviour — is **ten deliberate faults, made one at a time and the suite
+re-run against each**: the `revision_requested` connect wired out (7
+failures), `_may_revise()` always false (8), the handler never entering the
+revising state (1), the closure distance read from the proposal (1), the
+second attempt numbered 1 (1), `revision_pending` dropped from the record
+(1), the feedback dropped (1), `describe_revision()`'s marker dropped (1),
+`CONNECTED_056` removed from `VERDICTS` (1), and racing's
+`correction_feedback()` returning empty (8). It passes with
+`--fixed-fps 120`, with `--fixed-fps 30` and without any (TRAPS 4).
+
+The run before it (055, Godot 4.7.1 on Linux —
 `4.7.1.stable.official.a13da4feb` — headless, in a cloud container, every
 run sequential with `user://` cleared first):
 **suites with something to look at: 0** on all 62, with `--all`. The
@@ -8189,6 +8250,170 @@ of delivery"* is about, and the measurement above never touched its call at
 read the diff — and then the same of `main._on_revision_requested`. Both are
 one probe each in a throwaway copy, and the answer for each is either a
 fixture or a row in the owner's column.
+
+## 056 — the two rows 055 left unmeasured, and why one of them could not be reached
+
+**Objective.** The task this file named as the next assistant task: ask 055's
+question — *if this call stopped working tomorrow, would any suite say so?* —
+of the two rows `check_wiring_test` left `NOT_ASKED`.
+`GameController.finish_order`, the delivery verdict that PROTOCOL's *"never
+accept the carrier's claim as proof of delivery"* is about, called from
+`main.gd:692`; and `main._on_revision_requested`, the handler that asks the
+model to correct a circuit that will not close.
+
+**Starting state.** Branch `prototype-002a` at `b3a4606` (055). 62 suites,
+`--all`, 0 with something to look at — re-measured in this container before
+anything was touched, with `user://` cleared first (TRAPS 50), and it matched
+what 055 recorded.
+
+**Method, which is 055's and unchanged.** One call site at a time, wired out
+in a throwaway copy of the repository, every suite run with `--all`, the
+result lines **diffed** against the baseline. Every run sequential, `user://`
+cleared before each. Nothing in this repository was edited to measure it and
+no guard was removed from Genesis.
+
+### THE TWO ANSWERS ARE OPPOSITE, AND THE SECOND ONE IS THE FINDING
+
+**`finish_order` is held, and held hard.** Wire out its call at `main.gd:692`
+and **seven** suites say so:
+
+```
+carry_test             failures 0 -> 1
+false_delivery_test    failures 0 -> 5
+interference_test      failures 0 -> 2
+ledger_test            failures 0 -> 1
+order_test             failures 0 -> 1
+repeat_test            failures 0 -> 1
+ledger_audit_test      passed   -> SCRIPT ERROR (no 'carrier' key)
+```
+
+`false_delivery_test` reaches it through `main.npc.halt()` — the NPC's own
+`stopped_walking` signal, which is the door the game walks — not through the
+direct calls to `finish_order` that also appear in that file. So the delivery
+verdict, the one this project is most insistent about, was already being
+reached through the real door by six suites and nobody had written it down.
+The row was `NOT_ASKED`, which was honest: it said *not measured*, not
+*unheld*. It is now `CONNECTED` and names all seven.
+
+**`_on_revision_requested` is held by nothing.** Wire out the connect at
+`main.gd:80` and **all 62 suites pass, `--all` included — the diff against the
+baseline is empty.** Not one line differs.
+
+### WHY NOTHING COULD HAVE WALKED THAT DOOR, WHICH IS THE PART TO KEEP
+
+This is not TRAPS 49's shape — a door that existed and nothing walked. The
+door is **locked from the production side.** The emit at
+`game_controller.gd:1168` stands behind `_may_revise()`, and `_may_revise()`
+requires `current_source["source"] == "ai"`. That string is written in **one
+place in Genesis** — `AIInterpreter.describe()`, `ai_interpreter.gd:250` —
+which `main.gd` reaches only after `interpreter.is_available()` passes. Raw
+JSON, which is how every suite and every measurement in this repository sends
+a request, is stamped `{"source": "typed"}` at `main.gd:189`.
+
+So a harness with no key cannot produce this gate's input at any price, and
+no suite written against the normal door would ever have reached the handler.
+
+**Asked of the class, and the answer is written down rather than assumed
+(TRAPS 11):** `current_source` has **two** readers in `scripts/` — grepped,
+not remembered — and one of them is a record field. The closure revision is
+the **only** behaviour in Genesis gated on a request's provenance. The honest
+size of that class is one. TRAPS 52.
+
+### WHAT CHANGED
+
+One file: `tests/check_wiring_test.gd`. **No change to anything in
+`scripts/`** — verified mechanically, `git diff --stat` touches `tests/` and
+`docs/` only. Nothing in Genesis behaved wrongly at any point in this
+session: what was found is what the suite was holding, not what the code does.
+
+- The two `NOT_ASKED` rows become `CONNECTED` (naming the seven suites) and
+  `CONNECTED_056` (the new fixture). A new verdict `CONNECTED_056` is added to
+  `VERDICTS`, so a row carrying it fails if the list is not updated with it.
+- A fixture, `_revision_handler()`: an unclosable circuit sent through
+  `main._execute_json` with the provenance label set to what
+  `AIInterpreter.describe()` would have set, then **nine** assertions — one
+  the precondition that the refusal still happens, eight on the
+  state the real handler leaves behind — that Genesis entered the revising
+  state, that the second attempt is numbered 2, that it carries the feedback
+  Godot wrote, that the next request is marked a revision, and that the two
+  distances it carries are **the ones Godot measured**, read back out of the
+  same record the refusal wrote rather than compared with a literal.
+- It also asserts that a circuit refused while a revision is pending is still
+  refused `FAILED_CLOSURE`. A revision on its way must not turn a refusal
+  into a non-refusal.
+
+**What the fixture fakes, stated rather than buried: one field.** The
+provenance label. Everything downstream is the real path — the real refusal,
+the real `_may_revise`, the real emit, the real handler. The suite header says
+so in those words.
+
+### EVIDENCE — WHAT WAS ACTUALLY RUN
+
+Godot 4.7.1 headless on Linux (`4.7.1.stable.official.a13da4feb`), in a cloud
+container, every run **sequential** with `user://` cleared first (TRAPS 50).
+
+- **Baseline at 055:** 62 suites, `--all`, **0 with something to look at.**
+- **After:** 62 suites, `--all`, **0 with something to look at.** The suite
+  lists were **diffed**: the only difference is `check_wiring_test`'s own
+  line, 179 assertions to **188**. No file was added, so neither runner
+  needed an edit — and `run_tests.bat`'s `findstr` patterns were **RUN**
+  against the name rather than eyeballed, as were the two probe diffs.
+- **The fixture was run against broken code before it was believed** (052's
+  lesson, TRAPS 51). **Ten deliberate faults, one at a time**, every one
+  caught, and the FAIL lines read rather than counted: the connect wired out
+  (7 failures), `_may_revise` always false (8), the handler never entering the
+  revising state (1), **the closure distance read from the proposal instead of
+  the closure (1)**, the second attempt numbered 1 (1), `revision_pending`
+  dropped from the record (1), the feedback dropped (1),
+  `describe_revision()`'s marker dropped (1), `CONNECTED_056` removed from
+  `VERDICTS` (1), and racing's `correction_feedback()` returning empty (8).
+- The fourth of those is the one worth naming: it proves the number assertions
+  are **not vacuous**. The two distances on this circuit are 260.3 m and
+  980.0 m, so a handler carrying the wrong one is caught — which an assertion
+  written as a literal would not have been (TRAPS 6).
+- Passes with `--fixed-fps 120`, with `--fixed-fps 30` and without any
+  (TRAPS 4), so its place outside both runners' fixed-rate lists still holds.
+
+### NOT VERIFIED
+
+- **NO MODEL SENT ANY OF THIS.** This harness has no key. Every request was
+  typed as raw JSON through `main.gd`'s own typed door, and the one gate that
+  needs a model answer was set by hand, which is the whole subject of this
+  commit.
+- **That the AI is actually asked for a correction, and that an answer comes
+  back, is still not verified and cannot be here.** The handler calls
+  `interpreter.revise()` after a 4 s timer; the fixture asserts the state the
+  handler sets **before** that await, so no request is ever sent. The round
+  trip needs the owner's machine and a live key.
+- **NOTHING WAS RENDERED ON A SCREEN** and no world was looked at.
+- **NO WORLD, RECORD OR SAVED FILE OF THE OWNER'S CHANGES.** The prompt is
+  byte-identical and `PROMPT_VERSION` did not move.
+- **The seven suites that catch `finish_order` were not individually
+  re-verified one at a time.** They came out of one `--all` sweep against one
+  wire-out, diffed against the baseline. `ledger_audit_test` **throws** rather
+  than failing cleanly there — it indexes `record["carrier"]` on a record that
+  is not written when the call is gone. The runner reports it and counts it,
+  so nothing is hidden, but it is a suite that would read better as a failure
+  than as a script error. Not changed; recorded.
+
+**Next action.** 056 measured two signal-facing call sites and the second one
+turned out to be invisible for a structural reason. The class that reason
+belongs to has not been swept: **`main.gd` makes sixteen `connect()` calls**
+(enumerated with grep: `log_message`, `interpretation_ready`,
+`interpretation_failed`, `retrying`, `track_measured`, `revision_requested`,
+`equipped`, `ordered`, `door_changed`, experiment `progress` and `finished`,
+`lap_completed`, race `announced`, `pressed`, `text_submitted`, and
+`stopped_walking` at `main.gd:659`). Two of the sixteen are now measured —
+`stopped_walking` is the one `finish_order` sits behind, and
+`revision_requested` is the one nothing held. **The other fourteen have never
+been asked whether wiring them out would fail anything**, and these are the
+handlers that turn a controller verdict into what the player sees, which is
+the layer 055 did not reach. One wire-out each, `--all`, diffed; at roughly
+twenty minutes a sweep this is more than one unattended run, so it wants
+doing a few at a time with the answers written into the table as they come.
+Three of them (`interpretation_ready`, `interpretation_failed`, `retrying`)
+may well be TRAPS 52's shape again, and the honest thing is to measure rather
+than predict.
 
 ## Human decision needed
 

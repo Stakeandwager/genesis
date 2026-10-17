@@ -82,7 +82,41 @@ extends SceneTree
 #     by nothing. Where it should live is "Human decision needed" 18 and it
 #     is the owner's; nothing was moved.
 #
-# WHY THE THREE WERE INVISIBLE, WHICH IS THE PART WORTH KEEPING
+# --- 056: THE TWO ROWS 055 LEFT UNMEASURED, AND THEY ANSWER OPPOSITELY ---
+#
+# 055 left three rows unanswered and said so rather than letting them look
+# covered. 056 measured the two that could be measured, by 055's method -
+# one wire-out at a time in a throwaway copy, every suite with --all, the
+# result lines diffed, user:// cleared before each run.
+#
+#   GameController.finish_order  HELD HARD. The delivery verdict, which is
+#     what PROTOCOL's "never accept the carrier's claim as proof of
+#     delivery" is about. Wire out its call at main.gd:692 and SEVEN suites
+#     say so: false_delivery_test (5 failures), interference_test (2),
+#     carry_test, ledger_test, order_test, repeat_test, and
+#     ledger_audit_test throws on the record that is no longer written.
+#     false_delivery_test reaches it through main.npc.halt() - the NPC's own
+#     stopped_walking signal, which IS the door the game walks - not through
+#     the direct finish_order() calls that also appear in that file. So this
+#     was already held through the real door by six suites and nobody had
+#     written it down. The row said NOT_ASKED, which was honest: it meant
+#     not measured, never unheld.
+#
+#   main._on_revision_requested  HELD BY NOTHING. Wire out the connect at
+#     main.gd:80 and all 62 suites pass, --all included; the diff against
+#     the baseline is EMPTY. The fixture at 3e below holds it now, and the
+#     reason nothing could have held it before is TRAPS 52 - see that
+#     fixture's own header, because it is a different shape from the three
+#     above and worth reading as such.
+#
+# So after 056 every row in the table below carries a MEASURED verdict
+# except one: experiment_runner.gd:_on_ai_failed, which needs a live key and
+# an API that fails. Counted off the table, not remembered.
+#
+# WHY 055'S THREE WERE INVISIBLE, WHICH IS THE PART WORTH KEEPING
+#
+# (These are the three under "NOT HELD BEFORE 055" above, not 056's two:
+# 056's unheld one has a different cause and its own account at the fixture.)
 #
 # Every one of the three has a suite that tests the check itself, thoroughly, by
 # calling it directly. load_check_test is 236 lines about LoadCheck. What
@@ -162,9 +196,10 @@ var notes: Array = []
 #   REPORTS        answers whether a file operation worked. It refuses no
 #                  request, so there is no guard here to wire out.
 #   NEEDS_KEY      cannot be answered in this harness. 054's row, unchanged.
+#   CONNECTED_056  nothing caught it before 056; 056's fixture does now.
 #   NOT_ASKED      not measured. Said rather than left looking covered.
-const VERDICTS := ["CONNECTED", "CONNECTED_055", "NO_DOOR", "BASE_DEFAULT",
-	"REPORTS", "NEEDS_KEY", "NOT_ASKED"]
+const VERDICTS := ["CONNECTED", "CONNECTED_055", "CONNECTED_056", "NO_DOOR",
+	"BASE_DEFAULT", "REPORTS", "NEEDS_KEY", "NOT_ASKED"]
 
 # --- the table: one row per verdict-returning function in scripts/ ---
 #
@@ -198,12 +233,13 @@ const DECLARED := {
 	"feasibility_gate.gd:check": ["CONNECTED", "W03 failed refusal_reach_test"],
 	"game_controller.gd:_prepare_world": ["CONNECTED",
 		"its four steps are W10, W11, W13 and W12"],
-	"game_controller.gd:finish_order": ["NOT_ASKED",
-		"the delivery verdict. carry_test and false_delivery_test call it; its call at main.gd:692 was not wired out"],
+	"game_controller.gd:finish_order": ["CONNECTED",
+		"the delivery verdict. 056 wired out its call at main.gd:692: SEVEN suites said so - false_delivery_test (5), interference_test (2), carry_test, ledger_test, order_test, repeat_test, and ledger_audit_test threw on the missing record"],
 	"game_controller.gd:record_load_check": ["CONNECTED_055",
 		"the load fixture below reads the record it writes"],
 	"load_check.gd:compare": ["CONNECTED_055", "W01 was held by nothing, --all included"],
-	"main.gd:_on_revision_requested": ["NOT_ASKED", "a signal handler; not wired out"],
+	"main.gd:_on_revision_requested": ["CONNECTED_056",
+		"056 wired out its connect at main.gd:80 and all 62 suites passed, --all included. The revision fixture below holds it"],
 	"npc_goals.gd:validate": ["CONNECTED", "W07 failed controller_reach_test"],
 	"npc_goals.gd:validate_door": ["CONNECTED",
 		"W08 failed controller_reach_test, interference_test and panel_refused_test"],
@@ -750,6 +786,98 @@ func _tool_readback() -> void:
 	notes.append("legal specs that tell the two readback paths apart: %d" % distinguishing)
 
 
+# --- 3e. the closure revision, through the controller's own signal ---
+#
+# 055 left this row NOT_ASKED. 056 measured it: wire out the connect at
+# main.gd:80 and all 62 suites pass, --all included. Nothing held it.
+#
+# WHY NOTHING WALKED THIS DOOR, which is the part worth keeping. The emit at
+# game_controller.gd:1168 stands behind _may_revise(), and _may_revise()
+# requires current_source["source"] == "ai". That string is written in ONE
+# place in Genesis - AIInterpreter.describe(), ai_interpreter.gd:250 - which
+# main.gd reaches only after interpreter.is_available() passes. So the whole
+# revision path is gated on the request having come from the model, and no
+# harness without a key can produce that. Raw JSON sets {"source": "typed"}
+# (main.gd:189). Asked of the class: the closure revision is the ONLY
+# behaviour in Genesis gated on a request's provenance - grepped, two readers
+# of current_source and one of them is a record field. The honest size of
+# that class is one. TRAPS 52.
+#
+# WHAT THIS FIXTURE FAKES, STATED RATHER THAN BURIED: one field, the
+# provenance label, set to what AIInterpreter.describe() would have set.
+# Everything downstream is the real thing - the real unclosable circuit
+# through _execute_json, the real solve refusal, the real _may_revise, the
+# real emit, the real handler. What is NOT verified here and cannot be: that
+# the AI is actually asked and an answer comes back. The handler calls
+# interpreter.revise() after a 4 s timer, and this fixture asserts the state
+# the handler has already set before that await, so no request is ever sent.
+#
+# AND IT ASSERTS THE CAPABILITY, NOT A SENTENCE (TRAPS 6, TRAPS 14): that
+# Genesis enters the revising state, that the second attempt is numbered 2,
+# and that what it carries is the distance GODOT MEASURED - read back out of
+# the same record the refusal wrote, not a string the handler composed.
+
+func _revision_handler() -> void:
+	# The label AIInterpreter.describe() sets, and nothing else changed.
+	main.pending_request = "a circuit that cannot close"
+	main.pending_source = {"source": "ai"}
+	var records: Array = await _send_as_ai(UNCLOSABLE)
+	var refused := {}
+	for r in records:
+		var d: Dictionary = r
+		if str(d.get("category", "")) == "FAILED_CLOSURE":
+			refused = d
+	_check(not refused.is_empty(),
+		"the unclosable circuit is still refused FAILED_CLOSURE when it came from the model (got %s)" % str(_categories(records)))
+	_check(bool(refused.get("revision_pending", false)),
+		"and the record says a correction is on its way")
+
+	# The handler's work, which nothing held before 056.
+	_check(main.revising, "the revision handler put Genesis into the revising state")
+	var attempt: Dictionary = main.pending_attempt
+	_check(int(attempt.get("attempt", 0)) == 2,
+		"and the next attempt is numbered 2 (got %s)" % str(attempt.get("attempt", "absent")))
+	var of: Dictionary = attempt.get("revision_of", {})
+	_check(not of.is_empty(), "and it carries what it is a revision OF")
+	_check(str(of.get("feedback", "")) != "",
+		"and the feedback Godot wrote for the model")
+
+	# The numbers, against the record the refusal wrote rather than against a
+	# constant: a handler that carried the wrong circuit's measurements would
+	# pass an assertion written as a literal.
+	var closure: Dictionary = refused.get("closure", {})
+	var proposal: Dictionary = closure.get("proposal", {})
+	_check(is_equal_approx(float(of.get("closure_distance", -1.0)),
+			float(closure.get("closure_distance", -2.0))),
+		"and the closure distance Godot measured, not a number of its own (%s against %s)" % [
+			str(of.get("closure_distance", "absent")), str(closure.get("closure_distance", "absent"))])
+	_check(is_equal_approx(float(of.get("proposal_distance", -1.0)),
+			float(proposal.get("distance", -2.0))),
+		"and the proposal's distance from the start line (%s against %s)" % [
+			str(of.get("proposal_distance", "absent")), str(proposal.get("distance", "absent"))])
+	_check(str(main.pending_source.get("revision", "")) != "",
+		"and the next request is marked as a revision")
+	notes.append("revision carried: closure %.1f m, proposal %.1f m from the start line" % [
+		float(of.get("closure_distance", 0.0)), float(of.get("proposal_distance", 0.0))])
+
+	# The handler blocks further requests until the correction lands, and
+	# nothing else in this suite should inherit that.
+	main.revising = false
+	main.pending_attempt = {}
+	main.pending_source = {}
+
+
+# One level in from _send(): _handle_request() stamps every raw-JSON request
+# {"source": "typed"} (main.gd:189), which is the whole reason this door had
+# never been walked. Everything _execute_json does is the real path.
+func _send_as_ai(json_text: String) -> Array:
+	var before := _written().size()
+	main._execute_json(json_text)
+	await process_frame
+	await process_frame
+	return _since(before)
+
+
 func _run() -> void:
 	_make_main()
 	await process_frame
@@ -767,6 +895,8 @@ func _run() -> void:
 	await _solve_refusal()
 	print("--- the tool readback's two halves ---")
 	_tool_readback()
+	print("--- the closure revision, through the controller's signal ---")
+	await _revision_handler()
 
 	WorldStore.remove_world(SAVED_AS)
 	for note in notes:

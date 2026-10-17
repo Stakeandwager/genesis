@@ -3249,3 +3249,54 @@ stayed green. Corrected in `tests/refusal_reach_test.gd` and
 two fall-throughs are now written down and asserted.
 
 > Reflection answers for the whole family. It was asked about one member.
+
+---
+
+## 52. A path gated on provenance the harness can never produce
+
+**Signature:** a handler, a branch or a whole feature is wired in, obviously
+reachable by reading the code, and wiring it out fails nothing. Every suite
+that touches the area calls the pieces directly and passes.
+
+**Cause:** 056 wired out `main.gd:80` —
+`controller.revision_requested.connect(_on_revision_requested)` — and all 62
+suites passed, `--all` included. The closure revision, the one place Genesis
+asks the model to correct itself, was held by nothing.
+
+The reason is one `and` in a guard. The emit at `game_controller.gd:1168`
+stands behind `_may_revise()`, and `_may_revise()` requires
+`current_source["source"] == "ai"`. That string is written in **one** place in
+the project — `AIInterpreter.describe()`, `ai_interpreter.gd:250` — which
+`main.gd` reaches only after `interpreter.is_available()` passes. So the path
+is gated on the request having come from the model, and **a harness with no
+key cannot produce that gate's input at any price**. Raw JSON, which is how
+every suite and every measurement in this repository sends a request, is
+stamped `{"source": "typed"}` at `main.gd:189`.
+
+This is not the same blind spot as TRAPS 49. There the door existed and
+nothing walked it. Here the door is **locked from the production side**, so
+no amount of walking the normal door would ever have reached it, and no
+reviewer reading the handler would see anything wrong.
+
+**Do:**
+
+- When a call site cannot be reached from any test, ask what **production**
+  sets that the harness cannot, rather than looking for a missing test. A
+  provenance field, a key's presence, a clock, a platform, a signed build:
+  each one is a gate whose closed side is invisible to the whole suite.
+- Then ask it of the class and write down the size of the answer. Here:
+  `current_source` has two readers in `scripts/`, and one of them is a record
+  field, so the closure revision is the **only** behaviour in Genesis gated on
+  a request's provenance. Grepped, not remembered. The honest size of this
+  class is one.
+- A fixture may set such a gate by hand, and must say which field it set and
+  what that leaves unverified. 056's sets the provenance label and nothing
+  else; everything downstream — the refusal, `_may_revise`, the emit, the
+  handler — is the real path, and that the AI is actually asked is still not
+  verified and cannot be here.
+
+Found in 056, asking 055's question of the two rows 055 left `NOT_ASKED`. The
+other one, `GameController.finish_order`, turned out to be the opposite case:
+wiring out its call failed **seven** suites.
+
+> The test could not reach it because production holds the key.
