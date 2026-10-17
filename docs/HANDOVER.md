@@ -24,7 +24,75 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **058**, the task this file named as
+- Last commit at the time of writing: **059**, the task this file named as
+  the next assistant task: **the seven `connect()` rows of `main.gd`'s
+  sixteen still marked `NOT_ASKED`**. They were measured and **all sixteen
+  rows are now measured**, so 057's sweep is finished: `door_changed` is
+  **HELD** (`interference_test`, 3 failures, by the assertion that looks for
+  the physical door slab — and this file predicted nothing held it, as did
+  the session writing this, reading the code); the two **experiment** rows
+  need a key and were not faked (TRAPS 52); and **four are held by nothing
+  and all four are reachable with no key** — `lap_completed`, race
+  `announced`, `pressed` and `text_submitted`. **The last two are the doors
+  a player actually uses**: nothing in the project emits either signal,
+  grepped, so every suite enters at `_handle_request()` and the suite says
+  nothing about whether typing a sentence and pressing Build reaches the
+  game at all. **Holding those four is the next assistant task.**
+  **BUT THE COMMIT IS ABOUT SOMETHING THE MEASUREMENT TURNED UP.**
+  `intent_door_test` failed **8, 8, 7 and 8** under four wire-outs that
+  **cannot reach it** — it mentions no experiment, lap or button — and
+  nothing under three others or under a pristine control run. The varying
+  count is what settles it: a wire-out does not fail a different number of
+  assertions each time.
+  **THE CAUSE: `TrackLog.next_id()` COULD MINT THE SAME ID IN TWO
+  PROCESSES.** It was `"<unix seconds>-<serial>"` and `serial` restarts at 0
+  in every process, so two writers on one `user://track_log.jsonl` collide
+  whenever they overlap inside one second. **Measured: every id collided in
+  8 of 12 paired runs.** One ledger with two writers is the normal state of
+  this repository — every copy shares one `user://` (TRAPS 50) and
+  `run_tests.sh` starts sixty-odd processes against it a fraction of a
+  second apart. Readers take the **first** match and say nothing, so a suite
+  looking up its own record got another suite's.
+  **AND THE COST IS NOT ONLY THE HARNESS.** The id is the only thing tying a
+  later record to an earlier one: `session_report._understanding()` keys
+  evidence by id, so of two records sharing one the report attributes **one
+  request's understanding verdict to another** — a true-looking score about
+  the wrong request, in the artefact this project exists to keep — and
+  `game_controller.gd:420` writes a delivery's evidence as `"about": <id>`.
+  **The fix is one function**: the writer's own identity is in the id
+  (`OS.get_process_id()`), so no clock granularity can make two processes
+  agree. Nothing parses the string — grepped, every consumer compares it
+  whole — so widening it breaks no reader. **Re-measured on the fixed code:
+  12 of 12 pairs landed in the same wall-clock second, the exact condition
+  in which the old code collided every time, and 0 collided.**
+  **AND IT INVALIDATES PART OF THE METHOD THIS PROJECT MEASURES WITH**, said
+  here rather than left to be found: every commit since 055 reports *"the
+  lists were diffed and are identical"*, and those diffs were taken with a
+  suite in them that can fail this way in roughly two runs out of three.
+  Nothing in 055–058 is withdrawn — their answers were read off lists whose
+  other 62 lines were stable — but the confidence attached to "identical,
+  line for line" was higher than the method earned.
+  **THE CLASS IS THREE AND TWO OF THE THREE ARE NOT FIXED (TRAPS 11):** the
+  record id (fixed), the **session id** (`main.gd:515`, a tester's name plus
+  a second) and the experiment **`run_id`** (`experiment_runner.gd:62`, a
+  second and nothing else). Both left deliberately — the session id is in
+  reports the owner already has — and named below as the next task.
+  **AND THE NEW SUITE'S FIRST DRAFT ASSERTED SOMETHING FALSE**: "no two
+  records share an id" failed in a full run, because **a `PLAN` writes three
+  records under one id, deliberately**. The honest invariant is that two
+  **processes** must never share one. TRAPS 6 and 14, caught by running it.
+  `tests/record_id_test.gd`, **12 assertions**, failing against **five**
+  deliberate faults made one at a time.
+  63 suites passed before and **64** after, `--all` both times, `user://`
+  cleared first, lists **diffed**: the only difference is **one added
+  line**, the new suite's.
+  **NOT VERIFIED: that two real OS processes never collide is asserted by no
+  suite** — that needs a second process and a test that races a clock, and
+  what stands in its place is the 8-of-12 and 0-of-12 counts taken by hand.
+  **Nothing was rendered, no model sent anything, no request left the
+  container, and existing records are untouched.** See 059 below and
+  TRAPS 56.
+- Before 059: **058**, the task that file named as
   the next assistant task: **a fixture for `_on_interpretation_failed`, which
   needs no key and fakes nothing**. Done — **and asked of the whole class
   rather than the one handler named (TRAPS 11)**, because 057's sweep found
@@ -1104,8 +1172,8 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-64 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **62 suites**, counted with `ls tests/*.gd` rather than
+66 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **64 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites.
 
@@ -1117,7 +1185,26 @@ worlds, and suites fail for reasons that have nothing to do with the code.
 055 took four answers off such a run before noticing. If a run is being used
 as a measurement, clear `user://` before it, baseline included (TRAPS 50).
 
-Last full run (057, Godot 4.7.1 on Linux —
+Last full run (059, Godot 4.7.1 on Linux —
+`4.7.1.stable.official.a13da4feb` — headless, in a cloud container, every
+run sequential with `user://` cleared first):
+**suites with something to look at: 0** on all 64, with `--all`. The
+baseline at 058, measured the same way in the same container, was the same
+on 63 suites, and the lists were **diffed**: the only difference is **one
+added line**, `record_id_test`'s. 059 adds one file and it is in neither
+runner's fixed-rate list — it steps no physics — so neither runner needed an
+edit; `run_tests.bat`'s `findstr` patterns were RUN against the name rather
+than eyeballed.
+**AND READ TRAPS 56 BEFORE TRUSTING ANY DIFF TAKEN BEFORE THIS COMMIT.**
+Until 059, `TrackLog.next_id()` could mint the same id in two processes, so
+a suite that looks its own record up by id could get another suite's —
+`intent_door_test` failed 7 or 8 for that reason under four unrelated
+treatments while this sweep was being measured. Every "the lists were
+diffed and are identical" since 055 was taken with that coin flip in the
+instrument. The fix removes it; the claims those commits make about their
+own wire-outs still stand, because their other 62 lines were stable.
+
+The run before it (057, Godot 4.7.1 on Linux —
 `4.7.1.stable.official.a13da4feb` — headless, in a cloud container, every
 run sequential with `user://` cleared first):
 **suites with something to look at: 0** on all 62, with `--all`. The
@@ -6307,6 +6394,49 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
+**For the assistant, in this order, and the first is the smaller:**
+
+1. **Finish the id class — it is two thirds undone (TRAPS 11, TRAPS 56).**
+   059 fixed the record id and left the **session id** (`main.gd:514-515`, a
+   tester's name plus a wall-clock second) and the experiment **`run_id`**
+   (`experiment_runner.gd:62`, a second and nothing else) with the same
+   fault in them. The rule is stated in the 059 section: *an identifier that
+   has to tell one writer's records from another's must carry something only
+   that writer has.* Neither is urgent — the session id also carries the
+   name, and `run_id` needs a key — and the session id appears in reports
+   the owner already has, so **ask before changing its shape**: it is
+   "Human decision needed" 22. `ledger_audit_test.gd:111` already salts its
+   own session name, which is somebody meeting this once.
+2. **Hold the four connect rows 059 found unheld, all four reachable with no
+   key.** 058 is the method and `handler_wiring_test` is the file to extend.
+   In rising order of cost:
+   - **`lap_completed` (93)** is the cheapest. `update_progress()` is pure
+     geometry (`checkpoint_tracker.gd:40`) — walk positions past the twelve
+     checkpoints in order and the real signal fires with nothing faked. The
+     handler writes a history line a player reads.
+   - **`pressed` (100) and `text_submitted` (101)** are **the doors a player
+     actually uses**, and nothing in the project emits either signal
+     (grepped across `scripts/` and `tests/`). Put a distinctive request in
+     `input_box.text`, emit the real signal on the real node, and assert the
+     ledger's `record["request"]` carries that exact text — which proves the
+     text went from the box through the wire to the controller, not merely
+     that something happened (TRAPS 54). Surround it with spaces and the
+     `strip_edges()` is proved too. **Note what the harness cannot do**:
+     headless has no keyboard, so the signal is emitted by hand; everything
+     after it is real. Both handlers read `input_box.text` rather than the
+     signal's argument, so they are one behaviour at two doors — worth
+     asserting of both, not one (TRAPS 11).
+   - **race `announced` (98)** is the dearest: *"GO!"* comes out of
+     `_physics_process` once the countdown elapses, so it needs a race
+     standing up and physics stepped.
+   **And one thing found while measuring and left alone**: of the eight ways
+   out of `_handle_request()`, five clear `input_box` and three do not — a
+   `/` command, a pending revision and a busy interpreter all leave the text
+   in the box. Leaving a refused sentence there is arguably right and
+   leaving `/drive` there is arguably not. **Nothing was changed**, because
+   the behaviour may well be deliberate and it is a judgement about what the
+   box is for: "Human decision needed" 23.
+
 **Still the owner's, and still a minute's work — but it would NOT have
 worked before 057, and that is new information.** The proxy is built (020):
 set `GEMINI_API_KEY` in the Netlify site's environment variables, and set
@@ -6888,6 +7018,24 @@ at, because nothing a player can reach changed:**
   test double for `HTTPRequest`, which is the only way the last two handlers
   can be held ("Human decision needed" 20), and whether the busy sentence
   should be one function or two ("Human decision needed" 21).
+
+**059 adds a twenty-fifth, and one line of it is worth typing:**
+
+- **Nothing a player can reach behaves differently**, except that every new
+  ledger record's `id` now has three fields instead of two
+  (`<seconds>-<process>-<serial>`). **Existing records are untouched** and
+  every reader compares an id whole, so old and new sit in one ledger
+  without interpreting each other.
+- **Worth one glance in a session report.** Run `/session NAME`, type two or
+  three requests, then `/session end`. The understanding score in that
+  report is keyed by record id, and until 059 two records sharing an id
+  could put one request's verdict against another. Nothing should look
+  different — the collision needs two Genesis instances writing one ledger —
+  but it is the one player-facing thing the fix touches, and the report is
+  yours.
+- **And one thing is yours and new: "Human decision needed" 22**, whether
+  the other two members of the id class should move too — the session id and
+  the experiment `run_id`.
 
 **Smallest useful assistant task next.** The ledger question (033), the
 container-door question (034), the prompt-bound question (035), the validator
@@ -8813,8 +8961,14 @@ almost nothing about whether any of it is ever shown.
 struck rather than deleted, because two of its three sentences turned out to
 be wrong and the corrections are the useful part.
 
-1. **The seven rows still `NOT_ASKED`** — unchanged by 058, which added no
-   `connect()` and removed none. Same method, a few at a time; budget for it
+1. ~~**The seven rows still `NOT_ASKED`**~~ **DONE IN 059: ALL SIXTEEN ROWS
+   ARE NOW MEASURED.** One held (`door_changed`), two need a key, four held
+   by nothing and all four reachable without one. **And this entry's own
+   guesses were half right**: `pressed` and `text_submitted` are indeed held
+   by nothing, and `door_changed` — called "the interesting one" — is held,
+   by `interference_test`'s look for the physical door slab. Left struck
+   rather than deleted because the measurement found something bigger than
+   the rows: see 059 and TRAPS 56. Same method, a few at a time; budget for it
    properly, because one wire-out that breaks delivery costs 20 minutes of
    600 s timeouts rather than the 4 minutes a clean run takes.
    `door_changed` (83) and the two racing rows are the interesting ones;
@@ -8857,6 +9011,262 @@ be wrong and the corrections are the useful part.
    suite reads it. It is four lines and a `match`. Whether a colour is worth
    a test is a judgement about what a panel suite is for, so it is noted
    rather than taken.
+
+## 059 — the id two writers could both mint, found while measuring something else
+
+HANDOVER named this session's task as **the seven `connect()` rows of
+`main.gd`'s sixteen still marked `NOT_ASKED`**. They were measured and the
+answers are below. But the measurement produced a result that could not be
+true, and chasing that is what this commit is about.
+
+### The seven rows, measured (the assigned task)
+
+Same method as 057 and 058: one `connect()` commented out at a time in a
+throwaway copy **outside** the repository with its **own `config/name`** so
+it could not share `user://` with anything (TRAPS 50), every suite run with
+`--all`, the result lines **diffed** against a baseline taken the same way,
+every run sequential with `user://` cleared first. The sites were enumerated
+by grepping `.connect(` in `main.gd`, not copied from this file.
+
+| # | line | signal → handler | verdict |
+|---|------|------------------|---------|
+| 9 | 83 | `door_changed` → `_on_door_changed` | **HELD** — `interference_test`, 3 failures |
+| 10 | 88 | experiment `progress` | **NOT HELD — needs a key** (TRAPS 52) |
+| 11 | 89 | experiment `finished` | **NOT HELD — needs a key** (TRAPS 52) |
+| 12 | 93 | `lap_completed` → `_on_lap_completed` | **NOT HELD — and reachable with no key** |
+| 13 | 98 | race `announced` → `_on_race_announced` | **NOT HELD — and reachable with no key** |
+| 14 | 100 | `pressed` → `_on_build_pressed` | **NOT HELD — and reachable with no key** |
+| 15 | 101 | `text_submitted` → `_on_text_submitted` | **NOT HELD — and reachable with no key** |
+
+**All sixteen rows are now measured.** The sweep that 057 began is finished.
+
+- **`door_changed` (83) is HELD, and held by the right assertion.** This
+  file predicted it was "the interesting one" and the session writing this
+  predicted from the code that nothing held it. **Both were wrong, and the
+  measurement is what says so.** `interference_test` fails **3** with the
+  wire out, and the assertion that catches it is
+  `interference_test.gd:135` — *"and a real door stands in the corridor"*,
+  which looks for the physical slab. The handler calls
+  `controller.rebuild_standing_world()`, and `DungeonModule`'s own comment
+  at line 1197 says why that matters: *"a shut door is a slab across the
+  corridor, with collision, so it stops a body the way a wall does rather
+  than by rule."* Wire it out and `route()` still refuses to path through a
+  shut door, because it reads `is_shut()` straight off the layout — so the
+  door is enforced **by rule and not by geometry**, which is exactly what
+  018 built the slab to avoid. One suite noticed. **Note what did NOT
+  notice**: `controller_reach_test.gd:699` sends a `SHUT` and asserts
+  *"after a SHUT rebuilds the world, every thing still has a node"* — and
+  that passes **more** easily with the wire out, because nothing is freed
+  and rebuilt at all. It is TRAPS 54's shape: an assertion written to catch
+  a rebuild destroying things cannot tell a rebuild that happened from one
+  that never did.
+- **The two experiment rows (88, 89) need a key, and that is a fact about
+  one guard rather than a judgement.** `ExperimentRunner.start()` returns
+  *"No API key, so the experiment cannot run."* at its third line when
+  `_interpreter.is_available()` answers false, which is the real state of
+  this container. Nothing downstream ever runs, so **neither handler can be
+  reached by any suite here and neither was faked** (TRAPS 52). `progress`
+  has an emit at the top of `_next()` that needs no key in itself, and
+  `_next()` is reachable only through `start()`, so getting to it means
+  setting `running` by hand — a gate set by hand, which is the thing 056 did
+  and labelled.
+- **The four remaining rows are held by nothing and all four are reachable
+  with no key**, which is the useful half of the answer and is the next task.
+  `lap_completed` is the cheapest of the four: `update_progress()` is pure
+  geometry (`checkpoint_tracker.gd:40`), so walking positions past the
+  twelve checkpoints in order emits the real signal with nothing faked.
+  `announced` emits *"GO!"* from `_physics_process` once the countdown
+  elapses. **And `pressed` and `text_submitted` are the two doors a player
+  actually uses** — nothing in the project emits either signal, grepped
+  across `tests/` and `scripts/`; every suite calls `_handle_request()`
+  directly. So all sixteen connects could be measured and the suite still
+  says nothing about whether typing a sentence and pressing Build ever
+  reaches the game. Both handlers read `input_box.text` rather than the
+  signal's argument, so they are one behaviour at two doors.
+
+### The result that could not be true, which is the commit
+
+`intent_door_test` failed **8, 8, 7 and 8** under the four wire-outs for
+experiment `progress`, experiment `finished`, `lap_completed` and
+`pressed` — **none of which that suite mentions**; it has no reference to an
+experiment, a lap or a button — and failed **nothing** under `door_changed`,
+`race_announced`, `text_submitted` or a **pristine control run of the same
+copy**, which was taken and is identical to the baseline line for line.
+
+That is TRAPS 50's signature. The varying count settles it: a wire-out does
+not fail a different number of assertions each time.
+
+**THE CAUSE.** `TrackLog.next_id()` was `"<unix seconds>-<serial>"`, and
+`serial` is a static that restarts at 0 in every process. Two processes
+writing to one `user://track_log.jsonl` therefore mint **the same ids**
+whenever they overlap inside one wall-clock second. Measured, not inferred:
+two Godot processes, three records each, one ledger, twelve paired runs —
+**every id collided in eight of the twelve**. The four that did not were
+pairs that straddled a second boundary.
+
+`intent_door_test._record_for()` returns the **first** match in the file, so
+when the suite that runs immediately before it had already written that id,
+the lookup returned **that suite's record** and the assertions about this
+suite's own request failed. One ledger with two writers is the normal state
+of this repository, not an edge case: every copy shares one `user://`
+(TRAPS 50) and `run_tests.sh` starts sixty-odd processes against it a
+fraction of a second apart.
+
+**WHAT IT COST BEYOND THE HARNESS**, read off the readers rather than
+guessed. The id is the only thing tying a later record to an earlier one:
+
+- `session_report._understanding()` keys evidence by id, so of two records
+  sharing one, the report attributes **one's understanding verdict to the
+  other** — a true-looking score about the wrong request, in the artefact
+  this project exists to keep.
+- `game_controller.gd:420` writes a delivery's evidence as
+  `"about": <the order's id>`, so a duplicate makes the proof of a delivery
+  point at two orders.
+- Five suites and `session_report` scan for an id and take the first match.
+  None of them says anything when there are two.
+
+**AND IT INVALIDATES PART OF THE METHOD THIS PROJECT MEASURES WITH, which is
+said here rather than left for somebody to find (TRAPS 14).** Every commit
+since 055 reports *"the lists were diffed and are identical"*. Those diffs
+were taken with a suite in them that can fail this way in roughly two runs
+out of three. **The claims were true of the runs they describe; the
+instrument had a coin flip in it.** Nothing in 055–058 is withdrawn on this
+account — their wire-out answers were read off `--all` lists whose other 62
+lines were stable — but the confidence attached to "identical, line for
+line" was higher than the method earned.
+
+### What changed
+
+**One function, `scripts/track_log.gd`.** The writer's own identity is now in
+the id, so no clock granularity can make two processes agree:
+
+```gdscript
+return "%d-%d-%d" % [Time.get_unix_time_from_system(), OS.get_process_id(), serial]
+```
+
+`OS.get_process_id()` rather than a random salt because it **names** the
+writer: a collision is impossible and a record now also says which process
+wrote it. **Nothing parses this string** — grepped across `scripts/` and
+`tests/`; every consumer compares it whole, and no test asserts its shape —
+so widening it breaks no reader.
+
+**THE CLASS, NOT THE ONE THAT BROKE (TRAPS 11), AND THE LIST IS NOT
+CLOSED.** The rule is: *an identifier that has to tell one writer's records
+from another's must carry something only that writer has; a clock does not
+qualify at any granularity.* Asked of every identifier Genesis mints from a
+wall-clock time, grepped rather than remembered, the class is **three**:
+
+| identifier | where | state |
+|---|---|---|
+| record id | `track_log.gd:59` | **FIXED in 059** |
+| session id — tester's name + a second | `main.gd:514-515` | **SAME CLASS, NOT FIXED** |
+| experiment `run_id` — a second and nothing else | `experiment_runner.gd:62` | **SAME CLASS, NOT FIXED** |
+
+The two left are lower risk and neither is a guess: the session id also
+carries the tester's **name**, so it collides only for two writers using the
+same name in the same second, and `run_id` needs a key so nothing here can
+reach it. **They are left deliberately and named as the next task rather
+than quietly fixed**, because the session id appears in session reports the
+owner already has and changing its shape is a change to an artefact of his.
+**`ledger_audit_test.gd:111` already salts its session name with
+`Time.get_ticks_msec()`** — somebody met this once and defended one call
+site against it.
+
+### Evidence — what was actually run
+
+Godot 4.7.1 headless on Linux (`4.7.1.stable.official.a13da4feb`), in a
+cloud container, every run **sequential** with `user://` cleared first
+(TRAPS 50).
+
+- **Baseline at 058: 63 suites, `--all`, 0 with something to look at.**
+- **After: 64 suites, `--all`, 0 with something to look at.** The lists were
+  **diffed** and the only difference is **one added line**, the new suite's;
+  no existing suite's result line moved.
+- `tests/record_id_test.gd`, **12 assertions**. It steps no physics and
+  needed no entry in either runner's fixed-rate list.
+- **The fix was measured against the thing it fixes, in both directions.**
+  The paired-process experiment was re-run on the fixed code: **12 of 12
+  pairs landed in the same wall-clock second — the exact condition in which
+  the old code collided every time — and 0 collided.** Old code: 8 of 12.
+  New code: 0 of 12, with the condition present in all twelve.
+- **AND THE ORIGINAL FAILURE WAS REPRODUCED RATHER THAN INFERRED**, which is
+  the part that turns a plausible story into a cause. The suite pair that
+  produces it is `handler_wiring_test` then `intent_door_test` — the two
+  that run back to back in a full run — against one `user://`, repeated ten
+  times:
+  - **Pre-059 code: 1 of 10 pairs failed, and it failed EIGHT**, the exact
+    count seen four times during the sweep. That run had **13** ids written
+    by both processes; the nine passing runs had **1**.
+  - **Fixed code: 0 of 10 pairs failed**, and in every one of the ten the
+    shared ledger genuinely held records from **two distinct writers**, so
+    the condition was present each time.
+  **1 in 10 here against 8 in 12 in the minting experiment, and the
+  difference is honest rather than awkward**: the minting pair writes three
+  records in a few milliseconds, so almost all of them share a second,
+  while these two suites run for seconds apiece and most of their ids land
+  in different seconds. The rate depends on the overlap; the mechanism does
+  not.
+
+**IT WAS RUN AGAINST BROKEN CODE BEFORE IT WAS BELIEVED (TRAPS 51):** five
+deliberate faults, one at a time, in a throwaway copy with its own
+`config/name`, and the **FAIL lines READ rather than counted**.
+
+1. the pre-059 id restored, two fields — **2 failures**, and only 10 of the
+   12 assertions run, because two sit behind the three-field check. Recorded
+   that way rather than as "2 of 12".
+2. three fields but the writer component a constant `0` — **1 failure**, and
+   it is the one that matters: this is the regression that would pass a
+   shape check and silently restore the collision.
+3. `append()` overwriting an id the caller set — **1**.
+4. `append()` never assigning an id — **2**.
+5. `serial` not incrementing — **2**.
+
+### And the first draft of the new suite asserted something false
+
+Said here rather than quietly corrected, because it is the same shape as
+058's panel assertion and it was caught the same way — by running it
+(TRAPS 6, TRAPS 14).
+
+The suite's first draft asserted **"no two records in the ledger share an
+id"**. It passed alone and **failed in a full run, on 2 of 22 ids**. Reading
+the records rather than the count: **a `PLAN` request writes THREE records
+under ONE id** — the plan's own and one per world it builds — because they
+are all the same request. It is deliberate and has been since `PLAN`
+existed, and `intent_door_test._plan_record()` exists precisely because an
+id alone cannot tell those three apart.
+
+So the assertion was a claim about Genesis that is **simply untrue**, and it
+would have gone red for an honest reason while saying nothing about the
+fault the file is for. The invariant that was actually broken is narrower
+and is what the file now asserts: **two records written by different
+PROCESSES must never share an id.** Within one process, sharing one is by
+design.
+
+**The corrected form is stronger against the fault, not weaker**: wiring the
+pre-059 id back now scores **2** failures rather than 1, because the ids it
+writes name no writer and the suite says so.
+
+### What the tests do NOT prove
+
+- **That two real OS processes never collide is NOT asserted by any suite.**
+  Asserting it needs a second process, which would be this project's first
+  suite to spawn one, and a test that races a clock passes or fails on where
+  the second boundary falls — which is the fault, not a test for it. What
+  stands in its place is the 8-of-12 and 0-of-12 counts above, taken by
+  hand, and one structural assertion: two processes have two process ids.
+- **Nothing was rendered on a screen.** No pixel was drawn and no window
+  opened.
+- **No model sent anything and no request left the container.** The prompt is
+  byte-identical and `PROMPT_VERSION` did not move; `prompt_bounds_test`
+  holds that and passed.
+- **No world, record or saved file of the owner's changes.** Records written
+  from now on carry a wider id; **existing records are untouched** and every
+  reader compares ids whole, so old and new sit in one ledger without
+  interpreting each other.
+- **The four unheld connect rows are still held by nothing.** 059 added no
+  fixture for them; it added one for the ledger's ids.
+- **Two of the three members of the id class are not fixed**, as above.
+
 
 ## 058 — the three handlers a harness can hold, and the two it cannot
 
@@ -9858,6 +10268,65 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     `WIRE ONLY` in the assertion's own text, so the gap is recorded in the
     one place that cannot go stale. If the answer is yes, the smallest honest
     first step is one response shape and one assertion, not a framework.
+
+22. **Whether the other two time-minted identifiers should move too.**
+    Found in 059, which fixed one member of a three-member class and
+    deliberately left two (TRAPS 11 says to state the rule for every member,
+    and this is the statement).
+
+    The rule 059 applied: *an identifier that has to tell one writer's
+    records from another's must carry something only that writer has; a
+    clock does not qualify at any granularity, because the question is not
+    how precise it is but whether two writers can read the same value.*
+
+    - **The record id** (`track_log.gd:59`) was `<seconds>-<serial>` and now
+      carries `OS.get_process_id()`. **Fixed**, and it had to be: it is the
+      pointer every piece of later evidence uses, and it was colliding in 8
+      of 12 paired runs.
+    - **The session id** (`main.gd:514-515`) is the tester's **name** plus a
+      wall-clock second. It collides only for two writers using the same
+      name in the same second, so the risk is much smaller — and
+      `read_session()` and every session report group records by it, so
+      **changing its shape changes reports you already have**. That is why
+      it was not touched.
+    - **The experiment `run_id`** (`experiment_runner.gd:62`) is
+      `"run_" + <datetime to the second>` and carries nothing else, so it is
+      the weakest of the three on paper. It needs a key, so nothing in this
+      harness can reach it and nothing here has measured it.
+
+    **Nothing was moved.** The three options are: leave both (the risk is
+    real but small and the cost is to your own artefacts); move `run_id`
+    only (nothing reads it across processes, so it is nearly free); or move
+    both and accept that session ids written from then on look different
+    from the ones in your existing reports. **`ledger_audit_test.gd:111`
+    already salts its session name with `Time.get_ticks_msec()`**, which is
+    somebody meeting this once and defending one call site rather than the
+    class.
+
+23. **What the input box should keep after a request it did not send.**
+    Found in 059 while measuring the two input-door connects, and
+    deliberately NOT changed, because it may well be deliberate and it is a
+    judgement about what the box is for.
+
+    `_handle_request()` has eight ways out and clears `input_box` on five of
+    them: an accepted request (`main.gd:185`), a bare answer with nothing to
+    confirm (`:345`) and a consumed readback judgement (`:368`). **Three
+    leave the text where it is**: a `/` command, a pending revision
+    (*"Waiting for the AI's correction..."*) and a busy interpreter
+    (*"Still thinking about the last request..."*).
+
+    Two of those three read as right: a sentence Genesis refused to accept
+    **because it was busy** is one the player will want to send again, and
+    throwing it away would be worse. The `/` command is the odd one — type
+    `/drive`, and `/drive` is still sitting in the box afterwards, so
+    pressing Build again re-runs it. None of the twelve local commands is
+    destructive on a repeat, which is why this is a tidiness question and
+    not a fault.
+
+    **Nothing was changed.** If you want it consistent, the smallest
+    complete change is to clear the box in `_run_local_command()` rather
+    than at a fourth call site in `_handle_request()`, so the rule stays in
+    one place per door. Whether it should be consistent at all is yours.
 
 21. **Whether "still thinking about the last request" should be one sentence
     or two.** Found in 058 and deliberately NOT changed, because the

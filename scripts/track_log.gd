@@ -25,10 +25,38 @@ static var session: Dictionary = {}
 # is never edited: history is added to, not rewritten.
 static var serial: int = 0
 
-
+# 059: and the id has to be UNIQUE, because it is the only thing tying a
+# later record to an earlier one. It was "<unix seconds>-<serial>", and
+# `serial` restarts at 0 in every process, so TWO WRITERS ON ONE LEDGER mint
+# the same ids whenever they overlap inside one wall-clock second. Measured,
+# not inferred: two Godot processes appending three records each to one
+# user://track_log.jsonl collided on EVERY id in 8 of 12 paired runs.
+#
+# One ledger with two writers is not a hypothetical - it is the normal state
+# of this repository. Every copy of the project shares one user:// (TRAPS 50)
+# and run_tests.sh starts 64 suite processes against it, one after another, a
+# fraction of a second apart.
+#
+# WHAT A DUPLICATE COSTS, read off the readers rather than guessed:
+#   - session_report._understanding() keys evidence by id, so of two records
+#     sharing one, the report attributes ONE's understanding verdict to the
+#     OTHER and the owner reads a true-looking score about the wrong request.
+#   - game_controller.gd:420 writes a delivery's evidence as
+#     "about": <the order's id>, so a duplicate makes the proof of a
+#     delivery point at two orders.
+#   - every reader that scans for an id takes the FIRST match and says
+#     nothing (intent_door_test._record_for, ledger_said_test, and three
+#     more), so the wrong record is returned as the right one, silently.
+#
+# The fix is the writer's own identity in the id, so no clock granularity can
+# make two processes agree. OS.get_process_id() rather than a random salt
+# because it NAMES the writer: a duplicate is now impossible and a record
+# also says which process wrote it. Nothing parses this string - grepped
+# across scripts/ and tests/, every consumer compares it whole - so widening
+# it breaks no reader.
 static func next_id() -> String:
 	serial += 1
-	return "%d-%d" % [Time.get_unix_time_from_system(), serial]
+	return "%d-%d-%d" % [Time.get_unix_time_from_system(), OS.get_process_id(), serial]
 
 
 static func append(record: Dictionary) -> void:

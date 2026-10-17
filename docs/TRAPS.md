@@ -3467,3 +3467,86 @@ way a shared `user://` made four of 055's answers flattering (TRAPS 50).
 Found in 058, between the first and second runs of the same wire-out.
 
 > Ten failures and eight failures were the same fault.
+
+---
+
+## 56. Two writers, one ledger, and the same id
+
+**Signature:** a suite fails under changes that cannot reach it, the failure
+count varies between runs of the same change, and a pristine control run of
+the same copy passes.
+
+**Cause:** `TrackLog.next_id()` was `"<unix seconds>-<serial>"`, and `serial`
+is a static that restarts at 0 in every process. So two processes writing to
+one `user://track_log.jsonl` mint **the same ids** whenever they overlap
+inside one wall-clock second.
+
+Measured rather than reasoned about: two Godot processes, three records each,
+one ledger, twelve paired runs — **every id collided in eight of the
+twelve**. The four that did not were pairs that straddled a second boundary.
+
+One ledger with two writers is the normal state of this repository, not an
+edge case. Every copy of the project shares one `user://` (TRAPS 50) and
+`run_tests.sh` starts sixty-odd processes against it a fraction of a second
+apart. `intent_door_test` looks its own record up by id with `_record_for()`,
+which returns the **first** match in the file — so when the suite that runs
+immediately before it had already written that id, the lookup returned the
+**other suite's record** and the assertions about this suite's own request
+failed. It failed 8, 8, 7 and 8 under four wire-outs that cannot reach it,
+and nothing under three others.
+
+**What it cost beyond the harness**, read off the readers rather than
+guessed. The id is the only thing tying a later record to an earlier one:
+
+- `session_report._understanding()` keys evidence by id, so of two records
+  sharing one, the report attributes **one's understanding verdict to the
+  other** — a true-looking score about the wrong request, in the artefact
+  this project exists to keep.
+- `game_controller.gd:420` writes a delivery's evidence as
+  `"about": <the order's id>`, so a duplicate makes the proof of a delivery
+  point at two orders.
+- Five suites and `session_report` scan for an id and take the first match.
+  Not one of them says anything when there are two.
+
+**And it invalidates part of the method this project measures with.** Every
+commit since 055 reports *"the lists were diffed and are identical"*. Those
+diffs were taken with a suite in them that can fail this way in roughly two
+runs out of three. The claims were true of the runs they describe; the
+instrument had a coin flip in it.
+
+**Do:**
+
+- An identifier that has to tell one writer's records from another's must
+  carry something **only that writer has**. A clock does not qualify, at any
+  granularity: the question is not how precise it is but whether two writers
+  can read the same value.
+- A per-process counter is not an identity. It is the same counter in every
+  process.
+- When a suite fails under a treatment that cannot reach it, do not record
+  the number. Take a pristine control run of the same copy first — and if
+  the count varies between runs of the same treatment, stop measuring and
+  find out why, because every answer in that sweep is now suspect.
+- Prefer an identifier that **names** the writer over a random salt:
+  `OS.get_process_id()` makes a collision impossible *and* makes a record say
+  which process wrote it.
+- Then ask it of the class and write down the size of the answer, grepped
+  rather than remembered. Here it is **three**: the record id (fixed in 059),
+  the session id (`main.gd:515`, the tester's name plus a second) and the
+  experiment `run_id` (`experiment_runner.gd:62`, a second and nothing else).
+  **Two of the three are not fixed.** `ledger_audit_test` already salts its
+  session name with `Time.get_ticks_msec()`, which is somebody meeting this
+  once and defending one call site against it.
+
+**Reproduced, not inferred.** The pair that produces it is
+`handler_wiring_test` then `intent_door_test`, the two that run back to back
+in a full run, against one `user://`, repeated ten times. Pre-059: **one of
+ten pairs failed and it failed eight**, the same count the sweep kept
+seeing, and that run had **13** ids written by both processes where the nine
+passing runs had 1. Fixed: **0 of 10**, with records from two distinct
+writers in the shared ledger every time. The rate depends on how much the
+two writers overlap inside a second; the mechanism does not.
+
+Found in 059, while measuring something else, by noticing that a suite with
+no connection to a wire-out kept failing a different number of times.
+
+> The clock is not an identity. Two processes read the same second.
