@@ -1,5 +1,33 @@
 extends SceneTree
 
+# --- 061 FIRST: WHAT IN THIS HEADER HAS STOPPED BEING TRUE ---
+#
+# Everything below was written in 060 and is kept as it was written, because
+# deleting a sentence that has been overtaken loses the reason it was there
+# (TRAPS 14). Two of its claims are now HISTORY and not fact, and they are
+# named here rather than quietly edited out of the paragraphs that make them:
+#
+#   1. "Every suite that needs main.gd - sixteen of them - builds its own
+#      stand-in tree." NOT ANY MORE. 061 converted all sixteen _make_main()
+#      fixtures to load this same scene, through
+#      ProjectSettings.get_setting("application/run/main_scene") rather than
+#      by path. This file is still the FIRST in the project's history to load
+#      it, which is what the sentence was really about, and it is no longer
+#      the only one.
+#
+#   2. "Sixteen files in tests/ set box.use_collision = true." NOT ANY MORE
+#      either, and for the same reason: none of them builds a ground slab at
+#      all now. Section 6 used to assert that at least two other suites gave
+#      the slab collision the game has not got; that count is 0 and the
+#      assertion FAILED when 061 ran it, which is how a check is supposed to
+#      behave when the fact under it moves. It is turned round in place.
+#
+# What 061 established in their stead, and what section 0 now asserts, is the
+# invariant rather than the gap: no suite stands main.gd up by hand, and
+# every suite that stands it up reaches the scene through the setting. 061
+# also walked both trees and enumerated TWELVE differences between the old
+# stand-in and this scene; they are listed in HANDOVER's 061 section.
+#
 # --- 060: the four connects held by nothing, and the scene no test had ever
 #          loaded ---
 #
@@ -33,6 +61,9 @@ extends SceneTree
 # rather than in a document: the check guards the assumption instead of
 # checking the fact.
 #
+# (061: THE PARAGRAPH ABOVE IS NOW HISTORY. All sixteen were converted to
+# load this scene; see the note at the top of this header.)
+#
 # WHAT THAT COST, STATED AS THE CLASS AND NOT THE INSTANCE (TRAPS 11). The
 # scripts resolve SIX node paths against that scene, enumerated by reading
 # the source below rather than listed from memory:
@@ -53,6 +84,8 @@ extends SceneTree
 #
 # AND THE FIXTURE IS NOT THE SCENE IN A WAY THAT IS MEASURABLE. Sixteen files
 # in tests/ set `box.use_collision = true` on the ground slab they build.
+# (061: NONE DOES NOW - none of them builds a slab. Section 6 is turned
+# round and the note at the top of this header says why.)
 # Nothing in scripts/ sets use_collision anywhere, and the real scene's
 # Ground is a StaticBody3D with no CollisionShape3D under it and a CSGBox3D
 # with use_collision left at its default false. MEASURED, in a throwaway copy
@@ -81,6 +114,14 @@ extends SceneTree
 # measured, and section 6 holds the scene's half of it as a fact: the day
 # somebody turns collision on in the scene this suite says so, because
 # sixteen fixtures are already written as though it is on.
+# (061: THE SECOND HALF OF THAT SENTENCE IS NO LONGER TRUE. The sixteen
+# fixtures are gone and section 6 now asserts that NO suite gives the slab a
+# floor the game has not got, which is the same fact from the side that still
+# holds. 061 also measured what the stand-in's floor had been doing, and it
+# was not nothing: on drive_test's banked square an opponent car that came
+# off the road landed on that floor and was recovered 21 times, where against
+# the game's own scene it falls through the world and is recovered 25. Four
+# runs, two a side, each identical to its repeat. No verdict moved.)
 #
 # WHAT THIS FILE DOES NOT PROVE, said here rather than left to be found:
 #
@@ -220,20 +261,81 @@ func _the_scene() -> void:
 		"and it is %s, the scene this file loads (got %s)" % [
 			SCENE_PATH, "null" if launched == null else launched.resource_path])
 
-	# No other test or script reaches it. Read off the files, not remembered:
-	# if a second suite starts loading the scene this assertion says so, and
-	# the sentence in this header about "nothing had ever loaded it" has to
-	# be rewritten rather than left standing (TRAPS 14).
-	var loaders: Array = []
+	# 061: AND THE SENTENCE THAT USED TO BE ASSERTED HERE HAS STOPPED BEING
+	# TRUE, which is said here rather than left for an assertion to keep
+	# passing over a changed fact - TRAPS 14 in the check instead of in a
+	# document. What stood here was "this is the only file in tests/ or
+	# scripts/ that names a .tscn", written in 060 so that the header's claim
+	# that NOTHING had ever loaded scenes/main.tscn could not go stale
+	# unnoticed. In 061 all sixteen _make_main() fixtures were converted to
+	# load it, so that claim is false and the header above says so. The old
+	# assertion would still PASS, because those sixteen reach the scene
+	# through ProjectSettings and name no .tscn at all - which is exactly why
+	# it had to be replaced rather than kept: a check that cannot see the
+	# change it was written to catch is worth nothing.
+	#
+	# What is asserted instead is the invariant 061 actually establishes, and
+	# it is a stronger one than the sentence it replaces: NO suite stands
+	# main.gd up by hand any more, and every suite that stands it up at all
+	# reaches the scene through application/run/main_scene rather than by
+	# path. Enumerated off the files rather than listed, so a seventeenth
+	# suite is covered the day it is written.
+	#
+	# IT KEYS ON `var main: Node3D`, AND THAT IS A LIMITATION WORTH NAMING
+	# RATHER THAN LEAVING TO BE FOUND. session_test declares no such variable:
+	# it `extends "res://tests/drive_test.gd"` and inherits that file's
+	# fixture, so it stands main.gd up without appearing in either list here.
+	# It is covered in substance - whatever drive_test loads, it loads - but a
+	# future suite that inherits a fixture from somewhere else would be
+	# invisible to this enumeration. It is also why the count below is a floor
+	# and not an equality. This is the reason 061's documents say SEVENTEEN
+	# suites stand main.gd up where 060's said sixteen: sixteen files with a
+	# _make_main() of their own, plus session_test inheriting one.
+	var hand_built: Array = []
+	var by_setting: Array = []
+	var by_path: Array = []
+	for name in DirAccess.get_files_at("res://tests"):
+		# This file is skipped throughout section 0's enumerations: the
+		# strings being looked for are written out in its own source, so an
+		# enumeration that read itself would be counting its own assertions.
+		# The first draft of the line below did exactly that and FAILED
+		# naming player_door_test.gd, which is the only reason this comment
+		# is here rather than the mistake being in the committed suite.
+		if not name.ends_with(".gd") or name == "player_door_test.gd":
+			continue
+		var body := FileAccess.get_file_as_string("res://tests/%s" % name)
+		if body.contains('set_script(load("res://scripts/main.gd"))'):
+			hand_built.append(name)
+		if not body.contains("var main: Node3D"):
+			continue
+		if body.contains("application/run/main_scene"):
+			by_setting.append(name)
+		else:
+			by_path.append(name)
+	_check(hand_built.is_empty(),
+		"no suite builds a stand-in for the main scene by putting main.gd on a node it made itself (%s)" % str(hand_built))
+	_check(by_path.is_empty(),
+		"and every suite that stands main.gd up reaches the scene through application/run/main_scene, not by a path of its own (%s)" % str(by_path))
+	# A number, because an enumeration that matched nothing would assert
+	# nothing and pass (TRAPS 6). A floor rather than an exact count, so a
+	# seventeenth suite does not have to edit this line.
+	_check(by_setting.size() >= 16,
+		"and there are %d of them besides this file" % by_setting.size())
+	# A scene RESOURCE PATH lives in exactly one place - this file, which is
+	# the one that compares it with the setting. Read as "res://scenes" and
+	# not as ".tscn": the sixteen converted suites name scenes/main.tscn in a
+	# COMMENT explaining what they load, and the first draft of this line
+	# searched for ".tscn" and failed on all sixteen of those comments. A
+	# check that fires on a comment is checking the wording and not the fact.
+	var literals: Array = []
 	for dir in ["res://tests", "res://scripts"]:
 		for name in DirAccess.get_files_at(dir):
 			if not name.ends_with(".gd") or name == "player_door_test.gd":
 				continue
-			var body := FileAccess.get_file_as_string("%s/%s" % [dir, name])
-			if body.contains(".tscn"):
-				loaders.append(name)
-	_check(loaders.is_empty(),
-		"this is the only file in tests/ or scripts/ that names a .tscn (others: %s)" % str(loaders))
+			if FileAccess.get_file_as_string("%s/%s" % [dir, name]).contains("res://scenes"):
+				literals.append(name)
+	_check(literals.is_empty(),
+		"and a scene resource path is written out in this file and nowhere else in tests/ or scripts/ (others: %s)" % str(literals))
 
 	# The @onready paths, ENUMERATED OUT OF main.gd rather than copied here,
 	# so a fifth one is covered the day it is written. The count is asserted
@@ -526,24 +628,55 @@ func _the_scene_has_no_floor() -> void:
 	_check(box != null and not box.use_collision,
 		"and a CSGBox3D with use_collision off, so the scene's ground is scenery and not a floor")
 
-	# Read off tests/ rather than remembered: the asymmetry is the point.
-	# This file is skipped: its own header quotes the string, and an
-	# enumeration that counted itself would be counting a comment.
+	# 061 TURNED THIS ASSERTION ROUND, AND THE OLD ONE FAILING IS HOW. In 060
+	# it read "and N other suites in tests/ build that slab WITH collision,
+	# which the game's scene does not", with N asserted to be at least 2:
+	# sixteen fixtures set use_collision = true on a ground slab the game
+	# leaves as scenery. 061 converted all sixteen to load the scene, so not
+	# one of them builds a slab at all, the count went to 0 and the assertion
+	# failed when the suite was run. The asymmetry it was written to report is
+	# closed, so what is asserted now is the closure rather than the gap:
+	#
+	#   NO suite gives the ground a floor the game has not got.
+	#
+	# That is the same fact from the other side and it is the better guard:
+	# the day a new fixture builds a slab with collision on it, this fires.
+	# This file is skipped by the enumeration because its own header and
+	# assertions quote the string, and an enumeration that counted itself
+	# would be counting a comment.
+	#
+	# IT DOES NOT SAY NO SUITE HAS A FLOOR, which would be false:
+	# physics_test and behaviour_test each build their own 4000 m
+	# StaticBody3D with a real CollisionShape3D under it, deliberately,
+	# because what they measure is a body coming to rest. They do it through
+	# a shape and not through use_collision, and they stand up no main.gd, so
+	# neither this line nor 061 touched them.
 	var with_collision: Array = []
 	for name in DirAccess.get_files_at("res://tests"):
 		if not name.ends_with(".gd") or name == "player_door_test.gd":
 			continue
-		if FileAccess.get_file_as_string("res://tests/%s" % name).contains("use_collision = true"):
+		if FileAccess.get_file_as_string("res://tests/%s" % name).contains("use_collision"):
 			with_collision.append(name)
-	_check(with_collision.size() >= 2,
-		"and %d other suites in tests/ build that slab WITH collision, which the game's scene does not" % with_collision.size())
+	_check(with_collision.is_empty(),
+		"and no suite in tests/ gives that slab the collision the game's scene has not got (%s)" % str(with_collision))
 	var in_scripts: Array = []
 	for name in DirAccess.get_files_at("res://scripts"):
 		if name.ends_with(".gd") and FileAccess.get_file_as_string("res://scripts/%s" % name).contains("use_collision"):
 			in_scripts.append(name)
 	_check(in_scripts.is_empty(),
 		"while nothing in scripts/ sets use_collision at all (%s)" % str(in_scripts))
-	notes.append("the scene's ground is scenery; %d fixtures in tests/ give it collision and no script does" % with_collision.size())
+	# And the floors that ARE deliberate, named so that the assertion above
+	# cannot be read as "nothing in tests/ has a floor".
+	var own_floor: Array = []
+	for name in DirAccess.get_files_at("res://tests"):
+		if not name.ends_with(".gd") or name == "player_door_test.gd":
+			continue
+		var body := FileAccess.get_file_as_string("res://tests/%s" % name)
+		if body.contains("StaticBody3D.new()") and body.contains("CollisionShape3D.new()"):
+			own_floor.append(name)
+	_check(own_floor.size() >= 2,
+		"and the suites that really do stand a body on a floor build their own with a real shape (%s)" % str(own_floor))
+	notes.append("the scene's ground is scenery and since 061 no fixture pretends otherwise; the %d suites that need a floor build their own" % own_floor.size())
 
 
 # --- 7. the name a world is built into is not the world's to keep ---

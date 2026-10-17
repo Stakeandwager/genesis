@@ -144,35 +144,23 @@ func _initialize() -> void:
 
 # --- the harness: the real main.gd, as check_wiring_test stands it up ---
 
+# 061: the scene the game launches, loaded rather than hand-built.
+#
+# This function used to build a stand-in tree by hand and name each node what
+# main.gd's @onready lines ask for, so the fixture SUPPLIED the names the
+# suite then proved were there (TRAPS 57). 061 walked both trees and
+# enumerated twelve differences between that stand-in and scenes/main.tscn -
+# a missing light, environment and TitleLabel, a Ground that was a Node3D
+# where the scene has a StaticBody3D, a ground slab a metre lower with
+# collision the scene has not got, a camera at a different place and angle,
+# an unanchored panel, three unset strings and the child order of six nodes.
+# What this suite measures is now measured against the tree the game has.
+#
+# The scene is resolved through ProjectSettings rather than by path, so no
+# suite can end up holding a scene that is no longer the game's; the setting
+# itself is asserted in player_door_test.
 func _make_main() -> void:
-	main = Node3D.new()
-	main.name = "Main"
-	main.set_script(load("res://scripts/main.gd"))
-	var cam := Camera3D.new()
-	cam.name = "Camera3D"
-	cam.position = Vector3(0, 80, 120)
-	main.add_child(cam)
-	var ground := Node3D.new()
-	ground.name = "Ground"
-	main.add_child(ground)
-	var box := CSGBox3D.new()
-	box.name = "CSGBox3D"
-	box.size = Vector3(400, 1, 400)
-	box.position = Vector3(0, -0.5, 0)
-	box.use_collision = true
-	ground.add_child(box)
-	var ui := CanvasLayer.new()
-	ui.name = "UI"
-	main.add_child(ui)
-	var panel := PanelContainer.new()
-	panel.name = "CommandPanel"
-	ui.add_child(panel)
-	var vb := VBoxContainer.new()
-	vb.name = "VBoxContainer"
-	panel.add_child(vb)
-	for pair in [["InputBox", LineEdit.new()], ["BuildButton", Button.new()], ["StatusLabel", Label.new()]]:
-		pair[1].name = pair[0]
-		vb.add_child(pair[1])
+	main = load(str(ProjectSettings.get_setting("application/run/main_scene"))).instantiate()
 	get_root().add_child(main)
 
 

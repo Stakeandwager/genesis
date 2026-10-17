@@ -22,35 +22,23 @@ func _check(ok: bool, what: String) -> void:
 		failures.append(what)
 
 
+# 061: the scene the game launches, loaded rather than hand-built.
+#
+# This function used to build a stand-in tree by hand and name each node what
+# main.gd's @onready lines ask for, so the fixture SUPPLIED the names the
+# suite then proved were there (TRAPS 57). 061 walked both trees and
+# enumerated twelve differences between that stand-in and scenes/main.tscn -
+# a missing light, environment and TitleLabel, a Ground that was a Node3D
+# where the scene has a StaticBody3D, a ground slab a metre lower with
+# collision the scene has not got, a camera at a different place and angle,
+# an unanchored panel, three unset strings and the child order of six nodes.
+# What this suite measures is now measured against the tree the game has.
+#
+# The scene is resolved through ProjectSettings rather than by path, so no
+# suite can end up holding a scene that is no longer the game's; the setting
+# itself is asserted in player_door_test.
 func _make_main() -> void:
-	main = Node3D.new()
-	main.name = "Main"
-	main.set_script(load("res://scripts/main.gd"))
-	var cam := Camera3D.new()
-	cam.name = "Camera3D"
-	cam.position = Vector3(0, 80, 120)
-	main.add_child(cam)
-	var ground := Node3D.new()
-	ground.name = "Ground"
-	main.add_child(ground)
-	var box := CSGBox3D.new()
-	box.name = "CSGBox3D"
-	box.size = Vector3(200, 1, 200)
-	box.position = Vector3(0, -0.5, 0)
-	box.use_collision = true
-	ground.add_child(box)
-	var ui := CanvasLayer.new()
-	ui.name = "UI"
-	main.add_child(ui)
-	var panel := PanelContainer.new()
-	panel.name = "CommandPanel"
-	ui.add_child(panel)
-	var vb := VBoxContainer.new()
-	vb.name = "VBoxContainer"
-	panel.add_child(vb)
-	for pair in [["InputBox", LineEdit.new()], ["BuildButton", Button.new()], ["StatusLabel", Label.new()]]:
-		pair[1].name = pair[0]
-		vb.add_child(pair[1])
+	main = load(str(ProjectSettings.get_setting("application/run/main_scene"))).instantiate()
 	get_root().add_child(main)
 
 
@@ -157,32 +145,54 @@ func _run() -> void:
 	_check(main.checkpoint_tracker != null and main._track_centreline().size() > 20, "startup circuit has a centreline")
 
 	# A farm replaces the startup circuit; there is nothing to drive.
+	#
+	# 061: BY IDENTITY AND NOT BY NAME. This line used to read the last
+	# child's NAME and assert it was not "CircuitBuilder" - which a dummy
+	# "@Node3D@N" satisfies as readily as a farm does, so it could not tell
+	# the state it is about from the state it is not (TRAPS 58, TRAPS 41).
+	# The startup circuit's node is held by reference before the farm is
+	# built and looked for afterwards, which is the fact the line wanted:
+	# something stands, and the thing that stood before has gone.
+	var startup_circuit := _circuit_node()
+	_check(startup_circuit != null, "the startup circuit's node was held by reference, to be looked for after the farm")
 	var farm := "{\"command\": \"CREATE_FARM\", \"parameters\": {\"zones\": [{\"type\": \"crop\", \"crop\": \"wheat\", \"width\": 80, \"depth\": 60}, {\"type\": \"barn\", \"width\": 20, \"depth\": 15}]}}"
 	await _type(farm)
 	_check(not _drivable(), "after a farm, nothing to drive")
-	_check(_world_children() >= 1 and c.world_node.get_child(c.world_node.get_child_count() - 1).name != "CircuitBuilder", "farm is on screen")
+	var after_farm: Array = []
+	for ch in c.world_node.get_children():
+		if not ch.is_queued_for_deletion():
+			after_farm.append(ch)
+	_check(after_farm.size() >= 1 and not after_farm.has(startup_circuit),
+		"farm is on screen and the startup circuit it replaced is not, by identity (%d standing)" % after_farm.size())
 	main._start_driving()
 	_check(not main.driving and _history().contains("Build a track first"), "/drive on a farm is refused politely")
 
 	# A track replaces the farm (the change agreed for 002F).
 	var rect := _track(_square(300, 60))
 	await _type(rect)
-	var names := []
+	var standing: Array = []
 	for ch in c.world_node.get_children():
 		if not ch.is_queued_for_deletion():
-			names.append(str(ch.name))
-	# 060: THIS ASSERTION PASSES ON THE PARITY OF THIS FILE'S BUILD ORDER, not
-	# on a property the circuit has. RacingModule sets circuit.name before
-	# root.add_child(), and Godot replaces the name of a node that shares one
-	# with a sibling - the outgoing world, still in the tree that frame -
-	# with a dummy "@Node3D@N". The world before this one is a FARM, whose
-	# pieces go straight into world_node with no CircuitBuilder among them, so
-	# nothing collides and the name sticks. Build a circuit immediately before
-	# a circuit and it does not: measured in tests/player_door_test.gd
-	# section 7, where the name alternates across four builds. Line 163 above
-	# reads the name the other way round and is weaker still. Do not take this
-	# line as evidence that a world's node name is stable.
-	_check(names == ["CircuitBuilder"], "a track built after a farm replaces it (on screen: %s)" % str(names))
+			standing.append(ch)
+	# 060 FOUND WHAT WAS WRONG WITH THIS ASSERTION AND 061 CHANGED IT. It read
+	# the standing node's NAME and expected "CircuitBuilder", which passed on
+	# THE PARITY OF THIS FILE'S BUILD ORDER and not on any property the
+	# circuit has: RacingModule sets circuit.name before root.add_child(), and
+	# Godot replaces the name of a node that shares one with a sibling - the
+	# outgoing world, still in the tree that frame - with a dummy "@Node3D@N".
+	# The world before this one is a FARM, whose pieces go straight into
+	# world_node with no CircuitBuilder among them, so nothing collided and
+	# the name stuck. Build a circuit immediately before a circuit and it does
+	# not: measured in tests/player_door_test.gd section 7, where the name
+	# alternates across four builds. The fact is recorded rather than deleted
+	# (TRAPS 14, TRAPS 58) and the assertion now reads IDENTITY - one world
+	# stands and it is the one the controller will drive - which is what the
+	# line was for and is true whatever the name turns out to be.
+	_check(standing.size() == 1,
+		"a track built after a farm replaces it: one world stands (%d standing)" % standing.size())
+	if standing.size() == 1:
+		_check(standing[0] == _circuit_node(),
+			"and it IS the node the controller will drive, by identity rather than by name")
 	_check(_drivable() and c.last_build.get("command", "") == "CREATE_TRACK", "the track is drivable and is the player's world")
 
 	# Driving, and a change while driving puts the car back on the start line.

@@ -24,7 +24,92 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **060**, the task this file named as
+- Last commit at the time of writing: **061**, the task this file named as
+  the next assistant task: **the sixteen `_make_main()` fixtures, asked as a
+  class (TRAPS 11)**. The stand-in is **retired**. A throwaway script walked
+  both trees in one process and enumerated **twelve** differences between the
+  hand-built tree and `scenes/main.tscn` — a missing light, environment and
+  `TitleLabel`; a `Ground` that was a `Node3D` where the scene has a
+  `StaticBody3D`; a ground slab a metre lower with collision the scene has
+  not got; a slab 400 m across in twelve of the sixteen where the scene's is
+  200 m; a camera at a different place and level where the scene's is pitched
+  40° down; an unanchored panel; three unset strings; and six nodes at a
+  different child index. Rather than measure twelve differences one at a
+  time, **every fixture now loads the scene the game launches**, resolved
+  through `ProjectSettings.get_setting("application/run/main_scene")` so no
+  suite can hold a scene that is no longer the game's.
+  **AND THE CLASS WAS SEVENTEEN, NOT SIXTEEN:** `session_test` has no
+  `_make_main()` of its own — it `extends "res://tests/drive_test.gd"` and
+  inherits that file's fixture. 060's documents and TRAPS 57 both say
+  sixteen; the correction is recorded rather than made silently (TRAPS 14).
+  **65 suites passed before and 65 after**, `--all` both times, `user://`
+  cleared first, lists **diffed**: the only difference is **one line**,
+  `player_door_test`'s assertion count, **63 → 67**. No other suite's result
+  line moved, including all sixteen whose fixture was replaced — so **no
+  suite's answer rested on the stand-in**, which is the strong form of what
+  060 could only say about the ground's collision.
+  **WHAT IT BUYS, MEASURED THROUGH THE WHOLE RUNNER ON BOTH SIDES:** the
+  deliberate fault 060 used — `BuildButton` renamed in the scene, which kills
+  the game at launch on a null at `main.gd:100` — is caught by **18 of 65
+  suites** on the 061 code and by **1 of 65** on the pre-061 code. One was
+  already enough; the reason for the commit is the other direction, that
+  seventeen suites now measure against the tree the game has.
+  **AND THE STAND-IN'S FLOOR HAD BEEN DOING SOMETHING AFTER ALL.** 060
+  measured that turning its collision off changed no suite's answer, and that
+  still holds. But on `drive_test`'s **banked square** — the one circuit where
+  opponents leave the road — the stand-in gave **21** recoveries with Green
+  ending at `(234, −0.1, 67)`, **resting on a slab the game has not got**,
+  and the game's own scene gives **25** with Green at `(124, −50.2, −320)`,
+  **still falling**. Four runs, two a side, each byte-identical to its
+  repeat; the other five circuits identical line for line across all four.
+  Every opponent still finishes and no verdict moved. **The production code
+  was already right about this**, asserted off the source:
+  `race_director.gd:225` counts a car's vertical drop in its off-road
+  distance, doubled, so a falling car is recovered like any other. The game
+  does not need the floor; the harness was hiding the fall.
+  **AND TWO OF 060'S OWN GUARDS HAD TO BE REPLACED, WHICH IS THE PART WORTH
+  READING (TRAPS 59).** 060 wrote two enumerations to stop two sentences
+  going stale. 061 falsified both sentences and **only one of the two
+  noticed.** Section 6's — *"N other suites build that slab WITH
+  collision"*, N ≥ 2 — went to 0 and **failed when run**, which is a check
+  working; it is turned round to assert that **no** suite gives the ground a
+  floor the game has not got. Section 0's — *"this is the only file that
+  names a `.tscn`"*, written to guard *"nothing had ever loaded the
+  scene"* — **would have gone on passing**, because the seventeen reach the
+  scene through `ProjectSettings` and name no `.tscn` at all. A check written
+  against the one idiom its author imagined guards the idiom, not the fact.
+  It is replaced by the invariant 061 establishes: no suite stands `main.gd`
+  up by hand, and every suite that stands it up reaches the scene through the
+  setting.
+  **AND THE FIRST DRAFT OF THAT REPLACEMENT FAILED FOR ITS OWN REASON**: it
+  read `player_door_test`'s own source, where the searched-for strings are
+  written out, and reported the suite against itself; and its `.tscn` version
+  fired on all sixteen converted files because the **comment** in each names
+  `scenes/main.tscn`. Caught by running it, not by reading it, and recorded
+  in the suite (TRAPS 6, TRAPS 14).
+  **ALSO IN 061, the same question asked of `drive_test`'s two readings of a
+  world's node NAME** — HANDOVER's own "second candidate", and the class
+  rather than the instance (TRAPS 11). Both now assert **identity** against
+  `drivable["node"]`, which is TRAPS 58's own rule and what
+  `player_door_test` section 1 already did. So **nothing in this repository
+  identifies a world by name any more**, production or test. The mechanism
+  and the measured alternation are kept in the comments, not deleted. **The
+  production question is untouched and still the owner's**: "Human decision
+  needed" 24, corrected there.
+  **NOT VERIFIED: nothing was rendered and no window opened**, so the six
+  visual differences of the twelve — the light, the environment, the camera's
+  place and angle, the panel's anchors and the three strings — are
+  **unmeasured by anything**; all 061 establishes is that the suites now
+  stand up the tree that has them. **No file in `scripts/` was changed** and
+  nothing a player can reach behaves differently. No model sent anything, no
+  request left the container, the prompt is byte-identical and
+  `PROMPT_VERSION` did not move. No world, record or saved file of the
+  owner's changed, and `docs/GENESIS_BRIEF.md` was **not edited**.
+  **THE NEXT ASSISTANT TASK** is in 061's "Next action": the six differences
+  that are only ever true on a screen, and whether one of them — the
+  camera's captured transform, which is now the game's pitched camera rather
+  than a level stand-in — can be asserted headless as arithmetic.
+- Before 061: **060**, the task that file named as
   the next assistant task: **holding the four `connect()` rows of `main.gd`
   that 059 left held by nothing** — `lap_completed`, race `announced`,
   `pressed` and `text_submitted`. **All four are now held**, each through a
@@ -1272,9 +1357,25 @@ worlds, and suites fail for reasons that have nothing to do with the code.
 055 took four answers off such a run before noticing. If a run is being used
 as a measurement, clear `user://` before it, baseline included (TRAPS 50).
 
-Last full run (060, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
-headless, in a cloud container, every run sequential with `user://` cleared
-first): **suites with something to look at: 0** on all 65, with `--all`. The
+Last full run (061, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+headless, in a cloud container with 2 cores, every run sequential with
+`user://` cleared first): **suites with something to look at: 0** on all 65,
+with `--all`. The baseline at 060, measured the same way in the same
+container, was the same on 65 suites, and the lists were **diffed**: the only
+difference is **one line**, `player_door_test`'s assertion count, 63 → 67.
+**No file was added or removed, so neither runner needed an edit** — 061
+changes the body of `_make_main()` in sixteen existing files and nothing
+else about how they run.
+**AND SEVENTEEN SUITES NOW LOAD `scenes/main.tscn`** rather than building a
+stand-in for it: the sixteen with a `_make_main()` of their own, plus
+`session_test`, which inherits `drive_test`'s. A broken main scene therefore
+breaks seventeen suites and not none; measured, with `BuildButton` renamed,
+**18 of 65 report it** (the seventeen plus `player_door_test`) against **1 of
+65** before 061. If a run goes mysteriously and uniformly red, read
+`scenes/main.tscn` before reading the suites.
+
+The run before it (060, measured the same way):
+**suites with something to look at: 0** on all 65, with `--all`. The
 baseline at 059, measured the same way in the same container, was the same on
 64 suites, and the lists were **diffed**: the only difference is **one added
 line**, `player_door_test`'s. 060 adds one file and NEITHER RUNNER NEEDED AN
@@ -1941,9 +2042,29 @@ verified, and what remains uncertain.
   asked **what the fixture supplies**. A test double is an assumption written
   down; where it stands in for something the repository actually contains,
   the cheap measurement is to use the real thing instead and see what moves.
-  The second half of that question — the other fifteen differences between
-  the sixteen fixtures and the scene — is the next assistant task, and one of
-  them (the ground's collision) has been measured and costs nothing.
+
+  **061 FINISHED IT, AND THE ANSWER TO "WHAT MOVES" IS: NO VERDICT, ONE
+  NUMBER.** The stand-in is retired — all seventeen suites that stand
+  `main.gd` up now load the scene, resolved through
+  `application/run/main_scene`. Twelve differences were enumerated by walking
+  both trees in one process rather than by reading either. 65 suites passed
+  before and 65 after, lists **diffed**, the only change being
+  `player_door_test`'s assertion count: **no suite's answer rested on the
+  stand-in**, which is the strong form of what 060 could only say about the
+  collision. What did move is a number `drive_test` prints: on the banked
+  square an opponent that came off the road **rested on the stand-in's floor
+  (21 recoveries) and falls through the world against the game's own scene
+  (25)**. Four runs, two a side, each identical to its repeat.
+
+  **And the lesson 061 adds is about the CHECK and not the fixture, which
+  makes it the fifth commit of that kind (041, 042, 043, 052, 061).** 060
+  wrote two enumerations to keep two sentences honest. 061 falsified both
+  sentences; one enumeration failed and one **would have gone on passing**,
+  because it searched for the single idiom its author had in mind (`.tscn`
+  in a file) and the thing it was guarding happened through another
+  (`ProjectSettings`). See TRAPS 59. **Six of the twelve differences are
+  visual and nothing here can see any of them**, which is 061's "Next
+  action".
 
 - **The capability statement in the prompt is hand-written prose and can go
   stale.** `tests/log_023_test.gd` asserts that each thing it claims points at
@@ -9133,6 +9254,309 @@ be wrong and the corrections are the useful part.
    a test is a judgement about what a panel suite is for, so it is noted
    rather than taken.
 
+## 061 — the stand-in retired, and the floor it had been lending the harness
+
+**Objective.** The task this file named as the next assistant task, in these
+words: *"The sixteen `_make_main()` fixtures, asked as a class (TRAPS 11). 060
+measured one difference between the hand-built tree and the scene and found it
+cost nothing. The others are unmeasured... The cheapest useful end state is
+that the suites which only need `main.gd` stood up LOAD THE SCENE instead of
+building a stand-in."*
+
+**Starting state.** Branch `prototype-002a` at `7e59fa3` (060). Godot 4.7.1
+headless on Linux, `4.7.1.stable.official.a13da4feb`, in a cloud container
+with no API key. Baseline **65 suites, `--all`, `user://` cleared first: 0
+with something to look at.**
+
+### The differences, enumerated by walking both trees rather than by reading
+
+A throwaway script loaded `scenes/main.tscn`, built the stand-in in the same
+process, walked both trees and printed every node path, class, child index and
+every property `scripts/` reads off either. **Twelve differences**, and the
+list is the script's output and not a reading:
+
+| # | difference | scene | stand-in |
+|---|------------|-------|----------|
+| 1 | `/DirectionalLight3D` | present | **absent** |
+| 2 | `/WorldEnvironment` | present | **absent** |
+| 3 | `.../VBoxContainer/TitleLabel` | present | **absent** |
+| 4 | `/Ground` class | `StaticBody3D` | `Node3D` |
+| 5 | `Ground/CSGBox3D.position` | `(0, 0.5, 0)` — **top at y = 1.00** | `(0, −0.5, 0)` — **top at y = 0.00** |
+| 6 | `Ground/CSGBox3D.use_collision` | `false` | **`true`** |
+| 7 | `Ground/CSGBox3D.size` | 200 m | 400 m in twelve of the sixteen, 200 m in four |
+| 8 | `Camera3D` origin | `(0, 90, 110)` | `(0, 80, 120)` |
+| 9 | `Camera3D` basis | pitched 40° down | **identity — level** |
+| 10 | `UI/CommandPanel` anchors | bottom-wide (T1 R1 B1) | all zero |
+| 11 | `InputBox.placeholder_text`, `BuildButton.text`, `StatusLabel.text` | `"make a race track"`, `"BUILD"`, `"Status: Waiting"` | all `""` |
+| 12 | child order | `Ground, Light, Env, Camera3D, UI` / `TitleLabel, InputBox, …` | `Camera3D, Ground, UI` / `InputBox, …` — six nodes at a different index |
+
+Only **two** variants of the stand-in existed across the sixteen files,
+hashed rather than compared by eye: they differ from each other in nothing
+but #7.
+
+### Decision — retire the stand-in rather than measure twelve differences
+
+060's method was "make the fixture match and run everything", once per
+difference. Twelve differences is twelve full runs and leaves the class
+standing. The class fix (TRAPS 11) is to stop standing in for a thing the
+repository contains: every fixture now loads the scene the game launches.
+
+```gdscript
+func _make_main() -> void:
+	main = load(str(ProjectSettings.get_setting("application/run/main_scene"))).instantiate()
+	get_root().add_child(main)
+```
+
+Resolved **through `ProjectSettings` and not by path**, so no suite can end
+up holding a scene that is no longer the game's, and so no `.tscn` literal
+lives anywhere but `player_door_test`, which is the file that compares the
+two.
+
+**And the class was SEVENTEEN suites, not sixteen.** 060's documents and
+TRAPS 57 both say sixteen, counted as files with a `_make_main()`.
+`session_test` has none: it `extends "res://tests/drive_test.gd"` and
+inherits that file's fixture. It was a seventeenth stand-in user and is
+converted with the rest, by inheritance. The correction is recorded here
+rather than made silently (TRAPS 14).
+
+### Implementation
+
+- **Sixteen files in `tests/`**: `_make_main()`'s 27–30 hand-built lines
+  replaced by the two above, with the twelve differences named in a comment
+  so the next reader does not have to re-derive them. `session_test` follows
+  `drive_test`. **No file in `scripts/` was changed.**
+- **`tests/drive_test.gd`**: its **two** readings of a world's node name
+  (the class, not one instance — TRAPS 11) now assert **identity** against
+  `drivable["node"]`, which is TRAPS 58's own rule and what
+  `player_door_test` section 1 already did. 060 left a comment on one of
+  them; this removes the reading. The mechanism and the measured alternation
+  are kept in the comment (TRAPS 14), not deleted.
+  - *"farm is on screen"* read the last child's **name** and asserted it was
+    not `"CircuitBuilder"` — which a dummy `@Node3D@N` satisfies as readily
+    as a farm does, so it could not tell the state it was about from the
+    state it was not (TRAPS 41's shape). It now holds the startup circuit's
+    node **by reference** before the farm is built and asserts that node is
+    gone and something else stands.
+  - *"a track built after a farm replaces it"* asserted `names ==
+    ["CircuitBuilder"]`, which passed on the **parity of its own build
+    order**. It now asserts that one world stands and that it **is** the node
+    the controller will drive.
+- **`tests/player_door_test.gd`**: section 0's guard and section 6's
+  enumeration both had to be turned round, and **both of 060's sentences
+  under them had stopped being true**. See the next heading; that is the part
+  of this commit worth reading.
+
+### The two checks that had to be replaced, and why that is the finding
+
+060 wrote two enumerations whose job was to stop a sentence going stale. 061
+falsified both sentences, and **only one of the two checks noticed.**
+
+**(a) The one that noticed.** Section 6 asserted *"and N other suites in
+`tests/` build that slab WITH collision, which the game's scene does not"*,
+with N ≥ 2. After the conversion N is **0** and the assertion **FAILED when
+it was run**. That is a check behaving correctly: the fact under it moved and
+it said so. It is turned round in place — it now asserts that **no** suite
+gives the ground a floor the game has not got, which is the same fact from
+the side that still holds and is the better guard, since it fires the day a
+new fixture builds one. It is also stated explicitly that this does **not**
+mean no suite has a floor: `physics_test` and `behaviour_test` build their
+own 4000 m `StaticBody3D` with a real `CollisionShape3D`, deliberately, and
+are asserted to still do so.
+
+**(b) The one that did not, and this is TRAPS 59.** Section 0 asserted *"this
+is the only file in `tests/` or `scripts/` that names a `.tscn`"*, written to
+guard 060's claim that **nothing in this repository had ever loaded
+`scenes/main.tscn`**. 061 made that claim false in seventeen files — **and
+the assertion would have gone on passing**, because the converted suites
+reach the scene through `ProjectSettings` and name no `.tscn` at all. A check
+written against the only idiom its author could think of guards that idiom
+and not the fact. What replaces it is the invariant 061 establishes:
+
+- **no suite stands `main.gd` up by hand** — nothing in `tests/` puts
+  `main.gd` on a node it made itself;
+- **every suite that stands it up reaches the scene through
+  `application/run/main_scene`**, not by a path of its own;
+- and the count is asserted as a **floor**, because an enumeration that
+  matched nothing would assert nothing and pass (TRAPS 6).
+
+**And the first draft of those three assertions failed for the reason they
+exist.** Both of them read `player_door_test`'s own source, where the strings
+being searched for are written out, and reported the suite against itself;
+and the `.tscn` version fired on all sixteen converted files because the
+*comment* in each names `scenes/main.tscn`. A check that fires on a comment
+is checking the wording. Both are fixed — the file skips itself, and the
+search is for `res://scenes`, a resource path and not a filename — and the
+mistake is recorded in the suite rather than quietly corrected (TRAPS 6, 14).
+
+### What the stand-in's floor had actually been doing — measured, and it was not nothing
+
+060 measured difference #6 one way: it patched all sixteen fixtures to
+`use_collision = false` and found the full-run list identical, so **no
+suite's answer rested on that floor**. That is still true after 061. But
+"no answer moved" is not "nothing moved", and the number that moved is
+`drive_test`'s own printed output. On the **banked square** circuit, the one
+circuit in the suite where opponents leave the road at all:
+
+| | opponent recoveries | where Green ended |
+|---|---|---|
+| stand-in, floor top at y = 0 | **21** | `(234, −0.1, 67)` — **resting on it** |
+| the game's own scene, no floor | **25** | `(124, −50.2, −320)` — **still falling** |
+
+**Four runs, two a side, each byte-identical to its repeat**, `user://`
+cleared before each, the pre-061 side in a throwaway copy with its own
+`config/name` (TRAPS 50). The other five circuits are identical line for line
+across all four. So the difference is reproducible and it is the floor: **an
+opponent car that came off the banked square landed on a slab the game has
+not got.** Every opponent still completes its two laps and the suite's
+verdict is unchanged.
+
+**And the production code was already right about this**, asserted off the
+source rather than assumed: `race_director.gd:225` computes a car's
+off-road distance as `maxf(sqrt(best_d), (_points[best].y - pos.y) * 2.0)` —
+the vertical drop is counted, and doubled — so a car falling straight down
+reads as off the road once it is 8 m below it and is recovered like any
+other. The game does not need the floor. The harness had simply been
+hiding the fall.
+
+### Evidence — what was actually run
+
+Godot 4.7.1 headless on Linux (`4.7.1.stable.official.a13da4feb`), in a
+cloud container, **every run sequential with `user://` cleared first**
+(TRAPS 50). The container has 2 cores; nothing was run in parallel with a
+measurement except in a copy with its own `config/name`.
+
+- **Baseline at 060:** 65 suites, `--all`, **0 with something to look at**.
+- **Each of the seventeen converted suites was run ALONE immediately after
+  its own conversion**, with the runner's own `--fixed-fps 120` where the
+  runner applies it. All passed.
+- **After:** 65 suites, `--all`, **0 with something to look at.** The lists
+  were **diffed**: the only difference is **one line**,
+  `player_door_test`'s assertion count, **63 → 67**. No other suite's
+  result line moved — including all sixteen whose fixture was replaced.
+- **`drive_test` was run four more times** for the two measurements that
+  needed it: twice on each side of the stand-in change (the banked-square
+  numbers above) and twice against a renamed circuit node, once with each
+  version of its own assertions (fault 7 below).
+- **What the conversion buys, measured rather than argued.** The same
+  deliberate fault 060 used — `BuildButton` renamed to `Build` in
+  `scenes/main.tscn`, which kills the game at launch on a null at
+  `main.gd:100` — run through the **whole runner** on both sides, each in a
+  throwaway copy outside the repository with its own `config/name`:
+
+  | | suites with something to look at |
+  |---|---|
+  | pre-061 code (`7e59fa3`) | **1 of 65** — `player_door_test` alone, the file 060 added |
+  | 061 code | **18 of 65** |
+
+  Each of the eighteen reports the same line: `SCRIPT ERROR: Invalid access
+  to property or key 'pressed' on a base object of type 'null instance'`.
+  The eighteen are the sixteen converted files, `session_test` by
+  inheritance, and `player_door_test`. **Note what that number is and what
+  it is not:** the game dying at launch is caught by 18 suites instead of 1,
+  which is worth having, but 1 was already enough to catch it. The reason
+  for the conversion is the other direction — those seventeen suites now
+  measure what they measure **against the tree the game has** — and the
+  honest summary of that is the diff above: no answer any of them gives
+  changed, and now none of them rests on a stand-in.
+
+  **Their own `failures=` count says 0 under this fault**, because the error
+  is thrown in `main.gd`'s `_ready` and the suite carries on past it. What
+  reports the fault is `run_tests.sh`'s own `SCRIPT ERROR` branch, which is
+  checked before the result line and counted. Read as a suite count, not as
+  an assertion count.
+
+### Not verified
+
+- **Nothing was rendered on a screen.** Headless: the scene loads and its
+  nodes exist; no pixel was drawn and no window opened. Differences #1, #2,
+  #8, #9, #10 and #11 — the light, the environment, the camera's place and
+  angle, the panel's anchors and the three strings — are **visual, and
+  nothing here measures them.** What 061 establishes about them is only that
+  the suites now stand up the tree that has them.
+- **No model sent anything and no request left the container.** The prompt is
+  byte-identical and `PROMPT_VERSION` did not move; `prompt_bounds_test`
+  holds that and passed.
+- **No file in `scripts/` was changed**, so nothing a player can reach
+  behaves differently. The ground slab a metre lower in the harness (#5), the
+  missing `TitleLabel` (#3) and the child order (#12) are gone from the
+  harness, not from the game, where they were never wrong.
+- **No world, record or saved file of the owner's changed.**
+- **Whether a MOUSE CLICK emits `pressed`** is still Godot's and still
+  unheld, as are a player DRIVING to the checkpoints and the second emit of
+  `race.announced`. 060's limitations are unchanged.
+- **The `use_collision` measurement is 060's, re-stated and extended, not
+  re-run.** What 061 ran is the four drive_test runs above.
+- **No browser ran and no web export was made**, so 057's "Next action" is
+  untouched and still the owner's.
+
+### Run against broken code before it was believed (TRAPS 51)
+
+Deliberate faults, one at a time, each in a throwaway copy of the project
+outside the repository with its own `config/name` so it could not share
+`user://` with anything, FAIL lines **read** rather than counted.
+
+| fault | result |
+|-------|--------|
+| 1. `ledger_test` put back to hand-building a stand-in | **4 failures** in `player_door_test`, naming `ledger_test.gd` in three of them: the hand-built check, the setting check, the count, and section 6's collision check |
+| 2. `ledger_test` loads the scene by `"res://scenes/main.tscn"` instead of the setting | **3** — the setting check, the count, and the resource-path check |
+| 3. `BuildButton` renamed in the scene | **18 of 65 suites** report a SCRIPT ERROR, against **1 of 65** on the pre-061 code. Full-runner measurement, both sides |
+| 4. section 0's first draft, reading its own source | **2**, naming `player_door_test.gd` itself and all sixteen converted files. This is a real mistake that was caught by running it, not by review, and it is recorded in the suite (TRAPS 6) |
+| 5. section 6's 060 assertion left as it was | **1** — `with_collision.size() >= 2` against a count of 0. The check that noticed its own fact had moved |
+| 6. `_clear_world_node` never frees the outgoing world | **10** in `drive_test`, the first two being the new identity assertions, naming **63 standing** and **64 standing** |
+| 7. `RacingModule` names the circuit `"Circuit"` instead of `"CircuitBuilder"` | **see the table below** — this is the one that shows what the identity change buys |
+
+Faults 4 and 5 are not injected faults: they are what the suite did when it
+was first run, and they are listed here because they are the evidence that
+these assertions can fail at all.
+
+**Fault 7 is the measurement behind the `drive_test` change, and it is run
+both ways.** Nothing in `scripts/` reads a world's node name — asserted off
+the source by `player_door_test`, not assumed — so renaming the node breaks
+nothing a player can reach. The same fault, the same copy, the only
+difference being which version of `drive_test` is in it:
+
+| `drive_test` | result |
+|---|---|
+| pre-061 (`7e59fa3`) | **1 failure**: `a track built after a farm replaces it (on screen: ["Circuit"])` |
+| 061 | **0 failures** |
+
+A false alarm, in other words, on a change that costs nothing — which is
+what an assertion about wording does. **And note it is 1 and not 2:** the
+other name-reading line, *"the last child is not called CircuitBuilder"*,
+passes on `"Circuit"` as readily as on a dummy or a farm, which is the
+weakness TRAPS 41 describes and the reason both lines were changed and not
+just the one 060 commented on (TRAPS 11).
+
+### Next action
+
+**The twelve differences that are visual, and nothing in this repository can
+see any of them.** 061 removed the stand-in, so the suites now stand up a
+tree with a light, an environment, a 40°-pitched camera, an anchored panel
+and three strings in it — and asserts nothing about any of them, because the
+harness is headless. Six of the twelve differences in the table above are in
+that class. The question to ask is not "does the fixture match" any more, it
+is **what in this project is only ever true on a screen, and what would it
+take to measure one of them headless?** `camera.look_at_from_position` and
+`_restore_frame` are arithmetic and could be asserted without a pixel: the
+controller captures `original_camera_transform` from the scene, and since 061
+that is the game's pitched camera rather than a level stand-in, so a
+`/view`-and-return assertion would now be about the real thing. That is the
+smallest useful end of it.
+
+**And one number for the owner to look at rather than a task.**
+`docs/GENESIS_BRIEF.md:150`, under "Known rough edges", says banked corners
+*"act as ramps and throw cars over the barrier: about 23 opponent recoveries
+per race on a banked square"*. **That sentence is not falsified** — 061
+measured **21** on the stand-in and **25** against the game's own scene, and
+"about 23" covers both, which is said plainly because the opposite would have
+been the easier thing to write. What 061 adds is where the number came from:
+any such figure taken before this commit was taken in a harness whose ground
+was a floor, and the scene's number on the same circuit is **25**. The brief
+was **not edited** — it is a document the owner publishes, and nothing in
+this commit touches what the public sees.
+
+---
+
 ## 060 — the four doors, and the scene no test had ever loaded
 
 **Objective.** The task this file named as the next assistant task: **hold
@@ -10725,6 +11149,19 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     not read that line as evidence the name is stable. Whether the name
     should be made stable, or the reading of it removed, is yours. See
     TRAPS 58.
+
+    **061 TOOK THE SECOND OF THOSE TWO OPTIONS, ON THE TEST SIDE ONLY, SO
+    THE PARAGRAPH ABOVE NEEDS ONE CORRECTION.** "What reads the name is
+    `drive_test`, twice" **is no longer true**: both of its readings now
+    assert IDENTITY against `drivable["node"]` instead, which is the rule
+    TRAPS 58 states and which `player_door_test` section 1 had already been
+    following. So **nothing in this repository identifies a world by name**,
+    production or test, asserted off the files. **The production question is
+    untouched and still yours**: `RacingModule` still assigns a name that
+    `add_child` still replaces, and a world a player builds still usually
+    carries a dummy one. What changed is that no check depends on it any
+    more, so the latent fault can no longer be hidden by a test that passes
+    on build-order parity.
 
 25. **Whether a player who types raw JSON should be told what changed.**
     Found in 060 the same way, and not changed.

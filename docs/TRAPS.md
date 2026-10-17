@@ -3608,6 +3608,38 @@ Found in 060, by asking where the player's two doors actually are.
 `tests/player_door_test.gd` is the first file in the project's history to
 load `scenes/main.tscn`.
 
+**061 CLOSED THIS, AND CORRECTED TWO THINGS IN THE ACCOUNT ABOVE.**
+
+- **It was SEVENTEEN suites, not sixteen.** The count above is of files with
+  a `_make_main()` of their own. `session_test` has none: it
+  `extends "res://tests/drive_test.gd"` and inherits that file's fixture. A
+  count of fixtures is not a count of the suites that use one.
+- **"Sixteen files in `tests/` set `box.use_collision = true`" is now
+  history.** None of them builds a slab at all. Every one of the seventeen
+  loads the scene, resolved through
+  `ProjectSettings.get_setting("application/run/main_scene")` rather than by
+  path, so no suite can hold a scene that is no longer the game's.
+
+What 061 measured, and both halves are worth keeping:
+
+- **No suite's answer rested on the stand-in.** 65 suites before, 65 after,
+  `--all`, `user://` cleared first, lists diffed: the only change is one
+  assertion count. That is the strong form of what 060 could say about the
+  collision alone.
+- **But one number moved, and 060's "costs nothing" was about verdicts and
+  not about behaviour.** On `drive_test`'s banked square an opponent car that
+  came off the road **rested on the stand-in's floor at y = −0.1 after 21
+  recoveries**, and against the game's own scene **falls through the world to
+  y = −50.2 after 25**. Four runs, two a side, each byte-identical to its
+  repeat. The game does not need the floor —
+  `race_director.gd:225` counts a car's vertical drop in its off-road
+  distance, doubled, so a falling car is recovered like any other — but the
+  harness had been hiding the fall for the project's whole life.
+
+So the last line below is right and it is not the whole of it: a fixture that
+builds the tree agrees with itself about the TREE, and quietly lends the
+simulation a floor as well.
+
 > A fixture that builds the tree cannot test the tree. It can only agree
 > with itself.
 
@@ -3674,4 +3706,88 @@ Found in 060, by this file's own first draft asserting
 purpose and recorded under "Human decision needed" 24: it touches a builder
 every world in the project goes through, and nothing reads the name.
 
+**061 TOOK THE "Do" ABOVE AT ITS WORD, ON THE TEST SIDE.** `drive_test`'s
+**two** readings of a world's node name — the class and not the one
+instance 060 commented on (TRAPS 11) — now assert **identity** against
+`drivable["node"]`, as `player_door_test` section 1 already did. So
+**nothing in this repository identifies a world by name any more**,
+production or test, asserted off the files. The paragraph above saying "what
+reads the name is `drive_test`, twice" is history. **`scripts/` is
+unchanged** and the production question is still the owner's: the name is
+still assigned before `add_child` and still usually replaced. What changed
+is that no check can hide that any more by passing on its own build-order
+parity.
+
 > A node's name is not the node's. It is whatever was free when it arrived.
+
+---
+
+## 59. A guard written against the one idiom its author imagined
+
+**Signature:** a check exists for the express purpose of catching a claim
+going stale. The claim goes stale. The check passes.
+
+**Cause:** 060 found that nothing in this repository had ever loaded
+`scenes/main.tscn`, and wrote the claim into a suite header. Knowing a header
+sentence can rot, it added an enumeration to hold it:
+
+```gdscript
+if body.contains(".tscn"):
+	loaders.append(name)
+_check(loaders.is_empty(),
+	"this is the only file in tests/ or scripts/ that names a .tscn")
+```
+
+In 061 **seventeen suites began loading that scene**, so the claim was false.
+The assertion **would have gone on passing**, because those seventeen reach
+the scene through `ProjectSettings.get_setting("application/run/main_scene")`
+and name no `.tscn` anywhere. The check did not search for *loading the
+scene*. It searched for **the way the author happened to imagine loading the
+scene**, and the project found another.
+
+It is TRAPS 14's shape — a claim in a document with nothing behind it — but
+one level further in, and therefore harder to see: there *was* something
+behind it, and the something could not see the change.
+
+**Its twin in the same commit went the other way, and the contrast is the
+lesson.** Section 6 of the same suite asserted *"N other suites build that
+slab WITH collision"*, N ≥ 2, holding the other half of 060's finding. 061
+took that count to 0 and the assertion **failed when it was run**. The
+difference between the two is not care or effort: it is that one was keyed on
+a **count of the thing itself** and the other on a **string that happened to
+accompany it**.
+
+**And the replacement's first draft walked into the same trap twice.** It
+searched `tests/` for `set_script(load("res://scripts/main.gd"))` and for
+`.tscn`, and (a) found its own source, because the assertion writes those
+strings out, and (b) found all sixteen converted files, because each one's
+*comment* names `scenes/main.tscn`. Both failures were read off a run, not a
+review.
+
+**Do:**
+
+- Write the guard against **the state**, not against the spelling. "No suite
+  stands `main.gd` up by hand" is a fact about the repository; "no file
+  contains `.tscn`" is a fact about typing.
+- Prefer a guard that is a **count of the subject** over one that is a search
+  for a word near it. A count goes to zero when the thing goes away; a search
+  only goes to zero when one particular way of writing it goes away.
+- Ask of every new guard: **what is the other way this could happen?** If the
+  answer is "through a different API", the guard is already too narrow. 060's
+  check could not see `ProjectSettings`.
+- A file that searches for a string is a file that **contains** that string.
+  Skip itself, and say in the comment why.
+- A check that fires on a **comment** is checking the wording. Search for
+  something only code can contain — a resource path, a call, a node — not a
+  filename that a sentence might mention.
+- When a guard's claim is overtaken, **replace the guard, do not relax it**,
+  and say in the file that the sentence it held has become history
+  (TRAPS 14). A guard left passing over a changed fact is worse than no
+  guard: it certifies the stale claim.
+
+Found in 061, while retiring the fixtures TRAPS 57 is about — by noticing
+that the conversion had falsified 060's sentence and that the suite had not
+said so.
+
+> A guard keyed on how a thing is written guards the writing. The project
+> will find another way to write it, and the guard will still be green.
