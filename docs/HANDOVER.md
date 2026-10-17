@@ -24,6 +24,48 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
+- Last commit at the time of writing: **058**, the task this file named as
+  the next assistant task: **a fixture for `_on_interpretation_failed`, which
+  needs no key and fakes nothing**. Done — **and asked of the whole class
+  rather than the one handler named (TRAPS 11)**, because 057's sweep found
+  **five** handlers held by nothing and fixing one member of a list is not
+  fixing the list. The split is **three and two**:
+  `_on_interpretation_failed`, `_on_track_measured` and `_on_equipped` are
+  now **held**; `_on_interpretation_ready` and `_on_ai_retrying` are **still
+  held by nothing and were not faked** — their only emits sit inside
+  `_on_request_completed` and `_try_again`, which need a key (TRAPS 52), and
+  the suite asserts that asymmetry off the interpreter's own source so that
+  the day a key-free emit appears it says a fixture has become possible.
+  `tests/handler_wiring_test.gd`, **47 assertions**. **No file in `scripts/`
+  was changed and nothing a player can reach behaves differently.**
+  **THE FINDING: `main.gd:177` checks `interpreter.busy` and refuses first**,
+  with its own sentence, differing from `ai_interpreter.gd:345`'s by an
+  ellipsis instead of a full stop — so the typed-request door never reaches
+  the interpreter's busy guard and the handler does not run. **One condition,
+  two deciders: 057's shape, and nothing is wrong here** — the player is told
+  the right thing, by `main.gd`. Left as a candidate rather than changed,
+  because the behaviour is correct and the smallest complete change to
+  correct behaviour is none. The suite asserts both halves.
+  **AND A SENTENCE IN THIS FILE WAS FALSE**, found by measuring the thing it
+  denied: the cost of the unheld panel wire is not "permanently blank" but
+  permanently showing a placeholder, and the suite's own second draft
+  asserted "not blank" and **passed with the connect wired out**. TRAPS 54.
+  The cascade that made one fault read as three is TRAPS 55.
+  **AND "fakes nothing" was nearly true, not quite**: `_handle_request()`
+  refuses before it can reach `interpret()` with no key, so the door is
+  entered one level in with `pending_request` set exactly as
+  `_handle_request` sets it — and the ledger assertion the sketch described
+  **needs a session**, which the sketch did not say, because
+  `TrackLog.event()` returns at its first line outside one. Without that it
+  would have asserted the absence of a file write and passed.
+  62 suites passed before and **63** after, `--all` both times, `user://`
+  cleared first, lists **diffed**: the only difference is **one added line**,
+  the new suite's. It fails against **thirteen** deliberate faults made one
+  at a time, of which **two found faults in the suite rather than in the
+  code**.
+  **NOT VERIFIED: nothing was rendered on a screen, no model sent anything,
+  no request left the container, and the two handlers that need a key are
+  still held by nothing.** See 058 below, TRAPS 54 and TRAPS 55.
 - Last commit at the time of writing: **057**, the task this file named as
   the next assistant task: **the sweep of `main.gd`'s sixteen `connect()`
   calls**, of which 056 had measured two. Seven more were measured and the
@@ -73,7 +115,14 @@ that the owner has not ruled on.** Do not promote one to the other.
   nothing. The pattern is one layer — the handlers that turn a verdict into
   **what the player sees**. `main.gd:993` is the only production caller of
   `WorldRegistry.panel_lines()`, so every panel suite passes with the
-  measurements panel permanently blank. Nine rows remain `NOT_ASKED`.
+  measurements panel never showing a measurement. **This file said
+  "permanently blank" until 058 measured it. The panel is never blank:
+  `_build_metrics_panel()` seeds it at `main.gd:978` with "Build a composed
+  track to see its measurements.", and with the handler disconnected that is
+  what a player sees all session, under a heading reading TRACK MEASUREMENTS
+  — permanently wrong rather than empty, and an assertion that the panel is
+  "not blank" cannot tell the two apart. TRAPS 54.** Nine rows remain
+  `NOT_ASKED`.
 - Last commit at the time of writing: **056**, the task this file named as
   the next assistant task: **055's question asked of the two rows 055 left
   `NOT_ASKED`** — *if this call stopped working tomorrow, would any suite say
@@ -6823,6 +6872,23 @@ what changed is a suite and not a behaviour:
   saved worlds. 055 took four wrong answers off exactly that before
   noticing (TRAPS 50).
 
+**058 adds a twenty-fourth, and it is nothing to type and nothing to look
+at, because nothing a player can reach changed:**
+
+- **No file in `scripts/` was touched.** 058 wrote one test file. Every
+  behaviour it asserts is the behaviour that was already there.
+- **The one thing worth knowing rather than typing**: with the
+  `track_measured` wire disconnected the measurements panel does not go
+  blank — it keeps showing *"Build a composed track to see its
+  measurements."* under a TRACK MEASUREMENTS heading, for the whole session.
+  That is what this file called "permanently blank" from 057 until 058
+  measured it (TRAPS 54). Nothing is disconnected today, and the suite now
+  says so if it ever is.
+- **And two things are yours**, both new: whether this project should own a
+  test double for `HTTPRequest`, which is the only way the last two handlers
+  can be held ("Human decision needed" 20), and whether the busy sentence
+  should be one function or two ("Human decision needed" 21).
+
 **Smallest useful assistant task next.** The ledger question (033), the
 container-door question (034), the prompt-bound question (035), the validator
 question (036), the intent-door question (037), the which-field question
@@ -8702,7 +8768,11 @@ The answers, with what each one costs the player if the wire is lost:
   051 moved its four decisions into `panel_lines()` *"which is what this
   suite can call"*, and `panel_refused_test`, `panel_built_test` and
   `panel_geometry_test` all call it directly. **Every one of them passes with
-  the panel permanently blank.** The decisions are held; the drawing is not.
+  nothing ever drawn** — and not with the panel *blank*, which is how this
+  file put it until 058 measured it: the placeholder
+  `_build_metrics_panel()` seeds stays on screen instead (TRAPS 54). The
+  decisions are held; the drawing is not — and since 058 the drawing is
+  held too, by `tests/handler_wiring_test.gd`.
 - **`equipped` (81) is held by nothing**, and it is the only place a tool
   spec reaches a body that is already standing — `car.equip()`,
   `walker.equip()`, `walker.wear()`, `npc.wear()`. `boots_test`, `tool_test`
@@ -8739,24 +8809,254 @@ history panel, the measurements panel, the kit on the body. The suite holds
 the verdicts and the decisions behind those lines thoroughly, and holds
 almost nothing about whether any of it is ever shown.
 
-**Next action.** Two, in this order.
+**Next action.** Two, in this order. **Item 2 was done in 058** and is left
+struck rather than deleted, because two of its three sentences turned out to
+be wrong and the corrections are the useful part.
 
-1. **The nine rows still unmeasured** — seven `NOT_ASKED` above plus nothing
-   else. Same method, a few at a time; budget for it properly, because one
-   wire-out that breaks delivery costs 20 minutes of 600 s timeouts rather
-   than the 4 minutes a clean run takes. `door_changed` (83) and the two
-   racing rows are the interesting ones; `pressed` (100) and `text_submitted`
-   (101) are probably held by nothing, since every suite calls
-   `_handle_request` directly rather than through a button.
-2. **A fixture for `_on_interpretation_failed`, which needs no key and fakes
-   nothing.** Stand `main` up as `check_wiring_test._make_main()` does, set
-   `main.interpreter.api_key = ""`, call `main.interpreter.interpret(...)`,
-   and assert what the handler leaves behind: the status line, the history
-   entry, and the `ai_unavailable` event in the ledger with its `request`,
-   `reason` and `attempts` keys. It would be the first fixture in this
-   project to hold one of these handlers through a real emit on a real
-   signal with nothing set by hand — and it should be written against the
-   wire-out first (TRAPS 51), or it proves nothing.
+1. **The seven rows still `NOT_ASKED`** — unchanged by 058, which added no
+   `connect()` and removed none. Same method, a few at a time; budget for it
+   properly, because one wire-out that breaks delivery costs 20 minutes of
+   600 s timeouts rather than the 4 minutes a clean run takes.
+   `door_changed` (83) and the two racing rows are the interesting ones;
+   `pressed` (100) and `text_submitted` (101) are probably held by nothing,
+   since every suite calls `_handle_request` directly rather than through a
+   button. **And 058 is the method for whichever of them turns out to be
+   unheld**: it holds three handlers through real emits on real signals in
+   one fast suite, so a row found unheld now has a pattern to be held by
+   rather than only a verdict.
+2. ~~**A fixture for `_on_interpretation_failed`, which needs no key and
+   fakes nothing.**~~ **DONE IN 058, FOR THREE HANDLERS AND NOT ONE
+   (TRAPS 11), AND TWO OF THIS ENTRY'S OWN CLAIMS WERE WRONG.** The recipe
+   it gave was right about `_make_main()`, about the empty key and about
+   calling `interpret()` directly. It was wrong twice, and both are worth
+   carrying: **"with nothing set by hand" is not reachable** —
+   `_handle_request()` refuses before `interpret()` when there is no key, so
+   the door is entered one level in and `pending_request` must be set as
+   `_handle_request` would have set it; and **the `ai_unavailable` assertion
+   it describes needs a session**, because `TrackLog.event()` returns at its
+   first line outside one, so a fixture following this entry literally would
+   have asserted the absence of a file write and passed. Left struck because
+   the lesson is the one worth carrying: **a recipe written from reading the
+   code is a proposal, and the two things it got wrong were both things the
+   code does before the line the recipe was looking at.**
+
+3. **The handler layer is now half-held, and the half that is not is named.**
+   `_on_interpretation_ready` and `_on_ai_retrying` are still held by
+   nothing, and **cannot be held in this harness at all** — their only emits
+   are past the network. 058 asserts the connect for both and labels it
+   `WIRE ONLY` in the assertion's own text. What would hold them is a fake
+   HTTP response, and **that is a decision and not a task**: it means
+   standing a double in front of `HTTPRequest` so the suite can feed
+   `_on_request_completed` a body, which is the first test double this
+   project would own. It is now **"Human decision needed" 20**.
+
+4. **And one worth a look rather than a commit: `_metric_colour()` is
+   asserted by nothing.** 058 holds which lines the panel shows and in what
+   order; the colour each line is drawn in is the one thing left in
+   `main.gd`'s panel code that 051 did not move into `panel_lines()`, and no
+   suite reads it. It is four lines and a `match`. Whether a colour is worth
+   a test is a judgement about what a panel suite is for, so it is noted
+   rather than taken.
+
+## 058 — the three handlers a harness can hold, and the two it cannot
+
+HANDOVER named this as the next assistant task, in these words: *"a fixture
+for `_on_interpretation_failed`, which needs no key and fakes nothing"*. It
+came out of 057's sweep, which asked of each of `main.gd`'s sixteen
+`connect()` calls — *if this wiring stopped working tomorrow, would any suite
+say so?* — and found **five** of the seven it measured held by **nothing**.
+
+**THE FILE DOES THE CLASS AND NOT THE ONE NAMED (TRAPS 11).** Fixing one
+member of a list is not fixing the list. Asked of all five, the split is
+**three and two**, and it is a fact about where the emits are rather than a
+judgement:
+
+| handler | signal | 057 | now |
+|---|---|---|---|
+| `_on_interpretation_failed` | `interpretation_failed` | NOT HELD | **HELD**, two reasons through two guards |
+| `_on_track_measured` | `track_measured` | NOT HELD | **HELD**, a build and a refusal, line for line |
+| `_on_equipped` | `equipped` | NOT HELD | **HELD**, a body already standing |
+| `_on_interpretation_ready` | `interpretation_ready` | NOT HELD | **STILL NOT HELD** — needs a key |
+| `_on_ai_retrying` | `retrying` | NOT HELD | **STILL NOT HELD** — needs a key |
+
+`tests/handler_wiring_test.gd`, 47 assertions. **No file in `scripts/` was
+changed.** Nothing a player can reach behaves differently after this commit
+than before it.
+
+### Why two are left unheld, and why that is a fact rather than a shrug
+
+Mapped off `ai_interpreter.gd`'s own source rather than remembered:
+`interpretation_ready` has **one** emit and it is inside
+`_on_request_completed`; `retrying` has **one** and it is inside
+`_try_again`, which `_on_request_completed` calls. Both need an answer from
+the model, which needs a key. `interpretation_failed` has **eleven**, and
+**two of them are in `_send()`**, before anything is posted. That asymmetry
+is the whole reason one of the three is holdable, so the suite **asserts it
+mechanically off the source**: the day someone adds a key-free emit of
+either, the suite says a fixture has become possible. Run against a
+deliberately added `interpretation_ready.emit()` in `_send()`, that assertion
+fails and names the function.
+
+For those two, the suite asserts the **connect** and nothing else, labelled
+`WIRE ONLY` in the assertion's own text, so nobody reads it as more than it
+is. TRAPS 52's shape, left as 052 and 057 left it rather than faked.
+
+### HANDOVER's "fakes nothing" was nearly true, and the gap is the interesting part
+
+- **`main._handle_request()` cannot reach `interpret()` with no key.** It
+  refuses at `main.gd:193-195` — `is_available()` answering false — so the
+  no-key door is entered **one level in**, at `interpreter.interpret()`,
+  exactly as `check_wiring_test._send_as_ai()` enters at `_execute_json()`.
+  `pending_request` is set first because that is the one thing
+  `_handle_request` would have done on the way past (`main.gd:181`).
+  Everything after is real: the real refusal, emit, signal, connect, handler.
+- **THE LEDGER ASSERTION THE SKETCH DESCRIBED NEEDED A SESSION, and the
+  sketch did not say so.** `TrackLog.event()` returns at its first line when
+  no session is running (`track_log.gd:60`), so the `ai_unavailable` record
+  the handler writes **does not exist outside a session**. A fixture that had
+  asserted it without starting one would have been asserting the absence of a
+  file write — and passing. The suite starts a session.
+- **`attempts` is 0, not 1**, and that is right: `_send()` returns at its key
+  guard before `attempt = 1`, so a request refused before anything was tried
+  records no tries. Asserted as 0 with the reason in the assertion's text.
+
+### THE FINDING: main.gd's busy guard stands in front of the interpreter's
+
+**The suite's own first draft assumed `_send()`'s OTHER key-free refusal —
+the busy one — could be reached from the top, and asserted it. It failed.**
+
+`main.gd:177` checks `interpreter.busy` and refuses first, with **its own
+sentence**: *"Still thinking about the last request..."*, which differs from
+`ai_interpreter.gd:345`'s *"Still thinking about the last request."* by an
+ellipsis instead of a full stop. So the typed-request door never reaches the
+interpreter's guard at all, and the handler does not run: no status line from
+it, no history entry, no ledger event.
+
+**ONE CONDITION, TWO DECIDERS — 057's shape exactly**, where the key rule had
+five deciders and the fifth one was wrong. **Nothing is wrong here**, and the
+commit says so plainly: the player is told the right thing, by `main.gd`.
+What is true is that the interpreter's busy sentence has **one production door
+left** — `revise()` at `main.gd:418`, which does not check `busy`, grepped as
+one of only two callers of a `_send()`-reaching public method — and that two
+sentences for one condition is how the next wrong one gets written. Left as a
+candidate below rather than changed, because the behaviour is correct and the
+smallest complete change to correct behaviour is none.
+
+The suite holds **both halves**: that `main.gd`'s guard fires first and the
+handler does not run, and that the interpreter's guard does reach the handler
+when entered where a caller that does not check `busy` enters it. Run against
+`main.gd`'s busy guard deleted, the first of those fails.
+
+### A FALSE SENTENCE IN THIS FILE, FOUND BY MEASURING IT (TRAPS 14, TRAPS 54)
+
+Since 057 this file has said the cost of the unheld `track_measured` wire is
+that *"every panel suite passes with the measurements panel permanently
+**blank**"*. **Measured with the connect wired out: the panel is never
+blank.** `_build_metrics_panel()` writes a line into it at `main.gd:978` —
+*"Build a composed track to see its measurements."* — and with the handler
+disconnected **that line is what a player sees for the whole session**, under
+a heading reading TRACK MEASUREMENTS. Not blank: permanently **wrong**, which
+is worse.
+
+**And the suite's second draft walked straight into it**: it asserted the
+panel was "not blank", which **passed with the connect wired out**. An
+emptiness test cannot tell a measurement from the placeholder the widget was
+seeded with. The corrected assertions name the two states apart — is the
+placeholder **gone**, and is what replaced it the line `panel_lines()`
+actually produced — and the placeholder string is checked against `main.gd`'s
+own source rather than trusted in two files (TRAPS 28). **TRAPS 54.**
+
+### What the suite asserts, and what it does not (TRAPS 6, TRAPS 14)
+
+- **`_on_interpretation_failed`**: the status line, the history panel entry
+  against the request, and the ledger's `ai_unavailable` event with its
+  `request`, `reason` and `attempts` — the same refusal in all three places,
+  **not a second wording** in any of them. That `revising` was cleared. That
+  nothing went on the wire (`busy` false; and for the busy door, `last_body`
+  still empty, which `_send()` fills only after both guards). Two different
+  reasons through two different guards, which is what proves the handler is
+  not hard-coded to the no-key sentence.
+- **`_on_track_measured`**: that every line `panel_lines()` produced for the
+  record **the signal carried** is in the panel, **in order**; one measured
+  line named outright so the loop cannot go vacuous on an empty list; the
+  refusal shape (RESULT FAILED and REASON); and that the panel is **cleared**
+  between the two, so a refusal cannot appear under the last world's
+  measurements.
+- **`_on_equipped`**: a body stood up first, because the handler's branches
+  are each guarded on a node being non-null and in a harness there is usually
+  no walker — a suite could reach this handler and observe nothing. Then
+  every field of a legal boots spec on the standing body, **and `run_push`,
+  which no spec carries**: it is derived inside `Walker.equip()` from `push`
+  and `BootsTool.RUN_RATIO`, so its moving is proof `equip()` itself ran
+  rather than the kit merely being stored. And the `look` branch, which
+  reaches the same body through `wear()`.
+- **IT DOES NOT PROVE ANYTHING WAS SEEN.** Every assertion reads a
+  `RichTextLabel`'s parsed text or a node's fields in a headless process. No
+  pixel was drawn, no window opened, and nothing here says the panel is
+  legible, the colours are right or the text fits the box. `_metric_colour()`
+  is not asserted at all.
+- **IT DOES NOT PROVE THE AI PATH.** No model sent anything and no request
+  left the container: the no-key door refuses before `_post()`, the busy door
+  refuses before `_send()` builds a body, and the suite asserts both.
+- **AND IT DOES NOT HOLD THE TWO HANDLERS THAT NEED A KEY.** Those are still
+  held by nothing, and the suite says so in the text of two assertions.
+
+### Evidence — what was actually run
+
+Godot 4.7.1 headless on Linux (`4.7.1.stable.official.a13da4feb`), in a cloud
+container, every run **sequential** with `user://` cleared first (TRAPS 50).
+
+- **Baseline at 057**: 62 suites, `--all`, **0 with something to look at**.
+- **After**: 63 suites, `--all`, **0 with something to look at**.
+- The two lists were **diffed**. The only difference is **one added line**,
+  `handler_wiring_test    HANDLER WIRING 47 assertions, failures=0`. No
+  existing suite's result line moved.
+- The new suite runs in **1.2 s** and passes **without** `--fixed-fps`, so it
+  needed no entry in `run_tests.sh`'s `TIMED` or `SLOW` lists and the runner
+  was **not edited**. Run three times, same result each time.
+- **THIRTEEN DELIBERATE FAULTS, ONE AT A TIME**, each in a throwaway copy
+  outside the repository with its **own `config/name`** so it could not share
+  `user://` with anything (TRAPS 50), and the FAIL lines **read** rather than
+  counted:
+
+| fault | caught by |
+|---|---|
+| `interpretation_failed.connect` wired out | 8 failures, all in its own two sections |
+| `track_measured.connect` wired out | 5, all in the panel section |
+| `equipped.connect` wired out | 8, all in the equipped section |
+| `metrics_log.clear()` removed | 2 — and the draft before it caught **1** |
+| `run_push` left unchanged in `Walker.equip()` | 1 — the derived field |
+| the `attempts` key dropped from the event | 1 |
+| the handler's `_record()` removed | 2 — the history panel |
+| the handler's `revising = false` removed | 2 |
+| `main.gd`'s busy guard deleted | 1 — the finding above is asserted |
+| the handler's `TrackLog.event()` removed | 2 |
+| `walker.wear()` branch removed from `_on_equipped` | 1 — the look branch |
+| the panel drawing only its first line | 4 — the in-order assertion |
+| a key-free `interpretation_ready.emit()` added to `_send()` | 1 — and it names the function |
+
+- **TWO OF THE THIRTEEN FOUND FAULTS IN THE SUITE AND NOT IN THE CODE**, and
+  they are the two worth reading: the panel's "not blank" assertion, which
+  passed with the wire out (TRAPS 54), and the cascade — the first
+  `interpretation_failed` wire-out scored **ten** failures across all four
+  sections, of which **two** belonged to sections that hold their own wires.
+  With the state a previous section leaves behind cleared between sections it
+  scores **eight**, all in the two sections about that handler. A cascade
+  makes a suite look like it holds more than it does, which is the flattering
+  direction, the same as TRAPS 50's. **TRAPS 55.**
+
+### Not verified
+
+- **NO BROWSER RAN AND NO WEB EXPORT WAS MADE.** 057's "Next action" is
+  untouched and still the owner's: the Netlify key. Nothing here moves it.
+- **NOTHING WAS RENDERED ON A SCREEN**, and no claim above is about what a
+  player's eyes would do with the panel.
+- **NO MODEL SENT ANYTHING** and no request left the container.
+- **NO WORLD, RECORD OR SAVED FILE OF THE OWNER'S CHANGES.** The prompt is
+  byte-identical and `PROMPT_VERSION` did not move; `prompt_bounds_test`
+  holds that and passed. No file in `scripts/` was touched.
+- **SEVEN OF THE SIXTEEN `connect()` ROWS ARE STILL `NOT_ASKED`**, unchanged
+  by this commit, and they are the first item under "Next action" below.
 
 ## Human decision needed
 
@@ -9518,3 +9818,67 @@ almost nothing about whether any of it is ever shown.
     sent at all. This is the next thing a player on the live site would
     meet, and which of the three is right depends on what you want the site
     to say about itself.
+
+20. **Whether this project should own a test double for `HTTPRequest`.**
+    Found in 058, which is the second commit running to stop at the same
+    wall and the first to name it as a decision rather than a limitation.
+
+    `_on_interpretation_ready` and `_on_ai_retrying` are held by **nothing**,
+    and **no fixture in this harness can hold them**. Their only emits are
+    inside `_on_request_completed` and `_try_again`, past the network: 056
+    hit the same wall from a different direction (TRAPS 52) and so did 057.
+    Between them those two handlers are what a player sees when an answer
+    arrives and when the model is busy — the status line, the history entry,
+    the retry sentence 026 added so a four-second silence does not read as a
+    hang. **None of it is held by anything.**
+
+    What would hold them is a **double in front of `HTTPRequest`**, so a
+    suite could hand `_on_request_completed` a response body and a code.
+    That is a real change in kind and that is why it is yours:
+
+    - **It would be the first test double this project owns.** Every suite
+      today drives the real thing through a real door, which is the reason
+      the suite has the standing it has. A double is a thing that can drift
+      from what it stands for, and the drift is invisible: a suite that
+      passes against a double that no longer matches Google's shape proves
+      nothing and still says `failures=0`. TRAPS is largely a record of
+      exactly that failure mode in other clothes.
+    - **It would reach further than these two handlers.** Eight of
+      `interpretation_failed`'s eleven emits are in
+      `_on_request_completed`, and 026's whole retry policy — which codes
+      are `WORTH_RETRYING`, how long it waits, what it says — is unheld for
+      the same reason. So is `attempts_of_last()` returning anything but 0.
+      The gain is larger than the two rows; so is the surface.
+    - **The alternative is to leave them to the owner's machine**, where
+      they are already exercised every time a request succeeds or the model
+      is busy, and where 048's two faults were found. Unheld in the suite is
+      not the same as untested in practice.
+
+    **Nothing was built.** 058 asserts the two connects and labels them
+    `WIRE ONLY` in the assertion's own text, so the gap is recorded in the
+    one place that cannot go stale. If the answer is yes, the smallest honest
+    first step is one response shape and one assertion, not a framework.
+
+21. **Whether "still thinking about the last request" should be one sentence
+    or two.** Found in 058 and deliberately NOT changed, because the
+    behaviour is correct.
+
+    `main.gd:177` refuses a typed request while the interpreter is busy with
+    *"Still thinking about the last request..."*. `ai_interpreter.gd:345`
+    refuses inside `_send()` with *"Still thinking about the last
+    request."* — the same sentence with a full stop instead of an ellipsis.
+    **One condition, two deciders, which is 057's shape**, where the key
+    rule had five deciders and the fifth one was wrong. The difference here
+    is that **neither is wrong**: the player is told the right thing, by
+    `main.gd`, and the interpreter's is a real guard for the one caller that
+    does not check first (`revise()`, `main.gd:418`).
+
+    So this is not a fault and there is nothing to fix. What is true is that
+    057's lesson was *put the decision in one function both readers call*,
+    and this is a second place where two readers decide the same thing
+    separately. Making it one function would change no behaviour at all,
+    which is why the assistant did not do it — the smallest complete change
+    to correct behaviour is none, and a refactor that moves nothing is how a
+    repository fills with motion. Whether it is worth doing anyway, as
+    insurance of the kind `key_missing_for()` turned out to be, is a
+    judgement about this project's appetite for that trade and it is yours.

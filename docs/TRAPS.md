@@ -3369,3 +3369,101 @@ Found in 057, while sweeping `main.gd`'s sixteen `connect()` calls and asking
 why `_on_interpretation_failed` is held by nothing.
 
 > Four doors knew the rule. The fifth was the one in front.
+
+---
+
+## 54. A panel asserted non-empty, seeded with a placeholder
+
+**Signature:** a widget is asserted to be "not blank" and the assertion
+passes with the code that fills it disconnected.
+
+**Cause:** 058 wrote a fixture for the measurements panel, which 057 had
+found held by nothing — `main.gd:993` is the only production caller of
+`WorldRegistry.panel_lines()`, so `panel_refused_test`, `panel_built_test`
+and `panel_geometry_test` all pass with nothing ever drawn. The fixture's
+first draft asserted the panel was **blank** before any build, and failed:
+`main.gd` stands a starter circuit up in `_ready()` and that build fills it.
+The second draft asserted it was **not blank**, which passed — and still
+passed with `track_measured.connect` wired out, because
+`_build_metrics_panel()` writes a line into the panel at `main.gd:978`
+before anything is measured:
+
+```gdscript
+_metric("", "Build a composed track to see its measurements.", METRIC_LABEL_COLOUR)
+```
+
+So the panel is **never** blank. With the handler disconnected, that one
+line is what a player sees for the whole session, under a heading reading
+TRACK MEASUREMENTS. **And HANDOVER had been describing the cost of that
+missing wire as "the measurements panel permanently blank" since 057.** Not
+blank: permanently *wrong*, which is worse, and which the second draft's
+assertion could not tell from a real measurement.
+
+**And the same shape was already in this file's own account.** The cure was
+not a stronger emptiness test but a test that names the two states apart:
+is the **placeholder** gone, and is what replaced it the line
+`panel_lines()` actually produced?
+
+**Do:**
+
+- A non-empty assertion on a display is only as strong as the display's
+  empty state. Find out what the widget holds before anything runs — a
+  placeholder, a heading, a hint, a spinner — and assert against **that**
+  string, not against `""`.
+- Say which value is expected, not that some value arrived. `contains(want)`
+  beats `strip_edges() != ""` every time, and the day `want` changes the
+  assertion fails loudly instead of going quiet.
+- When a document states the cost of a missing wire, check the cost the same
+  way the wire was checked: disconnect it and look at the screen. TRAPS 14,
+  applied to a sentence about a widget.
+- The placeholder is a string in two files once a test knows it. Read it
+  from the source that writes it, or assert the two agree (TRAPS 28).
+
+Found in 058, by running a new suite against thirteen deliberate faults —
+the one that mattered was the fourth, `metrics_log.clear()` removed, which
+the second draft's assertion did not catch and the corrected one does.
+`tests/handler_wiring_test.gd` carries both halves.
+
+> The panel was not blank. It was holding the sentence that says it is.
+
+---
+
+## 55. One fault in a fixture, reported as three
+
+**Signature:** a single wire-out fails assertions in sections of a suite
+that have nothing to do with it, and the count of failures is read as the
+breadth of the damage.
+
+**Cause:** 058's suite holds three handlers in one file, in sections. The
+first section is `_on_interpretation_failed`, and **that handler is the one
+that clears `main.revising`** — which `main.gd:166` refuses every typed
+request on. Wire its `connect` out and the handler never runs, `revising`
+stays true, and every request the rest of the file sends is refused before
+it reaches anything. Measured: the first wire-out run scored **ten**
+failures across all four sections and read as "the whole file holds this
+wire". It does not. With the state a previous section can leave behind
+cleared between sections, the same wire-out scores **eight**, all of them in
+the two sections about that handler, and the `track_measured` and `equipped`
+sections pass — which is the honest answer, and also the proof that those
+two sections hold their own wires rather than this one.
+
+The direction of the error is the part worth keeping: it is **flattering**.
+A cascade makes a suite look like it holds more than it does, in exactly the
+way a shared `user://` made four of 055's answers flattering (TRAPS 50).
+
+**Do:**
+
+- When a fixture has sections, ask what state each one leaves behind, and
+  clear the state that gates the next one's input. Then the failure count is
+  attributable and each section's pass means something on its own.
+- Reset harness state, never a verdict. The fields cleared between sections
+  must be ones nothing downstream asserts, and the assertions about them
+  must run before the reset.
+- A wire-out that fails many sections is a claim about blast radius. Check it
+  by making the sections independent, not by counting.
+- Three faults, one at a time, is the measurement. One fault and three red
+  lines is a number.
+
+Found in 058, between the first and second runs of the same wire-out.
+
+> Ten failures and eight failures were the same fault.
