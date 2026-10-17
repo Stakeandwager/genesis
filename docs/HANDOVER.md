@@ -24,7 +24,94 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **059**, the task this file named as
+- Last commit at the time of writing: **060**, the task this file named as
+  the next assistant task: **holding the four `connect()` rows of `main.gd`
+  that 059 left held by nothing** — `lap_completed`, race `announced`,
+  `pressed` and `text_submitted`. **All four are now held**, each through a
+  **real emit**: the real button's signal, the real `LineEdit`'s signal, the
+  real `CheckpointTracker` counting a lap off the car's own position through
+  `main.gd:809`, and the real `RaceDirector`'s three-second countdown running
+  out under real physics. Nothing is hand-emitted into a handler.
+  **AND ASKING THE TASK'S OWN QUESTION ONE LEVEL OUT FOUND SOMETHING
+  LARGER, which is what the commit is about: NOTHING IN THIS REPOSITORY HAD
+  EVER LOADED `scenes/main.tscn`.** Grepped across `tests/` and `scripts/`:
+  no file mentioned a `.tscn` at all. Sixteen suites stand `main.gd` up by
+  building their own tree by hand and **naming the nodes `main.gd`'s
+  `@onready` lines ask for** — so the fixture supplies the names it then
+  proves are there, which is TRAPS 14 in a fixture rather than in a
+  document. The scripts resolve **six** node paths against that scene (four
+  `@onready` in `main.gd`, plus `Camera3D` and `Ground/CSGBox3D` read off
+  `world_root` in `game_controller.gd`), and **not one of them had ever been
+  checked against the scene the game launches**. Measured: rename
+  `BuildButton` to `Build` in the scene and `main.gd:100` throws on a null —
+  the game dead at startup — and before this commit all 64 suites were still
+  green. `tests/player_door_test.gd` is **the first file in the project's
+  history to load that scene**, and it resolves the six paths by enumerating
+  them out of the scripts' own source, so a seventh is covered the day it is
+  written. See TRAPS 57.
+  **AND THE FIXTURE IS NOT THE SCENE IN A WAY THAT IS MEASURABLE, AND WHAT
+  THAT COSTS TODAY IS NOTHING** — measured, not argued either way. Sixteen
+  files in `tests/` set `box.use_collision = true`; nothing in `scripts/`
+  sets it anywhere, and the real scene's `Ground` is a `StaticBody3D` with no
+  `CollisionShape3D` and a `CSGBox3D` with `use_collision` false. A 1 m box
+  dropped from y = 6 **fell to y = −42.77 and was still falling** in the real
+  scene and **rested at y = 0.49** in the fixture. All sixteen were then
+  patched to match the scene and every suite run again: **64 suites, 0 with
+  something to look at, and the list diffed IDENTICAL, line for line.** So no
+  suite's answer rests on that floor and this file does not claim one does.
+  An earlier draft of the suite header said *"every suite that has ever stood
+  a body on the ground has stood it on a floor the game does not have"*; that
+  is false — `physics_test` and `behaviour_test` build their own 4000 m
+  `StaticBody3D` with a real `CollisionShape3D` — and it is recorded rather
+  than deleted (TRAPS 14).
+  **AND TWO OF THE SUITE'S OWN ASSERTIONS WERE FALSE ABOUT GENESIS (TRAPS 6,
+  TRAPS 14).** Both passed review by reading and both failed when run.
+  (a) *"the circuit is the one thing standing in the world"* read the node's
+  **name** and expected `CircuitBuilder`, as `drive_test:174` does. It is
+  `@Node3D@49`, and **the name ALTERNATES**: `add_child` replaces the name of
+  a node that collides with a sibling, and the outgoing world is still a
+  sibling in that frame — 048's fact again. Every other circuit a player
+  builds gets a dummy name. Nothing in `scripts/` reads it (asserted off the
+  source), `drive_test` reads it twice, and **the obvious fix yields
+  `CircuitBuilder2`, measured**. Left unfixed on purpose: "Human decision
+  needed" 24, and TRAPS 58.
+  (b) *"the play loop reported the difference"* expected a `Changed:` line.
+  **A raw-JSON request is never an edit**: `main.gd:190` calls
+  `_execute_json` and returns, eight lines before `editing_from` is set. So
+  the player who debugs with raw JSON is never told what changed. "Human
+  decision needed" 25.
+  **64 suites passed before and 65 after**, `--all` both times, `user://`
+  cleared first, lists **diffed**: the only difference is **one added line**,
+  the new suite's. **63 assertions**, failing against **eleven** deliberate
+  faults made one at a time, FAIL lines read rather than counted. **No file in
+  `scripts/` was changed and nothing a player can reach behaves differently**
+  — the only edit outside `tests/player_door_test.gd` is a comment in
+  `drive_test`.
+  **NOT VERIFIED: nothing was rendered on a screen and no window opened; no
+  model sent anything and no request left the container; the prompt is
+  byte-identical and `PROMPT_VERSION` did not move. That a MOUSE CLICK emits
+  `pressed`, or a RETURN key `text_submitted`, is Godot's and is not held
+  here; nor is a player DRIVING to the checkpoints, nor the other emit of
+  `race.announced` (the result line in `RaceDirector._finish()`, which needs
+  three laps driven by somebody).** See 060 below and TRAPS 57 and 58.
+  **THE NEXT ASSISTANT TASK**, and it is the other half of TRAPS 57: the
+  **sixteen `_make_main()` fixtures**. Every one of them hand-builds a tree
+  that stands in for `scenes/main.tscn`, and 060 measured ONE difference
+  (the ground's collision) and found it cost nothing. The rest are
+  unmeasured. The question to ask of the class is *what else does the
+  hand-built tree have, or lack, that the scene does not* - enumerated by
+  diffing one fixture against the scene node by node rather than by reading -
+  and then, for each difference, the cheap measurement: make the fixture
+  match and run everything. The scene has a `TitleLabel`, a
+  `DirectionalLight3D`, a `WorldEnvironment` and an anchored `CommandPanel`
+  that no fixture builds, and its `Ground` is a `StaticBody3D` where
+  fourteen fixtures use a bare `Node3D`. Whether any of that is load-bearing
+  is not known. **A second candidate, smaller:** `drive_test:163` reads a
+  node name the other way round - *"the last child is not called
+  CircuitBuilder, so the farm is on screen"* - which a dummy name satisfies
+  as readily as a farm does (TRAPS 58, TRAPS 41). 060 added a comment there
+  and did not change the assertion.
+- Before 060: **059**, the task this file named as
   the next assistant task: **the seven `connect()` rows of `main.gd`'s
   sixteen still marked `NOT_ASKED`**. They were measured and **all sixteen
   rows are now measured**, so 057's sweep is finished: `door_changed` is
@@ -1172,8 +1259,8 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-66 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **64 suites**, counted with `ls tests/*.gd` rather than
+67 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **65 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites.
 
@@ -1185,7 +1272,19 @@ worlds, and suites fail for reasons that have nothing to do with the code.
 055 took four answers off such a run before noticing. If a run is being used
 as a measurement, clear `user://` before it, baseline included (TRAPS 50).
 
-Last full run (059, Godot 4.7.1 on Linux —
+Last full run (060, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+headless, in a cloud container, every run sequential with `user://` cleared
+first): **suites with something to look at: 0** on all 65, with `--all`. The
+baseline at 059, measured the same way in the same container, was the same on
+64 suites, and the lists were **diffed**: the only difference is **one added
+line**, `player_door_test`'s. 060 adds one file and NEITHER RUNNER NEEDED AN
+EDIT - `run_tests.sh`'s TIMED, SLOW and NOT_A_SUITE lists and
+`run_tests.bat`'s `findstr` patterns were **RUN** against the name
+`player_door_test` rather than eyeballed (TRAPS 4) and none of them matches,
+so it runs with no `--fixed-fps`. It takes about 4 s, of which 3 s is the
+RaceDirector's real countdown.
+
+The run before it (059, Godot 4.7.1 on Linux —
 `4.7.1.stable.official.a13da4feb` — headless, in a cloud container, every
 run sequential with `user://` cleared first):
 **suites with something to look at: 0** on all 64, with `--all`. The
@@ -1823,6 +1922,28 @@ verified, and what remains uncertain.
   caught by generating the sentence and reading it rather than by reasoning
   about the code, and the suite now asserts the rule: every command named in
   an example appears in `AIInterpreter.assembled_prompt()`.
+
+- **A green suite had never LOADED THE SCENE THE GAME RUNS.** Found in 060:
+  no file in `tests/` or `scripts/` mentioned a `.tscn` at all, so
+  `scenes/main.tscn` was reached only by `project.godot`'s `run/main_scene`
+  and only by the game. Sixteen suites stand `main.gd` up by hand-building a
+  tree and **naming each node what `main.gd`'s `@onready` lines ask for** —
+  the fixture supplies the names it then proves are there. Six node paths the
+  scripts resolve against that scene had never been checked against it.
+  Measured: rename `BuildButton` in the scene and `main.gd:100` throws on a
+  null, the game dead at launch, while all 64 suites stayed green. 64 suites
+  passed before and 65 after. See 060 below and TRAPS 57.
+
+  **What that says about the method, and it is a new axis.** 029 asked one
+  question of every file, 030 every way IN to one check, 031 what the
+  sentence must say, 037 the door rather than the field, 040 where the
+  project had already been right once, 043 what a check cannot see. This one
+  asked **what the fixture supplies**. A test double is an assumption written
+  down; where it stands in for something the repository actually contains,
+  the cheap measurement is to use the real thing instead and see what moves.
+  The second half of that question — the other fifteen differences between
+  the sixteen fixtures and the scene — is the next assistant task, and one of
+  them (the ground's collision) has been measured and costs nothing.
 
 - **The capability statement in the prompt is hand-written prose and can go
   stale.** `tests/log_023_test.gd` asserts that each thing it claims points at
@@ -9012,6 +9133,224 @@ be wrong and the corrections are the useful part.
    a test is a judgement about what a panel suite is for, so it is noted
    rather than taken.
 
+## 060 — the four doors, and the scene no test had ever loaded
+
+**Objective.** The task this file named as the next assistant task: **hold
+the four `connect()` rows of `main.gd` that 059 measured and found held by
+nothing** — `lap_completed` (93), race `announced` (98), `pressed` (100) and
+`text_submitted` (101). All four need no API key. The last two are the doors
+a player actually uses, and 059's words for the gap were: *"nothing in the
+project emits either signal, grepped, so every suite enters at
+`_handle_request()` and the suite says nothing about whether typing a
+sentence and pressing Build reaches the game at all."*
+
+**Starting state.** Branch `prototype-002a` at `c4aa7fb` (059). 64 suites,
+`--all`, `user://` cleared first: **0 with something to look at**.
+
+### What was done, and it is one new file
+
+`tests/player_door_test.gd`, **63 assertions**. **No file in `scripts/` was
+changed.** The only other edit in the commit is a comment in `drive_test`
+(see TRAPS 58). Nothing a player can reach behaves differently.
+
+All four rows are held through a **real emit**. Nothing is hand-emitted into
+a handler:
+
+| line | signal → handler | how it is reached |
+|------|------------------|-------------------|
+| 100 | `pressed` → `_on_build_pressed` | the real `Button`'s signal, with a raw-JSON circuit in the real box; a 4×300 m circuit is built, recorded and drivable |
+| 101 | `text_submitted` → `_on_text_submitted` | the real `LineEdit`'s signal; a 4×400 m circuit is built over the first |
+| 93 | `lap_completed` → `_on_lap_completed` | the car's own position moved along the circuit's checkpoints, with **`main.gd:809` — the only production caller of `update_progress()`, grepped — doing the feeding from `_process`** |
+| 98 | `announced` → `_on_race_announced` | a real `/race 1` and **361 physics frames of real countdown**, until `RaceDirector._physics_process` says `"GO!"` |
+
+### THE FINDING: nothing in this repository had ever loaded `scenes/main.tscn`
+
+Grepped across `tests/` and `scripts/`: **no file mentioned a `.tscn` at
+all.** The scene is reached only by `project.godot`'s `run/main_scene`, by
+uid — which is to say only by the game. Sixteen suites that need `main.gd`
+build their own tree by hand in a `_make_main()` of their own, and **name
+each node exactly what `main.gd`'s `@onready` lines ask for**. The fixture
+supplies the names and the suite then proves they are there. That is TRAPS 14
+in a fixture rather than in a document.
+
+**The class, enumerated off the source rather than listed (TRAPS 11): six
+node paths.**
+
+| where | path | type |
+|-------|------|------|
+| `main.gd:20` | `$UI/CommandPanel/VBoxContainer/InputBox` | `LineEdit` |
+| `main.gd:21` | `$UI/CommandPanel/VBoxContainer/BuildButton` | `Button` |
+| `main.gd:22` | `$UI/CommandPanel/VBoxContainer/StatusLabel` | `Label` |
+| `main.gd:23` | `$UI` | `CanvasLayer` |
+| `game_controller.gd:129` | `Camera3D`, off `world_root` | `Camera3D` |
+| `game_controller.gd:135` | `Ground/CSGBox3D`, off `world_root` | `CSGBox3D` |
+
+**What that cost, measured and not argued.** In a throwaway copy,
+`BuildButton` renamed to `Build` in the scene: `main.gd:100` throws *"Invalid
+access to property or key 'pressed' on a base object of type 'null
+instance'"* — the game dead at launch — and **before this commit every one of
+the 64 suites was still green**, because every one of them built the tree it
+wanted. `Ground` renamed to `Floor`: no crash at all, the controller's
+`get_node_or_null` returns null and the game runs on with no camera framing
+and no ground pad, silently.
+
+`player_door_test` is **the first file in the project's history to load that
+scene**. It asserts the scene is the one `ProjectSettings` launches before it
+asserts anything about it; it **enumerates** the four `@onready` paths and
+the two `get_node_or_null` literals out of the scripts' own source and
+resolves each against the loaded scene, so a seventh path is covered the day
+it is written; and it asserts that it is still the only file naming a `.tscn`,
+so the sentence above cannot go stale unnoticed (TRAPS 14). See TRAPS 57.
+
+### The fixture's floor, and what it costs: nothing, measured
+
+Sixteen files in `tests/` set `box.use_collision = true` on the ground slab
+they build. **Nothing in `scripts/` sets `use_collision` anywhere**, and the
+real scene's `Ground` is a `StaticBody3D` with **no `CollisionShape3D`** and
+a `CSGBox3D` with `use_collision` left at its default `false`. A 1 m
+`RigidBody3D` dropped from y = 6 over cleared ground, 400 physics frames:
+
+| | came to rest at |
+|---|---|
+| the real scene | **y = −42.77, and still falling** |
+| the fixture | **y = 0.49, on top of the slab** |
+
+So the harness has a floor the game does not. **What it costs today is
+nothing.** All sixteen fixtures were patched to `use_collision = false` in
+that throwaway copy and every suite was run again, `--all`, `user://` cleared
+first: **64 suites, 0 with something to look at, and the list diffed against
+the baseline is IDENTICAL, line for line.** No suite's answer rests on that
+floor, and this file does not claim one does.
+
+**An earlier draft of the suite header said something false here** and it is
+recorded rather than deleted (TRAPS 14): *"every suite that has ever stood a
+body on the ground has stood it on a floor the game does not have"*. The two
+suites that really do stand a body on a floor — `physics_test` and
+`behaviour_test` — build their own 4000 m `StaticBody3D` with a real
+`CollisionShape3D` and were not touched by that patch at all.
+
+Section 6 holds the scene's half of it as a fact, so that the day somebody
+turns collision on in the scene this suite says so: sixteen fixtures are
+already written as though it is on.
+
+### Two of the suite's own assertions were false about Genesis
+
+Both passed review by reading and both failed when run (TRAPS 6, TRAPS 14).
+
+**(a) The name of the node a world is built into is not the world's.** The
+assertion read the standing node's **name** and expected `CircuitBuilder`, as
+`drive_test:174` asserts. It is `@Node3D@49`. `RacingModule.build()` sets
+`circuit.name` and **then** calls `root.add_child()`; Godot replaces the name
+of a node that collides with a **sibling**, and the outgoing world is still a
+sibling in that frame — `queue_free()` does not remove it until the frame
+ends, **the same fact 048 found underneath a count that said fourteen rooms**.
+So the name **alternates**, which is more than "the first build is wrong",
+the reading made before measuring:
+
+| build | name | why |
+|-------|------|-----|
+| startup circuit | `CircuitBuilder` | nothing there to collide with |
+| 1 | `@Node3D@49` | the startup circuit still held it |
+| 2 | `CircuitBuilder` | the outgoing one was `@Node3D@49` |
+| 3 | `@Node3D@124` | the outgoing one held it again |
+
+Nothing a player can reach is wrong, **asserted rather than assumed**: no
+file in `scripts/` contains `"CircuitBuilder"` except the module that assigns
+it, so no production code identifies a world by name — the controller holds
+`drivable["node"]` by reference, and section 1 now asserts identity rather
+than name. **And the obvious fix does not fix it, measured:** moving the
+assignment to after `add_child` yields `CircuitBuilder2`. Left unfixed on
+purpose: "Human decision needed" 24, and TRAPS 58.
+
+**(b) A raw-JSON request is never an edit.** The assertion expected a
+`Changed: length` line in the history after a second world was built over the
+first, on the reasoning that `_handle_request` sets `editing_from` and the
+play loop reports the difference. It does not: **`main.gd:190` calls
+`_execute_json` and RETURNS**, eight lines before `main.gd:199-201` sets
+`editing_from` from the standing world. So the player who debugs with raw
+JSON is never told what changed; only the AI door gets that sentence.
+`drive_test` sets `main.editing_from` by hand before `_type()` for exactly
+this reason, which is the repository already knowing this without anywhere
+saying so. The suite now asserts the fact. "Human decision needed" 25.
+
+### Evidence — what was actually run
+
+Godot 4.7.1 headless on Linux (`4.7.1.stable.official.a13da4feb`), in a cloud
+container, **every run sequential with `user://` cleared first** (TRAPS 50).
+
+- **Baseline at 059:** 64 suites, `--all`, **0 with something to look at**.
+- **After:** 65 suites, `--all`, **0 with something to look at**. The lists
+  were **diffed** and the only difference is **one added line**,
+  `player_door_test`'s. No existing suite's result line moved.
+- `tests/player_door_test.gd`, **63 assertions**, about 4 s, of which 3 s is
+  the RaceDirector's real countdown. Needs no `--fixed-fps`: both runners'
+  lists and patterns were **RUN** against the name rather than eyeballed
+  (TRAPS 4) and neither matches it, so **neither runner was edited**.
+- **The fixture-floor measurement:** sixteen fixtures patched to match the
+  scene, full run, list **diffed identical**.
+
+**Run against broken code before it was believed (TRAPS 51): ELEVEN
+deliberate faults, one at a time**, each in a fresh throwaway copy outside
+the repository with its own `config/name`, FAIL lines **read** rather than
+counted.
+
+| fault | result |
+|-------|--------|
+| 1. `build_button.pressed.connect` wired out | 10 failures — the whole BUILD section, plus the three in section 7, because one fewer build shifts the name parity (see below) |
+| 2. `input_box.text_submitted.connect` wired out | 6 — the RETURN section, the guard, and one in section 7 |
+| 3. `lap_completed.connect` wired out | **1** — the lap sentence, and nothing else |
+| 4. `race.announced.connect` wired out | 2 — the announcement never arrives; the loop runs to its 3600-frame limit |
+| 5. `main.gd:809` `update_progress` removed from `_process` | 3 — no lap is counted at all; this is the production caller, not the connect |
+| 6. `_on_lap_completed` reports a fixed `"1:23.45"` | **1** — the assertion is built from the tracker's own numbers through its own formatter |
+| 7. `_on_text_submitted` trusts the signal argument | **1** — the guard, and only the guard |
+| 8. scene: `BuildButton` renamed to `Build` | SCRIPT ERROR at `main.gd:100`; the suite reaches only **36** of its 63 assertions and fails 10 |
+| 9. scene: `Ground` renamed to `Floor` | 3, including the enumerated path assertion. **This one found a fault in the suite**: its first draft read `.size` off a null `ground_box` and threw, aborting instead of reporting. Guarded now |
+| 10. scene: the ground given collision, as the fixtures have it | **1** — section 6 |
+| 11. `RacingModule` names the circuit AFTER `add_child` | 2, and the name it gets is `CircuitBuilder2` — which is how "the obvious fix" above was measured rather than assumed |
+
+**Faults 1 and 2 are one fault reading as several, and the numbers are given
+rather than hidden (TRAPS 55).** Section 7's three assertions read the
+sequence of world-node names across the three builds, so a door wire-out
+removes a build and shifts the parity. That is not three faults; it is the
+section being downstream of the doors, which is also the only way the
+sequence can be measured at all.
+
+### What the suite does NOT prove
+
+- **That a mouse click emits `pressed`, or a RETURN key `text_submitted`.**
+  Those are Godot's. What is held is everything from the signal inwards, in
+  the real scene.
+- **That a player DRIVING reaches the checkpoints.** The car's position is
+  set; nothing steers it. The driving loop is `drive_test`'s business.
+- **The other emit of `race.announced`** — the result line in
+  `RaceDirector._finish()`. It needs three full laps driven by somebody, and
+  nobody drives in a headless run. Only the countdown's `"GO!"` is walked.
+- **Anything rendered.** Headless: the scene loads, its nodes exist, no pixel
+  was drawn and no window opened.
+- **No model sent anything and no request left the container.** The prompt is
+  byte-identical and `PROMPT_VERSION` did not move; `prompt_bounds_test`
+  holds that and passed.
+- **No world, record or saved file of the owner's changed.**
+- **The fifteen other `_make_main()` fixtures are still not the scene**, and
+  only one of their differences has been measured. That is the next task.
+
+### Next action
+
+**The sixteen `_make_main()` fixtures, asked as a class (TRAPS 11).** 060
+measured one difference between the hand-built tree and the scene and found
+it cost nothing. The others are unmeasured and they are visible by eye
+already: the scene has a `TitleLabel`, a `DirectionalLight3D`, a
+`WorldEnvironment` and an anchored `CommandPanel` that no fixture builds, and
+its `Ground` is a `StaticBody3D` where fourteen fixtures use a bare `Node3D`.
+The method is the one that worked here: diff one fixture against the scene
+node by node rather than reading either, then for each difference make the
+fixture match and run everything. The cheapest useful end state is that the
+suites which only need `main.gd` stood up **load the scene** instead of
+building a stand-in — but that is sixteen files and should be measured one at
+a time, not swept.
+
+---
+
 ## 059 — the id two writers could both mint, found while measuring something else
 
 HANDOVER named this session's task as **the seven `connect()` rows of
@@ -10351,3 +10690,61 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     repository fills with motion. Whether it is worth doing anyway, as
     insurance of the kind `key_missing_for()` turned out to be, is a
     judgement about this project's appetite for that trade and it is yours.
+
+24. **Whether the node a world is built into should have a stable name.**
+    Found in 060 by the new suite's own first draft failing, and deliberately
+    NOT changed.
+
+    `RacingModule.build()` sets `circuit.name = "CircuitBuilder"` and then
+    calls `root.add_child(circuit)`. Godot replaces the name of a node that
+    collides with a **sibling**, and the world being replaced is still a
+    sibling in that frame. So **every other circuit a player builds gets a
+    dummy `@Node3D@N` name**, decided by what the previous world was called:
+    `CircuitBuilder`, `@Node3D@49`, `CircuitBuilder`, `@Node3D@124`, measured
+    across four builds in one session.
+
+    **Nothing a player can reach is wrong**, and that is asserted off the
+    source rather than assumed: no file in `scripts/` contains
+    `"CircuitBuilder"` except the module that assigns it, so no production
+    code identifies a world by name — the controller holds `drivable["node"]`
+    by reference. What reads the name is `drive_test`, twice, and the
+    positive one passes on the parity of its own build order.
+
+    **The obvious fix does not fix it, measured rather than assumed:** moving
+    the assignment to after `add_child` yields `CircuitBuilder2`. What would
+    fix it is freeing the outgoing world before adding the new one — which
+    changes the frame in which a world disappears, and 048 is the record of
+    what depended on that — or deciding that a world's node name is not
+    something anything should read, and saying so where the next reader of
+    `drive_test` will see it.
+
+    The assistant did not choose, because it touches a builder every world in
+    this project goes through and the fault is latent: nothing reads the name
+    today. What 060 did instead is hold the behaviour so it cannot change
+    silently, and put a comment on `drive_test:174` so the next session does
+    not read that line as evidence the name is stable. Whether the name
+    should be made stable, or the reading of it removed, is yours. See
+    TRAPS 58.
+
+25. **Whether a player who types raw JSON should be told what changed.**
+    Found in 060 the same way, and not changed.
+
+    `main.gd:190` calls `_execute_json` and **returns**, eight lines before
+    `main.gd:199-201` sets `editing_from` from the standing world. So a
+    raw-JSON request is never an edit, and the `Changed: length 1577 -> 1977 m`
+    sentence the play loop writes for an AI request is never written for a
+    typed one. Measured: two circuits built one over the other through the
+    real doors, and the history contains no `Changed:` line at all.
+
+    It may well be right. Raw JSON is the no-key door — *"useful for
+    debugging without spending API calls"*, says the comment above it — and
+    the controller's own build summary is printed either way, so nothing is
+    hidden, only uncompared. Against that: the owner is the person who types
+    raw JSON, the comparison is the one thing he cannot do by eye across two
+    builds, and it is three lines to set `editing_from` before
+    `_execute_json` as well.
+
+    What makes it the owner's rather than the assistant's is that it changes
+    what a request MEANS: with `editing_from` set, a typed JSON build becomes
+    an edit of the standing world in the record as well as in the sentence,
+    and the ledger is the artefact this project exists to keep.

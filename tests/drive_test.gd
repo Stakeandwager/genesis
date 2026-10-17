@@ -171,6 +171,17 @@ func _run() -> void:
 	for ch in c.world_node.get_children():
 		if not ch.is_queued_for_deletion():
 			names.append(str(ch.name))
+	# 060: THIS ASSERTION PASSES ON THE PARITY OF THIS FILE'S BUILD ORDER, not
+	# on a property the circuit has. RacingModule sets circuit.name before
+	# root.add_child(), and Godot replaces the name of a node that shares one
+	# with a sibling - the outgoing world, still in the tree that frame -
+	# with a dummy "@Node3D@N". The world before this one is a FARM, whose
+	# pieces go straight into world_node with no CircuitBuilder among them, so
+	# nothing collides and the name sticks. Build a circuit immediately before
+	# a circuit and it does not: measured in tests/player_door_test.gd
+	# section 7, where the name alternates across four builds. Line 163 above
+	# reads the name the other way round and is weaker still. Do not take this
+	# line as evidence that a world's node name is stable.
 	_check(names == ["CircuitBuilder"], "a track built after a farm replaces it (on screen: %s)" % str(names))
 	_check(_drivable() and c.last_build.get("command", "") == "CREATE_TRACK", "the track is drivable and is the player's world")
 

@@ -3550,3 +3550,128 @@ Found in 059, while measuring something else, by noticing that a suite with
 no connection to a wire-out kept failing a different number of times.
 
 > The clock is not an identity. Two processes read the same second.
+
+---
+
+## 57. The fixture supplied the names it then proved were there
+
+**Signature:** sixteen suites stand up the program's main node and every one
+of them passes. Rename a node in the scene the game actually launches and the
+game dies at startup on a null — and not one of the sixty-four suites says a
+word.
+
+**Cause:** **nothing in the repository had ever loaded `scenes/main.tscn`.**
+Grepped across `tests/` and `scripts/`: no file mentioned a `.tscn` at all.
+Every suite that needs `main.gd` builds its own tree by hand in a
+`_make_main()` of its own — `Node3D`, a `CanvasLayer` called `UI`, a
+`PanelContainer` called `CommandPanel`, a `LineEdit` called `InputBox` — and
+names each node exactly what `main.gd`'s `@onready` lines ask for. So the
+fixture **supplies** the names and then the suite proves they are there. It is
+TRAPS 14 in a fixture rather than in a document: the check guards the
+assumption instead of checking the fact.
+
+The scripts resolve **six** node paths against that scene — four `@onready`
+in `main.gd`, and `Camera3D` and `Ground/CSGBox3D` read off `world_root` in
+`game_controller.gd`. Measured in a throwaway copy by renaming
+`BuildButton` to `Build` in the scene: `main.gd:100` throws *"Invalid access
+to property or key 'pressed' on a base object of type 'null instance'"*,
+which is the game failing at launch, and before 060 every suite was still
+green.
+
+**And the hand-built tree was not the scene in a way that is measurable.**
+Sixteen files in `tests/` set `box.use_collision = true` on the ground slab.
+Nothing in `scripts/` sets `use_collision` anywhere, and the real scene's
+`Ground` is a `StaticBody3D` with no `CollisionShape3D` and a `CSGBox3D` with
+`use_collision` left false. A 1 m box dropped from y = 6 fell to **y = −42.77
+and was still falling** in the real scene, and **rested at y = 0.49** in the
+fixture. What that costs today is **nothing**, measured and not argued: all
+sixteen were patched to match the scene and every suite run again, and the
+lists diffed **identical, line for line**. The two suites that really do need
+a floor — `physics_test` and `behaviour_test` — build their own 4000 m
+`StaticBody3D` with a real `CollisionShape3D` and were untouched.
+
+**Do:**
+
+- A suite that stands up the program **loads the scene the program launches**,
+  resolved through `ProjectSettings` rather than by path, so a suite cannot
+  end up holding a scene that is no longer the game's.
+- Enumerate the node paths **out of the scripts' own source** — the
+  `@onready` lines, the `get_node_or_null` literals — and resolve each one
+  against the loaded scene. A list typed by hand covers the paths that
+  existed the day it was typed; an enumeration covers the fifth one the day
+  it is written.
+- Where a fixture must still be hand-built, treat every difference from the
+  scene as unmeasured until it is measured. The cheap measurement is to make
+  the fixture match and run everything.
+
+Found in 060, by asking where the player's two doors actually are.
+`tests/player_door_test.gd` is the first file in the project's history to
+load `scenes/main.tscn`.
+
+> A fixture that builds the tree cannot test the tree. It can only agree
+> with itself.
+
+---
+
+## 58. A node's name decided by what was there before it
+
+**Signature:** an assertion about a node's name passes, and the identical
+assertion one build earlier fails. Nothing about the node changed.
+
+**Cause:** `RacingModule.build()` sets `circuit.name = "CircuitBuilder"` and
+**then** calls `root.add_child(circuit)`. Godot's `add_child`, with
+`force_readable_name` left at its default `false`, replaces the name of a
+node that shares one with a **sibling** by a dummy `@Type@id`. And the world
+being replaced is still a sibling in that frame: `_clear_world_node()` calls
+`queue_free()`, which does not remove it until the frame ends — **the same
+fact 048 found underneath a count that said fourteen rooms**.
+
+So the name **alternates**, which is more than "the first build is wrong" —
+the reading this session made before measuring. Four builds in one session,
+measured:
+
+| build | node name | why |
+|-------|-----------|-----|
+| startup circuit | `CircuitBuilder` | nothing there to collide with |
+| 1 | `@Node3D@49` | the startup circuit still held the name |
+| 2 | `CircuitBuilder` | the outgoing one was called `@Node3D@49` |
+| 3 | `@Node3D@124` | the outgoing one held the name again |
+
+**Every other circuit a player builds gets a dummy name**, decided by what
+the previous world was called and by nothing about this one.
+
+Nothing a player can reach is wrong, and that is asserted rather than
+assumed: no file in `scripts/` contains the string `"CircuitBuilder"` except
+the module that assigns it, so no production code identifies a world by name
+— the controller holds `drivable["node"]` by reference. What reads the name
+is `drive_test`, twice. Its positive assertion (`names == ["CircuitBuilder"]`)
+passes on the **parity of its own build order**: the world before it is a
+farm, whose pieces go straight into `world_node` with no `CircuitBuilder`
+among them. Its other one reads the name the other way round — *"the last
+child is not called CircuitBuilder, so the farm is on screen"* — which a
+dummy name satisfies as readily as a farm does, so it cannot tell the state
+it is about from the state it is not (TRAPS 41's shape).
+
+**And the obvious fix does not fix it**, measured rather than assumed: moving
+the assignment to **after** `add_child` yields `CircuitBuilder2`, readable
+and still not the name. What would fix it is freeing the outgoing world
+before adding the new one, or not identifying a world by name at all.
+
+**Do:**
+
+- Identify a node by **reference**, never by name. A suite that wants to know
+  which node the game will drive asks the controller for
+  `drivable["node"]` and compares identity.
+- A name assigned before `add_child` is a request, not a fact. If a name has
+  to be stable, assign it after and assert it, or make sure no sibling can
+  hold it.
+- An assertion about a name is an assertion about **build order**. Ask what
+  the world before this one was, and whether the assertion survives the
+  other answer.
+
+Found in 060, by this file's own first draft asserting
+`standing == ["CircuitBuilder"]` and failing. Left unfixed in `scripts/` on
+purpose and recorded under "Human decision needed" 24: it touches a builder
+every world in the project goes through, and nothing reads the name.
+
+> A node's name is not the node's. It is whatever was free when it arrived.
