@@ -2971,3 +2971,60 @@ Found and fixed in 052, in one function: `FarmModule._check_reachable()`.
 > threshold with no name on it is a guard that does not guard the thing it is
 > named for — and a key nothing reads cannot be wrong, which is exactly why
 > nobody would notice if it stopped being true.
+
+---
+
+## 47. A sweep that never got past the door before the one it was measuring
+
+**Signature:** a reachability sweep reports that no legal input can reach a
+check, and one four-room design reaches it in a single line.
+
+**Cause:** 053 set out to answer, for every refusal category Genesis has,
+*can any request a player can send produce it?* The first sweep generated a
+"severed" dungeon — a chain with the last room left out — and reported
+`FAILED_UNREACHABLE` as out of reach. It is not out of reach at all.
+`DungeonModule.validate()` refuses a design with fewer than `rooms - 1`
+doors, so every severed design was thrown out ONE STEP EARLIER and
+`pre_check()` never saw one. A design that is disconnected *and* has enough
+doors — a triangle of three rooms and a fourth with none — is schema-legal
+and `pre_check()` refuses it immediately. The sweep had measured the
+validator and reported the answer as the pre-check's.
+
+**And the same shape a second time, in a negative fixture.** The first
+attempt at *does `FAILED_CORRIDOR` fire when a corridor does cross a room?*
+handed `post_check()` three rooms in a row with a door from the first to the
+third. It came back refused — and refused as `FAILED_UNWALKABLE`, because
+the middle room had no door at all. A fixture that fires the wrong guard
+looks exactly like a fixture that works, to any test that only asks whether
+something was refused.
+
+**Do:**
+
+- A sweep that is about step N must COUNT how many inputs reached step N, and
+  fail if that count is thin. `refusal_reach_test` asserts that 500-odd
+  designs got past `validate()` and that a decent share of them were refused
+  by `pre_check()`, so a sweep that is really measuring the door before it
+  cannot report "unreachable" quietly.
+- A negative fixture asserts WHICH category and WHICH step, never just that
+  something was refused.
+- When a sweep says a branch is unreachable, say WHY in arithmetic over the
+  code's own constants, and assert the arithmetic. "The sweep did not find
+  one" and "the numbers make it impossible" are different claims, and only
+  the second one survives a sweep that missed a shape.
+- Ask the second question too: **handed an input that DOES violate it, does
+  the check fire?** Of Genesis's twelve world-module refusal categories,
+  seven cannot be reached by any legal request, and all seven fire. None is
+  dead code. But six of the seven can be shown to be WIRED IN — their
+  violating input can be handed to the function the pipeline calls — and one
+  cannot: delete the call to `FarmModule._check_reachable()` and all 60
+  suites still pass. A guard nothing can reach is also a guard nothing can
+  prove is still connected, and where a check LIVES decides which of those
+  two it is.
+
+Found in 053, by running the sweep against the code and reading the output.
+`tests/refusal_reach_test.gd` fails against thirteen deliberate breakages,
+one at a time, and passes against the fourteenth — which is the one it
+reports.
+
+> A check cannot be measured through a door that cannot be made to carry the
+> thing it checks.

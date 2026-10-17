@@ -128,6 +128,14 @@ func pre_check(content: Dictionary, _record: Dictionary) -> Dictionary:
 
 # Work out where everything goes, and whether it can work at all.
 # Returns ok, category, reasons, layout.
+#
+# 053: a guard, and the only one of the seven whose reach is decided by the
+# REGISTRY rather than by arithmetic. All three modules override solve(), so
+# nothing a player can send is answered by the line below.
+# tests/refusal_reach_test.gd asks that by reflection over
+# WorldRegistry.modules() rather than by listing the three, so a fourth
+# world is asked the same question without that file being edited - and it
+# asserts that this refusal still comes back when the base is called direct.
 func solve(_content: Dictionary) -> Dictionary:
 	return {"ok": false, "category": "FAILED_LAYOUT", "reasons": ["this module has no solver"], "layout": {}}
 

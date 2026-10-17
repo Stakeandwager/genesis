@@ -501,6 +501,16 @@ func solve(content: Dictionary) -> Dictionary:
 			if not found:
 				failed.append(nxt)
 
+	# --- 053: a guard, and no legal request reaches it ---
+	# Ring r holds 8r slots, so rings 1..MAX_RING hold 80, and a dungeon has
+	# at most MAX_ROOMS - 1 = 23 other rooms to occupy any of them: there is
+	# always a free slot. Swept over 634 designs that got past validate(),
+	# the furthest ring ever needed was 2 of 4. It is kept because the day
+	# MAX_ROOMS, MAX_RING or the packing changes is the day that stops being
+	# true, and it FIRES:
+	# tests/refusal_reach_test.gd hands this function 200 rooms off one hub
+	# and asserts the category, and asserts the arithmetic above as well, so
+	# a change to either constant moves the suite.
 	var ok := slots.size() == rooms.size()
 	var out := {
 		"ok": ok,
@@ -593,8 +603,30 @@ func correction_feedback(result: Dictionary) -> String:
 # --- the solved dungeon ---
 
 # Step 5: the dungeon must fit, and no corridor may pass through a room it
-# does not serve. The second of those cannot happen by construction, so it is
-# a guard against a mistake here, not a gate on the AI.
+# does not serve.
+#
+# --- 053: ALL THREE of this step's refusals are guards, measured ---
+# This comment said the corridor check "cannot happen by construction" and
+# nothing had ever measured it or the two beside it. All three are now swept
+# and asserted in tests/refusal_reach_test.gd, and all three fire when the
+# layout they are about is handed in:
+#   FAILED_CORRIDOR    a corridor between non-adjacent slots runs down the
+#                      lane BETWEEN two rows, and the lane is GAP (6 m) wide
+#                      against a CORRIDOR of 4 m. Crossings over 516 solved
+#                      dungeons: 0. Fires on rooms wider than their pitch.
+#   FAILED_UNWALKABLE  005's answer: the tightest legal room leaves
+#                      MIN_SIDE - 2*WALL_THICK = 2.4 m against a BODY of
+#                      1.6 m, and a doorway is cut to the corridor's own
+#                      4 m, so no room size can pinch one. The only input
+#                      that makes walkable() refuse is a SHUT DOOR, and
+#                      set_shut() only runs on a layout already standing -
+#                      so this branch's live work is done by the same
+#                      walkable() AFTER the build, where route(), the panel
+#                      and the metrics read it. Fires on a shut door.
+#   FAILED_TOO_BIG     MAX_ROOMS rooms on a grid of pitch MAX_SIDE + GAP
+#                      span at most 23*46 + 40 = 1098 m against MAX_EXTENT
+#                      of 1400 m; the widest swept was 1098.0. Fires on
+#                      slots twenty pitches apart.
 func post_check(layout: Dictionary) -> Dictionary:
 	var rects := _rects(layout)
 	var bounds := _bounds(layout, rects)

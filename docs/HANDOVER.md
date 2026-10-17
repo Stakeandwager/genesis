@@ -24,7 +24,56 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **052**, the task this file named as
+- Last commit at the time of writing: **053**, the task this file named as
+  the next assistant task: **052's question asked of a LIST instead of a
+  key — which refusal categories can no legal request reach, and does each
+  of those checks fire when handed an input that does violate it?**
+  **THE NUMBER IS SEVEN OF TWELVE AND ALL SEVEN FIRE.** `grep` across
+  `scripts/` gives sixteen `FAILED_` categories; ten belong to the world
+  modules' four-step pipeline, and those ten are **twelve branches**,
+  because `FAILED_LAYOUT` is returned from three places for three reasons.
+  Five are reachable by a legal request and each has a named one in the
+  suite; seven are not, and **every one of the seven still refuses the thing
+  it names when handed it**. No dead refusal. The six categories the
+  CONTROLLER returns — `FAILED_SCHEMA`, `FAILED_SCENE`,
+  `FAILED_NOTHING_BUILT`, `FAILED_NO_HANDLER`, `FAILED_PARSE`, `FAILED_AI` —
+  are enumerated and **not asked**, and that is the next task.
+  **EACH "NO" IS ARITHMETIC AND NOT A SWEEP RESULT**, because a sweep that
+  missed a shape looks exactly like a bound that holds: rings 1..4 hold 80
+  slots against at most 23 other rooms; 24 rooms at pitch 46 span at most
+  1098 m against a limit of 1400; a corridor runs down a lane 6 m wide and
+  is 4 m; `MIN_ZONES` is 1 so an empty farm never reaches `solve()`; all
+  three modules override `solve()`, asked by reflection so a fourth world is
+  asked too. **This file's own first sweep got one of them wrong** and the
+  trap is TRAPS 47: it reported `FAILED_UNREACHABLE` as out of reach because
+  its disconnected designs had fewer doors than `validate()`'s floor and
+  were thrown out a step EARLIER — a triangle of three rooms and a fourth
+  outside it reaches it in one line.
+  **AND ONE GUARD CANNOT BE PROVED CONNECTED, WHICH IS THE FINDING.** Delete
+  the call to `FarmModule._check_reachable()` from `solve()` and **all 60
+  suites still pass** — measured with a full `--all` run. The other six are
+  reached through a door that takes the thing they check (`post_check(a
+  layout)`, `solve(a content)`), so wiring each of those out is caught, one
+  failure each, measured one at a time. The farm's is the only clearance
+  check made inside `solve()` on a layout `solve()` just built, and there is
+  nowhere to hand a violating one in. Moving it into `post_check()` is
+  behaviour-identical and would fix that; it changes which step refuses, so
+  it is **"Human decision needed" 18** and was not done.
+  **WHAT CHANGED IN THE CODE IS SEVEN COMMENTS** — one at each guard, naming
+  the arithmetic and the fixture, which is TRAPS 6's *"worth keeping, worth
+  labelling"* applied to the list rather than to the two that already said
+  so. `DungeonModule.post_check()`'s header claimed the corridor check
+  "cannot happen by construction" and nothing had measured it; it now says
+  so with the number beside it, and says the same for the two refusals next
+  to it it did not mention at all. 59 suites passed before and 60 after,
+  `--all` in both, lists **diffed**; `refusal_reach_test` is **93
+  assertions** and fails against **thirteen** deliberate breakages, one at a
+  time — and passes against the fourteenth, which is the one it reports.
+  **Not verified: no model sent any of this, nothing was rendered on a
+  screen, and no world, record or saved file changes** — the prompt is
+  byte-identical and `PROMPT_VERSION` did not move. See 053 below, "Human
+  decision needed" 18, and TRAPS 47.
+- The commit before it: **052**, the task that file named as
   the next assistant task: **the layout keys nothing reads, enumerated world
   by world** — and the class question it set with it, *is a layout a RECORD
   of what was decided or an INPUT to the builder?*
@@ -807,12 +856,32 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-61 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **59 suites**, counted with `ls tests/*.gd` rather than
+62 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **60 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites.
 
-Last full run (052, Godot 4.7.1 on Linux
+Last full run (053, Godot 4.7.1 on Linux —
+`4.7.1.stable.official.a13da4feb` — headless, in a cloud container):
+**suites with something to look at: 0** on all 60, with `--all`. The
+baseline at 052, measured the same way in the same container, was the same
+on 59 suites, and the lists were **diffed**: the only difference is
+`refusal_reach_test`.
+053's new suite is `refusal_reach_test` (**93 assertions**). It has no
+"failures against the pre-053 code" count, and that is not an omission:
+053 changes no behaviour, so there is no fault for it to catch. What stands
+in its place is **thirteen deliberate breakages, made one at a time and the
+suite re-run against each** — `MAX_EXTENT` 1400→900 (2 failures), `MAX_RING`
+4→1 (3), `MIN_ZONES` 1→0 (3), `GAP` 6→0.5 (4), `FAILED_SEPARATION` renamed
+in the source (3), and each of the seven guards wired OUT of the step that
+calls it (1 each for six of them). **The fourteenth it does not catch** and
+reports instead: the farm's lane guard wired out, where all 60 suites pass.
+Run with `--fixed-fps 60` and without; passes either way (TRAPS 4).
+`run_tests.bat` needed no edit: all sixteen of its `findstr` patterns were
+RUN against the name and none matches. README said 59 suites and there are
+60, counted with `ls`.
+
+The run before it (052, Godot 4.7.1 on Linux
 — `4.7.1.stable.official.a13da4feb` — headless, in a cloud container):
 **suites with something to look at: 0** on all 59, with `--all`, so
 `drive_test`, `session_test`, 048's `outgoing_world_test`, 049's
@@ -6393,6 +6462,24 @@ because what changed cannot be reached from a request:
   made 052's own new suite pass against the code it was written to catch,
   and the next person to sign a built tree needs to know.
 
+053 adds a twenty-second, and it is **nothing to type and nothing to look
+at**, because nothing a player can reach changed:
+
+- **No world, record or saved file moves.** 053 answered a question and
+  wrote down the answer. The only code changes are seven comments, one at
+  each refusal branch that no legal request can reach, naming the
+  arithmetic that puts it out of reach and the fixture that fires it.
+- **One thing is yours and it is "Human decision needed" 18**: the farm's
+  clearance check is called from inside `solve()`, and that is the one
+  guard in Genesis whose wiring no suite can hold to account — deleting the
+  call leaves all 60 suites green. Moving it to `post_check()` fixes that
+  and changes nothing a player sees; it changes which step refuses, so it
+  is yours.
+- And one worth knowing rather than typing: **a doorway is always cut to
+  the corridor's 4 m**, so `walkable()`'s *"a person 1.6 m across cannot get
+  to X"* can never be about a doorway too narrow, at any room size.
+  The only thing that makes a body's route fail is a **shut door**.
+
 **Smallest useful assistant task next.** The ledger question (033), the
 container-door question (034), the prompt-bound question (035), the validator
 question (036), the intent-door question (037), the which-field question
@@ -6440,9 +6527,44 @@ all **done**. Candidates, in the order the assistant would take them:
   Prototype 001 stubs are the standing warning about what a whitelist entry
   that builds nothing costs.
 
-- **THE NEXT ONE: which refusals can no legal request reach, and does each
-  of those checks catch the thing it names?** This is 052's question asked
-  of a LIST instead of a key, and the list is the refusal categories.
+- **THE NEXT ONE: the same two questions asked of the SIX the controller
+  returns.** 053 answered them for the ten categories the world modules
+  return and enumerated these six without asking either:
+  `FAILED_SCHEMA`, `FAILED_SCENE`, `FAILED_NOTHING_BUILT`,
+  `FAILED_NO_HANDLER`, `FAILED_PARSE` and the AI runner's `FAILED_AI` — plus
+  `GameController._order()`'s own `FAILED_UNWALKABLE`, which shares a name
+  with the dungeon's and is a different check. `refusal_reach_test` already
+  holds a row for each of them marked `NOT_ASKED`, so the work is to move
+  those rows and bring the evidence, and the enumeration is already
+  mechanical: a seventeenth category cannot be added without the suite
+  failing.
+  **What makes this one different from 053** is that these are about
+  COMMANDS rather than worlds, so the sweep is a walk of the whitelist
+  through a scene tree rather than a module pipeline — `command_schema_test`
+  and `intent_door_test` both stand `main.gd` up, and that is the pattern.
+  **Two of the six already have an answer written in a code comment that
+  nothing asserts**, which is the thing to check first and the shape TRAPS
+  14 is about: `_spawn_opponents()` says `has_track()` "can never return
+  true", and `NOTHING_BUILT`'s own comment says the three Prototype 001
+  paths "are the only ones that answer to it". `FAILED_NO_HANDLER` is the
+  one to expect an "unreachable" for — it needs a whitelisted command with
+  no case in `execute()` — and the second question is then the whole of its
+  value. **Expect the blind spot to be in the check**, and run the sweep
+  against the code it is written to catch before believing it: 053's first
+  sweep reported a reachable category as unreachable because its inputs were
+  refused one step earlier (TRAPS 47).
+
+- ~~**which refusals can no legal request reach, and does each
+  of those checks catch the thing it names?**~~ **DONE IN 053 FOR THE
+  WORLD-MODULE HALF: SEVEN OF TWELVE BRANCHES ARE OUT OF REACH AND ALL
+  SEVEN FIRE.** No dead refusal. Each "no" is arithmetic over the module's
+  own constants and asserted as such, not a sweep result. **And one guard
+  cannot be proved CONNECTED** — delete the call to
+  `FarmModule._check_reachable()` and all 60 suites pass — which is "Human
+  decision needed" 18. Left struck rather than deleted because the lesson is
+  the one worth carrying: **a guard nothing can reach is also a guard
+  nothing can prove is still wired in, and where a check LIVES decides which
+  of those two it is.** The entry as it stood:
   `sweep_test` has reported since 005 that **no legal command reaches
   `FAILED_UNWALKABLE`** — TRAPS 6's own example — and 052 found the second
   member without looking for it: the farm's reachability branch of
@@ -7258,6 +7380,159 @@ smallest and cheapest tier. A heavier model would likely be both more reliable
 and better at interpretation, at more cost per request. That is a cost
 decision, so it is his and not the assistant's.
 
+---
+
+## 053 — the refusals no legal request can reach, and which of them can be proved connected
+
+**Objective.** The task this file named as the next assistant task: *052's
+question asked of a LIST instead of a key, and the list is the refusal
+categories.* Two members were known and both had been found by accident —
+`FAILED_UNWALKABLE` by 005, the farm's lane branch of `FAILED_LAYOUT` by 052
+— and the question was how many more there are, and whether each of them
+catches the thing it names.
+
+**Starting state.** Branch `prototype-002a` at 052 (`7435974`). 59 suites,
+`--all`, 0 with something to look at, measured in this container before
+anything changed.
+
+### The enumeration, and it is mechanical
+
+`grep` for `FAILED_<NAME>` across `scripts/` gives **sixteen** categories.
+Ten of them are returned by the three world modules' four-step pipeline
+(`validate -> pre_check -> solve -> post_check`), which is the class this
+commit sweeps. Six are the controller's and the parser's — `FAILED_SCHEMA`,
+`FAILED_SCENE`, `FAILED_NOTHING_BUILT`, `FAILED_NO_HANDLER`, `FAILED_PARSE`
+and the AI runner's `FAILED_AI` — and **neither question is asked of them
+here**; they need a scene tree and a whitelist walk rather than a module
+sweep, and that is the next task below. `FAILED_UNWALKABLE` has two owners,
+the dungeon's `post_check()` and `GameController._order()`; only the first
+is swept. The parser's `UNSUPPORTED` is a refusal and is not a `FAILED_`
+category at all, so it is outside this entirely — said rather than left to
+look covered.
+
+Ten names, but **twelve branches**: `FAILED_LAYOUT` is returned from three
+different places for three different reasons, and a table with one row per
+NAME would have hidden two of them.
+
+### The answer: seven of twelve cannot be reached, and all seven fire
+
+| branch | where | (1) a legal request? | (2) fires when violated? |
+|---|---|---|---|
+| `FAILED_UNREACHABLE` | dungeon `pre_check` | **yes** — 3 rooms in a triangle, a 4th outside it | — |
+| `FAILED_DEGREES_OF_FREEDOM` | racing `pre_check` | **yes** — two straights and no corner | — |
+| `FAILED_INFEASIBLE` | racing `pre_check` | **yes** — two 10° corners, net turn 20° | — |
+| `FAILED_CLOSURE` | racing `solve` | **yes** — two 1000 m straights against one of 20 m | — |
+| `FAILED_SEPARATION` | racing `post_check` | **yes** — a 13-section composition that closes and runs over itself twice | — |
+| `FAILED_PLACEMENT` | dungeon `solve` | no — rings 1..4 hold **80** slots, a dungeon has at most **23** other rooms | **yes** — 200 rooms off one hub |
+| `FAILED_CORRIDOR` | dungeon `post_check` | no — **0 crossings** in 516 solved dungeons; a corridor runs down a lane `GAP` (6 m) wide and is 4 m | **yes** — rooms wider than their pitch |
+| `FAILED_UNWALKABLE` | dungeon `post_check` | no — 005's answer, unchanged | **yes** — a shut door |
+| `FAILED_TOO_BIG` | dungeon `post_check` | no — 24 rooms at pitch 46 span at most **1098 m**, limit **1400**; widest swept 1098.0 | **yes** — slots 20 pitches apart |
+| `FAILED_LAYOUT` (no zones) | farm `solve` | no — `MIN_ZONES` is 1, `validate()` refuses first | **yes** — `solve({"zones": []})` |
+| `FAILED_LAYOUT` (lane) | farm `solve` | no — narrowest gap over 544 farms exactly **6.0000 m** | **yes** as a function; **see below** |
+| `FAILED_LAYOUT` (no solver) | `WorldModule.solve` | no — all three modules override `solve()` | **yes** — the base called direct |
+
+**No dead refusal, and that is the headline.** Every one of the seven
+branches no player can reach still catches the thing it names when it is
+handed one. Seven guards, not seven pieces of dead code pretending to be a
+safety net.
+
+**And the sweep is not the evidence for the first column.** Each *no* is
+arithmetic over the module's own constants, asserted as such, because a
+sweep that missed a shape looks exactly like a bound that holds — which is
+how this session's first sweep got `FAILED_UNREACHABLE` wrong (TRAPS 47).
+
+### The one that cannot be proved connected, which is the finding
+
+**Delete the call to `FarmModule._check_reachable()` from `solve()`, leave
+the function sitting there, and all 60 suites still pass.** Measured, with
+the full `--all` run, not supposed.
+
+The other six guards are reached through a door that takes the thing they
+check: `post_check(a layout)`, or `solve(a content)`. A test hands that door
+a violation and the category comes back, so wiring the guard out is caught —
+measured one at a time for all six, one failure each. The farm's lane check
+is the only one called INSIDE `solve()` on a layout `solve()` has just
+built, and `solve()` cannot be made to build a violating one. **There is
+nowhere to hand it in.** So its row has two answers: the function refuses a
+violation, and the pipeline cannot be shown to call it.
+
+052 considered moving it into `post_check()` — where `WorldModule`'s own
+comment says a check on a solved layout goes, and where racing puts its
+separation check — and declined it as *behaviour-identical, a move rather
+than a fix*. It is still behaviour-identical. It is also the difference
+between a guard that can be proved connected and one that cannot, which is a
+reason 052 did not have. **Not done here**: it changes where a refusal comes
+from, so it is "Human decision needed" 18.
+
+### What changed in the code
+
+Nothing a player can reach. Seven comments, one at each guard, each naming
+the arithmetic that puts it out of reach and the fixture that fires it —
+which is TRAPS 6's own instruction (*"worth keeping, worth labelling"*)
+applied to the whole list rather than to the two members that already said
+so. `DungeonModule.post_check()`'s header **claimed** the corridor check
+"cannot happen by construction" and nothing had ever measured it; it now
+says so with the number beside it, and says the same for the two refusals
+next to it that it did not mention at all.
+
+### Evidence — what was actually run
+
+- Godot 4.7.1 headless on Linux (`4.7.1.stable.official.a13da4feb`), in a
+  cloud container. **Baseline at 052: 59 suites, `--all`, 0 with something
+  to look at. After: 60 suites, `--all`, 0 with something to look at.** The
+  lists were **diffed**; the only difference is `refusal_reach_test`.
+- `tests/refusal_reach_test.gd`: **93 assertions**. Run with `--fixed-fps 60`
+  and without; passes either way (TRAPS 4).
+- **It was run against broken code before it was believed** (052's lesson).
+  Thirteen deliberate breakages, one at a time: `MAX_EXTENT` 1400→900 (2
+  failures), `MAX_RING` 4→1 (3), `MIN_ZONES` 1→0 (3), `GAP` 6→0.5 (4),
+  `FAILED_SEPARATION` renamed in the source (3), and each of the seven
+  guards wired out of the step that calls it (1 each for six of them).
+  **The fourteenth — the farm's lane guard wired out — it does not catch**,
+  and that is reported rather than papered over.
+- `run_tests.bat` needed no edit: all sixteen of its `findstr` patterns were
+  RUN against `refusal_reach_test` and none matches, so it runs there
+  without `--fixed-fps`, which is what it gets here.
+- README said 59 suites and there are 60, counted with `ls`.
+
+### What the tests did NOT prove
+
+- **No model sent any of this.** Every request in the suite and in the
+  measuring was typed by hand; this harness has no key.
+- **Nothing was rendered on a screen**, and no world was looked at. What was
+  compared is categories, layouts and measurements, headless.
+- **No farm, dungeon, track, record or saved world changes.** The prompt is
+  byte-identical, `PROMPT_VERSION` did not move, and nothing on the owner's
+  disk was touched. The only code changes are comments.
+- **The six controller categories are not measured**, and nothing here
+  claims they are. They are enumerated, declared `NOT_ASKED`, and named as
+  the next task.
+- **"Unreachable" is a statement about today's constants**, not a theorem.
+  Each one is asserted as arithmetic so that a change to a constant moves
+  the suite, which is the most a suite can do.
+
+### Found while measuring, written up rather than fixed
+
+- **`FAILED_UNWALKABLE` has two reasons and only one of them can ever
+  happen.** A doorway is cut to the width of the corridor leg that meets it
+  — `CORRIDOR` is 4 m, `BODY` is 1.6 m — so *"a person 1.6 m across cannot
+  get to X"* for a doorway too narrow cannot be produced by any room size,
+  legal or not: rooms of 1, 2, 3 and 4 m were handed to `walkable()` and
+  none blocked anything, because a room narrower than the corridor has no
+  wall left to block with. The only input that makes `walkable()` refuse is
+  a **shut door**, and `set_shut()` only runs on a layout already standing,
+  so `post_check()` never sees one. The branch's live work is done by the
+  same `walkable()` AFTER the build, where `route()`, the panel and the
+  metrics read it.
+- **A corridor that crosses a room reports the same sentence once per leg.**
+  The fixture that fires `FAILED_CORRIDOR` comes back with *"a to c passes
+  through b"* four times. It is in a branch nothing can reach, so it costs
+  nothing today; it is written down because the day the branch is reachable
+  is the day a player reads it four times.
+
+**Next action.** The same two questions asked of the six controller
+categories — see the candidate list.
+
 ## Human decision needed
 
 1. **The six section types the prompt withholds — the owner's call, and there
@@ -7916,3 +8191,41 @@ decision, so it is his and not the assistant's.
       that would be safe either way is a suite that fails on a duplicate id,
       which is a guard and not a choice; say which of the three you want and
       it goes in with the guard.
+18. **Where the farm's clearance check lives, which decides whether it can
+    ever be proved connected.** Measured in 053 and left for you because it
+    moves where a refusal comes from.
+
+    `FarmModule._check_reachable()` is the farm's version of *"the circuit
+    must close"*. It is called from inside `solve()`, on the layout `solve()`
+    has just built. **Delete that call and every one of the 60 suites still
+    passes** — measured with a full `--all` run, not inferred. Nothing can
+    tell the connected guard from the disconnected one, because `solve()`
+    cannot be made to build a layout that violates it, so there is no input
+    that distinguishes the two.
+
+    The dungeon's three guards and racing's separation check do not have this
+    problem: they are reached through `post_check(layout)`, which takes the
+    thing they check, so a test hands it a violation and the category comes
+    back. Wiring any of those six out is caught, measured one at a time.
+
+    052 raised the same move and declined it as *behaviour-identical, a move
+    rather than a fix*, which was right on the evidence it had. The options:
+
+    - **(a) Leave it.** Costs nothing today and the guard does work when
+      called. The farm keeps the one check in this project that no suite can
+      hold to account.
+    - **(b) Move it into `post_check()`**, where `WorldModule`'s own comment
+      says a check on a solved layout goes and where racing already puts its
+      separation check. Behaviour-identical today — the branch is
+      unreachable, the category stays `FAILED_LAYOUT` — and it makes the
+      wiring testable, which is the whole of the argument. It is a change to
+      which STEP refuses, so a record's `category` would arrive from
+      `post_check` rather than `solve`; nothing in the repository reads which
+      step a category came from, checked by grep, but that is the thing to
+      look at twice before taking it.
+    - **(c) Move all three worlds' clearance checks to one place** and make
+      it the rule rather than the convention. Larger, and the class question
+      rather than the instance (TRAPS 11).
+
+    **Nothing was moved.** The guard is labelled where it stands and the
+    measurement is in `tests/refusal_reach_test.gd` and in the 053 section above.

@@ -204,6 +204,10 @@ func validate(parameters: Dictionary) -> Dictionary:
 # and build() reads the gate from _gate() for that reason.
 func solve(content: Dictionary) -> Dictionary:
 	var zones: Array = (content["zones"] as Array).duplicate(true)
+	# 053: a guard. MIN_ZONES is 1, so validate() refuses a farm of no zones
+	# one step earlier and nothing a player can send arrives here empty.
+	# Kept and asserted both ways in tests/refusal_reach_test.gd: that no
+	# legal request reaches it, and that solve({"zones": []}) still refuses.
 	if zones.is_empty():
 		return {"ok": false, "category": "FAILED_LAYOUT", "reasons": ["there is nothing to lay out"], "layout": {}}
 
@@ -255,6 +259,19 @@ func solve(content: Dictionary) -> Dictionary:
 		"lane_width": LANE_WIDTH,
 	}
 
+	# --- 053: a guard, and the one this project cannot prove is connected ---
+	# 052 measured that no legal request reaches it: solve() never leaves two
+	# zones closer than 6.0000 m over 468 farms, re-measured over 544 in
+	# tests/refusal_reach_test.gd. What 053 adds is the other half, and it is
+	# uncomfortable. Delete this call and leave _check_reachable() sitting
+	# below it, and every suite in this repository still passes - measured,
+	# not supposed. The farm is the only world whose clearance check is made
+	# INSIDE solve() on a layout solve() itself built; the dungeon's and
+	# racing's are reached through post_check(layout), so a test can hand
+	# those a violation and prove the WIRING. A violating farm layout has
+	# nowhere to be handed in. Moving this into post_check() would fix that
+	# and is behaviour-identical today; it is a change to where a refusal
+	# comes from, so it is the owner's and it is in HANDOVER.
 	var reach := _check_reachable(layout)
 	if not reach["ok"]:
 		return {"ok": false, "category": "FAILED_LAYOUT", "reasons": reach["reasons"], "layout": layout}
