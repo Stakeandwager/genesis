@@ -24,7 +24,62 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **061**, the task this file named as
+- Last commit at the time of writing: **062**, the task 061's "Next action"
+  named: **what in this project is only ever true on a screen, and can any of
+  it be measured headless?** It can, and measuring it found a fault a player
+  can reach. `GameController` has two functions that decide what is on screen
+  — `_frame_view()` and `_restore_view()` — and **before 062 no suite read
+  either**. Counted rather than remembered: the word "camera" appeared in
+  **17** of the 65 files and in exactly **three assertions** — two that a
+  particular camera is `current` (`explore_test`) and one that the controller
+  holds a camera at all (`player_door_test`). Not one read where a camera is,
+  what it is pointing at, or what it can see.
+  **THE RULE THE TWO KEEP BETWEEN THEM WAS KEPT AT TWO OF ITS THREE DOORS
+  (TRAPS 11).** The rule: when a request leaves the world empty, the view goes
+  back to the scene's own camera and the scene's own 200 m pad. `CLEAR_WORLD`
+  does it, a sectionless `CREATE_TRACK` does it, and **a `PLAN` that fails in
+  pass 3 did not** — so a plan that failed after clearing took the player's
+  world away and left a camera and a **1452 m pad still framed on the circuit
+  that was gone**. Measured in a throwaway copy before a line was changed,
+  with the plan a player meets first: two worlds and no `"around"`. **040 is
+  the commit about that exact function** and fixed the half of this path that
+  was about the world being destroyed; it could not see this half, because
+  nothing in the repository could express it. The fix is **one call** inside
+  040's own `if cleared_for_building:` guard — inside it, because a plan
+  refused before it clears must leave the view alone, which is now asserted
+  too.
+  **`tests/view_frame_test.gd` is new, 82 assertions, and is the first file in
+  this project to read a camera.** It solves `_frame_view`'s span and centre
+  back out of the camera and asks whether the pad, `near`, `far` and the
+  camera's **aim** agree; it asserts the capability rather than the arithmetic
+  as well — every corner of a world's real footprint, off the AABBs standing in
+  the scene, is inside the camera's frustum and on the pad; it asks both of
+  **every command `WorldRegistry` knows about**; and it counts the emptying
+  paths off the source, **exactly** and not as a floor, so a fourth cannot be
+  added in silence.
+  **66 SUITES PASSED, `--all`, `user://` CLEARED FIRST**, against 65 at the
+  061 baseline, lists **diffed**: the only difference is the one added line.
+  Run alone, the suite gives **4 failures before the fix and 0 after**, and six
+  deliberate faults were each injected in their own throwaway copy to prove
+  every class of assertion can fail.
+  **AND 061'S OWN GUARD CAUGHT THIS COMMIT'S FIRST DRAFT, TWICE** — an unused
+  `SCENE_PATH` constant, and then the comment explaining its removal quoting
+  the literal it was about. Both read off a run. TRAPS 59's replacement doing
+  the job it was written for, on the first new suite written after it.
+  **NOT VERIFIED: nothing was rendered.** Five of 061's six visual differences
+  — the light, the environment, the panel's anchors and the three strings — are
+  **still unmeasured by anything**; a world inside the frustum of an unlit
+  scene is a black screen and nothing here would notice. **Whether the panels
+  cover the world is not asserted**: the four `FRAME_*` constants are held to
+  be applied consistently, not to be right. The frustum answer is for
+  **1152 × 648**, the size `project.godot` configures, set on the root window
+  from the setting because a headless Godot gives it 64 × 64 — at which three
+  of four footprint corners were inside and the fourth was off the left edge,
+  which would have been a finding about the harness. See TRAPS 60.
+  **THE NEXT ASSISTANT TASK** is in 062's "Next action": the light and the
+  environment, which are probably a labelled guard rather than a measurement,
+  because this container has no renderer.
+- Before 062: **061**, the task this file named as
   the next assistant task: **the sixteen `_make_main()` fixtures, asked as a
   class (TRAPS 11)**. The stand-in is **retired**. A throwaway script walked
   both trees in one process and enumerated **twelve** differences between the
@@ -1331,6 +1386,16 @@ TRAPS), then to work in this order of priority: an unaddressed finding from
 one of the owner's sessions, then finishing something already started, then
 the smallest useful thing on the roadmap.
 
+**IT DID NOT RUN BETWEEN 2026-10-17 AND 2026-10-22.** 061 was pushed at
+16:05 on the 17th and 062 at the time of writing on the 22nd — **five days
+and roughly sixty firings with nothing in the history**. 062 cannot tell from
+inside the repository whether the task was paused, failed to start, or ran and
+found nothing worth committing without writing that down as it is told to; all
+three are possible and the first is the owner's to know. Recorded here because
+a session reading `git log` will otherwise read the gap as a decision
+somebody made. Nothing was lost: 062 resumed from 061's "Next action" exactly
+as the protocol intends.
+
 **It is told to make no commit when there is nothing honestly worth doing**,
 and to write down what it considered instead. A thin commit every two hours is
 how a repository fills with motion and no progress, and inventing work for a
@@ -1344,8 +1409,8 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-67 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **65 suites**, counted with `ls tests/*.gd` rather than
+68 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **66 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites.
 
@@ -1357,7 +1422,22 @@ worlds, and suites fail for reasons that have nothing to do with the code.
 055 took four answers off such a run before noticing. If a run is being used
 as a measurement, clear `user://` before it, baseline included (TRAPS 50).
 
-Last full run (061, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+Last full run (062, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+headless, in a cloud container with 2 cores, every run sequential with
+`user://` cleared first): **suites with something to look at: 0** on all 66,
+with `--all`. The baseline at 061, measured the same way in the same
+container, was the same on 65 suites, and the lists were **diffed**: the only
+difference is **one added line**, `view_frame_test`, 82 assertions. **No
+existing suite's result line moved**, `player_door_test`'s included.
+`view_frame_test` is new and needs no entry in either runner: it takes no
+`--fixed-fps` and is not slow.
+**AND IT SETS THE ROOT WINDOW TO `project.godot`'s VIEWPORT SIZE** —
+1152 × 648, read from the setting — because a headless Godot gives the root
+window 64 × 64 and a frustum depends on the aspect ratio. It asserts the
+window took the size before it believes anything that rests on it. See
+TRAPS 60.
+
+The run before it (061, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
 headless, in a cloud container with 2 cores, every run sequential with
 `user://` cleared first): **suites with something to look at: 0** on all 65,
 with `--all`. The baseline at 060, measured the same way in the same
@@ -1801,6 +1881,19 @@ verified, and what remains uncertain.
 
 - **Nothing has been tested by anybody but the owner.** No stranger has used
   Genesis. The external-usability claim is entirely unmeasured.
+- **NOTHING HAS EVER BEEN RENDERED IN THIS HARNESS, AND MOST OF WHAT IS ONLY
+  TRUE ON A SCREEN IS STILL UNMEASURED.** 062 is the first commit to assert
+  anything about the view, and what it covers is the **camera's place and
+  angle** — the one of 061's six visual differences that is arithmetic. Still
+  read by nothing: the `DirectionalLight3D`, the `WorldEnvironment`, the
+  command panel's anchors and the three strings in the scene. **A world
+  correctly framed in an unlit scene is a black screen and every suite would
+  still be green.** Related and narrower: whether the panels cover the world is
+  not asserted either — the four `FRAME_*` constants in `game_controller.gd`
+  are held to be applied consistently, never to be the right numbers, because
+  a `CanvasLayer`'s `Control`s are laid out but never drawn headless. That one
+  is a judgement the owner can make in a second in the editor, and is the
+  "Next action" note under 062.
 - **The web build still has no AI until the key is set on Netlify.** The proxy
   is built (`netlify/functions/interpret.js`, 020) and the browser asks it
   instead of Google, but it reads `GEMINI_API_KEY` from the Netlify site's
@@ -9253,6 +9346,240 @@ be wrong and the corrections are the useful part.
    suite reads it. It is four lines and a `match`. Whether a colour is worth
    a test is a judgement about what a panel suite is for, so it is noted
    rather than taken.
+
+## 062 — the layer nothing could read, and the rule kept at two of its three doors
+
+**Objective.** 061's "Next action", in its own words: *"what in this project
+is only ever true on a screen, and what would it take to measure one of them
+headless? `camera.look_at_from_position` and `_restore_frame` are arithmetic
+and could be asserted without a pixel."* Answer that, and in answering it find
+out whether the layer nothing had ever read was in fact correct.
+
+**Starting state.** Branch `prototype-002a` at `b84cfb2` (061). 65 suites,
+`--all`, `user://` cleared first: **suites with something to look at: 0**,
+measured in this container before anything was changed.
+
+### The layer, and what "nothing could read it" means exactly
+
+`GameController` has two functions that decide what a player sees after a
+build:
+
+- `_frame_view(bounds_min, bounds_max)` — pulls the camera back far enough to
+  hold the world that was just built, aims it slightly right of and nearer
+  than the centre so the panels do not cover the world, and grows the ground
+  pad under it. Called at **three** places: after a plan, after a world build,
+  and from `show_unrecorded`.
+- `_restore_view()` — puts the camera's transform, near and far, and the pad's
+  size and position, back to the ones `scenes/main.tscn` has. Called at
+  **two**.
+
+**No suite read either.** Grepped across all 65: the word "camera" appears in
+**17** of the 65 files, and in exactly **three assertions** — counted, not
+remembered:
+
+```
+explore_test:78     walker.camera.current             which camera is live
+explore_test:117    main.controller.camera.current    which camera is live
+player_door_test:374  main.controller.camera != null  that there is one
+```
+
+Every other appearance is a comment. **Not one read where a camera is, what it
+is aimed at, or what it can see.** That is a whole layer of the game with no
+reader — and a layer with no reader does not accumulate no faults, it
+accumulates uncounted ones (TRAPS 60).
+
+### The fault, which is the rule kept at two of its three doors (TRAPS 11)
+
+The rule the two functions keep between them is one sentence: **when a request
+leaves the world empty, the view goes back to the scene's own camera and the
+scene's own 200 m pad.** The paths that empty the world without building
+another were enumerated by reading **every call of `_clear_world_node()` in
+`game_controller.gd`**, not from memory — six calls, three of which are
+followed by a build and a framing, leaving three in the class:
+
+| path | before 062 |
+|---|---|
+| `CLEAR_WORLD` — `_clear_world()` | restores |
+| a sectionless `CREATE_TRACK` — `_build_prototype_ring()` | restores |
+| a `PLAN` that fails in **pass 3** — `_execute_plan()` | **did not** |
+
+**Measured in a throwaway copy outside the repository with its own
+`config/name` (TRAPS 50), before a line was changed**, with the plan a player
+meets first — two worlds and no `"around"`, which `_place()` centres on each
+other and then refuses because neither contains the other:
+
+| after | camera | ground pad | world children |
+|---|---|---|---|
+| a 500 m circuit | (455.2, 528.0, 238.4) | 1452 m at (310, −250) | 1 |
+| `CLEAR_WORLD` | (0, 90, 110) — the scene's | 200 m at origin | 0 |
+| a sectionless `CREATE_TRACK` | (0, 90, 110) — the scene's | 200 m at origin | 0 |
+| **the failed plan** | **(455.2, 528.0, 238.4)** | **1452 m at (310, −250)** | **0** |
+
+A camera and a 1452 m pad still framed on a circuit that is no longer there.
+Both farms really do build in pass 3 — the ledger shows two `Farm built`
+lines — and the plan fails after the standing world has been cleared for
+building.
+
+**040 is the commit about that exact function**, and it fixed the half of this
+path that was about the world being destroyed before Genesis knew it could
+replace it. It did not see this half, and the reason is not carelessness:
+**nothing in the repository could express it.** A missing world is a child
+count. A camera left in the wrong place is twelve floats nobody had ever asked
+for.
+
+### Implementation
+
+- **`scripts/game_controller.gd`** — one call, `_restore_view()`, inside the
+  `if cleared_for_building:` block of `_execute_plan()`. Inside the guard, because
+  a plan refused in pass 1 has cleared nothing and its view must **not** be
+  put back: that is 040's rule seen from the view's side, and section 3 of the
+  new suite asserts both halves.
+- **`tests/view_frame_test.gd`** — new, 82 assertions, six sections numbered
+  0 to 5. It is the first file in this project to read a camera.
+
+### What the suite asserts, and why each assertion is about a fact
+
+0. **What the controller captured is the scene's own camera and pad**, compared
+   against a **freshly instantiated copy of the scene** rather than against
+   numbers written in the suite — so the day somebody moves the camera in the
+   editor this says what moved, not that a literal is stale. It also asserts
+   the live camera has **already moved** by then, which is what makes the
+   capture meaningful: `main.gd` shows an unrecorded circuit at startup, and
+   that frames the view. And it asserts the scene's camera is **pitched down**,
+   at 40.0°, which is the one of 061's six visual differences anything can
+   read: the retired stand-in's camera was level.
+1. **The framing arithmetic, solved back out of what it set.** `_frame_view`
+   sets five things from one centre and one span. The suite solves the span
+   back out of the camera's height and the centre back out of its position,
+   then asks whether the pad's centre, the pad's size, `near`, `far` and the
+   camera's **aim** all agree with them. Every constant comes from
+   `GameController`, never retyped (TRAPS 28). Asked of **every command
+   `WorldRegistry` knows about**, with an assertion that each one has a sample
+   request — so a fourth kind of world cannot be added without this suite
+   asking the same question of it (TRAPS 11).
+2. **The capability, not the arithmetic**: every corner of the world's real
+   footprint — taken off the `VisualInstance3D` AABBs standing in the scene,
+   not off any number a module reported — is **inside the camera's frustum**,
+   and **on the ground pad**. `Camera3D.is_position_in_frustum()` is a matrix
+   multiplication and answers headless.
+3. **The class**: each of the three emptying paths, through `_handle_request`,
+   each preceded by a real build, with "the view has moved off the scene's
+   camera" asserted **first** so that "it went back" can never pass because it
+   never left. Plus the complement: a plan refused before it clears leaves the
+   world standing **and** its framing untouched.
+4. **The class is closed, read off the source.** Six `_clear_world_node()`
+   calls, three `_restore_view()`, three `_frame_view(`, counted in
+   `game_controller.gd` — **exact counts, not floors**, because the claim is
+   that the class has no fourth member and a floor would pass on a path nobody
+   had classified (TRAPS 6). Plus: exactly **two** lines in `scripts/` move the
+   overhead camera at all.
+5. **`/view` comes back to the framed camera**, not to the scene's. A player
+   who drives a circuit and stops is looking at the circuit.
+
+### Evidence — what was actually run
+
+Godot 4.7.1 headless on Linux (`4.7.1.stable.official.a13da4feb`), in a cloud
+container with 2 cores, every run **sequential** with `user://` cleared first
+(TRAPS 50).
+
+- **Baseline at 061**: 65 suites, `--all`, **0 with something to look at**.
+- **After**: 66 suites, `--all`, **0 with something to look at**.
+- **The lists were diffed.** The only difference is **one added line**,
+  `view_frame_test  VIEW FRAME 82 assertions, failures=0`. **No existing
+  suite's result line moved.**
+- `view_frame_test` was also run alone, before and after the fix: **4
+  failures** before, **0** after. It takes **1.0 s** and needs no
+  `--fixed-fps`.
+- **The full run was done three times and only the third is quoted, which is
+  worth writing down rather than tidying away.** The first came back with
+  `player_door_test` at one failure — 061's guard catching this commit's
+  unused `SCENE_PATH`, below. The second was clean. **The third was needed
+  because the second had been spoiled from inside this session:** a single
+  suite was run for a quick check while the full run was still going, and
+  both share one `user://`, which is TRAPS 50 exactly, committed by the
+  session that had just read it. Nothing was believed off that run; it was
+  discarded and the whole thing re-run with `user://` cleared. The first and
+  third agree line for line but for the added suite.
+
+**And 061's own guard caught this commit's first draft**, which is worth more
+than the fix: the new suite carried a `SCENE_PATH` constant, spelled out in
+full, that it never used, and `player_door_test`'s enumeration — *"a scene
+resource path is written out in this file and nowhere else"* — **failed naming
+`view_frame_test.gd`**. Then it failed a **second** time, because the comment
+explaining the removal quoted the literal it was about. Both were read off a
+run. That is TRAPS 59's replacement doing exactly the job it was written for,
+on the first new suite written after it.
+
+### Run against broken code before it was believed (TRAPS 51)
+
+Six deliberate faults, one at a time, each in its own throwaway copy of the
+project outside the repository with its own `config/name` so none could share
+`user://` with anything, FAIL lines **read** rather than counted.
+
+| fault | result |
+|---|---|
+| 1. the 062 fix reverted | **4** — the camera, the near/far and the pad on the plan path, and the count of restores in section 4 |
+| 2. `FRAME_HEIGHT` 0.80 → 0.08, so the camera barely leaves the ground | **1** — `CREATE_TRACK`'s near-left footprint corner falls out of the frustum. The arithmetic assertions all still pass, correctly: the suite solves the span out of the same constant, so a tuning change is not a fault and only the capability check has an opinion |
+| 3. the pad centred 100 m from where the camera is aimed | **4** — all three worlds' "pad is centred where the camera is aimed", and the dungeon falls off the pad's edge |
+| 4. `look_at_from_position` replaced by setting `camera.position`, so the camera is placed but never aimed | **4** — all three worlds' aim assertion, at **dot 0.977**, plus section 4's count of lines that move the camera. Worth reading: the camera keeps the scene's 40° pitch, so it is *nearly* right, every position assertion passes, and only the aim catches it |
+| 5. the scene's camera levelled to the retired stand-in's `(0, 80, 120)` | **2** — the pitch assertions, and **only** those. The live camera is aimed by `look_at`, so the levelling is invisible until a world is cleared; section 0 is the only thing in this project holding the scene's camera to being pitched at all |
+| 6. `_restore_view` puts the transform back but not the near and far planes | **3** — the near/far assertion on all three emptying paths |
+
+### Not verified
+
+- **NOTHING WAS RENDERED. No pixel was drawn and no window opened.** Every
+  number here is a transform, a matrix or an AABB.
+- **FIVE OF 061'S SIX VISUAL DIFFERENCES ARE STILL UNMEASURED BY ANYTHING** —
+  the light, the environment, the panel's anchors and the three strings. This
+  commit measures the sixth, the camera's place and angle. **A world inside the
+  frustum of a scene with no light in it is a black screen and nothing here
+  would notice.**
+- **WHETHER THE PANELS COVER THE WORLD IS NOT ASSERTED.** `_frame_view` aims
+  right of and nearer than the centre precisely because the command panel
+  covers the bottom and the history and metrics panels cover the right. Where
+  those panels actually end is a `Control` layout under a `CanvasLayer`, laid
+  out but never drawn headless. The suite asserts the world is in the **3D
+  frustum**, not that it is in the part of it a player can see. The four
+  `FRAME_*` constants are therefore still **unvalidated as a choice**: they are
+  asserted to be applied consistently, not to be right.
+- **THE FRUSTUM ANSWER IS FOR 1152 × 648**, the size `project.godot`
+  configures, set on the root window from the setting. A player who resizes the
+  window, and the web build's canvas, are both other aspect ratios and neither
+  was measured.
+- **NO FILE IN `scripts/` CHANGED EXCEPT `game_controller.gd`**, and in it one
+  call inside one existing guard. Nothing about interpretation, validation,
+  construction, measurement, the ledger or the prompt moved. `PROMPT_VERSION`
+  did not move and `prompt_bounds_test` passed.
+- **NO MODEL SENT ANYTHING** and no request left the container. No world,
+  record or saved file of the owner's changed. `docs/GENESIS_BRIEF.md` was not
+  edited.
+- **NO BROWSER RAN AND NO WEB EXPORT WAS MADE**, so 057's "Next action" is
+  untouched and still the owner's.
+- The fault fixed here is **visible only**. No measurement, record, readback or
+  verdict was wrong because of it, and that was checked rather than assumed:
+  the full-run lists are identical but for the new line.
+
+### Next action
+
+**The light and the environment, which are the next two of the six, and are
+probably not measurable the way the camera was.** A `DirectionalLight3D` at a
+rotation and a `WorldEnvironment` with a sky are state a suite can read off the
+scene — that much is the same trick as section 0 — but *whether anything is lit*
+is a renderer's answer and this container has none. The honest smallest step is
+the one section 0 already takes for the camera: assert that the scene **has**
+them, with the values it has, so the day one is deleted or switched off a suite
+says so. That is a guard, not a measurement, and should be labelled as one
+(TRAPS 6).
+
+**And one thing for the owner rather than a task.** The four `FRAME_*`
+constants decide whether a built world is hidden behind the panels, and nothing
+can check them headless — the panels are laid out but never drawn. That is a
+judgement a pair of eyes makes in a second and a harness cannot make at all:
+build a 900 m circuit and a two-room dungeon in the editor and say whether each
+sits clear of the panels. It is the cheapest piece of the visual layer the
+owner can settle and the assistant cannot.
+
+---
 
 ## 061 — the stand-in retired, and the floor it had been lending the harness
 

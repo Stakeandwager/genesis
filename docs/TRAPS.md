@@ -3791,3 +3791,80 @@ said so.
 
 > A guard keyed on how a thing is written guards the writing. The project
 > will find another way to write it, and the guard will still be green.
+
+---
+
+## 60. A whole layer with nothing able to read it, and the rule kept at two of its three doors
+
+**Signature:** a fault survives a commit written expressly about the function
+it lives in, and survives 65 green suites, because the only evidence of it is
+on a screen nobody is looking at.
+
+**Cause:** `GameController` has two functions that decide what a player sees
+after a build — `_frame_view()`, which pulls the camera back far enough to
+hold the world and grows the ground pad under it, and `_restore_view()`, which
+puts both back the way `scenes/main.tscn` has them. **Before 062 no suite read
+either.** Counted rather than remembered: the word "camera" appeared in **17**
+of the 65 files and in exactly **three assertions** — two that a particular
+camera is `current`, one that the controller holds a camera at all. Every other
+appearance was a comment. Not one read where a camera is, what it is aimed at,
+or what it can see.
+
+The rule the two functions keep between them is one sentence: *when a request
+leaves the world empty, the view goes back to the scene's own camera and the
+scene's own 200 m pad.* Read off every call of `_clear_world_node()` in the
+file, there are three paths that empty the world without building another, and
+**the rule was kept at two of them**:
+
+| path | |
+|---|---|
+| `CLEAR_WORLD` | restores |
+| a sectionless `CREATE_TRACK` | restores |
+| a `PLAN` that fails in pass 3 | **did not** |
+
+So a plan that failed after clearing took the player's world away and left a
+camera and a 1452 m ground pad still framed on the circuit that was no longer
+there. Reachable with the plan a player meets first: two worlds and no
+`"around"`, which `_place()` centres on each other and refuses.
+
+**040 is the commit about that exact function**, and it fixed the half of this
+path that was about the world being destroyed. It did not see the other half,
+and the reason is not carelessness: **nothing in the repository could express
+it.** A missing world is a child count. A camera left in the wrong place is
+twelve floats nobody had ever asked for.
+
+**And the measurement nearly asked its question at a size no player has.** A
+frustum depends on the aspect ratio, and a headless Godot gives the root window
+**64 × 64**. The first draft of the new suite's capability check found three of
+the four corners of a world's footprint inside the frustum and the fourth off
+the left edge, at every circuit size tried. That is not a finding about Genesis.
+At the size `project.godot` configures — 1152 × 648 — all four are inside with
+room to spare.
+
+**Do:**
+
+- Ask of every layer, not every function: **what in this project is only ever
+  true on a screen, in a log, in a file nobody reads back?** A layer with no
+  reader accumulates faults at the rate the code changes, and none of them
+  costs a test.
+- Most of what looks visual is **arithmetic**. A transform is twelve floats, a
+  frustum is a matrix, and `Camera3D.is_position_in_frustum()` answers headless
+  without drawing anything. "We cannot test it, it is graphical" is a claim
+  about Genesis and gets checked like one (TRAPS 14).
+- When a rule is kept in more than one place, **enumerate the places off the
+  source** and check every one. Two of three doors is how this fault looked
+  from the inside: correct, twice, in the two functions anybody would read.
+- **Set the measurement's own conditions from the project's settings, never
+  from a literal, and assert they took.** A headless default that no player
+  ever meets turns a capability check into a check on the harness (TRAPS 6).
+- A guard keyed on **line distance** is a guard on comment length. 062's first
+  draft asserted that each `_restore_view()` sat within three lines of a
+  `_clear_world_node()`; it passed, and then failed the moment the commit added
+  its own restore with a comment above it. Keyed on **function scope** instead,
+  it says what it meant to say.
+
+Found in 062, by asking 061's "Next action" — *what in this project is only
+ever true on a screen?* — rather than by finding the fault.
+
+> A layer nothing can read is not a layer with no faults. It is a layer whose
+> faults have never been counted.

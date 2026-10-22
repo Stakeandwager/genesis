@@ -943,6 +943,24 @@ func _execute_plan(parameters: Dictionary) -> void:
 			track_builder.clear()
 			opponent_builder.clear()
 			_clear_world_node()
+			# --- 062: and the view goes with it ---
+			# The rule the project already kept at its other two doors: when
+			# a request leaves the world empty, the camera and the ground pad
+			# go back to the ones the scene has. CLEAR_WORLD does it and so
+			# does a sectionless CREATE_TRACK; this path did not, so a plan
+			# that failed in pass 3 took the player's world away and left a
+			# camera and a 1452 m pad still framed on it. Measured before it
+			# was changed, with the plan a player meets first - two worlds
+			# and no "around", which both _place() on the origin and fail
+			# because neither contains the other.
+			#
+			# 040 is the commit that stopped this function destroying a world
+			# it had not yet decided it could replace. This is the half of
+			# the same path that was only ever visible, which is why 040 did
+			# not see it: nothing in this repository could read a camera.
+			# tests/view_frame_test.gd now can, and section 4 of it counts
+			# the doors so a fourth cannot be added without an answer.
+			_restore_view()
 		_finish_failed(record, "FAILED_SCENE", plan_problems)
 		return
 
