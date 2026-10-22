@@ -24,7 +24,17 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **063**, the task 062's "Next action"
+- Last commit at the time of writing: **064**, which is a **record and not a
+  change** — no code, no scene, no test. Asked whether 063's push "went
+  through", and the answer is that the only workflow this repository has, the
+  `web build`, **has failed on every push since 14 October — 46 of them.** The
+  export succeeds in 9 seconds; the **publish** fails because
+  `NETLIFY_AUTH_TOKEN` and `NETLIFY_SITE_ID` are empty, so the Netlify CLI
+  falls back to an interactive login and times out after five and a half
+  minutes. **The live site is still commit `71b065f`, from before 021.** The
+  secrets are the owner's and 064 touched nothing. New "Human decision
+  needed" 27: whether the suite should run in CI at all, which it never has.
+- Before 064: **063**, the task 062's "Next action"
   named: **the light and the environment, the next two of 061's six visual
   differences.** 062 guessed they would not be measurable the way the camera
   was. **One of them was.** A `DirectionalLight3D` emits along its own local
@@ -1959,6 +1969,30 @@ verified, and what remains uncertain.
   a `CanvasLayer`'s `Control`s are laid out but never drawn headless. That one
   is a judgement the owner can make in a second in the editor, and is the
   "Next action" note under 062.
+- **AND THE LIVE SITE HAS NOT BEEN UPDATED SINCE 14 OCTOBER. The `web build`
+  workflow has FAILED ON EVERY PUSH SINCE RUN 28, which is 46 consecutive
+  failures**, and nothing in these documents said so until 064 went looking.
+  Read off the GitHub Actions API rather than remembered:
+
+  | | |
+  |---|---|
+  | last successful run | **27**, commit `71b065f` (020), 2026-10-14 06:26 |
+  | first failure | **28**, *"Deploy with the Netlify CLI, to one URL"*, 06:30 |
+  | failures since | **46**, every push, 044 through 063 among them |
+
+  **The export is not what fails.** On 063's own run (73) the steps *"Fetch
+  Godot and its web export template"* and *"Import, then export"* both
+  **succeeded**, in 9 seconds — so the web export of the current code,
+  `scenes/main.tscn` fix included, builds fine. The step that fails is
+  *"Publish to Netlify"*, and the log says why in one line: `NETLIFY_AUTH_TOKEN`
+  and `NETLIFY_SITE_ID` are **both empty in the job environment**, so the
+  Netlify CLI falls back to an **interactive login**, prints an authorize URL
+  to a log nobody is reading, waits five and a half minutes and exits 1.
+  **So every push for eight days has spent five minutes waiting for a human to
+  click a link in a CI log.** Setting those two secrets is the owner's and only
+  the owner's — see the note under 020 and "Human decision needed" 19. Until
+  then **what a visitor sees is commit `71b065f`**, which predates everything
+  from 021 onward.
 - **The web build still has no AI until the key is set on Netlify.** The proxy
   is built (`netlify/functions/interpret.js`, 020) and the browser asks it
   instead of Google, but it reads `GEMINI_API_KEY` from the Netlify site's
@@ -6841,7 +6875,15 @@ and recorded because it is what made this commit's own suite vacuous.
 worked before 057, and that is new information.** The proxy is built (020):
 set `GEMINI_API_KEY` in the Netlify site's environment variables, and set
 `NETLIFY_AUTH_TOKEN` and `NETLIFY_SITE_ID` as GitHub secrets so a push
-deploys. After that, a stranger with the link can type a sentence and get a
+deploys.
+
+**AND "SO A PUSH DEPLOYS" IS CURRENTLY FALSE, WHICH 064 MEASURED RATHER THAN
+ASSUMED.** Those two secrets are empty, and the `web build` workflow has
+therefore failed on **every push since run 28** — 46 of them. The export
+succeeds; the publish never happens. So the second half of this paragraph is
+not an optional extra that would make deploys automatic: **it is the thing
+standing between every commit since 021 and the live site.** See the new
+bullet under "Limitations — unverified or absent". After that, a stranger with the link can type a sentence and get a
 world, which is the first time that has ever been true. Nothing the assistant
 can do moves this: the key must not be in the repository.
 
@@ -9412,6 +9454,103 @@ be wrong and the corrections are the useful part.
    a test is a judgement about what a panel suite is for, so it is noted
    rather than taken.
 
+## 064 — the deploy that has failed on every push since 14 October
+
+**Objective.** None of its own: this is a **record, not a change**. No code,
+no scene and no test was touched. It exists because the question *"did the
+build go through?"* was asked about 063, and answering it honestly meant
+looking at the one workflow this repository has — which turned out to be
+failing, and to have been failing for eight days, with nothing in these
+documents saying so.
+
+**Starting state.** Branch `prototype-002a` at `924d274` (063). 67 suites,
+`--all`, **0 with something to look at**, three byte-identical runs. That part
+was already true and is unchanged by this commit.
+
+### What was measured
+
+`.github/workflows/web.yml` is the only workflow in the repository. **It is
+not a test runner** — the headless suite has never run in CI and does not run
+here either. What it does is export the Godot web build on every push to
+`prototype-002a` and publish it to Netlify. Read off the Actions API:
+
+| | |
+|---|---|
+| last successful run | **27**, commit `71b065f` (020), 2026-10-14 06:26 |
+| first failure | **28**, *"Deploy with the Netlify CLI, to one URL"*, 2026-10-14 06:30 |
+| consecutive failures since | **46** — every push, 021 through 063 |
+
+**The export is not what fails**, and that is the part worth knowing. On
+063's own run, number 73, the job's steps came back:
+
+```
+3. Fetch Godot and its web export template   success   (8s)
+4. Import, then export                        success   (9s)
+5. Publish to Netlify                         FAILURE   (5m 27s)
+```
+
+So the web export of the current code — `scenes/main.tscn`'s fixed sun
+included — **builds cleanly with the 4.7.1 web template**. The failure is in
+the publish, and the log gives the cause in two lines of job environment:
+
+```
+NETLIFY_AUTH_TOKEN:
+NETLIFY_SITE_ID:
+Logging into your Netlify account...
+Opening https://app.netlify.com/authorize?response_type=ticket&ticket=...
+- Waiting for authorization...
+Error: Timed out waiting for authorization.
+```
+
+Both secrets are **empty**, so the Netlify CLI falls back to an **interactive
+login**, prints an authorize link into a log nobody is reading, and waits.
+**Every push for eight days has spent five and a half minutes waiting for a
+human to click a link in a CI log, then exited 1.**
+
+### Why this was not found before, which is the same shape as 062 and 063
+
+The gap is not that nobody knew the secrets were unset — HANDOVER has said
+*"set `NETLIFY_AUTH_TOKEN` and `NETLIFY_SITE_ID` as GitHub secrets so a push
+deploys"* since 020, under the owner's own outstanding item. **The gap is that
+nothing ever read the result.** The sentence describes a future in which the
+secrets are set; no document recorded that in the present they are not, and
+that the consequence is 46 red runs and a public site frozen at a commit from
+before 021. **A push being red is only ever true on a page nobody in this loop
+opens**, which is TRAPS 60's lesson one layer out from the game: the
+unattended task reads `git log`, PROTOCOL, HANDOVER and TRAPS, and the
+workflow's verdict is in none of them.
+
+### What changed
+
+- **`docs/HANDOVER.md` only.** A new bullet under "Limitations — unverified or
+  absent" with the table above; a correction to the 020 note, whose *"so a
+  push deploys"* is currently **false**; and this section.
+- **NOTHING ELSE.** No code, no scene, no test, no workflow file.
+
+### Not verified, and not done
+
+- **NO SECRET WAS SET, NO WORKFLOW FILE WAS EDITED AND NOTHING WAS
+  RE-RUN.** Secrets and deployment are the owner's by standing instruction and
+  this commit does not touch them. The fix is two values in **Settings →
+  Secrets and variables → Actions**, and it is his.
+- **IT IS NOT KNOWN WHETHER THE DEPLOY WOULD SUCCEED ONCE THEY ARE SET.** All
+  that is established is which step fails and why. Whether the site then
+  serves a working build is the first deploy's answer, not this one's.
+- **THE SUITE STILL DOES NOT RUN IN CI**, and this commit does not propose
+  that it should — adding it would be a change to what a push costs and does,
+  which is the owner's call. It is written up as **"Human decision needed"
+  27**.
+- **NO BROWSER RAN.** The export's success is GitHub's report of its own
+  step, not a page that was loaded and looked at.
+
+### Next action
+
+Unchanged: 063's, the command panel's anchors and the three strings in the
+scene. This commit adds nothing to the assistant's queue — it moves one thing
+onto the owner's, where it already half-was.
+
+---
+
 ## 063 — the sun that pointed along the ground
 
 **Objective.** 062's "Next action", in its own words: *"The light and the
@@ -11875,3 +12014,22 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     **And the same fix changes what the web build looks like**, because the
     web build gets the same scene. Nothing here exported or rendered anything,
     so the first look at it is the owner's, in the editor or on the site.
+
+27. **Should the headless suite run in CI?** Found while writing 064, which is
+    the commit that noticed the `web build` workflow had failed 46 times
+    running. The suite has **never** run in GitHub Actions: the only workflow
+    exports the web build and publishes it. Every `failures=0` this project
+    has ever quoted was produced on the owner's machine or in an assistant's
+    container, by hand.
+
+    The case for: a push that breaks a suite is currently invisible until
+    somebody runs `run_tests.sh`, and the unattended task is the only thing
+    that routinely does. The case against, and it is not small: `--all` takes
+    minutes of a runner's time per push, the two slow racing suites are most
+    of it, and this project's whole claim rests on the suite being run against
+    **what is committed** rather than against a copy — which CI does satisfy,
+    but so does the owner. It is also a change to what a push costs.
+
+    **Nothing was built or proposed in the workflow file.** If the answer is
+    yes, the smallest honest version is the fast suites only, on push, with
+    `--all` left to a manual trigger.
