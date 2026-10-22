@@ -3868,3 +3868,73 @@ ever true on a screen?* — rather than by finding the fault.
 
 > A layer nothing can read is not a layer with no faults. It is a layer whose
 > faults have never been counted.
+
+---
+
+## 61. The sun's rotation, written into the three slots the engine ignores
+
+**Signature:** a value that has been wrong since the project's first commit,
+in a node every suite stands up and nothing has ever read, and the numbers
+that should hold it are sitting one field away, in a field that does nothing.
+
+**Cause:** `scenes/main.tscn` has had this line since `614a1f5`, Prototype
+001, and no commit between then and 063 touched it:
+
+```
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45, -30, 0)
+```
+
+That is an **identity basis** with an **origin of (-45, -30, 0)**, on a
+`DirectionalLight3D`. A directional light is infinitely far away: the engine
+**ignores its position entirely** and emits along the node's local -Z, so its
+rotation is the whole of what it does. With no rotation the sun pointed
+**horizontally**, and `N·L` for every horizontal surface in Genesis — the pad
+the game starts on, a track's road, a farm's zones, a dungeon's floors — was
+**exactly 0.000000**. The three numbers that would have aimed it were in the
+one field on that node that changes nothing.
+
+It survived 62 commits, 66 green suites and eight faults found by the owner's
+own editor sessions, and the reason is TRAPS 60's reason: **the word
+"DirectionalLight" appeared nowhere in `scripts/` or `tests/`.** Not in an
+assertion, not in a comment. Neither did "WorldEnvironment" or "ambient".
+
+**Do:**
+
+- For each node in a scene, ask **which of its twelve floats actually do
+  anything.** A directional light's position does nothing; a camera's does.
+  Three numbers in a slot the engine ignores, on a node whose other slot is
+  unset, are a value written into the wrong field — and that is a reading, not
+  a guess, because the numbers themselves say what they were for.
+- **A hand-ordered `Transform3D` literal in a `.tscn` is the transpose of the
+  basis you computed in code.** 063's first fix was going to be written out by
+  hand from `Basis.from_euler()`'s own printed axes, which would have installed
+  the **inverse** rotation — and the existing line gave no warning, because an
+  identity basis is its own transpose. What caught it was asking Godot to
+  serialize the scene and reading the line it wrote. Let the engine write the
+  twelve floats.
+- **"We cannot test it, it is graphical" is a claim about Genesis** (TRAPS 14,
+  TRAPS 60). Whether anything is *lit* needs a renderer. Whether the sun can
+  reach a floor **at all** is one dot product, and it is the question that was
+  wrong.
+- State the cost **at the width it is true** (TRAPS 15). The scene's
+  `Environment` has a sky background with ambient source BG at full sky
+  contribution, so horizontal surfaces were still lit — flatly, from
+  everywhere, with no sun term and no shadows. "The screen was black" would
+  have been false, and is asserted nowhere.
+
+**And the deliberate fault that caught the new suite's first draft, which is
+worth more than the fix.** That draft asked every question of the **running
+game**, reasoning that the light a player gets is a stronger subject than the
+light the file describes. It is — for a light. It is the **weaker** subject for
+a camera, and the suite's class assertion covers both: `_frame_view()` **aims
+the live camera on every build**, so with the scene's camera rotation deleted
+the draft reported **0 failures** and passed on a camera that had no rotation
+in the file at all. Read the live state to find out what a player gets; read
+the **file** to find out whether a value is there to be got. A value something
+else supplies every frame cannot be found missing by looking at the frame.
+
+Found in 063, by taking 062's "Next action" — *the light and the environment* —
+at its word, and finding that one of the two was arithmetic after all.
+
+> A number in a field the engine ignores is not a number with no effect. It is
+> a number whose effect was wanted somewhere else.

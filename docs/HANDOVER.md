@@ -24,7 +24,62 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **062**, the task 061's "Next action"
+- Last commit at the time of writing: **063**, the task 062's "Next action"
+  named: **the light and the environment, the next two of 061's six visual
+  differences.** 062 guessed they would not be measurable the way the camera
+  was. **One of them was.** A `DirectionalLight3D` emits along its own local
+  -Z and the engine **ignores its position entirely**, so its rotation is the
+  whole of what it does — and `scenes/main.tscn` had carried
+  `Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45, -30, 0)` since the project's
+  **first commit**: an identity basis with the three numbers sitting in the
+  origin slots, a rotation written into the one field on that node that
+  changes nothing. **The sun pointed horizontally.** `rotation_degrees` read
+  `(0, 0, 0)`, the direction the light travelled was `(0, 0, -1)`, and `N·L`
+  for every horizontal surface in Genesis — the 200 m pad the game starts on,
+  a track's road, a farm's zone slabs, a dungeon's floors — was **exactly
+  0.000000**. The only surfaces the sun reached were walls facing +Z.
+  **STATED AT THE WIDTH IT IS TRUE (TRAPS 15): the screen was not black.** The
+  `Environment` has a sky background with ambient source `BG` at full sky
+  contribution, so horizontal surfaces were lit flatly by the sky, with no sun
+  term and no shadows (`shadow_enabled` is `false`). What was lost is the
+  **directional half** of the lighting.
+  **THE FIX IS ONE LINE** — the same three numbers moved into the basis — and
+  **the twelve floats were written by Godot, not by hand**: a `.tscn`'s
+  `Transform3D` literal is the **transpose** of the basis `Basis.from_euler()`
+  prints, so the hand-ordered version would have installed the inverse
+  rotation, and the old line gave no warning because an identity basis is its
+  own transpose. See TRAPS 61.
+  **`tests/scene_light_test.gd` is new, 26 assertions, and is the first file
+  in this project to read a light or an environment at all** — before it,
+  "DirectionalLight", "WorldEnvironment" and "ambient" appeared **nowhere** in
+  `scripts/` or `tests/`, not even in a comment. Section 0 is a **labelled
+  guard** (every line prefixed `GUARD:`) that the scene has a sun and a sky
+  and both are switched on; section 1 is the measurement; section 2 asks the
+  rule as a **class** — every node in the scene whose job is decided by which
+  way it points, which is the camera as well as the light — and closes it off
+  the source, nothing in `scripts/` makes a light or an environment; section 3
+  reads the running game after a real build.
+  **67 SUITES PASSED, `--all`, `user://` CLEARED FIRST**, against 66 at the
+  062 baseline, lists **diffed**: the only difference is the one added line.
+  Run alone the suite gives **7 failures before the fix and 0 after**, and
+  **eight deliberate faults** were each injected in their own throwaway copy.
+  **AND FAULT 8 CAUGHT THIS COMMIT'S FIRST DRAFT, which is worth more than the
+  fix.** That draft asked every question of the **running game**. For a light
+  that is the stronger subject; for a camera it is the **weaker** one, because
+  `_frame_view()` aims the live camera on every build — so with the scene's
+  camera rotation deleted the draft reported **0 failures** and its class
+  assertion passed on a camera that had no rotation in the file at all. Read
+  the live state to find what a player gets; read the **file** to find whether
+  a value is there to be got.
+  **NOT VERIFIED: nothing was rendered and no window was opened.** Whether the
+  scene now looks right is unmeasured and unmeasurable here; the angle and
+  `shadow_enabled` are **"Human decision needed" 26**. Still read by nothing:
+  the command panel's anchors and the three strings in the scene.
+  **THE NEXT ASSISTANT TASK** is in 063's "Next action": those strings and
+  anchors — the last of the six — with the warning that a `Control`'s rect
+  under a `CanvasLayer` must be measured in a throwaway copy before anything
+  is asserted off it.
+- Before 063: **062**, the task 061's "Next action"
   named: **what in this project is only ever true on a screen, and can any of
   it be measured headless?** It can, and measuring it found a fault a player
   can reach. `GameController` has two functions that decide what is on screen
@@ -76,9 +131,10 @@ that the owner has not ruled on.** Do not promote one to the other.
   from the setting because a headless Godot gives it 64 × 64 — at which three
   of four footprint corners were inside and the fourth was off the left edge,
   which would have been a finding about the harness. See TRAPS 60.
-  **THE NEXT ASSISTANT TASK** is in 062's "Next action": the light and the
-  environment, which are probably a labelled guard rather than a measurement,
-  because this container has no renderer.
+  **062'S "NEXT ACTION" WAS DONE IN 063**: the light and the environment. Its
+  guess that they would be a labelled guard rather than a measurement was half
+  right — the environment is a guard, and the light turned out to be
+  arithmetic with a fault in it.
 - Before 062: **061**, the task this file named as
   the next assistant task: **the sixteen `_make_main()` fixtures, asked as a
   class (TRAPS 11)**. The stand-in is **retired**. A throwaway script walked
@@ -1409,8 +1465,8 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-68 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **66 suites**, counted with `ls tests/*.gd` rather than
+69 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **67 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites.
 
@@ -1881,15 +1937,24 @@ verified, and what remains uncertain.
 
 - **Nothing has been tested by anybody but the owner.** No stranger has used
   Genesis. The external-usability claim is entirely unmeasured.
-- **NOTHING HAS EVER BEEN RENDERED IN THIS HARNESS, AND MOST OF WHAT IS ONLY
-  TRUE ON A SCREEN IS STILL UNMEASURED.** 062 is the first commit to assert
-  anything about the view, and what it covers is the **camera's place and
-  angle** — the one of 061's six visual differences that is arithmetic. Still
-  read by nothing: the `DirectionalLight3D`, the `WorldEnvironment`, the
-  command panel's anchors and the three strings in the scene. **A world
-  correctly framed in an unlit scene is a black screen and every suite would
-  still be green.** Related and narrower: whether the panels cover the world is
-  not asserted either — the four `FRAME_*` constants in `game_controller.gd`
+- **NOTHING HAS EVER BEEN RENDERED IN THIS HARNESS, AND WHAT IS ONLY TRUE ON A
+  SCREEN IS MEASURED IN PART.** 062 is the first commit to assert anything
+  about the view — the **camera's place and angle** — and 063 the first to read
+  the **light and the environment**, which is where it found a sun that had
+  pointed along the ground since the project's first commit. Of 061's six
+  visual differences the **light** and the **environment** now have a reader,
+  as the camera's place and angle has had since 062; **the command panel's
+  anchors and the three strings in the scene still have none.** (061's own
+  list is counted two ways in two places — 060 said sixteen fixtures where
+  there were seventeen, and the six are named as four things in 062's notes —
+  so what is claimed here is the names and not an arithmetic.)
+  **AND WHAT IS ASSERTED ABOUT THE LIGHT IS NOT THAT ANYTHING IS LIT.** No
+  renderer exists in this container. `scene_light_test` asserts that the sun
+  can reach a horizontal surface at all — one dot product — and that the
+  scene's sky and ambient source are present and switched on; whether the
+  result is bright enough to see a dungeon floor by is a renderer's answer and
+  nobody has asked it. Related and narrower: whether the panels cover the
+  world is not asserted either — the four `FRAME_*` constants in `game_controller.gd`
   are held to be applied consistently, never to be the right numbers, because
   a `CanvasLayer`'s `Control`s are laid out but never drawn headless. That one
   is a judgement the owner can make in a second in the editor, and is the
@@ -9347,6 +9412,276 @@ be wrong and the corrections are the useful part.
    a test is a judgement about what a panel suite is for, so it is noted
    rather than taken.
 
+## 063 — the sun that pointed along the ground
+
+**Objective.** 062's "Next action", in its own words: *"The light and the
+environment, which are the next two of the six, and are probably not
+measurable the way the camera was. [...] The honest smallest step is the one
+section 0 already takes for the camera: assert that the scene HAS them, with
+the values it has, so the day one is deleted or switched off a suite says so.
+That is a guard, not a measurement, and should be labelled as one (TRAPS 6)."*
+
+Done, and labelled. **And the estimate in that paragraph was wrong in one
+place, which is what this commit is about: which way a light POINTS is
+arithmetic, exactly as a camera's aim turned out to be in 062, and asking it
+found a fault that has been in the scene since the project's first commit.**
+
+**Starting state.** Branch `prototype-002a` at `9144a03` (062). 66 suites,
+`--all`, `user://` absent (a fresh container): **suites with something to look
+at: 0**, measured here before anything was changed.
+
+### The layer, and what "nothing had ever read it" means exactly
+
+062 could say that the word "camera" appeared in 17 of 65 test files and in
+three assertions. This layer is thinner than that. Grepped across `scripts/`
+and `tests/`, before this commit:
+
+```
+DirectionalLight     0 occurrences in scripts/, 0 in tests/
+Light3D              0 occurrences in scripts/, 0 in tests/
+WorldEnvironment     0 occurrences in scripts/, 0 in tests/
+light_energy         0 occurrences in scripts/, 0 in tests/
+ambient              0 occurrences in scripts/, 0 in tests/
+```
+
+Not an assertion, not a comment. **Nothing in this project had ever mentioned
+the light or the environment at all.**
+
+**The first version of that count said "light appears four times in
+`scripts/`, every one inside an unrelated string". It was wrong and is
+corrected here rather than quietly fixed (TRAPS 14): the substring appears
+EIGHT times** — "slightly" twice, "lightweight", "lightened", "a light
+go-kart", "light on your feet", "lighter", and one that is not an accident:
+
+```
+circuit_builder.gd:123   # Winding chosen so the road faces up, towards the light.
+```
+
+That comment **assumes a light overhead**, and is the one line in the project
+that reading the scene would have falsified. It is still true after this
+commit, for the first time.
+
+### The fault
+
+`scenes/main.tscn` has had this line since `614a1f5` — Prototype 001, the
+project's first commit — and **no commit between then and this one touched
+it**:
+
+```
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45, -30, 0)
+```
+
+That is an **identity basis** with an **origin of (-45, -30, 0)**. A
+`DirectionalLight3D` emits along its own local -Z and is infinitely far away:
+**the engine ignores its position entirely**, so its rotation is the whole of
+what it does. Read off an instance of the scene, in the tree, before a line
+was changed:
+
+| | |
+|---|---|
+| `rotation_degrees` | **(0, 0, 0)** |
+| direction the light travels | **(0, 0, −1)** — horizontal |
+| `N·L` for a horizontal surface | **0.000000** — exactly zero |
+| `N·L` for a wall facing +Z | 1.000000 |
+
+**The sun pointed along the ground.** Every horizontal surface in Genesis —
+the 200 m pad the game starts on, the pad a built world stands on, a track's
+road, a farm's zone slabs, a dungeon's room and corridor floors — took **exactly
+no direct light**, because a surface whose normal is perpendicular to the
+direction the light travels receives none under any diffuse model. The only
+surfaces the sun reached were walls facing +Z.
+
+**And the three numbers say what was meant.** `(-45, -30, 0)` in the origin
+slots of a node whose position does nothing, on a node whose rotation does
+everything, is a rotation written into the wrong field. The fix moves those
+same three numbers into the basis and changes nothing else.
+
+### What it cost, stated at the width it is true (TRAPS 15)
+
+**"The screen was black" would be false** and is asserted nowhere. The
+`WorldEnvironment`'s `Environment` has `background_mode = SKY` with a
+`ProceduralSkyMaterial`, ambient source `BG`, sky contribution `1.00` and
+ambient energy `1.000` — so horizontal surfaces were still lit **by the sky**:
+flatly, from every direction at once, with no sun term. `shadow_enabled` is
+`false` on that light, so there were no shadows to lose either. What the fault
+cost is the **directional half** of the lighting, which is the half that makes
+a shape read as a shape, and the sun disk the procedural sky draws sat exactly
+**on** the horizon rather than above it.
+
+**How much that is worth looking at is a judgement for a pair of eyes and the
+harness cannot make it.** See "Human decision needed" below: the angle itself
+is the owner's to tune, and `shadow_enabled` is his call too.
+
+### The rule, and where else it holds (TRAPS 11)
+
+The fault is one light with no rotation. The rule it comes from is wider:
+**a node whose job is decided by which way it points must have been pointed.**
+Two kinds of node in `scenes/main.tscn` do their job by pointing, and the
+fault was that one of the two had been given a position and no rotation while
+the other had both:
+
+| node | position | rotation |
+|---|---|---|
+| `Camera3D` | (0, 90, 110) | **(−40, 0, 0)** — set |
+| `DirectionalLight3D` | (−45, −30, 0) — **ignored by the engine** | **none** |
+
+So the new suite asks the question of **both classes, enumerated off the
+scene**, and a third node of either kind added tomorrow is asked it too. The
+other place the rule holds was read off the source rather than asserted: the
+two cameras a player rides are built in code and both are pointed at
+construction — `car.gd:245` calls `look_at`, `walker.gd:185` sets
+`camera.rotation`. Neither was changed.
+
+### Implementation
+
+- **`scenes/main.tscn`** — one line. The light's three numbers moved from the
+  origin into a real rotation of `(-45, -30, 0)` degrees.
+  **The twelve floats were written by Godot and not by hand**, and that
+  mattered: a `.tscn`'s `Transform3D` literal is the **transpose** of the
+  basis `Basis.from_euler()` prints, so the hand-ordered version would have
+  installed the inverse rotation — and the old line gave no warning, because
+  an identity basis is its own transpose. Caught by asking the engine to
+  serialize the scene and reading the line it wrote. See TRAPS 61.
+- **`tests/scene_light_test.gd`** — new, **26 assertions**, the first file in
+  this project to read a light or an environment. Four sections: a labelled
+  **guard** that the scene has a sun and a sky and both are switched on; the
+  **measurement**, whether the sun can reach a floor at all; the **class**,
+  every node whose job is its direction, plus a closure read off the source
+  that nothing in `scripts/` makes a light or an environment so the scene's
+  are all the game has; and a second reading off the **running game** with a
+  world built through the door a player types into.
+- **No file in `scripts/` was changed.** Nothing about interpretation,
+  validation, construction, measurement, the ledger or the prompt moved.
+
+### Evidence — what was actually run
+
+Godot **4.7.1.stable.official.a13da4feb**, headless, Linux, in a cloud
+container with 2 cores. Every run **sequential**, with `user://` cleared
+first (TRAPS 50).
+
+- **Baseline at 062, before anything was changed:** 66 suites, `--all`,
+  **suites with something to look at: 0**.
+- **After:** 67 suites, `--all`, **suites with something to look at: 0**.
+  **The lists were diffed and the only difference is ONE ADDED LINE**,
+  `scene_light_test`'s. No existing suite's result line moved.
+- **THE FULL RUN WAS DONE THREE TIMES**, `user://` moved aside before each so
+  no run read another's ledger (TRAPS 50), and **all three are byte-identical
+  to each other**. The third was run after the last edit to any file in the
+  commit, including the comment corrections, so what is quoted here is a run
+  of what is being committed and not of an earlier draft.
+- **Run alone, the new suite gives 7 FAILURES BEFORE THE FIX AND 0 AFTER**,
+  and takes about a second. The seven are the whole of section 1, the class
+  assertion in section 2 and the guard in section 3; **every assertion in
+  section 0 passed on the broken scene**, which is what makes it a guard and
+  not a measurement.
+
+### Run against broken code before it was believed (TRAPS 51)
+
+Eight deliberate faults, one at a time, each in its own throwaway copy of the
+project outside the repository with its own `config/name` so none could share
+`user://` with anything. FAIL lines **read**, not counted.
+
+| fault | result |
+|---|---|
+| 1. the 063 fix reverted | **7** — the whole of section 1, the class assertion, and section 3's guard |
+| 2. the light deleted from the scene | **3** — and the assertion count drops 26 → 16, which is why the counts are asserted: an enumeration over no lights would otherwise pass in silence |
+| 3. `light_energy` set to 0 | **2** — section 0's energy guard and section 3's |
+| 4. the light switched invisible | **3** — `visible`, the ancestor-chain check, and section 3's |
+| 5. the `Environment` resource cleared off the `WorldEnvironment` | **1** — and the count drops to 21, the rest of the environment block being skipped |
+| 6. the sun rotated to point at the **sky** instead of the ground | **4** — and *"has a rotation at all"* correctly **passes**, which is the measured version of the comment that says the two assertions fail for different reasons |
+| 7. `farm_module.gd` builds an `OmniLight3D` of its own | **1** — the closure, naming the file and line |
+| 8. the **camera's** rotation deleted in the scene | **1** — the class assertion, naming `Camera3D`. **On the first draft of the suite this was 0.** |
+
+**And fault 8 is worth more than the fix.** The suite's first draft asked
+every question of the **running game**, on the reasoning that the light a
+player gets is a stronger subject than the light the file describes. It is —
+for a light. It is the **weaker** subject for a camera: `_frame_view()` aims
+the live camera on every build, so a camera with no rotation in the scene at
+all is pointed correctly within a frame of the game starting, and the draft
+**reported 0 failures** on it. The fault was still caught in this repository
+— `view_frame_test` section 0 holds the scene's camera to being pitched, off
+its own fresh instance — but a class assertion that cannot see a missing
+rotation is not holding the class. Sections 0 to 2 now read the scene as the
+game launches it; section 3 reads the running game, and the two are not
+allowed to stand in for each other. Caught by injecting the fault, not by
+reading the code. TRAPS 61.
+
+### What the suite asserts, and what it does not
+
+- **Section 0 is a GUARD and says so in the output**, every line prefixed
+  `GUARD:`. Those assertions passed on the broken scene and pass on the fixed
+  one; none can fail on anything a player types, because nothing a player
+  types touches either node. They are there for the day somebody deletes the
+  light, zeroes its energy, clears the environment or switches the ambient
+  source off — each one property away in the editor, and none of them visible
+  to any suite before this file existed (TRAPS 6).
+- **Section 1 is a measurement.** It solves the question off the ground pad's
+  own up direction rather than off a literal `Vector3.UP`, so if anybody tilts
+  the ground the question follows it.
+- **One assertion in it is a BAND and is labelled `JUDGEMENT` in the output**:
+  that the sun stands between 10° and 80° above the horizon. Those two numbers
+  are an opinion about what daylight looks like, not something measured.
+- **Section 3 is a guard too**, for the reason section 2's closure gives:
+  nothing in `scripts/` makes or writes a light, so no request can move the
+  sun. It is one build and one reading rather than a sweep over the three
+  world kinds, because the answer does not depend on what was built — three
+  kinds would have been three copies of one reading dressed up as three
+  measurements.
+
+### Not verified
+
+- **NOTHING WAS RENDERED. No pixel was drawn and no window was opened.** Every
+  number in this commit is a transform, a dot product or a property read off a
+  resource. **A suite in this container cannot answer "is it lit" and this one
+  does not pretend to.** What it answers is "can the sun reach a floor at
+  all", which is arithmetic, and the answer was no.
+- **WHETHER THE SCENE NOW LOOKS RIGHT IS UNMEASURED AND UNMEASURABLE HERE.**
+  That the sun reaches the ground is a fact; that 45° and −30° are good angles
+  is not. It is under "Human decision needed".
+- **THREE OF 061'S SIX VISUAL DIFFERENCES ARE STILL READ BY NOTHING** — the
+  command panel's anchors and the three strings in the scene. 062 measured the
+  camera's place and angle; this commit measures the light and the
+  environment's state. **Whether the panels cover the world is still not
+  asserted**, and still cannot be: a `CanvasLayer`'s `Control`s are laid out
+  but never drawn headless. The four `FRAME_*` constants remain asserted to be
+  applied consistently, never to be the right numbers.
+- **THE ENVIRONMENT IS GUARDED, NOT MEASURED.** That its ambient source is
+  `BG` with full sky contribution is read and asserted; that the resulting
+  ambient term is bright enough to see a dungeon floor by is not, and is a
+  renderer's answer.
+- **NO FILE IN `scripts/` CHANGED.** `PROMPT_VERSION` did not move, the prompt
+  is byte-identical and `prompt_bounds_test` passed. No model sent anything
+  and no request left the container. No world, record or saved file of the
+  owner's changed. `docs/GENESIS_BRIEF.md` was not edited.
+- **NO BROWSER RAN AND NO WEB EXPORT WAS MADE**, so 057's "Next action" is
+  untouched and still the owner's. The web build gets the same scene and
+  therefore the same fix, but nothing here verifies that.
+- The two cameras a player rides were **read, not asserted**: `car.gd:245`
+  points its camera with `look_at` and `walker.gd:185` sets
+  `camera.rotation`, so the rule holds there, but only the scene's two
+  oriented nodes are held to it by a suite.
+
+### Next action
+
+**The command panel's anchors and the three strings in the scene — the last
+of 061's six, and the only part of the visual layer a headless suite has not
+been pointed at.** The strings are the cheap half and the same trick as
+section 0 here: `TitleLabel`'s text, `InputBox`'s placeholder and
+`BuildButton`'s text are set in `scenes/main.tscn` and read by nothing, so a
+guard can hold them to being non-empty and to being what the scene says. The
+anchors are the harder half, and worth a careful look before any assertion is
+written: a `Control`'s `anchors_preset` and `grow_*` flags are state a suite
+can read, but `get_rect()` on a laid-out-never-drawn `Control` under a
+`CanvasLayer` may or may not be meaningful headless, and **that should be
+established by measuring it in a throwaway copy before anything is asserted
+off it** — an assertion resting on a rect that is always zero would be TRAPS 6
+again. If the rect is real, then the question 062 wrote down as the owner's
+becomes partly answerable here after all: whether the panels cover the part of
+the frustum a world is framed in.
+
+---
+
 ## 062 — the layer nothing could read, and the rule kept at two of its three doors
 
 **Objective.** 061's "Next action", in its own words: *"what in this project
@@ -11512,3 +11847,31 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     what a request MEANS: with `editing_from` set, a typed JSON build becomes
     an edit of the standing world in the record as well as in the sentence,
     and the ledger is the artefact this project exists to keep.
+
+26. **The sun's angle, and whether it should cast shadows.** 063 fixed a
+    `DirectionalLight3D` that had no rotation at all: its three numbers were
+    sitting in the origin slots, which the engine ignores for a directional
+    light, so the sun pointed horizontally and every horizontal surface in
+    Genesis took exactly zero direct light. That part is a defect and is
+    fixed. **These two parts are not defects and were not decided:**
+
+    - **The angle.** The fix uses the scene's own three numbers, `(-45, -30,
+      0)` degrees, because reinterpreting the numbers that were already there
+      is the least inventive choice available — **not** because 45° and −30°
+      are the right angles. What a sun should look like over a 1500 m circuit
+      is a judgement a pair of eyes makes in a second and a harness cannot
+      make at all. If you want it lower, higher or round the other way, it is
+      one line in `scenes/main.tscn` and `scene_light_test` will still pass:
+      the band it asserts is 10° to 80° above the horizon, and that band is
+      labelled `JUDGEMENT` in the suite's own output for exactly this reason.
+    - **Shadows.** `shadow_enabled` is `false` on that light and always has
+      been. With the sun pointing along the ground it made no difference
+      whatsoever; now that it points at the ground it does. Shadows are what
+      makes a track read as sitting ON the pad rather than floating over it,
+      and they cost frame time — on a web build, on whatever hardware a
+      visitor has. That is a visual and cost trade and it is yours. Nothing
+      in this commit turned it on.
+
+    **And the same fix changes what the web build looks like**, because the
+    web build gets the same scene. Nothing here exported or rendered anything,
+    so the first look at it is the owner's, in the editor or on the site.
