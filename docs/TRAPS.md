@@ -3938,3 +3938,51 @@ at its word, and finding that one of the two was arithmetic after all.
 
 > A number in a field the engine ignores is not a number with no effect. It is
 > a number whose effect was wanted somewhere else.
+
+---
+
+## 62. The rect that is zero in the one place a suite would read it
+
+**Signature:** a new suite asserts something about a `Control`'s size or
+position, passes, and would have passed on any layout whatsoever — including
+no layout at all.
+
+**Cause:** a `Control` under a `CanvasLayer` gets its rect **as it enters the
+tree**, not on a deferred pass, so headless layout is not the problem 063
+expected it to be. But there is one window in which every rect reads
+`(0, 0)`: before the viewport's first layout pass. That window is
+`_initialize()` — which is where a `SceneTree` script begins, and therefore
+exactly where a suite written the obvious way does its work. Measured three
+ways in one process, Godot 4.7.1 headless, a `CanvasLayer` and a
+`PanelContainer` added to the root and read immediately:
+
+| when the node was added | rect read immediately |
+|---|---|
+| inside `_initialize()`, before the first frame | `(0, 0)` |
+| from a deferred call, one frame having begun | `(1152, 120)` |
+| later still | `(1152, 120)` |
+
+So `_run.call_deferred()` — the idiom `scene_light_test`, `view_frame_test`
+and `scene_ui_test` all open with — is **load-bearing** for anything that
+reads a rect, and none of those files said so. A suite that skipped it would
+have compared zeros to zeros and reported `failures=0`, which is TRAPS 6 with
+the engine supplying the vacuity rather than the schema.
+
+**Do:**
+
+- Never read a `Control`'s rect from `_initialize()`. Defer the body of the
+  suite, as these files do, and say in a comment that the deferral is the
+  reason the rects are real.
+- When a measurement depends on a fact about the engine, **assert the fact in
+  the file that depends on it**, both halves — the zero and the non-zero.
+  A probe that established it once, in a throwaway copy, is not evidence
+  that the committed suite is reading anything.
+- The general form: before asserting off a value the engine computes, find the
+  conditions under which that value is a default, and check that the suite is
+  not standing in one of them.
+
+Found in 065, by writing the wrong assertion first and reading the failure:
+the suite's own section 1 claimed the rect needed frames stepped, and failed,
+because by then a frame had begun.
+
+---

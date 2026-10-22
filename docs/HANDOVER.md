@@ -24,7 +24,50 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **064**, which is a **record and not a
+- Last commit at the time of writing: **065**, the task 063's "Next action"
+  named: **the command panel's anchors and the strings in the scene — the last
+  of 061's six visual differences, which are now all read by something.** One
+  new test file, `tests/scene_ui_test.gd`, 43 assertions; **no code, no scene
+  and no prompt changed.**
+  063 warned that a `Control`'s rect might be meaningless headless and said to
+  measure it in a throwaway copy before asserting off it. Measured, and the
+  answer is **narrower than "frames must be stepped"**: a `Control` gets its
+  rect **as it enters the tree**, and the only window in which a rect reads
+  `(0, 0)` is before the viewport's first layout pass — i.e. inside
+  `_initialize()`, which is where a `SceneTree` script starts and exactly
+  where a suite written the obvious way would read it. **So the
+  `_run.call_deferred()` idiom these suites open with is load-bearing, and
+  none of them said so** (new TRAPS 62). This file's own first draft asserted
+  the wrong rule and **failed on its first run**, which is how the right one
+  was found.
+  **TWO UNDERCOUNTS IN 063'S OWN PARAGRAPH, both TRAPS 11.** The strings are
+  **four**, not three — `StatusLabel.text` is set in the scene too, and was
+  easy to miss from a list of "strings nothing reads" precisely because
+  `main.gd:22` *does* read it. And the panels are **three**, not one:
+  `HistoryPanel` and `MetricsPanel` are built in code (`main.gd:916`, `:954`)
+  with **absolute offsets from the top**, where the command panel's are
+  relative to the **bottom**.
+  **THE FINDING IS THAT THE LAYOUT IS CORRECT AND EIGHT PIXELS FROM NOT
+  BEING.** `project.godot` sets no window size, so the base viewport is
+  1152 x 648; under stretch `canvas_items`/`expand` the logical height
+  **floors** at 648 (asked for 500, the viewport came back 1492 x 648), so the
+  base size is the tightest the vertical layout can ever be and checking there
+  checks everywhere. There the metrics panel ends at y=520 and the command
+  panel starts at y=528 — and 528 is 648 minus the panel's **content**
+  height, which moves with the font. **Adding one ordinary `Label` to that
+  `VBoxContainer` takes the clearance to −19 px and the panels overlap**;
+  nothing in the repository would have said so. **Not fixed** — moving a panel
+  is a visual judgement and is "Human decision needed" 28.
+  **68 SUITES PASSED, `--all`, `user://` CLEARED FIRST**, against 67 at the
+  064 baseline, lists **diffed** (baseline re-run with the file moved out,
+  not quoted from memory): the only difference is the one added line. Two full
+  runs, **byte-identical**. **Eight deliberate faults** were each injected in
+  their own throwaway copy and the FAIL lines read.
+  **NOT VERIFIED: nothing was rendered and no window was opened**, so whether
+  any of this is legible is still unmeasured. And **whether the panels cover
+  the world is still not asserted** — now partly answerable, deliberately not
+  answered, because it is a judgement about the game.
+- Before 065: **064**, which is a **record and not a
   change** — no code, no scene, no test. Asked whether 063's push "went
   through", and the answer is that the only workflow this repository has, the
   `web build`, **has failed on every push since 14 October — 46 of them.** The
@@ -34,6 +77,7 @@ that the owner has not ruled on.** Do not promote one to the other.
   minutes. **The live site is still commit `71b065f`, from before 021.** The
   secrets are the owner's and 064 touched nothing. New "Human decision
   needed" 27: whether the suite should run in CI at all, which it never has.
+  **065 did not change this and set no secret.**
 - Before 064: **063**, the task 062's "Next action"
   named: **the light and the environment, the next two of 061's six visual
   differences.** 062 guessed they would not be measurable the way the camera
@@ -83,9 +127,12 @@ that the owner has not ruled on.** Do not promote one to the other.
   a value is there to be got.
   **NOT VERIFIED: nothing was rendered and no window was opened.** Whether the
   scene now looks right is unmeasured and unmeasurable here; the angle and
-  `shadow_enabled` are **"Human decision needed" 26**. Still read by nothing:
-  the command panel's anchors and the three strings in the scene.
-  **THE NEXT ASSISTANT TASK** is in 063's "Next action": those strings and
+  `shadow_enabled` are **"Human decision needed" 26**. Read by nothing *as of
+  063*: the command panel's anchors and the three strings in the scene —
+  **065 DID BOTH AND THIS CLAUSE IS NO LONGER CURRENT**, and it found that the
+  strings were four. **That task is DONE; the live next task is the one under
+  "Next action" below.** What 063 handed over, kept here as the record of what
+  it asked for: those strings and
   anchors — the last of the six — with the warning that a `Control`'s rect
   under a `CanvasLayer` must be measured in a throwaway copy before anything
   is asserted off it.
@@ -133,7 +180,9 @@ that the owner has not ruled on.** Do not promote one to the other.
   the job it was written for, on the first new suite written after it.
   **NOT VERIFIED: nothing was rendered.** Five of 061's six visual differences
   — the light, the environment, the panel's anchors and the three strings — are
-  **still unmeasured by anything**; a world inside the frustum of an unlit
+  **still unmeasured by anything** *(true at 062; the light and environment
+  got a reader in 063 and the last two in 065, so all six are read now — none
+  of which makes anything rendered)*; a world inside the frustum of an unlit
   scene is a black screen and nothing here would notice. **Whether the panels
   cover the world is not asserted**: the four `FRAME_*` constants are held to
   be applied consistently, not to be right. The frustum answer is for
@@ -220,7 +269,8 @@ that the owner has not ruled on.** Do not promote one to the other.
   **NOT VERIFIED: nothing was rendered and no window opened**, so the six
   visual differences of the twelve — the light, the environment, the camera's
   place and angle, the panel's anchors and the three strings — are
-  **unmeasured by anything**; all 061 establishes is that the suites now
+  **unmeasured by anything** *(true at 061; 062, 063 and 065 gave each of them
+  a reader, and none of them a renderer)*; all 061 establishes is that the suites now
   stand up the tree that has them. **No file in `scripts/` was changed** and
   nothing a player can reach behaves differently. No model sent anything, no
   request left the container, the prompt is byte-identical and
@@ -1952,12 +2002,21 @@ verified, and what remains uncertain.
   about the view — the **camera's place and angle** — and 063 the first to read
   the **light and the environment**, which is where it found a sun that had
   pointed along the ground since the project's first commit. Of 061's six
-  visual differences the **light** and the **environment** now have a reader,
-  as the camera's place and angle has had since 062; **the command panel's
-  anchors and the three strings in the scene still have none.** (061's own
+  visual differences the **light** and the **environment** got a reader there,
+  as the camera's place and angle had since 062, and **065 added the last two
+  — the command panel's anchors and the scene's strings — so ALL SIX NOW HAVE
+  A READER.** (The clause that stood here until 065 said those two *"still
+  have none"*, which was true when it was written and is the shape of TRAPS 14;
+  it is corrected in place rather than left to be read as current.) (061's own
   list is counted two ways in two places — 060 said sixteen fixtures where
   there were seventeen, and the six are named as four things in 062's notes —
   so what is claimed here is the names and not an arithmetic.)
+  **AND "ALL SIX ARE READ" IS A STATEMENT ABOUT COVERAGE, NOT ABOUT
+  CORRECTNESS ON A SCREEN.** Every one of those readers measures a transform,
+  a rect, a dot product or a property. **Nothing in this container has ever
+  drawn a pixel**, so "the visual layer is tested" would be false and is not
+  claimed (TRAPS 15). What 065 added is 43 assertions about rects and strings
+  and **no** evidence that any of it is legible.
   **AND WHAT IS ASSERTED ABOUT THE LIGHT IS NOT THAT ANYTHING IS LIT.** No
   renderer exists in this container. `scene_light_test` asserts that the sun
   can reach a horizontal surface at all — one dot product — and that the
@@ -6828,6 +6887,11 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
+**AS OF 065 THE VISUAL-LAYER AXIS IS CLOSED** — 061's six differences all
+have a reader now, which is what 062, 063 and 065 were each one step of. So
+the two items below are no longer queued behind it: they are the live next
+task, and the first has been passed over by six consecutive commits.
+
 **For the assistant, in this order, and the first is the smaller:**
 
 1. **Finish the id class — it is two thirds undone (TRAPS 11, TRAPS 56).**
@@ -9454,6 +9518,249 @@ be wrong and the corrections are the useful part.
    a test is a judgement about what a panel suite is for, so it is noted
    rather than taken.
 
+## 065 — the last of 061's six, and the eight pixels nothing was holding
+
+**Objective.** 063's "Next action", in its own words: *"The command panel's
+anchors and the three strings in the scene — the last of 061's six, and the
+only part of the visual layer a headless suite has not been pointed at."* With
+a warning attached: `get_rect()` on a laid-out-never-drawn `Control` under a
+`CanvasLayer` *"may or may not be meaningful headless, and that should be
+established by measuring it in a throwaway copy before anything is asserted
+off it — an assertion resting on a rect that is always zero would be TRAPS 6
+again."*
+
+**Starting state.** `prototype-002a` at `70687e6` (064). 67 suites, `--all`,
+0 with something to look at. Nothing in `scripts/` or `tests/` read a
+`Control`'s rect, an anchor or any string set in `scenes/main.tscn`.
+
+### The warning was right, and the answer is narrower than it predicted
+
+Measured in a throwaway copy first, as instructed. **The layout is not
+deferred and frames do not need stepping**: a `Control` gets its rect as it
+enters the tree. There is exactly one window in which a rect reads zero —
+before the viewport's first layout pass, which is to say inside
+`_initialize()`, which is where a `SceneTree` script starts and therefore
+exactly where a suite written the obvious way would read it.
+
+| when the node was added | rect read immediately |
+|---|---|
+| inside `_initialize()`, before the first frame | `(0, 0)` |
+| from a deferred call, one frame having begun | `(1152, 120)` |
+| later still | `(1152, 120)` |
+
+**So `_run.call_deferred()` is load-bearing and nothing said so.**
+`scene_light_test`, `view_frame_test` and this file all open with it; for
+anything reading a rect it is the difference between a measurement and
+zeros compared to zeros. New TRAPS 62.
+
+**AND THIS FILE'S OWN FIRST DRAFT GOT IT WRONG, WHICH IS HOW IT WAS FOUND.**
+Section 1 was first written to assert that the rect needed frames stepped —
+the probe's conclusion, carried over without re-checking the condition it
+held under. It **failed on the first run**, because by the time a deferred
+`_run()` adds anything, a frame has begun. The failure is the finding; the
+assertion now states the rule that is true and asserts both halves of it, so
+the day the engine changes its mind the next session is told which way.
+
+### Two things 063's own paragraph undercounted, and both are TRAPS 11
+
+1. **The strings are four, not three.** 063 named `TitleLabel`'s text,
+   `InputBox`'s placeholder and `BuildButton`'s text. `scenes/main.tscn` also
+   sets `StatusLabel.text = "Status: Waiting"` — and that one *is* read by
+   code (`main.gd:22` holds it and overwrites it within a frame), which is
+   precisely why it was easy to leave out of a list of *"strings nothing
+   reads"*. The class is **a string this scene sets**, and it has four
+   members. Section 0 enumerates rather than naming, so a fifth joins the
+   list without the list being edited.
+
+2. **The panels are three, not one.** *"The command panel's anchors"* names
+   the one panel that is in the scene. Two more are built in code and added
+   to the same `CanvasLayer` — `main.gd:916` `HistoryPanel` and `main.gd:954`
+   `MetricsPanel` — and both are positioned with **absolute pixel offsets
+   from the top edge**, where the command panel's are relative to the
+   **bottom**. The rule a player cares about belongs to all three together:
+   panels do not sit on top of one another and do not hang off the screen.
+
+### The worst case is bounded, which is what makes it assertable
+
+`project.godot` sets no window size, so the base viewport is Godot's default
+**1152 x 648**, with stretch mode `canvas_items` and aspect `expand`.
+Measured by asking the root for several sizes:
+
+| asked | logical viewport |
+|---|---|
+| 1152 x 1152 | 1152 x 1152 |
+| 1152 x 800 | 1152 x 799 |
+| 1152 x 648 | 1152 x 648 |
+| 1152 x 500 | **1492 x 648** — height floored, width grew instead |
+
+Under `expand` the logical viewport never goes **below** the base size in
+either axis. So 648 is a floor on the logical height, **the base viewport is
+the tightest the vertical layout can ever be**, and a suite that checks the
+panels there has checked them at every window size. The suite asserts the
+floor itself rather than assuming it. `--resolution` was tried first and
+**has no effect headless** — the viewport stayed 1152 x 1152 at every value —
+so the root's own `size` is what moves it.
+
+### THE FINDING: it is correct today, and eight pixels from not being
+
+At the base viewport the three panels do not overlap — measured, not assumed.
+But the margin is thin and nothing was holding it:
+
+| panel | vertical extent | from |
+|---|---|---|
+| `HistoryPanel` | 10 .. 250 | absolute, from the top (`main.gd:923-926`) |
+| `MetricsPanel` | 258 .. 520 | absolute, from the top (`main.gd:961`) |
+| `CommandPanel` | 528 .. 648 | its **content height**, from the bottom |
+
+**Eight pixels** between the metrics panel's bottom edge and the command
+panel's top edge, and the two numbers come from different files. 520 is an
+`offset_bottom` somebody typed; 528 is 648 minus the command panel's 120 px
+of content height — **the sum of four children's minimum sizes, which moves
+with the font**. `grow_vertical = 0` against a bottom anchor means the panel
+grows **upward**, into the metrics panel.
+
+**Demonstrated, not reasoned about.** One extra `Label` added to that
+`VBoxContainer` — a legal, ordinary edit — takes the clearance to **−19 px**
+and the two panels overlap. Before this commit nothing in the repository
+would have said so.
+
+**NOT A FAULT TODAY AND NOT FIXED HERE.** The layout is correct as it stands,
+and moving a panel is a judgement about what the screen should look like,
+which is the owner's: new "Human decision needed" 28. What the suite does is
+hold the eight pixels so the day they go, it says which two edges met.
+
+### What the suite asserts
+
+`tests/scene_ui_test.gd` is new, **43 assertions**, and is the first file in
+this project to read a `Control`'s rect, an anchor or a string set in the
+scene.
+
+- **Section 0 is a GUARD** and says so in the output, every line prefixed
+  `GUARD:`. The four strings, read off a **fresh instance never added to the
+  tree** — the file is the right subject for *"is a value there to be got at
+  all"*, because `main.gd` overwrites `StatusLabel`'s text within a frame and
+  the running game would answer this question about itself rather than about
+  the scene (063's fault 8, one layer along, TRAPS 61). Nothing a player types
+  writes any of these, so none can fail on a request; they fail the day
+  somebody empties one in the editor.
+  One of them is a different claim from the rest and is worth naming:
+  **`InputBox.text` is asserted empty**, so the example sentence stays a
+  placeholder and is never a value that gets submitted.
+- **Section 1 is the MEASUREMENT the rest rests on** — the zero and the
+  non-zero, as above. Its subject is a `CanvasLayer` and a `PanelContainer`
+  built by hand and **not** a second copy of `main.tscn`: instantiating that
+  scene runs `main.gd._ready`, which opens the shared ledger, and two of
+  those in one process is TRAPS 56.
+- **Section 2 is the measurement at the worst case.** Every **pair** of
+  panels, not the pair that was interesting; containment in the viewport,
+  because a panel off the bottom is invisible without overlapping anything;
+  the command panel's anchoring, grow direction, and that its height is its
+  content's minimum rather than a number anybody chose.
+- **One assertion is labelled `JUDGEMENT` in the output**, as 063's daylight
+  band is: that the clearance is **at least 8 px**. Eight is the margin
+  measured at 065, not a figure anybody chose, and the label says so.
+- **Section 3 closes the class off the tree.** The scene has exactly one
+  `CanvasLayer`; every top-level `Control` under it is found by **walking**
+  rather than by name, and the count is asserted — an enumeration that finds
+  nothing passes everything inside it in silence (063's fault 2).
+
+### Run against broken code before it was believed (TRAPS 51)
+
+Eight deliberate faults, one at a time, each in its own throwaway copy
+outside the repository with its own `config/name` so none could share
+`user://` with anything. FAIL lines **read**, not counted.
+
+| fault | result |
+|---|---|
+| 1. `TitleLabel`'s text emptied | **2** — the count drops to 3, and the named assertion |
+| 2. `StatusLabel` deleted from the scene | **2** — the count, and *"still has a StatusLabel in it"* |
+| 3. the example sentence moved from `placeholder_text` into `text` | **2** — the placeholder assertion and *"the example is a placeholder, not a value"* |
+| 4. **a fifth row added to the command panel** | **4** — the string count, and the overlap, naming **−19 px** and both edges |
+| 5. `MetricsPanel`'s `offset_bottom` moved 520 → 545 | **3** — the overlap, naming −17 px |
+| 6. the command panel re-anchored to the top | **6** — two overlaps, the anchor pair, the grow direction, and the bottom edge |
+| 7. a fourth panel built in code, off to the left | **1** — the class count alone, which is the closure doing its job: it overlaps nothing |
+| 8. `HistoryPanel` pushed off the right edge | **1** — containment, printing the rect and the viewport |
+
+### Evidence
+
+- **Baseline at 064, before anything was added:** 67 suites, `--all`,
+  **suites with something to look at: 0**.
+- **After:** 68 suites, `--all`, **0 with something to look at.**
+- **The lists were diffed and the only difference is ONE ADDED LINE**,
+  `scene_ui_test`'s. No existing suite's result line moved. The baseline was
+  re-run for the diff with the new file moved out of `tests/` rather than
+  quoted from memory.
+- **The full run was done twice with `user://` cleared before each** (TRAPS
+  50) and **the two are byte-identical**.
+- Run alone the suite gives **43 assertions, failures=0**, in about a second.
+
+### Not verified
+
+- **NOTHING WAS RENDERED. No pixel was drawn and no window was opened.**
+  Every number here is a rect computed by the layout engine, which runs
+  headless. None of it is evidence that anything is **legible**, that the
+  panel style is visible, that text fits inside its own box, or that the
+  colours work. A `Control` under a `CanvasLayer` is laid out and never drawn
+  in this container, exactly as 062 and 063 recorded.
+- **IT IS STILL NOT ASSERTED THAT THE PANELS DO NOT COVER THE WORLD**, and
+  that is deliberate. 062 wrote the question down as the owner's and 063
+  repeated it. It is now **partly answerable** — the panels' rects are known
+  and the camera's frustum is known — and is still not answered, because
+  which part of a framed world a player needs to see is a judgement about the
+  game and not arithmetic. What is new is only that the inputs exist. See
+  "Human decision needed" 28.
+- **THE STRING VALUES ARE GUARDED, NOT JUDGED.** That `InputBox`'s
+  placeholder is `"make a race track"` is asserted; **whether that is a good
+  sentence to show a new player is not.** It is worth one look and it is the
+  owner's: HANDOVER 032 records *"make me a race track"* with no sections
+  described as hitting Prototype 001's stub, which clears the world and
+  reports that it built nothing. **Whether the model answers that sentence
+  with a sectionless `CREATE_TRACK` is NOT KNOWN and was not tested** — this
+  harness has no key and nothing was reproduced from the owner's screen. The
+  suite asserts the string, never that the string is wise.
+- **NO FILE IN `scripts/` CHANGED, AND NEITHER DID `scenes/main.tscn`.** This
+  commit adds one test file and documentation. `PROMPT_VERSION` did not move,
+  the prompt is byte-identical and `prompt_bounds_test` passed. No model sent
+  anything and no request left the container. No world, record or saved file
+  of the owner's changed.
+- **NO BROWSER RAN AND NO WEB EXPORT WAS MADE.** The web build gets the same
+  scene and the same panels, and nothing here verifies that. 064's finding
+  stands untouched: the `web build` workflow still fails on every push and
+  the live site is still `71b065f`. **No secret was set and no workflow file
+  was edited.**
+- **NOTHING WAS MEASURED AT A WINDOW LARGER THAN THE BASE VIEWPORT'S ASPECT.**
+  The floor is asserted; the ceiling is not, because panels anchored to edges
+  only get further apart as the viewport grows.
+
+### Next action
+
+**For the assistant, and 061's six are now all read, so this is a new axis
+rather than the next item on a list.** The two cheapest, in order:
+
+1. **The id class, still two thirds undone (TRAPS 11, TRAPS 56)** — the item
+   that has sat at the top of "Next action" since 059 and been passed over by
+   060 through 065. The session id (`main.gd:514-515`) and the experiment
+   `run_id` (`experiment_runner.gd:62`) carry the same fault 059 fixed in the
+   record id. **Read the caveat before starting**: the session id's shape is
+   "Human decision needed" 22 because it appears in reports the owner already
+   has, so that half needs asking, and only `run_id` can be changed without
+   him.
+2. **The four connect rows 059 found unheld**, all four reachable with no key,
+   with `handler_wiring_test` the file to extend and 058 the method. The
+   cheapest is `lap_completed`; `pressed` and `text_submitted` are **the two
+   doors a player actually uses** and nothing in the project emits either.
+   The full ordering and the method are in the "Next action" section above.
+
+**And one thing this commit found and left alone, which is a judgement and
+not a task:** `InputBox`'s placeholder is the one example sentence Genesis
+shows a new player, and the shape of request it suggests is the shape 032
+recorded as hitting a stub that builds nothing. Whether the model actually
+answers it that way is unverifiable here. Written up under "Human decision
+needed" 28 rather than changed, because the words a player is shown first are
+product and not engineering.
+
+---
+
 ## 064 — the deploy that has failed on every push since 14 October
 
 **Objective.** None of its own: this is a **record, not a change**. No code,
@@ -12033,3 +12340,63 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     **Nothing was built or proposed in the workflow file.** If the answer is
     yes, the smallest honest version is the fast suites only, on push, with
     `--all` left to a manual trigger.
+
+28. **The panel layout, which is correct today and eight pixels from not
+    being — and the first sentence Genesis shows a player.** Both found while
+    writing 065, both left alone because both are judgements about what the
+    screen should look like rather than engineering.
+
+    **(a) The eight pixels.** At the base viewport — 1152 x 648, which is
+    the tightest the vertical layout can ever be, because under stretch
+    `canvas_items`/`expand` the logical height floors at the base size — the
+    three panels stack like this:
+
+    | panel | vertical extent | where the number comes from |
+    |---|---|---|
+    | `HistoryPanel` | 10 .. 250 | absolute offsets, `main.gd:923-926` |
+    | `MetricsPanel` | 258 .. 520 | absolute offsets, `main.gd:961` |
+    | `CommandPanel` | 528 .. 648 | **content height**, from the bottom edge |
+
+    They do not overlap. But 520 is a number somebody typed into `main.gd`
+    and 528 is 648 minus the command panel's 120 px of **content** height —
+    the sum of four children's minimum sizes, which moves with the font. One
+    extra `Label` in that `VBoxContainer` takes the clearance to **−19 px**,
+    measured. The options:
+
+    - **(i) Leave it.** Costs nothing; the suite now fails loudly the day the
+      eight pixels go, naming both edges. This is what 065 did.
+    - **(ii) Give the metrics panel a bottom anchor** so it ends a fixed
+      distance above the command panel instead of at a fixed y. Removes the
+      coupling to the font entirely and is a few lines.
+    - **(iii) Lay the right-hand panels out in a container** rather than with
+      absolute offsets. The most robust and the largest change.
+
+    **Nothing was changed, and (ii) is a proposal and not a plan.** The
+    assistant's view, offered as a view: the coupling is real but the failure
+    mode is now visible, so this is worth doing when something else touches
+    those panels and not on its own account.
+
+    **(b) The placeholder sentence.** `InputBox`'s `placeholder_text` in
+    `scenes/main.tscn` is **`"make a race track"`** — the one example Genesis
+    shows a player who has never typed anything. HANDOVER 032 records
+    *"make me a race track"*, with no sections described, as the request that
+    hits Prototype 001's stub: it **clears the world and reports that it built
+    nothing**.
+
+    **WHAT IS NOT KNOWN, AND IT IS THE WHOLE QUESTION:** whether the model
+    answers that sentence with a sectionless `CREATE_TRACK` or invents
+    sections for it. **This was not tested** — the harness has no key, nothing
+    was reproduced from the owner's screen, and the suite asserts only that
+    the string is what the scene says, never that it is wise. So this is one
+    request's worth of typing in the editor, and it answers it:
+
+    - If it comes back as a built circuit, the placeholder is fine and this
+      item closes.
+    - If it comes back as *"CREATE_TRACK built nothing"*, then **the first
+      thing Genesis suggests is the one thing it refuses**, and the fix is one
+      string in the scene — something like *"a circuit with two long straights
+      and a hairpin"*, which 031 records as working. `scene_ui_test` section 0
+      asserts the current value by name, so changing it fails that assertion
+      and the new string goes in the same edit.
+
+    It is the owner's because the words a player is shown first are product.
