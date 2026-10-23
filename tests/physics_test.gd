@@ -80,13 +80,16 @@ func _run() -> void:
 		await physics_frame
 
 	var bad := 0
+	var asserted := 0
 	for r in results:
 		print("  %-10s travelled %6.1f m, reached %5.1f km/h" % [r[0], r[1], r[2]])
 	var ordinary: float = results[0][1]
 	var powerful: float = results[1][1]
 	var feeble: float = results[2][1]
+	asserted += 1
 	if powerful <= ordinary * 1.05:
 		print("FAIL  more power did not travel further"); bad += 1
+	asserted += 1
 	if feeble >= ordinary * 0.95:
 		print("FAIL  less power did not travel less"); bad += 1
 	if bad == 0:
@@ -100,6 +103,7 @@ func _run() -> void:
 	var plain_stop: float = stops[0][3]
 	var hard_stop: float = stops[1][3]
 	var soft_stop: float = stops[2][3]
+	asserted += 1
 	if not (hard_stop < plain_stop and plain_stop < soft_stop):
 		print("FAIL  braking did not order the stops: %.2f m, %.2f m, %.2f m" % [hard_stop, plain_stop, soft_stop])
 		bad += 1
@@ -112,11 +116,12 @@ func _run() -> void:
 	var worst := 0.0
 	for r in stops:
 		worst = maxf(worst, absf(float(r[1]) - plain_run))
+	asserted += 1
 	if worst > plain_run * 0.001:
 		print("FAIL  braking changed the run to speed by %.3f m, so \"and nothing else\" is false" % worst)
 		bad += 1
 	else:
 		print("PASS  and changes nothing else: every run to speed within %.3f m of %.1f m" % [worst, plain_run])
 
-	print("PHYSICS TEST failures=%d" % bad)
+	print("PHYSICS TEST %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)

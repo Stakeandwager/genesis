@@ -2,14 +2,17 @@ extends SceneTree
 func _initialize() -> void:
 	var m := FarmModule.new()
 	var bad := 0
+	var asserted := 0
 
 	# the request that used to be refused
 	var one := {"zones": [{"type": "barn", "width": 20, "depth": 20}]}
 	var v := m.validate(one)
+	asserted += 1
 	if not bool(v["ok"]):
 		print("FAIL  one zone rejected: ", v["errors"]); bad += 1
 	else:
 		var solved := m.solve(v["content"])
+		asserted += 1
 		if not bool(solved["ok"]):
 			print("FAIL  one zone would not lay out: ", solved["reasons"]); bad += 1
 		else:
@@ -19,6 +22,7 @@ func _initialize() -> void:
 				m.readback(one), e.x, e.y, int(metrics["zone_count"]), float(metrics["fence_length"])])
 
 	# zero zones must still be refused
+	asserted += 1
 	if bool(m.validate({"zones": []})["ok"]):
 		print("FAIL  zero zones accepted"); bad += 1
 	else:
@@ -28,6 +32,7 @@ func _initialize() -> void:
 	var many: Array = []
 	for i in 30:
 		many.append({"type": "crop", "crop": "corn", "width": 20, "depth": 20})
+	asserted += 1
 	if bool(m.validate({"zones": many})["ok"]):
 		print("FAIL  30 zones accepted"); bad += 1
 	else:
@@ -35,10 +40,11 @@ func _initialize() -> void:
 
 	# a normal farm is unchanged
 	var two := {"zones": [{"type": "barn", "width": 20, "depth": 20}, {"type": "pond", "width": 50, "depth": 50}]}
+	asserted += 1
 	if not bool(m.validate(two)["ok"]):
 		print("FAIL  two zones broke"); bad += 1
 	else:
 		print("PASS  two zones unchanged: %s" % m.readback(two))
 
-	print("FARM TEST failures=%d" % bad)
+	print("FARM TEST %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)

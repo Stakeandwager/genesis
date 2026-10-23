@@ -15,6 +15,7 @@ func _rooms(names: Array, size := 10.0) -> Array:
 func _initialize() -> void:
 	var m := DungeonModule.new()
 	var bad := 0
+	var asserted := 0
 
 	var shapes := [
 		["a row of five",  ["a","b","c","d","e"], [[1,2],[2,3],[3,4],[4,5]]],
@@ -26,10 +27,12 @@ func _initialize() -> void:
 	]
 	for s in shapes:
 		var layout: Dictionary = _solve(m, _rooms(s[1]), s[2])
+		asserted += 1
 		if layout.is_empty():
 			bad += 1; print("FAIL  %s would not solve" % s[0]); continue
 		var w: Dictionary = m.walkable(layout)
 		var ok: bool = int(w["reached"]) == int(w["room_count"]) and (w["blocked_doors"] as Array).is_empty()
+		asserted += 1
 		if ok:
 			print("PASS  %-20s logical %d/%d, physical %d/%d" % [
 				s[0], s[1].size(), s[1].size(), int(w["reached"]), int(w["room_count"])])
@@ -42,10 +45,11 @@ func _initialize() -> void:
 	# pass, however well connected the graph is.
 	var layout: Dictionary = _solve(m, _rooms(["a","b","c"]), [[1,2],[2,3]])
 	var walls: Array = m._wall_rects(m._rects(layout)[0], [])
+	asserted += 1
 	if walls.size() != 4:
 		bad += 1; print("FAIL  a room with no doorway should have 4 solid walls, got %d" % walls.size())
 	else:
 		print("PASS  a room with no openings is walled on all four sides")
 
-	print("WALK TEST failures=%d" % bad)
+	print("WALK TEST %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)

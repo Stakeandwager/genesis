@@ -81,6 +81,7 @@ extends SceneTree
 #     that guards a fault is TRAPS 14 in its most literal form.
 
 var failures: Array = []
+var asserted := 0
 var lines: Array = []
 var c: GameController
 
@@ -90,6 +91,7 @@ func _initialize() -> void:
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	lines.append(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		failures.append(what)
@@ -617,7 +619,7 @@ func _run() -> void:
 	for out in lines:
 		print(out)
 	print("")
-	print("PROCEDURE failures=%d" % failures.size())
+	print("PROCEDURE %d assertions, failures=%d" % [asserted, failures.size()])
 	for f in failures:
 		print("  - %s" % str(f))
 	quit(0)

@@ -55,12 +55,14 @@ extends SceneTree
 # is a judgement and it is in HANDOVER under the owner's next session.
 
 var failures: Array = []
+var asserted := 0
 var lines: Array = []
 # Every sentence this suite caused to be produced, for the plural sweep.
 var said: Array = []
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	lines.append(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		failures.append(what)
@@ -262,7 +264,7 @@ func _initialize() -> void:
 	for line in lines:
 		print(line)
 	print("")
-	print("CONTAINER DOOR failures=%d" % failures.size())
+	print("CONTAINER DOOR %d assertions, failures=%d" % [asserted, failures.size()])
 	quit(1 if failures.size() > 0 else 0)
 
 

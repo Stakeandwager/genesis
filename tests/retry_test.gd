@@ -22,9 +22,11 @@ extends SceneTree
 # identical errors.
 
 var bad := 0
+var asserted := 0
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	print(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		bad += 1
@@ -37,7 +39,7 @@ func _initialize() -> void:
 	_the_message_a_player_ends_up_with()
 	_the_record()
 
-	print("RETRY TEST failures=%d" % bad)
+	print("RETRY TEST %d assertions, failures=%d" % [asserted, bad])
 	quit(1 if bad > 0 else 0)
 
 

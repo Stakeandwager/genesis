@@ -72,9 +72,11 @@ extends SceneTree
 # commit that adds the door.
 
 var bad := 0
+var asserted := 0
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	if not ok:
 		bad += 1
 		print("  FAIL  ", what)
@@ -87,7 +89,7 @@ func _initialize() -> void:
 	_a_false_claim_is_still_caught()
 	_an_asking_word_does_not_excuse_an_askable_capability()
 	_only_the_capabilities_with_no_door_are_marked()
-	print("ASKED failures=%d" % bad)
+	print("ASKED %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)
 
 

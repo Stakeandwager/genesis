@@ -20,9 +20,11 @@ extends SceneTree
 # implementation.
 
 var bad := 0
+var asserted := 0
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	print(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		bad += 1
@@ -35,7 +37,7 @@ func _initialize() -> void:
 	_defect_2_articles()
 	_defect_1_missing_tool()
 
-	print("log_022_test failures=%d" % bad)
+	print("log_022_test %d assertions, failures=%d" % [asserted, bad])
 	quit(1 if bad > 0 else 0)
 
 

@@ -112,6 +112,7 @@ const SPOKEN_AN := ["8", "11", "18", "80", "88", "800", "888", "8000", "11000", 
 const SPOKEN_A := ["1", "2", "4", "7", "9", "10", "12", "20", "40", "110", "180", "1100", "1800", "110000"]
 
 var failures: Array = []
+var asserted := 0
 var lines: Array = []
 var said: Array = []        # every sentence this suite caused to be produced
 
@@ -124,6 +125,7 @@ var names_used: Dictionary = {}
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	if ok:
 		lines.append("PASS  " + what)
 	else:
@@ -228,7 +230,7 @@ func _initialize() -> void:
 	for line in lines:
 		print(line)
 	print("")
-	print("SAID ARTICLE failures=%d" % failures.size())
+	print("SAID ARTICLE %d assertions, failures=%d" % [asserted, failures.size()])
 	quit(1 if failures.size() > 0 else 0)
 
 

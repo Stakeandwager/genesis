@@ -17,11 +17,13 @@ extends SceneTree
 var main: Node3D
 var lines: Array = []
 var failures: Array = []
+var asserted := 0
 
 const ROOMS := "{\"name\": \"entrance\", \"width\": 12, \"depth\": 12}, {\"name\": \"store\", \"width\": 12, \"depth\": 12}, {\"name\": \"vault\", \"width\": 12, \"depth\": 12}"
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	lines.append(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		failures.append(what)
@@ -194,5 +196,5 @@ func _finish() -> void:
 	print("")
 	for l in lines:
 		print(l)
-	print("LEDGER TEST failures=%d" % failures.size())
+	print("LEDGER TEST %d assertions, failures=%d" % [asserted, failures.size()])
 	quit(failures.size())

@@ -12,6 +12,7 @@ extends SceneTree
 var main: Node3D
 var lines: Array = []
 var failures: Array = []
+var asserted := 0
 
 const DUNGEON := "{\"command\": \"CREATE_DUNGEON\", \"parameters\": {\"rooms\": [{\"name\": \"entrance\", \"width\": 10, \"depth\": 10}, {\"name\": \"vault\", \"width\": 10, \"depth\": 10}], \"doors\": [[1, 2]]}}"
 const TRACK := "{\"command\": \"CREATE_TRACK\", \"parameters\": {\"mode\": \"circuit\", \"sections\": [{\"type\": \"straight\", \"length\": 80}, {\"type\": \"corner\", \"radius\": 30, \"angle\": 90}, {\"type\": \"straight\", \"length\": 80}, {\"type\": \"corner\", \"radius\": 30, \"angle\": 90}, {\"type\": \"straight\", \"length\": 80}, {\"type\": \"corner\", \"radius\": 30, \"angle\": 90}, {\"type\": \"straight\", \"length\": 80}, {\"type\": \"corner\", \"radius\": 30, \"angle\": 90}]}}"
@@ -22,6 +23,7 @@ func _initialize() -> void:
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	lines.append(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		failures.append(what)
@@ -119,5 +121,5 @@ func _run() -> void:
 	print("")
 	for l in lines:
 		print(l)
-	print("EXPLORE TEST failures=%d" % failures.size())
+	print("EXPLORE TEST %d assertions, failures=%d" % [asserted, failures.size()])
 	quit(failures.size())

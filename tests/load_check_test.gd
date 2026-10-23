@@ -20,9 +20,11 @@ extends SceneTree
 # a warning nobody reads.
 
 var bad := 0
+var asserted := 0
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	print(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		bad += 1
@@ -67,7 +69,7 @@ func _initialize() -> void:
 	_a_measurement_this_version_dropped(measured)
 	_every_outcome_says_what_was_not_saved()
 
-	print("LOAD CHECK failures=%d" % bad)
+	print("LOAD CHECK %d assertions, failures=%d" % [asserted, bad])
 	quit(1 if bad > 0 else 0)
 
 

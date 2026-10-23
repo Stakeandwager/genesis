@@ -10,9 +10,11 @@ extends SceneTree
 # This is the session that proves it, and would have passed before.
 
 var bad := 0
+var asserted := 0
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	print(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		bad += 1
@@ -66,5 +68,5 @@ func _initialize() -> void:
 	_check(absf(float(u2["rate_worst"]) - 1.0) < 0.001, "and that one was understood")
 	_check(int(u2["moved_on"]) == 3, "the three silences are still on the record")
 
-	print("SILENCE TEST failures=%d" % bad)
+	print("SILENCE TEST %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)

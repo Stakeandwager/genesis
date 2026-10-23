@@ -34,9 +34,11 @@ const SHARPLY := 0.75              # "stops sharply" must be at most this much o
 
 var lines: Array = []
 var failures: Array = []
+var asserted := 0
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	lines.append(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		failures.append(what)
@@ -194,5 +196,5 @@ func _run() -> void:
 	print("")
 	for l in lines:
 		print(l)
-	print("BEHAVIOUR TEST failures=%d" % failures.size())
+	print("BEHAVIOUR TEST %d assertions, failures=%d" % [asserted, failures.size()])
 	quit(failures.size())

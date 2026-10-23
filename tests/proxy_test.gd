@@ -42,10 +42,12 @@ extends SceneTree
 # interpret() door. The round trip needs the owner's machine.
 
 var bad := 0
+var asserted := 0
 var interpreter: AIInterpreter
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	print(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		bad += 1
@@ -178,7 +180,7 @@ func _initialize() -> void:
 	_check(not interpreter.busy,
 		"and no request was put on the wire")
 
-	print("PROXY TEST failures=%d" % bad)
+	print("PROXY TEST %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)
 
 

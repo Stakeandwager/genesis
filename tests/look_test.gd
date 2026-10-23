@@ -8,8 +8,10 @@ extends SceneTree
 # applied to a file.
 
 var bad := 0
+var asserted := 0
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	print(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		bad += 1
@@ -93,7 +95,7 @@ func _initialize() -> void:
 	w2.free()
 
 	_clean_up(real)
-	print("LOOK TEST failures=%d" % bad)
+	print("LOOK TEST %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)
 
 

@@ -44,6 +44,7 @@ extends SceneTree
 var main: Node3D
 var lines: Array = []
 var failures: Array = []
+var asserted := 0
 
 const ROOMS := "{\"name\": \"entrance\", \"width\": 12, \"depth\": 12}, {\"name\": \"store\", \"width\": 12, \"depth\": 12}, {\"name\": \"vault\", \"width\": 12, \"depth\": 12}"
 
@@ -77,6 +78,7 @@ const ORDERED := ["CREATE_DUNGEON", "ORDER", "SHUT", "OPEN", "EQUIP",
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	lines.append(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		failures.append(what)
@@ -223,7 +225,7 @@ func _run() -> void:
 func _finish() -> void:
 	for line in lines:
 		print(line)
-	print("LEDGER SAID failures=%d" % failures.size())
+	print("LEDGER SAID %d assertions, failures=%d" % [asserted, failures.size()])
 	for f in failures:
 		print("  - " + f)
 	quit(1 if failures.size() > 0 else 0)

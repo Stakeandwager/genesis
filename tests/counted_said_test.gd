@@ -64,11 +64,13 @@ extends SceneTree
 # the numbers a request carried).
 
 var failures: Array = []
+var asserted := 0
 var lines: Array = []
 var said: Array = []        # every sentence this suite caused to be produced
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	if ok:
 		lines.append("PASS  " + what)
 	else:
@@ -106,7 +108,7 @@ func _initialize() -> void:
 	for line in lines:
 		print(line)
 	print("")
-	print("COUNTED SAID failures=%d" % failures.size())
+	print("COUNTED SAID %d assertions, failures=%d" % [asserted, failures.size()])
 	quit(1 if failures.size() > 0 else 0)
 
 

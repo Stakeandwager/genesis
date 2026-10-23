@@ -26,9 +26,11 @@ extends SceneTree
 # stop a sentence that has been shown to be too wide coming quietly back.
 
 var bad := 0
+var asserted := 0
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	print(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		bad += 1
@@ -45,7 +47,7 @@ func _initialize() -> void:
 	_the_fields_table_is_a_fact()
 	_the_withheld_types_are_not_offered()
 
-	print("CAPABILITY TEST failures=%d" % bad)
+	print("CAPABILITY TEST %d assertions, failures=%d" % [asserted, bad])
 	quit(1 if bad > 0 else 0)
 
 

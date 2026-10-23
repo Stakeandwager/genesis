@@ -28,9 +28,11 @@ extends SceneTree
 # it was by far the cheaper of the two to produce.
 
 var bad := 0
+var asserted := 0
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	print(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		bad += 1
@@ -43,7 +45,7 @@ func _initialize() -> void:
 	_refusals_that_are_honest()
 	_what_the_refusals_denied_still_exists()
 
-	print("log_023_test failures=%d" % bad)
+	print("log_023_test %d assertions, failures=%d" % [asserted, bad])
 	quit(1 if bad > 0 else 0)
 
 

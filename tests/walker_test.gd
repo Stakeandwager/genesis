@@ -21,6 +21,7 @@ const ARRIVE := 1.2                # metres; close enough to count as there
 var module: DungeonModule
 var lines: Array = []
 var failures: Array = []
+var asserted := 0
 
 
 func _initialize() -> void:
@@ -42,7 +43,7 @@ func _run() -> void:
 	print("")
 	for l in lines:
 		print(l)
-	print("WALKER TEST failures=%d" % failures.size())
+	print("WALKER TEST %d assertions, failures=%d" % [asserted, failures.size()])
 	quit(failures.size())
 
 
@@ -89,6 +90,7 @@ func _try_shape(title: String, names: Array, doors: Array) -> void:
 	var count: int = layout["rooms"].size()
 	var geo := int(geometric["reached"])
 
+	asserted += 1
 	var ok := reached.size() == count
 	lines.append("%-18s geometry %d/%d, body %d/%d%s" % [
 		title, geo, count, reached.size(), count,

@@ -7,6 +7,7 @@ extends SceneTree
 var main: Node3D
 var lines: Array = []
 var failures: Array = []
+var asserted := 0
 var race_results: Array = []
 
 const S := "{\"type\": \"straight\", \"length\": %d}"
@@ -17,6 +18,7 @@ func _initialize() -> void:
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	lines.append(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		failures.append(what)
@@ -249,5 +251,5 @@ func _run() -> void:
 	print("\n".join(lines))
 	print("RACES")
 	print("\n".join(race_results))
-	print("DRIVE TEST failures=%d" % failures.size())
+	print("DRIVE TEST %d assertions, failures=%d" % [asserted, failures.size()])
 	quit(failures.size())

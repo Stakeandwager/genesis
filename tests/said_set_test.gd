@@ -80,10 +80,12 @@ extends SceneTree
 # anything here; there is no API key in the harness that runs this.
 
 var failures: Array = []
+var asserted := 0
 var lines: Array = []
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	lines.append(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		failures.append(what)
@@ -152,7 +154,7 @@ func _initialize() -> void:
 	for line in lines:
 		print(line)
 	print("")
-	print("SAID SET failures=%d" % failures.size())
+	print("SAID SET %d assertions, failures=%d" % [asserted, failures.size()])
 	quit(1 if failures.size() > 0 else 0)
 
 

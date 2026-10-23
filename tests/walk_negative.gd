@@ -2,6 +2,7 @@ extends SceneTree
 func _initialize() -> void:
 	var m := DungeonModule.new()
 	var bad := 0
+	var asserted := 0
 
 	var rooms: Array = []
 	for n in ["a", "b", "c"]:
@@ -23,6 +24,7 @@ func _initialize() -> void:
 	for k in 40:
 		out_path.append(a.get_center() + Vector2(0, -float(k) * 0.5))
 	var stuck: Dictionary = m._first_blockage(out_path, floors, sealed)
+	asserted += 1
 	if stuck.is_empty():
 		bad += 1; print("FAIL  walked out through a solid wall")
 	else:
@@ -36,10 +38,11 @@ func _initialize() -> void:
 		all_floors.append(leg)
 	var path: Array = m._corridor_path(layout, 0, 1)
 	var through: Dictionary = m._first_blockage(path, all_floors, open_walls + m._wall_rects(rects[1], [legs[legs.size()-1]]))
+	asserted += 1
 	if through.is_empty():
 		print("PASS  with the doorway cut, the same walk gets through")
 	else:
 		bad += 1; print("FAIL  blocked through an open doorway: %s" % str(through["why"]))
 
-	print("NEGATIVE TEST failures=%d" % bad)
+	print("NEGATIVE TEST %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)

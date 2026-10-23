@@ -92,6 +92,7 @@ extends SceneTree
 var main: Node3D
 var lines: Array = []
 var failures: Array = []
+var asserted := 0
 
 const ROOMS := "{\"name\": \"entrance\", \"width\": 12, \"depth\": 12}, {\"name\": \"store\", \"width\": 12, \"depth\": 12}"
 const SECTIONS := "{\"type\": \"straight\", \"length\": 200}, {\"type\": \"corner\", \"radius\": 60, \"angle\": 90}, {\"type\": \"straight\", \"length\": 200}, {\"type\": \"corner\", \"radius\": 60, \"angle\": 90}, {\"type\": \"straight\", \"length\": 200}, {\"type\": \"corner\", \"radius\": 60, \"angle\": 90}, {\"type\": \"straight\", \"length\": 200}, {\"type\": \"corner\", \"radius\": 60, \"angle\": 90}"
@@ -177,6 +178,7 @@ func _ring_probe() -> String:
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	lines.append(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		failures.append(what)
@@ -468,7 +470,7 @@ func _run() -> void:
 
 	for line in lines:
 		print(line)
-	print("COMMAND SCHEMA failures=%d" % failures.size())
+	print("COMMAND SCHEMA %d assertions, failures=%d" % [asserted, failures.size()])
 	for f in failures:
 		print("  - " + f)
 	quit()

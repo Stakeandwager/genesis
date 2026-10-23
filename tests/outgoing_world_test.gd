@@ -28,9 +28,11 @@ extends SceneTree
 # FIRST, clears it the way the controller clears it, and only then builds.
 
 var bad := 0
+var asserted := 0
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	print(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		bad += 1
@@ -56,7 +58,7 @@ func _initialize() -> void:
 	_a_world_that_is_not_going_anywhere_still_counts()
 	_the_sentence_a_player_reads()
 
-	print("OUTGOING WORLD failures=%d" % bad)
+	print("OUTGOING WORLD %d assertions, failures=%d" % [asserted, bad])
 	quit(1 if bad > 0 else 0)
 
 

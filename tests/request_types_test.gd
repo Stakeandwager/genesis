@@ -81,6 +81,7 @@ extends SceneTree
 # the sixth file doing it again.
 
 var bad := 0
+var asserted := 0
 
 # The six. Each is a value JSON.parse can produce where a number belongs.
 # "10" is included precisely because it LOOKS usable: float("10") is 10 and
@@ -90,6 +91,7 @@ const NOT_NUMBERS := [null, {}, [1, 2], true, "ten", "10"]
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	print(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		bad += 1
@@ -122,7 +124,7 @@ func _run() -> void:
 	_readbacks_invent_no_measurement()
 	_the_valid_case_still_works()
 
-	print("REQUEST TYPES failures=%d" % bad)
+	print("REQUEST TYPES %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)
 
 

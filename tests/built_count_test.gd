@@ -85,9 +85,11 @@ extends SceneTree
 # silence and not a falsehood.
 
 var bad := 0
+var asserted := 0
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	print(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		bad += 1
@@ -97,7 +99,7 @@ func _initialize() -> void:
 	_every_world()
 	_the_sentence_follows_the_tree()
 	_a_node_on_its_way_out_is_not_counted()
-	print("BUILT COUNT failures=%d" % bad)
+	print("BUILT COUNT %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)
 
 

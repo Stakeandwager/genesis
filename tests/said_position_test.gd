@@ -104,10 +104,12 @@ extends SceneTree
 # which is a suite reporting on itself.
 
 var failures: Array = []
+var asserted := 0
 var lines: Array = []
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	if ok:
 		lines.append("PASS  " + what)
 	else:
@@ -404,5 +406,5 @@ func _initialize() -> void:
 	for line in lines:
 		print(line)
 	print("")
-	print("SAID POSITION failures=%d" % failures.size())
+	print("SAID POSITION %d assertions, failures=%d" % [asserted, failures.size()])
 	quit()

@@ -11,6 +11,7 @@ extends SceneTree
 
 var lines: Array = []
 var failures: Array = []
+var asserted := 0
 
 
 func _initialize() -> void:
@@ -18,6 +19,7 @@ func _initialize() -> void:
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	lines.append(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		failures.append(what)
@@ -109,5 +111,5 @@ func _run() -> void:
 	print("")
 	for l in lines:
 		print(l)
-	print("WALK PHYSICS failures=%d" % failures.size())
+	print("WALK PHYSICS %d assertions, failures=%d" % [asserted, failures.size()])
 	quit(failures.size())

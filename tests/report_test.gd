@@ -25,6 +25,9 @@ extends SceneTree
 # key that goes missing must produce a FAIL line and a clean exit, not another
 # ten-minute hang for the next person.
 
+var asserted := 0
+
+
 func _initialize() -> void:
 	var records := [
 		{"type":"session_event","time":"2026-10-08T09:00:00","event":"session_start"},
@@ -48,9 +51,10 @@ func _initialize() -> void:
 
 	var bad := 0
 	var u: Dictionary = s.get("understanding", {})
+	asserted += 1
 	if u.is_empty():
 		print("FAIL no understanding block in the summary")
-		print("REPORT TEST failures=1")
+		print("REPORT TEST %d assertions, failures=1" % asserted)
 		quit(1)
 		return
 
@@ -69,6 +73,7 @@ func _initialize() -> void:
 	# meet, and they meet at 2 of the 3 that bear on it - not at 3 of 4.
 	bad += _near(u, "rate_best", 2.0 / 3.0)
 	bad += _near(u, "rate_worst", 2.0 / 3.0)
+	asserted += 1
 	if absf(float(u.get("rate_best", -1.0)) - 0.75) < 0.001:
 		print("FAIL rate_best is 0.75: silence is back in the fraction (012)")
 		bad += 1
@@ -80,21 +85,24 @@ func _initialize() -> void:
 	without.remove_at(without.size() - 2)   # d's understanding record
 	without.remove_at(without.size() - 2)   # d's own record
 	var u2: Dictionary = SessionReport.summarise(without).get("understanding", {})
+	asserted += 1
 	if int(u2.get("bearing", -1)) != int(u.get("bearing", -2)):
 		print("FAIL silence changed the denominator: %s with, %s without"
 			% [u.get("bearing", "?"), u2.get("bearing", "?")])
 		bad += 1
+	asserted += 1
 	if absf(float(u2.get("rate_worst", -1.0)) - float(u.get("rate_worst", -2.0))) > 0.001:
 		print("FAIL silence changed the score: %s with, %s without"
 			% [u.get("rate_worst", "?"), u2.get("rate_worst", "?")])
 		bad += 1
+	asserted += 1
 	if int(u2.get("moved_on", -1)) != 0:
 		print("FAIL moved_on should be 0 without the silent record, was ", u2.get("moved_on", "?"))
 		bad += 1
 
 	bad += _world_counts()
 
-	print("REPORT TEST failures=%d" % bad)
+	print("REPORT TEST %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)
 
 
@@ -132,23 +140,28 @@ func _world_counts() -> int:
 			"command": others[i], "source": {"source": "ai"}, "metrics": {},
 		})
 	var s := SessionReport.summarise(records)
+	asserted += 1
 	if int(s.get("worlds_built", -1)) != 0:
 		print("FAIL %d non-world commands counted as %s worlds built" % [
 			others.size(), s.get("worlds_built", "?")])
 		bad += 1
+	asserted += 1
 	if float(s.get("seconds_to_first_world", 0.0)) >= 0.0:
 		print("FAIL a session with no world reports a first world after %s s, from \"%s\"" % [
 			s.get("seconds_to_first_world", "?"), s.get("first_world_request", "?")])
 		bad += 1
+	asserted += 1
 	if bool(s.get("made_another", true)):
 		print("FAIL a session with no world says the player made another")
 		bad += 1
+	asserted += 1
 	if int(s.get("requests", -1)) != others.size():
 		print("FAIL the requests themselves stopped being counted: %s of %d" % [
 			s.get("requests", "?"), others.size()])
 		bad += 1
 	# They are not discarded either: a request that worked is still reported.
 	var other_done: Array = s.get("done_otherwise", [])
+	asserted += 1
 	if other_done.size() != others.size():
 		print("FAIL %d non-world requests that worked, %d reported" % [
 			others.size(), other_done.size()])
@@ -164,9 +177,11 @@ func _world_counts() -> int:
 				"source": {"source": "ai"}, "metrics": {}},
 		]
 		var w := SessionReport.summarise(one)
+		asserted += 1
 		if int(w.get("worlds_built", -1)) != 1:
 			print("FAIL %s is a world and was counted %s times" % [worlds[i], w.get("worlds_built", "?")])
 			bad += 1
+		asserted += 1
 		if float(w.get("seconds_to_first_world", -1.0)) < 0.0:
 			print("FAIL %s built a world and no first world was reported" % worlds[i])
 			bad += 1
@@ -179,6 +194,7 @@ func _world_counts() -> int:
 			"readback": "a line", "result": "VALID", "construction": "BUILT", "command": "PLAN",
 			"steps": [str(worlds[0]), "ORDER"], "source": {"source": "ai"}, "metrics": {}},
 	]
+	asserted += 1
 	if int(SessionReport.summarise(plan_world).get("worlds_built", -1)) != 1:
 		print("FAIL a plan that built a world was not counted as one")
 		bad += 1
@@ -188,6 +204,7 @@ func _world_counts() -> int:
 			"result": "VALID", "construction": "BUILT", "command": "PLAN",
 			"steps": ["ORDER", "ORDER"], "source": {"source": "ai"}, "metrics": {}},
 	]
+	asserted += 1
 	if int(SessionReport.summarise(plan_order).get("worlds_built", -1)) != 0:
 		print("FAIL a plan of two orders was counted as a world")
 		bad += 1
@@ -198,6 +215,7 @@ func _world_counts() -> int:
 # quit() and hangs the harness for its whole timeout, which is how this suite
 # spent ten releases on the broken list.
 func _eq(d: Dictionary, key: String, want: int) -> int:
+	asserted += 1
 	if not d.has(key):
 		print("FAIL no key '%s'" % key)
 		return 1
@@ -208,6 +226,7 @@ func _eq(d: Dictionary, key: String, want: int) -> int:
 
 
 func _near(d: Dictionary, key: String, want: float) -> int:
+	asserted += 1
 	if not d.has(key):
 		print("FAIL no key '%s'" % key)
 		return 1

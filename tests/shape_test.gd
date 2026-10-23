@@ -2,6 +2,7 @@ extends SceneTree
 func _initialize() -> void:
 	var m := DungeonModule.new()
 	var bad := 0
+	var asserted := 0
 	var cases := [
 		["a row of five (what the player asked for)",
 		 [["room_one",10,10],["room_two",10,10],["room_three",10,10],["room_four",10,10],["room_five",10,10]],
@@ -16,6 +17,7 @@ func _initialize() -> void:
 		 [[1,2],[2,3],[2,4],[2,5]], "with four rooms off hall"],
 	]
 	for c in cases:
+		asserted += 1
 		var rooms: Array = []
 		for r in c[1]:
 			rooms.append({"name": r[0], "width": r[1], "depth": r[2]})
@@ -25,5 +27,5 @@ func _initialize() -> void:
 		else:
 			bad += 1
 			print("FAIL  %-40s %s\n      expected to contain: %s" % [c[0], line, c[3]])
-	print("SHAPE TEST failures=%d" % bad)
+	print("SHAPE TEST %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)

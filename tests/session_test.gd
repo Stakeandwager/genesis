@@ -139,5 +139,5 @@ func _run() -> void:
 	_check(not last.has("session"), "records after the session are not tagged")
 
 	print("\n".join(lines))
-	print("SESSION TEST failures=%d" % failures.size())
+	print("SESSION TEST %d assertions, failures=%d" % [asserted, failures.size()])
 	quit(failures.size())

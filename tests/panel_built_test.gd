@@ -89,9 +89,11 @@ extends SceneTree
 # door. And no model sent any request in this file.
 
 var bad := 0
+var asserted := 0
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	if not ok:
 		bad += 1
 		print("  FAIL  ", what)
@@ -103,7 +105,7 @@ func _initialize() -> void:
 	_getting_about_follows_the_usable_doors()
 	_one_list_one_type()
 	_the_loop_count_counts_components()
-	print("PANEL BUILT failures=%d" % bad)
+	print("PANEL BUILT %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)
 
 

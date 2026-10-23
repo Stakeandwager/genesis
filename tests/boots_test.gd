@@ -11,9 +11,11 @@ extends SceneTree
 
 var lines: Array = []
 var failures: Array = []
+var asserted := 0
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	lines.append(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		failures.append(what)
@@ -101,5 +103,5 @@ func _initialize() -> void:
 	print("")
 	for l in lines:
 		print(l)
-	print("BOOTS TEST failures=%d" % failures.size())
+	print("BOOTS TEST %d assertions, failures=%d" % [asserted, failures.size()])
 	quit(failures.size())

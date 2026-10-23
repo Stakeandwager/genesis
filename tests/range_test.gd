@@ -13,10 +13,15 @@ func _initialize() -> void:
 	print(SessionReport.describe("range", s))
 	var u: Dictionary = s["understanding"]
 	var bad := 0
+	var asserted := 0
 	# accepted 2 (confirmed + use), corrected 1, disputed 1, revised excluded
+	asserted += 1
 	if int(u["bearing"]) != 4: print("FAIL bearing ", u["bearing"]); bad += 1
+	asserted += 1
 	if absf(float(u["rate_worst"]) - 0.50) > 0.001: print("FAIL worst ", u["rate_worst"]); bad += 1
+	asserted += 1
 	if absf(float(u["rate_best"]) - 0.75) > 0.001: print("FAIL best ", u["rate_best"]); bad += 1
+	asserted += 1
 	if int(u["counts"]["REVISED"]) != 1: print("FAIL revised"); bad += 1
-	print("RANGE TEST failures=%d" % bad)
+	print("RANGE TEST %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)

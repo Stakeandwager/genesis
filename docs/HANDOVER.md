@@ -24,7 +24,68 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **075**, which asked the live axis's
+- Last commit at the time of writing: **076**, which closed the class 075
+  named as its own TRAPS 11 and did not fix: **55 of the 72 suites printed
+  `failures=0` and nothing else, so an assertion could be deleted from any of
+  them and the run output would not move.** Only a diff of the full PASS list
+  against a recorded md5 would have caught it, which is what 073, 074 and 075
+  each had to do.
+  **MEASURED, NOT ARGUED: eleven deliberate deletions, each in its own
+  throwaway copy with its own `config/name` (TRAPS 50), the suite run after
+  each. ALL ELEVEN STAYED `failures=0` AND EXITED 0**, and the assertion count
+  was the only thing that moved — one `_check` out of `look_test` (18 -> 17),
+  `carry_test` (21 -> 20) and `session_test` (18 -> 17, the inherited-helper
+  shape); a row out of `judge_test`'s case table (21 -> 20); an `_eq` row and
+  a direct if-block out of `report_test` (28 -> 27 each); two rows out of
+  `said_fields_test` (127 -> 126 each); a `_differs` row out of
+  `plan_said_test` (50 -> 49); the walls control out of `walk_test` (11 ->
+  10); and **one condition out of `tool_test`'s six-case loop, which cost six
+  assertions (21 -> 15) and still said `failures=0`.**
+  **THREE MUST-PASS CONTROLS PASS at the SAME count** — a PASS/FAIL message
+  reworded in `look_test`, `judge_test` and `tool_test` — so the count reads
+  the assertions and not the wording (TRAPS 6).
+  **WHAT CHANGED.** 55 files in `tests/`, no file added or removed, nothing in
+  `scripts/`, `scenes/` or either runner. 39 of the 55 funnel every assertion
+  through one `_check(ok, what)` whose body is the only failure site, verified
+  per file rather than assumed, and took one mechanical increment. The other
+  16 were read in full: `proxy_test` turned out to be the first shape after
+  all, `session_test` needed only its print line because it inherits
+  `drive_test`'s helper, and the remaining 14 record failures at ad-hoc sites
+  where each site that decides pass or fail got its own increment, so the
+  count is path-correct. **71 of the 72 suites now print a count**;
+  `sweep_test` prints a VERDICT by design and is the whole remainder.
+  **THE VERIFICATION IS THE WHOLE OF THE WORK AND IT CAME BACK CLEAN.** Two
+  full runs on the final tree, `user://` cleared before each, **byte-identical**
+  (md5 `dddf8006012399e50eb9470da9e29af6`), 72 suites, `--all`, 0 with
+  something to look at. The 55 new counts were then **stripped** from that
+  output and the result **diffed against the baseline: byte-identical**, md5
+  `69eb8489ca8e4586238a7a2ad7743a9e` — which is also **the md5 075a recorded
+  on the clean pushed tree**, so the record and the container agreed before
+  anything was touched and no suite's verdict moved after. Two things the
+  format change could have broken were measured rather than reasoned about: a
+  **genuine failure** still prints, exits 1 and is counted by `run_tests.sh`
+  ("suites with something to look at: 1"), and **`report_test`'s early-exit
+  line** — a path this commit rewrote that had never run — prints `REPORT TEST
+  1 assertions, failures=1` and exits 1. `run_tests.bat` was **read**: it
+  matches `failures=`/`bad=` as substrings and computes no verdict, so it
+  needs no edit.
+  **AND A COUNT IN THIS FILE WAS WRONG BEFORE 076 TOUCHED IT.** "Run the tests
+  first" said *"56 of the 72 suites print no assertion count — 15 print one"*
+  in the same paragraph that says `formula_test` was given one in 075.
+  Measured off 075's own output it was **55 and 16**. TRAPS 24's shape, one
+  commit old, in the paragraph that tells you to run the `ls` rather than
+  trust it. Corrected.
+  **NOT VERIFIED: nothing was rendered, no window was opened, no model was
+  asked anything and no request left the container. There is no API key
+  here.** The prompt is byte-identical, `PROMPT_FINGERPRINT` did not move and
+  `PROMPT_VERSION` stays at `050-no-command-for-a-question-1`. **NOTHING
+  ASSERTS THE COUNTS** — no suite checks that a result line carries one, so a
+  suite added tomorrow without one would be caught by nobody, which is exactly
+  how this class reached 55 members. That is the first entry under "Next
+  action" and it is a real gap. No secret was set and no workflow file was
+  edited; 064's finding stands and the live site is still `71b065f`. **No new
+  "Human decision needed."** New TRAPS 73.
+- Before 076: **075**, which asked the live axis's
   question of `tests/formula_test.gd` and found that **the question one layer
   behind it was the better one**. The axis asks *what has the subject never
   supplied?*; measured first, the subject supplies exactly ONE formula clause
@@ -2314,7 +2375,26 @@ worlds, and suites fail for reasons that have nothing to do with the code.
 055 took four answers off such a run before noticing. If a run is being used
 as a measurement, clear `user://` before it, baseline included (TRAPS 50).
 
-Last full run (075, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+Last full run (076, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+headless, in a cloud container, every run sequential with `user://` cleared
+first): **suites with something to look at: 0** on all **72**, with `--all`.
+`ls tests/*.gd` returned **74** and the run reported **72**, re-counted rather
+than carried forward. **TWO full runs on the final tree, `user://` cleared
+before each, byte-identical** (md5 `dddf8006012399e50eb9470da9e29af6`).
+The baseline in this container before anything was touched was the same on
+**72** and was **byte-identical to the md5 075a recorded**
+(`69eb8489ca8e4586238a7a2ad7743a9e`). **EVERY RESULT LINE MOVED**, because 076
+added an assertion count to 55 of them — so the lists were not diffed raw.
+They were compared the way the entry asked: the 55 new counts were **stripped**
+from the after-run output and the result **diffed against the baseline**, which
+came back **byte-identical** at that same md5. No suite's verdict moved and no
+line was added or removed, so neither runner needed an edit: 076 changes the
+body of 55 existing files and adds none. `run_tests.bat` was read rather than
+assumed — it matches `failures=`/`bad=`/`VERDICT` as substrings and computes no
+verdict of its own.
+**This is the first comparable baseline for the result lines; 075's is not.**
+
+The run before it (075, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
 headless, in a cloud container, every run sequential with `user://` cleared
 first): **suites with something to look at: 0** on all **72**, with `--all`.
 `ls tests/*.gd` returned **74** and the run reported **72**, re-counted rather
@@ -2336,13 +2416,22 @@ the four `docs/` mentions in `tests/` — `agreement_test`, `capability_test`,
 **every `DirAccess.open` in `tests/` targets `res://scripts` or
 `res://tests`**, so no suite can read anything under `docs/`.
 
-**NOTE ON THE RESULT LINES, because it changes what a diff of them is worth.**
-**56 of the 72 suites print no assertion count** — 15 print one and
-`sweep_test` prints a VERDICT by design — so for those 56 a vanished assertion
-does **not** move the line, and only a diff of the full PASS lists would catch
-it. `formula_test` was given a count in 075 because the change could not
-otherwise be verified from the result lists at all. The class is the first
-entry under "Next action", and closing it will reset every line here once.
+**NOTE ON THE RESULT LINES — AS OF 076 EVERY SUITE CARRIES AN ASSERTION
+COUNT.** **71 of the 72 print `<N> assertions, failures=<M>`**; `sweep_test`
+prints a VERDICT by design and is the whole remainder. So a vanished assertion
+now moves the run output itself, and a diff of the full PASS lists is no
+longer the only thing that would catch it. **This reset every result line
+once**, which is why the md5 recorded above for 076 is the first comparable
+baseline and 075's is not.
+**WHAT THIS PARAGRAPH SAID BEFORE, AND WHY IT IS RECORDED RATHER THAN
+OVERWRITTEN.** It said *"56 of the 72 suites print no assertion count — 15
+print one"* while also saying, two sentences later, that `formula_test` had
+been given a count in 075. Both cannot be true. Measured off 075's own
+recorded output: **55 printed none and 16 printed one.** 075's "Next action"
+said *"the remaining 55"* and was right; this paragraph kept the pre-075 pair
+and was the stale one. A count in a document, one commit old, in the one
+paragraph here that tells you to run the `ls` rather than trust it — TRAPS 24,
+and 076's own small finding about this file.
 
 The run before it (074, measured the same way): **0 with something to look at**
 on all **72**, with `--all`.
@@ -10616,6 +10705,197 @@ be wrong and the corrections are the useful part.
    a test is a judgement about what a panel suite is for, so it is noted
    rather than taken.
 
+## 076 — fifty-five suites that could lose an assertion and still print failures=0
+
+**Objective.** Read the repository first, as instructed, and take the highest
+thing that is honestly useful. There is **no unaddressed owner finding** — the
+last owner session is still 2026-10-16. So: the **first live entry under
+"Next action"**, which 075 wrote and deliberately did not close, and which it
+named as its own TRAPS 11 — *56 of the 72 suites print no assertion count on
+their result line*, with `formula_test` given one in 075 because that commit
+could not otherwise be verified from the result lists at all.
+
+**Starting state.** `prototype-002a` at `a69b7f7` (075a). Baseline in this
+container, `--all`, `user://` cleared first: **72 suites, 0 with something to
+look at**, and the output **byte-identical to the md5 075a recorded**
+(`69eb8489ca8e4586238a7a2ad7743a9e`). The record and the container agreed
+before anything was touched.
+
+### What a result line could not say, measured rather than argued
+
+`failures=0` is the same line whether a suite made ninety assertions or none.
+For the 55 suites that printed nothing else, **an assertion could be deleted
+outright and the run output would not move** — the only thing that would catch
+it is a diff of the full PASS list against a recorded md5, which is what 073,
+074 and 075 each had to do.
+
+**ELEVEN DELIBERATE DELETIONS, each in its own throwaway copy of the project
+with its own `config/name` (TRAPS 50), the suite run after each. ALL ELEVEN
+STAYED `failures=0` AND EXITED 0**, and in every one the assertion count was
+the only thing that moved:
+
+```
+look_test        one _check call deleted                18 -> 17   failures=0
+carry_test       one _check call deleted                21 -> 20   failures=0
+judge_test       one row deleted from the case table    21 -> 20   failures=0
+report_test      one _eq row deleted                    28 -> 27   failures=0
+report_test      one direct if-block deleted            28 -> 27   failures=0
+said_fields_test the circuit-whole row deleted         127 -> 126  failures=0
+said_fields_test one unmeasured section cut from table 127 -> 126  failures=0
+tool_test        the readback condition deleted          21 -> 15   failures=0
+walk_test        the walls control deleted               11 -> 10   failures=0
+plan_said_test   one _differs row deleted                50 -> 49   failures=0
+session_test     one _check call deleted                 18 -> 17   failures=0
+```
+
+The `tool_test` row is the one to read twice: deleting **one condition** from a
+six-case loop cost **six** assertions, and the suite reported `failures=0`
+both times. The `session_test` row is the inherited case — it extends
+`drive_test` and its count comes from the parent's helper, which is the one
+shape that could have silently counted nothing.
+
+**THREE MUST-PASS CONTROLS, checked for passing for the right reason
+(TRAPS 6).** A PASS/FAIL message reworded in `look_test`, `judge_test` and
+`tool_test`: all three green at the **same** count. So the count reads the
+assertions and not the wording.
+
+### The two shapes the 55 came in, enumerated rather than listed
+
+Counted off the baseline run with `ls tests/*.gd`, not remembered: **74 files,
+72 suites, 16 printed a count, 55 printed none, `sweep_test` prints a VERDICT
+by design.**
+
+- **39 suites funnel every assertion through one `func _check(ok, what)`**
+  whose body is the only place a failure is recorded — verified per file by
+  grepping for every `failures.append` and `bad += 1` site and confirming each
+  sits inside that helper. For these the edit is mechanical: `asserted += 1`
+  as the helper's first statement.
+- **16 do not**, and each was read in full. `proxy_test` turned out to be the
+  first shape after all (its second `failures.append` is a signal collector,
+  not a failure list). `session_test` needed only its print line, because it
+  extends `drive_test` and inherits the helper. The other 14 record failures
+  at ad-hoc sites, and each site that decides pass or fail got its own
+  increment — so the count is path-correct, and a condition removed from
+  inside a loop costs one per iteration.
+
+**The rule, stated so it can be applied to a suite written tomorrow: a result
+line says how many assertions RAN, not only how many failed.**
+
+### What changed
+
+**55 files in `tests/`, no file added or removed, nothing in `scripts/`,
+`scenes/`, `docs/` or either runner.** `run_tests.bat` was **read** rather
+than assumed: it matches `failures=`/`bad=`/`VERDICT` as substrings and
+computes no verdict of its own, so the new format needs no edit there, and
+`run_tests.sh`'s `case` patterns match on the END of the line and still do.
+The prompt is byte-identical, `PROMPT_FINGERPRINT` did not move and
+`PROMPT_VERSION` stays at `050-no-command-for-a-question-1`.
+
+**71 of the 72 suites now print a count**; `sweep_test` prints a VERDICT by
+design and is the whole remainder. The class is closed.
+
+**AND A COUNT IN THIS FILE WAS WRONG BEFORE THIS COMMIT TOUCHED IT.** The
+"Run the tests first" section said *"56 of the 72 suites print no assertion
+count — 15 print one"*, in the same paragraph that goes on to say
+`formula_test` was given a count in 075. Both cannot be true: measured off
+075's own recorded output, it was **55 and 16**. 075's "Next action" said *"the
+remaining 55"* and was right; the run-record paragraph kept the pre-075 pair.
+TRAPS 24's shape, one commit old, in the one paragraph of this file that
+invites the reader to run the `ls` rather than trust it. Corrected.
+
+### Evidence — what was actually run
+
+Godot 4.7.1 on Linux (`4.7.1.stable.official.a13da4feb`), headless, in a cloud
+container, every run sequential with `user://` cleared first.
+
+- **Baseline before anything was touched:** 72 suites, `--all`, **0 with
+  something to look at**, md5 `69eb8489ca8e4586238a7a2ad7743a9e` —
+  **byte-identical to the md5 075a recorded on the clean pushed tree.** That
+  identity is the reason the baseline is known to be uncontaminated rather
+  than argued to be: the edits in this session landed while the baseline run
+  was still going, and the run matching 075a's md5 exactly is what settles
+  that no edited file was read by it.
+- **After, twice on the final tree,** `user://` cleared before each: 72
+  suites, `--all`, **0 with something to look at**, **byte-identical** (md5
+  `dddf8006012399e50eb9470da9e29af6`).
+- **THE VERIFICATION THE ENTRY ASKED FOR, AND IT IS THE WHOLE OF THE WORK.**
+  The 55 changed suites' counts were **stripped** from the after-run output
+  and the result **diffed** against the baseline: **byte-identical, md5
+  `69eb8489ca8e4586238a7a2ad7743a9e` again.** No suite's verdict moved, no
+  line was added or removed, and the only change to any result line is the
+  inserted count.
+- **A genuine failure is still flagged through the new format**, which the
+  format change could have broken and nothing else would have caught: with one
+  `_check` in `look_test` made to fail, the suite printed `LOOK TEST 18
+  assertions, failures=1`, exited 1, and `run_tests.sh` reported **"suites
+  with something to look at: 1"** and exited 1.
+- **`report_test`'s early-exit line was exercised**, because this commit
+  rewrote a line on a path that had never run: with the summary's
+  understanding block made to go missing, it printed `REPORT TEST 1
+  assertions, failures=1` and exited 1.
+- Eleven deliberate deletions and three wording controls as tabled above.
+
+### What the tests do NOT prove
+
+- **NOTHING ASSERTS THE COUNTS.** No suite checks that a result line carries a
+  count, nor that a suite's `asserted` actually tracks its assertions. The 71
+  counts rest on this session's per-file reading and on the eleven deletions
+  above, which covered **8 suites of 71** and all five reporting shapes. A
+  suite added tomorrow with no count would be caught by nobody, which is
+  exactly how this class reached 55 members. That is the first entry under
+  "Next action" and it is a real gap, not a tidy-up.
+- **A count is not a measure of what a suite is worth.** `capability_test`
+  prints 529 and `walk_negative` prints 2; the second is not a worse suite.
+  Nothing here should be read as inviting anybody to raise a number.
+- Nothing was rendered, no window was opened, **no model was asked anything
+  and no request left the container. There is no API key here.**
+- **No secret was set and no workflow file was edited.** 064's finding stands:
+  the web build has failed on every push since 14 October and the live site is
+  still `71b065f`.
+- **No new "Human decision needed."** New TRAPS 73.
+
+### Next action
+
+**THE FIRST LIVE ENTRY, AND IT IS THE GAP THIS COMMIT OPENED: nothing holds
+the counts it just added.** The class-holder to write is a source scan over
+`tests/`, in `source_scan_test`'s family (it already reads `tests/` through
+`_code_of()` and is the tenth-member precedent): **every file in `tests/` that
+is a suite must print a result line of the form `<N> assertions,
+(failures|bad)=<M>`**, with `sweep_test`'s VERDICT and the two tools
+(`prompt_test`, `replay`) named as the exceptions and read from the same lists
+`run_tests.sh` holds rather than retyped. That catches a suite added without a
+count, which is the way this class grew. It does **not** catch an `asserted`
+that stops incrementing — that needs a deletion, and a deletion cannot be a
+standing suite — so the entry should say so in its own header rather than
+imply otherwise (TRAPS 6, TRAPS 14). It adds one line to the result list, so
+the md5 above is the last comparable baseline and the next session should take
+a fresh one in the same commit.
+
+**THEN THE CLASS QUESTION 075 LEFT, UNCHANGED AND STILL THE BIGGER ONE: which
+lines of the assembled prompt can be deleted with no suite failing?** 075
+answered it for the racing section's 11 rule units by deleting eight of them
+one at a time. The prompt has **112 non-blank lines** and **11 suites read it**
+(`boots_test`, `capability_test`, `claim_field_test`, `container_door_test`,
+`formula_test`, `intent_door_test`, `look_test`, `order_test`,
+`procedure_test`, `prompt_bounds_test`, `prompt_numeral_test`). Doing it by
+deletion is 112 runs and the rendered line does not map one-to-one onto a
+source line, so **screen it cheaply first**: collect every string literal in
+the eleven suites' CODE (through `_code_of()`), ask which prompt lines no
+literal reaches, and only then measure the candidates by deletion. Expect
+075's shape — the lines with numbers in them are held and the prose is not —
+and expect the dungeon and farm sections to be where it bites, since 074
+recorded that the eight PROSE numerals have nothing standing behind them.
+**This commit makes that sweep cheaper to read**: a prompt line whose deletion
+costs a suite an assertion without failing it now shows in the run output.
+
+**The prompt-numeral class stays closed** and 073's warning stands: do not
+re-open it by building 068's table of 41.
+
+**And do not take the pattern-breadth axis as written.** Four entries in a row
+asked for a widening and all four times the widening had no subject. The
+question that has paid is the one behind it: 072's *what has the subject never
+supplied?* and 075's *what has the subject supplied that nothing reads?*
+
 ## 075 — the rules the prompt stated and no suite read
 
 **Objective.** Read the repository first, as instructed, and take the highest
@@ -10812,6 +11092,13 @@ sentence described the method and never named the consequence.
 - **No new "Human decision needed."**
 
 ### Next action
+
+**CLOSED IN 076 — all 55 remaining suites now print a count, verified by
+stripping the counts and diffing byte-for-byte against this commit's own
+baseline. The original text is left below with its original number, because
+the number itself was wrong: measured off 075's own output it was 55 and 16,
+not 56 and 15 (see the 076 section). The reasoning for the entry stands and is
+what 076 acted on.**
 
 **THE FIRST LIVE ENTRY, AND IT IS A CLASS THIS COMMIT DELIBERATELY DID NOT
 CLOSE: 56 of the 72 suites print no assertion count on their result line.**

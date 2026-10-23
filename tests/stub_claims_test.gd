@@ -51,9 +51,11 @@ extends SceneTree
 # is a fact the owner's decision in HANDOVER turns on.
 
 var bad := 0
+var asserted := 0
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	print(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		bad += 1
@@ -63,7 +65,7 @@ func _initialize() -> void:
 	_opponents()
 	_ring()
 	_corner()
-	print("STUB CLAIMS failures=%d" % bad)
+	print("STUB CLAIMS %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)
 
 

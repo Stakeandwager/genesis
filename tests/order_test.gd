@@ -18,12 +18,14 @@ extends SceneTree
 var main: Node3D
 var lines: Array = []
 var failures: Array = []
+var asserted := 0
 
 const CHAIN := "{\"command\": \"CREATE_DUNGEON\", \"parameters\": {\"rooms\": [{\"name\": \"entrance\", \"width\": 10, \"depth\": 10}, {\"name\": \"middle\", \"width\": 10, \"depth\": 10}, {\"name\": \"vault\", \"width\": 10, \"depth\": 10}], \"doors\": [[1, 2], [2, 3]]}}"
 const FARM := "{\"command\": \"CREATE_FARM\", \"parameters\": {\"zones\": [{\"type\": \"barn\", \"width\": 20, \"depth\": 20}]}}"
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	lines.append(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		failures.append(what)
@@ -140,5 +142,5 @@ func _run() -> void:
 	print("")
 	for l in lines:
 		print(l)
-	print("ORDER TEST failures=%d" % failures.size())
+	print("ORDER TEST %d assertions, failures=%d" % [asserted, failures.size()])
 	quit(failures.size())

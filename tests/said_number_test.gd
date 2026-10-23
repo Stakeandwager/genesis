@@ -75,9 +75,11 @@ extends SceneTree
 # a judgement about prose and it is HANDOVER's "Human decision needed" 11.
 
 var bad := 0
+var asserted := 0
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	print(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		bad += 1
@@ -89,7 +91,7 @@ func _initialize() -> void:
 	_a_refusal_names_the_number_that_was_sent()
 	_the_reference_doors_say_it_the_same_way()
 
-	print("SAID NUMBER failures=%d" % bad)
+	print("SAID NUMBER %d assertions, failures=%d" % [asserted, bad])
 	quit(1 if bad > 0 else 0)
 
 

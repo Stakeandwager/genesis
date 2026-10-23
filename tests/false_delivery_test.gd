@@ -17,6 +17,7 @@ extends SceneTree
 var main: Node3D
 var lines: Array = []
 var failures: Array = []
+var asserted := 0
 var false_successes := 0
 
 const ROOMS := "{\"name\": \"entrance\", \"width\": 12, \"depth\": 12}, {\"name\": \"middle\", \"width\": 12, \"depth\": 12}, {\"name\": \"room_3\", \"width\": 12, \"depth\": 12}"
@@ -24,6 +25,7 @@ const DOORS := "[1, 2], [2, 3]"
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	lines.append(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		failures.append(what)
@@ -282,5 +284,5 @@ func _run() -> void:
 		print(l)
 	print("")
 	print("FALSE SUCCESSES: %d   (the acceptance criterion is 0)" % false_successes)
-	print("FALSE DELIVERY TEST failures=%d" % failures.size())
+	print("FALSE DELIVERY TEST %d assertions, failures=%d" % [asserted, failures.size()])
 	quit(failures.size())

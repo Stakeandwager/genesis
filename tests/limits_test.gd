@@ -50,9 +50,11 @@ extends SceneTree
 # that make the narrower wording true are asserted below.
 
 var bad := 0
+var asserted := 0
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	print(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		bad += 1
@@ -73,7 +75,7 @@ func _run() -> void:
 	_the_prompt_has_not_gone_back_to_the_wider_claim()
 	_a_rule_scoped_to_a_sentence()
 
-	print("LIMITS TEST failures=%d" % bad)
+	print("LIMITS TEST %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)
 
 

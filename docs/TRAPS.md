@@ -4864,3 +4864,90 @@ supplied?* — and finding that the question one layer behind it was better:
 > Genesis still says it. Seven rules could have left the prompt in silence.
 
 ---
+
+## 73. An assertion deleted from a suite that went on printing failures=0
+
+**Signature:** a suite's result line is identical before and after one of its
+assertions is removed. The suite passes, the runner's "suites with something to
+look at" stays 0, and nothing in the run output has moved. The loss is visible
+only in a diff of the full PASS list against a recorded md5.
+
+**Cause.** A result line that reports only how many assertions FAILED cannot
+report that one stopped running. `failures=0` is the same string whether a
+suite made ninety assertions or none, and **55 of the 72 suites printed
+nothing else.** Every commit from 072 on had to work around it: 072's fault was
+found by diffing the PASS list and seeing four lines gone, and 073, 074 and 075
+each had to diff full output against a recorded md5 to be sure nothing had
+silently stopped asserting. 075 gave `formula_test` a count for exactly that
+reason — because its change could not otherwise be verified from the result
+lists at all — and said plainly in its own "Next action" that fixing one
+member of a list is TRAPS 11 and that it had done it.
+
+**Measured rather than argued.** Eleven deliberate deletions, each in its own
+throwaway copy of the project with its own `config/name` (TRAPS 50), the suite
+run after each. **All eleven stayed `failures=0` and exited 0**, and in every
+one the assertion count was the only thing that moved:
+
+```
+look_test        one _check call deleted                18 -> 17   failures=0
+carry_test       one _check call deleted                21 -> 20   failures=0
+session_test     one _check call deleted                18 -> 17   failures=0
+judge_test       one row deleted from the case table    21 -> 20   failures=0
+report_test      one _eq row deleted                    28 -> 27   failures=0
+report_test      one direct if-block deleted            28 -> 27   failures=0
+said_fields_test the circuit-whole row deleted         127 -> 126  failures=0
+said_fields_test one unmeasured section cut from table 127 -> 126  failures=0
+plan_said_test   one _differs row deleted               50 -> 49   failures=0
+walk_test        the walls control deleted              11 -> 10   failures=0
+tool_test        ONE condition deleted from a loop      21 -> 15   failures=0
+```
+
+The last row is the one worth reading twice: **one condition removed from a
+six-case loop cost six assertions**, and the suite reported `failures=0` both
+times. Nothing short of the count would have said so.
+
+**Do:**
+
+- **A result line states how many assertions RAN, not only how many failed.**
+  Both numbers, on the line the runner prints, so a vanished assertion is
+  visible in the run output and not only in a diff against a remembered md5.
+- **Apply it to every suite, including the ones written tomorrow (TRAPS 11).**
+  One suite given a count because that commit happened to need it is not a
+  fix; it is a member of a list. 076 did the remaining 55 in one commit
+  precisely so the result lines reset once rather than twice.
+- **Count the assertion, not the printed line.** A completeness guard that
+  passes silently is still an assertion and still counts; a summary line like
+  `if bad == 0: print("PASS ...")` is not one and must not. So the count will
+  not always equal the number of PASS/FAIL lines, and a suite's header should
+  not claim it does.
+- **Count at each site that decides pass or fail, so the count is
+  path-correct.** A condition inside a loop costs one per iteration, which is
+  what made the `tool_test` row above read 21 -> 15 instead of 21 -> 20.
+- **Verify a reformatting of the result lines by stripping and diffing, never
+  by reading them.** Strip the inserted counts from the after-run output and
+  diff against the baseline: it must come back byte-identical. That is the only
+  check that distinguishes "the lines all changed because a count was added"
+  from "the lines all changed and one verdict moved too".
+- **And check that a real failure still gets through the new format.** A change
+  to a result line can break the runner's own pass/fail matching, and a green
+  run is exactly what that failure looks like. 076 made one `_check` fail on
+  purpose and confirmed the runner still reported "suites with something to
+  look at: 1" and exited 1. A rewritten early-exit line that had never run was
+  made to run, too.
+- **A count is not a score.** 529 assertions is not a better suite than 2.
+  Nothing about this line should be read as inviting anybody to raise a number.
+
+**And what it does NOT do, said here so the next session does not over-read
+it.** Nothing asserts the counts. No suite checks that a result line carries
+one, nor that a suite's `asserted` still tracks its assertions. The 71 counts
+rest on a per-file reading and on the eleven deletions above, which covered 8
+suites of 71. A suite added without a count would be caught by nobody — which
+is how this class reached 55 members in the first place.
+
+Found in 076, taking the entry 075 wrote and deliberately left open, and
+naming as its own.
+
+> Fifty-five suites could forget an assertion and go on saying failures=0.
+> The green was true and it was not the whole truth.
+
+---

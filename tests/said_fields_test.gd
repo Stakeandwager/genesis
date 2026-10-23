@@ -44,6 +44,7 @@ extends SceneTree
 #   broken later, not because anything was wrong with them.
 
 var bad := 0
+var asserted := 0
 
 
 func _initialize() -> void:
@@ -51,13 +52,14 @@ func _initialize() -> void:
 	_dungeon_rooms_and_things()
 	_farm_zones()
 	_tool_specs()
-	print("SAID FIELDS failures=%d" % bad)
+	print("SAID FIELDS %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)
 
 
 # The sentence must change when the field changes. Nothing is asserted about
 # WHAT it changes to.
 func _differs(where: String, field: String, said_a: String, said_b: String) -> void:
+	asserted += 1
 	if said_a != said_b and said_a != "" and said_b != "":
 		print("PASS  %-26s %-10s %s" % [where, field, said_a])
 		return
@@ -94,11 +96,13 @@ func _circuit_sections() -> void:
 	}
 
 	for type in SectionValidator.FIELDS:
+		asserted += 1
 		if not base.has(type):
 			bad += 1
 			print("FAIL  circuit / %s has no sound example here; add one" % type)
 			continue
 		for field in (SectionValidator.FIELDS[type] as Array):
+			asserted += 1
 			if not other.has(field):
 				# A field nobody thought to vary is the whole fault this
 				# suite is about, so it is a failure and not a skip.
@@ -136,6 +140,7 @@ func _circuit_sections() -> void:
 		{"type": "straight", "length": 200.0},
 		{"type": "corner", "radius": 50.0, "angle": 90.0}]}
 	var checked := r.validate(circuit)
+	asserted += 1
 	if bool(checked["ok"]):
 		print("PASS  circuit / whole        valid     %s" % r.readback(circuit))
 	else:
@@ -151,6 +156,7 @@ func _circuit_sections() -> void:
 			{"type": "loop_segment", "radius": 30.0, "angle": {}},
 			{"type": "crest", "length": 200.0, "grade": [8]}]:
 		var said := r.readback({"sections": [section]})
+		asserted += 1
 		if said != "" and not said.contains("0 deg") and not said.contains("0%") and not said.contains("nan"):
 			print("PASS  circuit / unmeasured  %-10s %s" % [str(section["type"]), said])
 		else:
@@ -201,6 +207,7 @@ func _dungeon_rooms_and_things() -> void:
 	var unmeasured := d.readback({"rooms": [
 		{"name": "hall", "width": 12.0, "depth": 12.0},
 		{"name": "vault", "width": null, "depth": 20.0}], "doors": [[1, 2]]})
+	asserted += 1
 	if unmeasured.contains("vault") and not unmeasured.contains("0 m vault"):
 		print("PASS  dungeon / unmeasured   room      %s" % unmeasured)
 	else:
@@ -209,6 +216,7 @@ func _dungeon_rooms_and_things() -> void:
 
 	# And a sound dungeon is sound, so the above is not two refusals.
 	var checked := d.validate({"rooms": rooms, "doors": doors})
+	asserted += 1
 	if bool(checked["ok"]):
 		print("PASS  dungeon / whole        valid     %s" % d.readback({"rooms": rooms, "doors": doors}))
 	else:
@@ -251,6 +259,7 @@ func _tool_specs() -> void:
 func _each_field(where: String, tool: ToolModule, other: Dictionary) -> void:
 	var defaults: Dictionary = tool.defaults()
 	for field in defaults:
+		asserted += 1
 		if not other.has(field):
 			bad += 1
 			print("FAIL  %-26s %-10s no second value listed; add one" % [where, field])

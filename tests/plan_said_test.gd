@@ -69,6 +69,7 @@ extends SceneTree
 # this suite stays green.
 
 var bad := 0
+var asserted := 0
 
 
 # --- two requests for every command the whitelist allows ---
@@ -131,13 +132,14 @@ func _initialize() -> void:
 	_every_command()
 	_every_world_in_a_plan()
 	_plan_layer()
-	print("PLAN SAID failures=%d" % bad)
+	print("PLAN SAID %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)
 
 
 # The sentence must change when the request changes. Nothing is asserted
 # about WHAT it changes to.
 func _differs(where: String, said_a: String, said_b: String) -> void:
+	asserted += 1
 	if said_a != said_b and said_a != "" and said_b != "":
 		print("PASS  %-34s %s" % [where, said_a])
 		return
@@ -149,6 +151,7 @@ func _differs(where: String, said_a: String, said_b: String) -> void:
 
 
 func _check(ok: bool, what: String) -> void:
+	asserted += 1
 	print(("PASS  " if ok else "FAIL  ") + what)
 	if not ok:
 		bad += 1
@@ -161,6 +164,7 @@ func _every_command() -> void:
 		var command := str(entry)
 		if command == "PLAN":
 			continue
+		asserted += 1
 		if not pairs.has(command):
 			bad += 1
 			print("FAIL  %-34s whitelisted and not listed in this suite" % command)
@@ -184,6 +188,7 @@ func _every_world_in_a_plan() -> void:
 	for entry in WorldRegistry.modules():
 		var module: WorldModule = entry
 		var piece: Array = module.pieces()
+		asserted += 1
 		if piece.size() != 2:
 			bad += 1
 			print("FAIL  %-34s declares no list of pieces" % module.command())
