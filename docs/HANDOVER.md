@@ -61,7 +61,10 @@ that the owner has not ruled on.** Do not promote one to the other.
   output and the result **diffed against the baseline: byte-identical**, md5
   `69eb8489ca8e4586238a7a2ad7743a9e` — which is also **the md5 075a recorded
   on the clean pushed tree**, so the record and the container agreed before
-  anything was touched and no suite's verdict moved after. Two things the
+  anything was touched and no suite's verdict moved after. **A THIRD full run
+  was taken on the clean pushed tree at `1c0df4f`, byte-identical to both, and
+  its strip-and-diff byte-identical to the baseline** — see "Run the tests
+  first". Two things the
   format change could have broken were measured rather than reasoned about: a
   **genuine failure** still prints, exits 1 and is counted by `run_tests.sh`
   ("suites with something to look at: 1"), and **`report_test`'s early-exit
@@ -2379,8 +2382,19 @@ Last full run (076, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
 headless, in a cloud container, every run sequential with `user://` cleared
 first): **suites with something to look at: 0** on all **72**, with `--all`.
 `ls tests/*.gd` returned **74** and the run reported **72**, re-counted rather
-than carried forward. **TWO full runs on the final tree, `user://` cleared
-before each, byte-identical** (md5 `dddf8006012399e50eb9470da9e29af6`).
+than carried forward. **THREE full runs, `user://` cleared before each, all
+byte-identical** (md5 `dddf8006012399e50eb9470da9e29af6`): two on the final
+tree, and a **THIRD on the clean pushed tree at `1c0df4f`**, taken because
+076's doc edits landed after the second — exactly as 074a's and 075a's did —
+so the md5 demonstrably covers what is on the remote. **The strip-and-diff was
+re-run on that third output too and is byte-identical to the baseline**, md5
+`69eb8489ca8e4586238a7a2ad7743a9e`.
+Checked rather than reasoned about (TRAPS 4): the four `docs/` mentions in
+`tests/` — `agreement_test`, `capability_test`, `formula_test` and
+`retry_test` — are all prose inside comments, and **every `DirAccess.open` in
+`tests/` targets `res://scripts` or `res://tests`** (grepped for `res://docs`
+and `"docs/` as well), so no suite can read anything under `docs/` and the doc
+edits could not have moved any suite's result.
 The baseline in this container before anything was touched was the same on
 **72** and was **byte-identical to the md5 075a recorded**
 (`69eb8489ca8e4586238a7a2ad7743a9e`). **EVERY RESULT LINE MOVED**, because 076
