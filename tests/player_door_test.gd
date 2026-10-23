@@ -303,7 +303,16 @@ func _the_scene() -> void:
 		# is here rather than the mistake being in the committed suite.
 		if not name.ends_with(".gd") or name == "player_door_test.gd":
 			continue
-		var body := FileAccess.get_file_as_string("res://tests/%s" % name)
+		# READ OFF THE CODE AND NOT THE WHOLE FILE (067). Every needle below
+		# is a question about what a suite DOES, and until 067 all four were
+		# asked of the raw file. MEASURED: add a suite to tests/ that loads
+		# the main scene from a path it assembles itself - which is exactly
+		# what this section exists to forbid - and the by_path assertion
+		# FAILS by name, until one comment line in it says "Not read from
+		# application/run/main_scene, deliberately", at which point the suite
+		# is filed as reaching the setting and PASSES. 67 assertions,
+		# failures=0, on the guard 061 wrote the section for. See TRAPS 64.
+		var body := _code_of(FileAccess.get_file_as_string("res://tests/%s" % name))
 		if body.contains('set_script(load("res://scripts/main.gd"))'):
 			hand_built.append(name)
 		if not body.contains("var main: Node3D"):
@@ -321,6 +330,14 @@ func _the_scene() -> void:
 	# seventeenth suite does not have to edit this line.
 	_check(by_setting.size() >= 16,
 		"and there are %d of them besides this file" % by_setting.size())
+	# The reader those four needles go through, with its own negative control,
+	# because the enumeration above is only as good as the text it reads. The
+	# needle here is the one the measurement used.
+	var prose := "# Not read from application/run/main_scene, deliberately.\n\tvar p := 1  # application/run/main_scene\n"
+	_check(not _code_of(prose).contains("application/run/main_scene"),
+		"and the reader it uses does not see that setting in a comment, on its own line or after code")
+	_check(_code_of('\tvar p := ProjectSettings.get_setting("application/run/main_scene")\n').contains("application/run/main_scene"),
+		"while it does see it in a line of code, so the filing above is not done by seeing nothing")
 	# A scene RESOURCE PATH lives in exactly one place - this file, which is
 	# the one that compares it with the setting. Read as "res://scenes" and
 	# not as ".tscn": the sixteen converted suites name scenes/main.tscn in a
@@ -332,7 +349,15 @@ func _the_scene() -> void:
 		for name in DirAccess.get_files_at(dir):
 			if not name.ends_with(".gd") or name == "player_door_test.gd":
 				continue
-			if FileAccess.get_file_as_string("%s/%s" % [dir, name]).contains("res://scenes"):
+			# Code, not prose (067). This needle was CHOSEN to dodge the
+			# sixteen comments that name the scene - the paragraph above says
+			# so - and reading the code instead is the general form of that
+			# dodge, so a seventeenth comment cannot fail this for a wording
+			# reason. It narrows the check in exactly one way, correctly: a
+			# commented-out resource path is not a resource path anything
+			# loads. Found while measuring 067, by this file's own fixture
+			# failing on a comment in the throwaway suite written to test it.
+			if _code_of(FileAccess.get_file_as_string("%s/%s" % [dir, name])).contains("res://scenes"):
 				literals.append(name)
 	_check(literals.is_empty(),
 		"and a scene resource path is written out in this file and nowhere else in tests/ or scripts/ (others: %s)" % str(literals))
@@ -342,7 +367,7 @@ func _the_scene() -> void:
 	# too, because an enumeration that matched nothing would assert nothing
 	# and pass (TRAPS 6).
 	var onready := RegEx.create_from_string('@onready var \\w+: (\\w+) = \\$(\\S+)')
-	var source := FileAccess.get_file_as_string("res://scripts/main.gd")
+	var source := _code_of(FileAccess.get_file_as_string("res://scripts/main.gd"))
 	var found := 0
 	for m in onready.search_all(source):
 		found += 1
@@ -359,7 +384,7 @@ func _the_scene() -> void:
 	# The controller's two, read out of its own source the same way. These
 	# resolve against world_root, which is main.
 	var getter := RegEx.create_from_string('world_root\\.get_node_or_null\\("([^"]+)"\\) as (\\w+)')
-	var controller_source := FileAccess.get_file_as_string("res://scripts/game_controller.gd")
+	var controller_source := _code_of(FileAccess.get_file_as_string("res://scripts/game_controller.gd"))
 	var paths: Array = []
 	for m in getter.search_all(controller_source):
 		paths.append(m.get_string(1))
@@ -655,13 +680,13 @@ func _the_scene_has_no_floor() -> void:
 	for name in DirAccess.get_files_at("res://tests"):
 		if not name.ends_with(".gd") or name == "player_door_test.gd":
 			continue
-		if FileAccess.get_file_as_string("res://tests/%s" % name).contains("use_collision"):
+		if _code_of(FileAccess.get_file_as_string("res://tests/%s" % name)).contains("use_collision"):
 			with_collision.append(name)
 	_check(with_collision.is_empty(),
 		"and no suite in tests/ gives that slab the collision the game's scene has not got (%s)" % str(with_collision))
 	var in_scripts: Array = []
 	for name in DirAccess.get_files_at("res://scripts"):
-		if name.ends_with(".gd") and FileAccess.get_file_as_string("res://scripts/%s" % name).contains("use_collision"):
+		if name.ends_with(".gd") and _code_of(FileAccess.get_file_as_string("res://scripts/%s" % name)).contains("use_collision"):
 			in_scripts.append(name)
 	_check(in_scripts.is_empty(),
 		"while nothing in scripts/ sets use_collision at all (%s)" % str(in_scripts))
@@ -671,7 +696,7 @@ func _the_scene_has_no_floor() -> void:
 	for name in DirAccess.get_files_at("res://tests"):
 		if not name.ends_with(".gd") or name == "player_door_test.gd":
 			continue
-		var body := FileAccess.get_file_as_string("res://tests/%s" % name)
+		var body := _code_of(FileAccess.get_file_as_string("res://tests/%s" % name))
 		if body.contains("StaticBody3D.new()") and body.contains("CollisionShape3D.new()"):
 			own_floor.append(name)
 	_check(own_floor.size() >= 2,
@@ -737,7 +762,7 @@ func _the_name_is_not_the_worlds() -> void:
 	for name in DirAccess.get_files_at("res://scripts"):
 		if not name.ends_with(".gd") or name == "racing_module.gd":
 			continue
-		if FileAccess.get_file_as_string("res://scripts/%s" % name).contains('"CircuitBuilder"'):
+		if _code_of(FileAccess.get_file_as_string("res://scripts/%s" % name)).contains('"CircuitBuilder"'):
 			readers.append(name)
 	_check(readers.is_empty(),
 		"and no script but the module that assigns it names \"CircuitBuilder\" at all, so no production code identifies a world by name (%s)" % str(readers))
@@ -765,3 +790,32 @@ func _run() -> void:
 		print("  ", note)
 	print("PLAYER DOOR %d assertions, failures=%d" % [asserted, bad])
 	quit(1 if bad > 0 else 0)
+
+
+# The CODE of a .gd source: comment lines blanked and trailing comments cut,
+# with the line count preserved so a scan that reports a line number still
+# reports the right one. A question about what the code DOES is answered from
+# this. A question about what is MENTIONED anywhere is a different question
+# and reads the raw file; which one a scan is asking is decided by the
+# direction of its assertion and not by habit.
+#
+# WHY THIS EXISTS. 066 found that the first version of record_id_test's
+# session scan was satisfied by a comment saying OS.get_process_id() in
+# prose, and fixed it in that one function. 067 asked the same question of
+# every source scan in tests/ and MEASURED three more, each flipped from FAIL
+# to PASS by one comment line. See TRAPS 64.
+#
+# NOT A PARSER. A "#" inside a string literal cuts the line early, which can
+# only lose a code match and never invent one - so this is safe in the one
+# direction that matters: nothing a comment says can make a presence check
+# pass.
+static func _code_of(source: String) -> String:
+	var out := ""
+	for raw in source.split("\n"):
+		var line := str(raw)
+		if line.strip_edges().begins_with("#"):
+			out += "\n"
+			continue
+		var hash_at := line.find("#")
+		out += (line if hash_at < 0 else line.substr(0, hash_at)) + "\n"
+	return out

@@ -24,7 +24,49 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **066**, which did two things and the
+- Last commit at the time of writing: **067**, which asked TRAPS 11's question
+  of the commit that had just restated TRAPS 11. **066's FIRST DELIBERATE
+  FAULT PASSED**, because its new scan searched whole files for
+  `OS.get_process_id()` and the comment 066 had written into
+  `handler_wiring_test` says the call in prose. 066 narrowed that one function
+  and wrote the lesson into TRAPS: *"scan code, not comments."* **IT NARROWED
+  ONE FUNCTION. NINE FILES IN `tests/` READ THIS PROJECT'S OWN SOURCE, AND
+  THREE MORE WERE SATISFIED BY A COMMENT** — measured one at a time in
+  throwaway copies with their own `config/name` (TRAPS 50), each flipped from
+  FAIL to PASS by **one comment line**, and each caught again after the fix:
+  `handler_wiring_test`'s guard that its `PLACEHOLDER` is the string `main.gd`
+  writes (47 assertions, failures=0, on a false claim);
+  `player_door_test`'s guard that no suite reaches the main scene by a path of
+  its own, defeated by a comment saying it did **not** use the setting (67,
+  failures=0); and `check_wiring_test`'s guard that `BY_HAND`'s row still
+  names a function that exists, defeated by *"Renamed from func
+  quarrel_with(reason)"* (188, failures=0).
+  **AND "SCAN CODE, NOT COMMENTS" TURNED OUT TO BE THE WRONG RULE, which is
+  the finding worth more than the fixes.** Applied as written it would have
+  **narrowed two checks that are wide on purpose**: `controller_reach_test`
+  and `refusal_reach_test` both collect every `FAILED_` name in `scripts/` and
+  assert each has a declared row, and a name that appears only in a comment
+  still has to be answered for. The rule is about **direction** — a question
+  about what the code *does* reads the code; a question about what is
+  *mentioned* reads the raw file — and `refusal_reach_test` now asks both of
+  one scan with the texts separated. **Measured while splitting it: all 16
+  categories are in code, 6 are also in comments, and NONE is comment-only,
+  so no answer in the repository changed.**
+  **NO FILE IN `scripts/` OR `scenes/` CHANGED.** Nine files in `tests/` now
+  read source through one function, `_code_of()`, byte-identical in every
+  copy; one new suite, `tests/source_scan_test.gd` (24 assertions), holds the
+  class at **file granularity** and says so. **69 suites, `--all`, `user://`
+  cleared first: 0 with something to look at**, against 68 at the 066
+  baseline, lists **diffed** — four assertion counts moved and one line was
+  added, nothing else. Two full runs, **byte-identical**. **Nine deliberate
+  faults and two negative controls**, FAIL lines read; fault 6's first
+  attempt proved nothing because the injection was incomplete, and is
+  recorded that way (TRAPS 55). New TRAPS 64; new "Human decision needed" 30.
+  **NOT VERIFIED: nothing was rendered, no model was asked anything, no
+  request left the container, and the per-needle half of the rule is NOT
+  held** — `source_scan_test` proves a member has the reader and uses it
+  somewhere, not that every needle in it goes through it.
+- Before 067: **066**, which did two things and the
   first is about this file. **"Next action" item 2 — *hold the four
   `connect()` rows 059 found unheld* — HAD BEEN DONE IN 060**, in
   `tests/player_door_test.gd`, and this section's own 065 entry called it
@@ -1568,8 +1610,8 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-69 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **67 suites**, counted with `ls tests/*.gd` rather than
+71 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **69 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites.
 
@@ -1581,7 +1623,23 @@ worlds, and suites fail for reasons that have nothing to do with the code.
 055 took four answers off such a run before noticing. If a run is being used
 as a measurement, clear `user://` before it, baseline included (TRAPS 50).
 
-Last full run (062, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+Last full run (067, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+headless, in a cloud container, every run sequential with `user://` cleared
+first): **suites with something to look at: 0** on all **69**, with `--all`.
+The baseline at 066, measured the same way in the same container with the same
+binary before anything was touched, was the same on 68 suites, and the lists
+were **diffed**: four assertion counts moved — `check_wiring` 188 → 190,
+`handler_wiring` 47 → 49, `player_door` 67 → 69, `refusal_reach` 96 → 99 —
+and one line was added, `source_scan_test` 24. **`controller_reach` stayed at
+136**, which is the measurement saying that moving its trailing-comment skip
+into the shared reader cost no site. Two full runs after the last edit,
+**byte-identical** (md5 `9bb6bd51cf700054e643edd76a4d2780`).
+`source_scan_test` needs no entry in either runner: `run_tests.sh`'s three
+lists and `run_tests.bat`'s `findstr` patterns were **RUN** against the name
+rather than eyeballed (TRAPS 4) and none matches, so it runs with no
+`--fixed-fps`. It steps no physics and takes under a second.
+
+The run before it (062, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
 headless, in a cloud container with 2 cores, every run sequential with
 `user://` cleared first): **suites with something to look at: 0** on all 66,
 with `--all`. The baseline at 061, measured the same way in the same
@@ -2019,6 +2077,17 @@ verified, and what remains uncertain.
   `count_of()` the word form, and `container_door_test` sweeps every
   sentence the suite produced for a count of one followed by a plural,
   rather than quoting any of them. See TRAPS 27.
+- **A scan over this project's own source reads the text its question is
+  about.** 066 and 067. A question about what the code **does** is answered
+  from the code, comments stripped; a question about what is **mentioned**
+  anywhere reads the raw file, and which one a scan is asking is decided by
+  the direction of its assertion. 066 found a presence check a comment could
+  satisfy and fixed one function; 067 found three more in the nine files that
+  read source, each flipped from FAIL to PASS by one comment line, and found
+  that the blunter rule — *"scan code, not comments"* — would have narrowed
+  two checks that are wide on purpose. One reader, `_code_of()`, in every file
+  that scans source; `tests/source_scan_test.gd` holds the class, at file
+  granularity and saying so. See TRAPS 63 and 64.
 - **Silence is not agreement.** `ACCEPTED_BY_SILENCE` is recorded and excluded
   from the understanding score.
 - **A carrier's claim is evidence of an attempt, not of delivery.** Delivery is
@@ -8132,6 +8201,27 @@ all **done**. Candidates, in the order the assistant would take them:
     cannot see. `grep` for `RegEx` and for `contains(` in `tests/` and ask of
     each one: what passes this that should not?
 
+    **067 ASKED THIS ALONG ONE AXIS AND THAT AXIS IS CLOSED: can a comment
+    answer it?** Nine files in `tests/` read a `.gd` source; eleven of their
+    scan sites read raw text and **three were satisfied by a single comment
+    line** in the direction that matters, each measured in its own throwaway
+    copy before anything was changed. All nine now read through one
+    `_code_of()`, and `tests/source_scan_test.gd` holds the class at file
+    granularity. **The finding worth more than the fixes is that TRAPS 63's
+    own wording — "scan code, not comments" — is the WRONG rule**: applied
+    literally it narrows two checks that are wide on purpose, so the rule is
+    about the DIRECTION of the assertion. See TRAPS 64 and the 067 section.
+
+    **WHAT IS LEFT OF THIS ENTRY, AND IT IS THE LARGER HALF — THE REGEX
+    BREADTH AXIS, WHICH IS 042'S OWN FAULT AND WAS NOT LOOKED FOR IN 067.**
+    042's sweep was correct and its regex could only match one word order; a
+    comment cannot cause that and `_code_of()` does nothing about it. The
+    method is the entry's own: `grep` `RegEx.create_from_string` and
+    `contains(` in `tests/`, and for each pattern ask what member of its
+    class it cannot match — then feed it that member and watch the suite stay
+    green. **Expect the blind spot to be in the check**, which it has now
+    been in 041, 042, 043, 052, 066 and 067.
+
   The method, which has now worked twice: **take the rule, find the FUNCTION
   the fix introduced, grep its call sites, and count them against the places
   the rule holds.** Where the count differs, measure what the difference costs
@@ -9599,6 +9689,197 @@ be wrong and the corrections are the useful part.
    suite reads it. It is four lines and a `match`. Whether a colour is worth
    a test is a judgement about what a panel suite is for, so it is noted
    rather than taken.
+
+## 067 — the rule written down in one commit and applied to one function
+
+**Objective.** The live entry under "Smallest useful assistant task next",
+in its own words: *"for every sweep in `tests/`, what is the sweep blind
+to?"* — raised by 042, never taken. Asked here along **one** axis: can a
+comment satisfy it? That axis was chosen because 066 had just been bitten by
+it, fixed one function, and written the general lesson into TRAPS in the same
+commit, which is TRAPS 11's exact shape.
+
+**Starting state.** Branch `prototype-002a` at `e9f3cca` (066). 68 suites,
+`--all`, `user://` cleared first: **0 with something to look at**, run in this
+container before anything was touched, with
+`4.7.1.stable.official.a13da4feb`.
+
+### The class, enumerated rather than listed (TRAPS 31)
+
+Counted by script over `tests/`, not remembered: **nine files read a `.gd`
+source out of this repository** — `check_wiring_test`,
+`controller_reach_test`, `handler_wiring_test`, `player_door_test`,
+`proxy_test`, `record_id_test`, `refusal_reach_test`, `scene_light_test`,
+`view_frame_test`. Of their scan sites, **seven already stripped comments in
+some form and eleven did not**, and the split was inconsistent *inside* single
+files: `check_wiring_test`'s `_verdict_functions()` strips and its `BY_HAND`
+check two hundred lines later does not.
+
+**Three of the eleven were answerable by prose in the direction that
+matters** — a presence check a comment can satisfy. Each was reproduced in its
+own throwaway copy of the project outside the repository with its own
+`config/name` (TRAPS 50), **before** anything was changed, and each needed one
+comment line:
+
+| guard | the fault | without the comment | with it |
+|---|---|---|---|
+| `handler_wiring_test` — its `PLACEHOLDER` is the string `main.gd` writes | change `main.gd:978`, leave the old text in a comment beside it | **47, failures=1** | **47, failures=0** |
+| `player_door_test` — no suite reaches the main scene by a path of its own | add a suite that loads the scene from a path it assembles, with a comment saying it does *not* use the setting | **67, failures=1** | **67, failures=0** |
+| `check_wiring_test` — `BY_HAND`'s row still names a function that exists | rename `quarrel_with()` through `scripts/` and `tests/`, put the row back to the old name, add *"Renamed from func quarrel_with(reason)"* to `refusal_check.gd` | **188, failures=1** | **188, failures=0** |
+
+The other eight read raw text in the **absence** direction — *"nothing in
+`scripts/` sets `use_collision`"*, *"a scene resource path is written out in
+one file"* — where a comment makes the suite fail **loudly** for a wording
+reason rather than pass quietly. Not a false pass, and not harmless: this
+file's own fixture for the `player_door_test` fault **failed on a comment in
+the throwaway suite written to measure it**, which is how that half was found.
+
+### And the rule in TRAPS 63 is the wrong rule, which is worth more than the fixes
+
+TRAPS 63's last bullet says *"scan code, not comments."* Applied to the class
+as written, **it would have narrowed two checks that are wide on purpose.**
+`controller_reach_test` and `refusal_reach_test` each collect every `FAILED_`
+name in `scripts/` and assert that every one has a declared row. A name that
+appears **only in a comment** still has to be answered for, because somebody
+reading that comment will go looking for the row.
+
+And the same scan's other direction needs the opposite text:
+*"a declared row still names a category the code returns"* is exactly the
+stale row that a category deleted from the code and left in a comment would
+keep alive.
+
+**So the rule is about DIRECTION and not habit:**
+
+> A question about what the code **does** is answered from the code, comments
+> stripped. A question about what is **mentioned** anywhere reads the raw
+> file. Which one a scan is asking is decided by the direction of its
+> assertion.
+
+`refusal_reach_test._categories_in_source()` now takes `code_only` and is
+called **both ways**, with the reason written at the function.
+**Measured when the split was made, rather than assumed: all 16 categories are
+in code, 6 of them are also in comments, and none is comment-only** — so no
+answer in the repository changed, and the split is what makes the staleness
+half able to fail at all.
+
+### Implementation — no file in `scripts/` or `scenes/` changed
+
+- **One reader, `_code_of()`**, in each of the nine files plus the new suite.
+  It blanks whole-line comments **in place** and cuts trailing ones, so the
+  **line count is preserved** — not tidiness: `record_id_test`'s session scan
+  reports `file:line` off this text, and 066's own fault 2 was a report that
+  named a line which started nothing. Verified after the change: that scan
+  still names `handler_wiring_test.gd:583`.
+- **Eleven scan sites moved onto it**, across `check_wiring_test`,
+  `controller_reach_test`, `handler_wiring_test`, `player_door_test`,
+  `proxy_test`, `record_id_test`, `refusal_reach_test`, `scene_light_test` and
+  `view_frame_test`. `record_id_test`'s `_asks_who_it_is()` is now two lines
+  — the stripping 066 wrote by hand is the shared reader's job.
+- **A negative control beside each fixed presence scan**, asserting the
+  **reader** and not the wording: the needle in a whole-line comment and after
+  code on the same line are both invisible, and the same needle in a line of
+  code is not. That last assertion is what stops the first two passing by
+  seeing nothing (TRAPS 6).
+- **`tests/source_scan_test.gd`** (new, 24 assertions) enumerates every file
+  in `tests/` that reads a `.gd` source, and asserts: each goes through
+  `_code_of()`; each **defines** it, because `tests/` has no shared library;
+  and **all ten copies are byte-identical** — ten private copies of one
+  function is TRAPS 28's shape, and a drifted copy is a scan blind in a way
+  nothing says. It holds itself to the same rule, and it asserts the one
+  **exclusion** as a fact: `session_test.gd` names `res://tests` once and that
+  line is its `extends`, so an `extends` is not a read.
+- **Two things deliberately NOT changed.** The two wide `FAILED_` scans stay
+  wide, with the reason written where somebody applying TRAPS 63 literally
+  would read it. And `proxy_test`'s reads of `netlify/functions/interpret.js`
+  and `export_presets.web.cfg` stay raw: their comments are `//` and `;`, not
+  `#`, so `_code_of()` is the wrong reader and **nothing about them was
+  measured here**.
+- **Neither runner needed an edit.** `run_tests.sh`'s `TIMED`, `SLOW` and
+  `NOT_A_SUITE` lists and `run_tests.bat`'s `findstr` patterns were **RUN**
+  against the name `source_scan_test` rather than eyeballed (TRAPS 4): none
+  matches, so it runs with no `--fixed-fps`. It takes under a second and
+  steps no physics.
+
+### Evidence — what was actually run
+
+- **69 suites, `--all`, `user://` cleared first: 0 with something to look
+  at**, against **68** at the 066 baseline taken in this container with the
+  same binary before anything was touched. The lists were **diffed**, not
+  quoted from memory: `check_wiring` 188 → 190, `handler_wiring` 47 → 49,
+  `player_door` 67 → 69, `refusal_reach` 96 → 99, and one added line,
+  `source_scan_test` 24. **`controller_reach` stayed at 136**, which is the
+  measurement that says moving its trailing-comment skip into `_code_of()`
+  cost no site: all nineteen rows held.
+- **Two full runs after the last edit, BYTE-IDENTICAL** (md5
+  `9bb6bd51cf700054e643edd76a4d2780`).
+- **The three faults above were reproduced BEFORE the fix and re-run AFTER
+  it**, and all three now fail by name: *"the placeholder this file looks for
+  is the one main.gd writes, in code and not in a comment"*, *"and every suite
+  that stands main.gd up reaches the scene through application/run/main_scene,
+  not by a path of its own"*, *"quarrel_with is still in refusal_check.gd, in
+  code and not in a comment"*.
+- **066's own fault 1 still fails**, which is the regression that mattered
+  most: `handler_wiring_test`'s session name reverted to the bare string is
+  still caught, by name and at the right line.
+- **NINE DELIBERATE FAULTS against the new suite**, each in its own throwaway
+  copy with its own `config/name`, FAIL lines **read** rather than counted:
+
+  1. A new suite in `tests/` that scans `main.gd` as raw text → named, with
+     the line, **and** reported as not defining the reader. 2 failures.
+  2. One copy of `_code_of()` drifted by a single character (`:=` → `=`) →
+     *"all 10 copies are byte-identical"* failed naming `scene_light_test`.
+  3. A member keeping the call and losing the definition → named.
+  4. `_code_of()` replaced by `return source` → 6 failures: the drift row and
+     every prose assertion.
+  5. Comment lines **removed** instead of blanked → the line-count
+     assertions failed, which is the half that protects `file:line` reports.
+  6. **FAULT 6's FIRST ATTEMPT PROVED NOTHING AND IS RECORDED THAT WAY
+     (TRAPS 55).** It changed one of `scene_light_test`'s two source paths and
+     the suite correctly stayed green, because the file still named the other
+     one — an incomplete injection, not a blind check. Re-run with **every**
+     source path in that file assembled from pieces (verified by script:
+     zero code lines carrying the literal), the `KNOWN` row failed by name.
+  7. `session_test` given a real source read → **4** failures: it joins the
+     class, is reported as raw and as defining nothing, and the exclusion
+     assertion fails because its mention is no longer only its `extends`.
+  8. **A negative control**: a suite whose only mention of `res://scripts`,
+     `res://tests` and `FileAccess` is in a comment, reading nothing →
+     correctly **not** in the class, 0 failures.
+  9. **A second negative control**: a new suite that reads source **and** goes
+     through an identical `_code_of()` → correctly admitted, class size 10 →
+     11, 0 failures.
+
+### What this does NOT prove
+
+- **It does not hold the rule per needle, and `source_scan_test`'s own header
+  says so.** What is asserted is that a member has the reader and uses it
+  somewhere. A suite that strips comments for one scan and reads raw text for
+  the next would pass. The per-needle half is held only where 067 put a
+  negative control, beside each fixed presence scan. Narrowing the closure
+  needs a parser, and a parser written here would be the next thing nothing
+  holds to account.
+- **It found no live wrong answer anywhere in the repository.** All three
+  faults are **latent**: measured, every `FAILED_` category is in code, every
+  needle the fixed scans look for is in code today, and not one assertion
+  changed its verdict. What changed is that three guards can now fail when
+  they should.
+- **Nothing was rendered, no window was opened, no model was asked anything
+  and no request left the container.** There is no API key here.
+  `PROMPT_VERSION` did not move and the prompt is byte-identical.
+- **No secret was set and no workflow file was edited.** 064's finding stands:
+  the `web build` has failed on every push since 14 October and the live site
+  is still `71b065f`.
+- **The other axis of 042's question is still unasked.** 042's entry says to
+  grep `RegEx` and `contains(` in `tests/` and ask of each *"what passes this
+  that should not?"*. 067 asked exactly one thing of exactly one family of
+  readers: can a comment answer it? **A regex that can only match one word
+  order (042's own fault) or one direction of its class is a different blind
+  spot and was not looked for here.**
+
+### Next action
+
+See "Next action" above. The comment axis of 042's question is answered and
+struck; the regex-breadth axis is not and is now the first live entry.
 
 ## 066 — the salt that was a clock, and the entry that had been done for five commits
 
@@ -12721,3 +13002,44 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     **It is the owner's because the second option narrows what a suite
     asserts**, and a suite that quietly proves less than it used to is the
     failure mode this whole document exists to prevent.
+
+30. **Whether `tests/` should have a shared library, now that ten suites carry
+    byte-identical copies of one function.** Found in 067 while applying the
+    comment-stripping rule to the class, and **not** acted on, because the
+    convention it would change is the owner's.
+
+    The fact, measured rather than argued: **ten files in `tests/` now define
+    `_code_of()` and all ten definitions are byte-identical**, asserted as
+    such by `tests/source_scan_test.gd`. That is TRAPS 28's shape — a thing
+    written out by hand in many places — and the cost of a copy drifting is a
+    source scan that is blind in a way nothing says. The drift assertion is
+    what stands in for the library today, and it works: faults 2 and 4 of 067
+    were both caught by it.
+
+    Why 067 did not just extract it: **every suite in `tests/` stands alone**,
+    which is this project's convention and the reason `run_tests.sh` can run
+    any file in that directory as a suite. A shared helper file would be the
+    **first** file in `tests/` that is not a suite since `replay` and
+    `prompt_test`, so it has to go into `run_tests.sh`'s `NOT_A_SUITE` list
+    **and** `run_tests.bat`'s `findstr` patterns — and the `.bat` cannot be
+    run here (TRAPS 4 is about exactly that file). A helper that is missed by
+    one runner is a suite that prints no result line and reports as a failure
+    on Windows only.
+
+    The options:
+
+    - **Leave it.** Ten copies and one assertion that they agree. Costs a
+      copy-paste every time an eleventh suite scans source, and the assertion
+      catches it the moment it drifts.
+    - **A helper in `tests/`**, added to both runners' skip lists. Cheapest
+      code, and the one change here that cannot be verified from this
+      container.
+    - **A helper in `scripts/`.** No runner change at all, because
+      `run_tests.sh` only walks `tests/`. But it puts harness-only code into
+      the product's own directory, where `layout_key_test` and
+      `check_wiring_test` enumerate `scripts/` by reflection and would start
+      answering for it.
+
+    **It is the owner's because it is a decision about where the harness
+    lives**, and because the only option that is purely mechanical is the one
+    whose verification needs a Windows machine.

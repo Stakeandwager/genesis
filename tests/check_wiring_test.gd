@@ -414,12 +414,18 @@ func _verdict_functions() -> Dictionary:
 # Does this script define this method itself? Read from the file, because
 # Script.get_script_method_list() includes what a script INHERITS and so
 # cannot tell an override from a fall-through (TRAPS 51).
+#
+# Read off the CODE (067). The "\n" anchors already kept a comment out of
+# this one - a comment line starts with "#", so "\nfunc " cannot match it -
+# and the anchors are kept for that reason; what _code_of() adds is the
+# commented-out definition, "#func solve(" at the start of a line, which the
+# anchors alone do not catch. See TRAPS 64.
 func _defines(script_path: String, method: String) -> bool:
 	var file := FileAccess.open(script_path, FileAccess.READ)
 	if file == null:
 		_check(false, "could not read %s" % script_path)
 		return false
-	var text := file.get_as_text()
+	var text := _code_of(file.get_as_text())
 	file.close()
 	return text.contains("\nfunc %s(" % method) or text.contains("\nstatic func %s(" % method)
 
@@ -437,16 +443,31 @@ func _enumeration() -> void:
 
 	# The hand-declared one. It is not found by the rule above, so the rule
 	# cannot hold it: what is asserted is that the function is still there.
+	#
+	# READ OFF THE CODE AND NOT THE WHOLE FILE (067). This needle has no "\n"
+	# anchor in front of it, unlike _defines() below, and that difference was
+	# worth a measurement rather than a guess: rename quarrel_with() through
+	# scripts/ and tests/, put the BY_HAND key back to the old name, and this
+	# assertion FAILS - until one comment line in refusal_check.gd says
+	# "Renamed from func quarrel_with(reason)", at which point it PASSES on a
+	# row that names a function nobody has. 188 assertions, failures=0, on a
+	# staleness guard that was stale. See TRAPS 64.
 	for key in BY_HAND:
 		var parts := str(key).split(":")
 		var file := FileAccess.open("res://scripts/" + parts[0], FileAccess.READ)
 		_check(file != null, "BY_HAND names a file that exists: %s" % parts[0])
 		if file == null:
 			continue
-		var text := file.get_as_text()
+		var text := _code_of(file.get_as_text())
 		file.close()
 		_check(text.contains("func %s(" % parts[1]),
-			"%s is still in %s" % [parts[1], parts[0]])
+			"%s is still in %s, in code and not in a comment" % [parts[1], parts[0]])
+		# The reader's own negative control: prose does not answer a question
+		# about what the code has, and code does.
+		_check(not _code_of("# func %s(reason)\n\tvar x := 1  # func %s(\n" % [parts[1], parts[1]]).contains("func %s(" % parts[1]),
+			"and the reader it uses does not see %s() in a comment, on its own line or after code" % parts[1])
+		_check(_code_of("static func %s(reason: String) -> Array:\n" % parts[1]).contains("func %s(" % parts[1]),
+			"while it does see it in a line of code, so the check above is not passing by seeing nothing")
 		_check(not found.has(key),
 			"%s is still outside the mechanical rule, which is why it is declared by hand" % str(key))
 
@@ -891,3 +912,32 @@ func _run() -> void:
 		print("  ", note)
 	print("CHECK WIRING %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)
+
+
+# The CODE of a .gd source: comment lines blanked and trailing comments cut,
+# with the line count preserved so a scan that reports a line number still
+# reports the right one. A question about what the code DOES is answered from
+# this. A question about what is MENTIONED anywhere is a different question
+# and reads the raw file; which one a scan is asking is decided by the
+# direction of its assertion and not by habit.
+#
+# WHY THIS EXISTS. 066 found that the first version of record_id_test's
+# session scan was satisfied by a comment saying OS.get_process_id() in
+# prose, and fixed it in that one function. 067 asked the same question of
+# every source scan in tests/ and MEASURED three more, each flipped from FAIL
+# to PASS by one comment line. See TRAPS 64.
+#
+# NOT A PARSER. A "#" inside a string literal cuts the line early, which can
+# only lose a code match and never invent one - so this is safe in the one
+# direction that matters: nothing a comment says can make a presence check
+# pass.
+static func _code_of(source: String) -> String:
+	var out := ""
+	for raw in source.split("\n"):
+		var line := str(raw)
+		if line.strip_edges().begins_with("#"):
+			out += "\n"
+			continue
+		var hash_at := line.find("#")
+		out += (line if hash_at < 0 else line.substr(0, hash_at)) + "\n"
+	return out

@@ -377,13 +377,29 @@ func _measurements_panel() -> void:
 	# TRAPS 28's shape. Checked against main.gd's own source rather than
 	# trusted, so it cannot drift into a constant that matches nothing and
 	# makes the assertion below pass for free.
+	#
+	# AND READ OFF THE CODE AND NOT THE WHOLE FILE (067). Measured: change
+	# main.gd:978's string and leave the old text in a comment beside it, and
+	# this assertion goes from FAIL to PASS while its claim is false - 47
+	# assertions, failures=0, on a guard whose whole job is to stop the
+	# constant drifting away from the string main.gd writes. One comment line.
+	# See TRAPS 64.
 	var main_src := FileAccess.open("res://scripts/main.gd", FileAccess.READ)
 	_check(main_src != null, "main.gd's source can be read")
 	if main_src != null:
 		var text := main_src.get_as_text()
 		main_src.close()
-		_check(text.contains(PLACEHOLDER),
-			"the placeholder this file looks for is the one main.gd writes")
+		_check(_code_of(text).contains(PLACEHOLDER),
+			"the placeholder this file looks for is the one main.gd writes, in code and not in a comment")
+		# The stripper's own negative control, because this scan is only as
+		# good as the text it reads. Prose first, then code: a needle in a
+		# whole-line comment and a needle after code on the same line are
+		# both prose, and the same needle in code is not.
+		var prose := "# %s\n\tvar x := 1  # %s\n" % [PLACEHOLDER, PLACEHOLDER]
+		_check(not _code_of(prose).contains(PLACEHOLDER),
+			"and the reader it uses does not see that string in a comment, on its own line or after code")
+		_check(_code_of('\t_metric("", "%s", C)\n' % PLACEHOLDER).contains(PLACEHOLDER),
+			"while it does see it in a line of code, so the check above is not passing by seeing nothing")
 
 	var at_launch := _panel()
 	_check(not at_launch.contains(PLACEHOLDER),
@@ -587,3 +603,32 @@ func _run() -> void:
 		print("  ", note)
 	print("HANDLER WIRING %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)
+
+
+# The CODE of a .gd source: comment lines blanked and trailing comments cut,
+# with the line count preserved so a scan that reports a line number still
+# reports the right one. A question about what the code DOES is answered from
+# this. A question about what is MENTIONED anywhere is a different question
+# and reads the raw file; which one a scan is asking is decided by the
+# direction of its assertion and not by habit.
+#
+# WHY THIS EXISTS. 066 found that the first version of record_id_test's
+# session scan was satisfied by a comment saying OS.get_process_id() in
+# prose, and fixed it in that one function. 067 asked the same question of
+# every source scan in tests/ and MEASURED three more, each flipped from FAIL
+# to PASS by one comment line. See TRAPS 64.
+#
+# NOT A PARSER. A "#" inside a string literal cuts the line early, which can
+# only lose a code match and never invent one - so this is safe in the one
+# direction that matters: nothing a comment says can make a presence check
+# pass.
+static func _code_of(source: String) -> String:
+	var out := ""
+	for raw in source.split("\n"):
+		var line := str(raw)
+		if line.strip_edges().begins_with("#"):
+			out += "\n"
+			continue
+		var hash_at := line.find("#")
+		out += (line if hash_at < 0 else line.substr(0, hash_at)) + "\n"
+	return out

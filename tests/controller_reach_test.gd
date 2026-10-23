@@ -299,15 +299,18 @@ func _refusal_sites() -> Dictionary:
 		var file := FileAccess.open("res://scripts/" + name, FileAccess.READ)
 		if file == null:
 			continue
-		var text := file.get_as_text()
+		var text := _code_of(file.get_as_text())
 		file.close()
 		for raw_line in text.split("\n"):
 			var line := str(raw_line)
-			# A commented-out site is not a site. Checked so that the
-			# explanatory comments beside these very calls - which quote the
-			# category names - are not counted as branches.
-			if line.strip_edges().begins_with("#"):
-				continue
+			# A commented-out site is not a site. The whole-line case was
+			# already skipped here from the start - so that the explanatory
+			# comments beside these very calls, which quote the category
+			# names, are not counted as branches. 067 moved the skip into
+			# _code_of() so the TRAILING case is cut too: a comment after
+			# code on the same line is prose as well, and nothing was reading
+			# it that way. No count moved when this changed - measured, all
+			# nineteen rows held. See TRAPS 64.
 			for pattern in forms:
 				var re := RegEx.create_from_string(pattern)
 				for m in re.search_all(line):
@@ -358,6 +361,15 @@ func _enumeration() -> void:
 
 	# The two suites together have to cover every name in scripts/, or a
 	# category could sit between them unanswered.
+	#
+	# THIS ONE READS THE RAW FILE ON PURPOSE AND 067 LEFT IT THAT WAY. Its
+	# direction is "every name mentioned anywhere has to be answered for", so
+	# a name that appears only in a comment is still in scope: somebody
+	# reading that comment will go looking for the row. Reading code only
+	# would NARROW it, which is why TRAPS 63's blunter wording - "scan code,
+	# not comments" - is not the rule, and why TRAPS 64 states the direction
+	# instead of the habit. The staleness half of the same question, in
+	# refusal_reach_test, reads the code for the opposite reason.
 	var module_names := ["FAILED_UNREACHABLE", "FAILED_PLACEMENT", "FAILED_CORRIDOR",
 		"FAILED_UNWALKABLE", "FAILED_TOO_BIG", "FAILED_LAYOUT", "FAILED_DEGREES_OF_FREEDOM",
 		"FAILED_INFEASIBLE", "FAILED_CLOSURE", "FAILED_SEPARATION"]
@@ -768,3 +780,32 @@ func _run() -> void:
 		print("  NOTE  ", line)
 	print("CONTROLLER REACH %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)
+
+
+# The CODE of a .gd source: comment lines blanked and trailing comments cut,
+# with the line count preserved so a scan that reports a line number still
+# reports the right one. A question about what the code DOES is answered from
+# this. A question about what is MENTIONED anywhere is a different question
+# and reads the raw file; which one a scan is asking is decided by the
+# direction of its assertion and not by habit.
+#
+# WHY THIS EXISTS. 066 found that the first version of record_id_test's
+# session scan was satisfied by a comment saying OS.get_process_id() in
+# prose, and fixed it in that one function. 067 asked the same question of
+# every source scan in tests/ and MEASURED three more, each flipped from FAIL
+# to PASS by one comment line. See TRAPS 64.
+#
+# NOT A PARSER. A "#" inside a string literal cuts the line early, which can
+# only lose a code match and never invent one - so this is safe in the one
+# direction that matters: nothing a comment says can make a presence check
+# pass.
+static func _code_of(source: String) -> String:
+	var out := ""
+	for raw in source.split("\n"):
+		var line := str(raw)
+		if line.strip_edges().begins_with("#"):
+			out += "\n"
+			continue
+		var hash_at := line.find("#")
+		out += (line if hash_at < 0 else line.substr(0, hash_at)) + "\n"
+	return out

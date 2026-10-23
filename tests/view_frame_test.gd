@@ -366,7 +366,10 @@ func _world_is_in_view(label: String) -> void:
 # count is EXACT and not a floor: the claim is that the class is closed, and
 # a floor would pass on a fourth path nobody had classified (TRAPS 6).
 func _the_class_is_closed() -> void:
-	var source := FileAccess.get_file_as_string("res://scripts/game_controller.gd")
+	# Read off the CODE (067). The per-line skips below already dropped a
+	# whole-line comment; _code_of() also cuts a comment that follows code on
+	# the same line, which nothing was doing. See TRAPS 64.
+	var source := _code_of(FileAccess.get_file_as_string("res://scripts/game_controller.gd"))
 	_check(source != "", "game_controller.gd was read")
 
 	var clears: Array = []
@@ -436,7 +439,7 @@ func _the_class_is_closed() -> void:
 	# because a third writer is how two readings of one view would start.
 	var writers: Array = []
 	for name in ["game_controller.gd", "main.gd", "car.gd", "walker.gd"]:
-		var text := FileAccess.get_file_as_string("res://scripts/" + name)
+		var text := _code_of(FileAccess.get_file_as_string("res://scripts/" + name))
 		for line in text.split("\n"):
 			var stripped: String = (line as String).strip_edges()
 			if stripped.begins_with("#"):
@@ -554,3 +557,32 @@ func _run() -> void:
 		print(line)
 	print("VIEW FRAME %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)
+
+
+# The CODE of a .gd source: comment lines blanked and trailing comments cut,
+# with the line count preserved so a scan that reports a line number still
+# reports the right one. A question about what the code DOES is answered from
+# this. A question about what is MENTIONED anywhere is a different question
+# and reads the raw file; which one a scan is asking is decided by the
+# direction of its assertion and not by habit.
+#
+# WHY THIS EXISTS. 066 found that the first version of record_id_test's
+# session scan was satisfied by a comment saying OS.get_process_id() in
+# prose, and fixed it in that one function. 067 asked the same question of
+# every source scan in tests/ and MEASURED three more, each flipped from FAIL
+# to PASS by one comment line. See TRAPS 64.
+#
+# NOT A PARSER. A "#" inside a string literal cuts the line early, which can
+# only lose a code match and never invent one - so this is safe in the one
+# direction that matters: nothing a comment says can make a presence check
+# pass.
+static func _code_of(source: String) -> String:
+	var out := ""
+	for raw in source.split("\n"):
+		var line := str(raw)
+		if line.strip_edges().begins_with("#"):
+			out += "\n"
+			continue
+		var hash_at := line.find("#")
+		out += (line if hash_at < 0 else line.substr(0, hash_at)) + "\n"
+	return out

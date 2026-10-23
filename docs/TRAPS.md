@@ -4050,3 +4050,82 @@ third, nobody's, was reproducibly broken.
 > The harness writes to the ledger too.
 
 ---
+
+## 64. The rule was written down, applied to one function, and nine scans read the same raw text
+
+**Signature:** a fix is applied where the fault was found, the general lesson
+is written into this file in the same commit, and the next session finds the
+same fault in three more places that nobody asked. TRAPS 11's signature,
+except that the commit which left the others undone is the one that wrote
+TRAPS 11's lesson out again.
+
+**Cause:** 066's first deliberate fault **passed**. Its new scan searched
+whole files in `tests/` for `OS.get_process_id()`, and the comment 066 had
+just written into `handler_wiring_test` says the call in prose — so reverting
+that suite's session name to the bare string the scan exists to catch changed
+nothing. 066 narrowed that one function and wrote the lesson down: *"a check
+a comment can satisfy is not a check. Scan code, not comments."*
+
+**It narrowed one function.** Nine files in `tests/` read this project's own
+source, and 067 asked each of them the same question. **Three more were
+satisfied by a comment**, measured one at a time in throwaway copies with
+their own `config/name` (TRAPS 50), each flipped from FAIL to PASS by **one
+comment line**:
+
+- `handler_wiring_test`'s guard that its `PLACEHOLDER` constant is the string
+  `main.gd` writes. Change `main.gd:978` and leave the old text in a comment
+  beside it: **47 assertions, failures=0**, on a guard whose whole job is to
+  stop that constant drifting into something that matches nothing — which is
+  TRAPS 54's fault one layer out.
+- `player_door_test`'s guard that no suite reaches the main scene by a path of
+  its own — the rule 061 retired the stand-in for. A suite that loads the
+  scene from a path it assembles itself is caught **by name**, until one
+  comment in it says *"Not read from application/run/main_scene,
+  deliberately"*, at which point it is filed as reaching the setting: **67
+  assertions, failures=0.**
+- `check_wiring_test`'s guard that `BY_HAND`'s row still names a function that
+  exists. Rename `quarrel_with()` through `scripts/` and put the row back to
+  the old name and it fails; add *"Renamed from func quarrel_with(reason)"* to
+  `refusal_check.gd` and **188 assertions, failures=0**, on a staleness guard
+  that was itself stale.
+
+**AND "SCAN CODE, NOT COMMENTS" IS THE WRONG RULE, which is the part worth
+keeping.** Applied as written it would have **narrowed two checks that are
+wide on purpose.** `controller_reach_test` and `refusal_reach_test` both
+collect every `FAILED_` name in `scripts/` and assert each has a declared row,
+and a name that appears only in a comment **still has to be answered for**,
+because somebody reading that comment will go looking for the row. The same
+scan's other direction — *"a declared row still names a category the code
+returns"* — needs the opposite text, because a category deleted from the code
+and left in a comment is exactly the stale row it exists to catch.
+
+**Do:**
+
+- **The rule is about DIRECTION, not habit.** A question about what the code
+  **does** is answered from the code, comments stripped. A question about what
+  is **mentioned** anywhere reads the raw file. One scan can be asked both;
+  `refusal_reach_test._categories_in_source(code_only)` now is, with the two
+  texts separated and the reason written at the function.
+- **When a fix is applied to the function where the fault was found, count the
+  other callers of the same question before the commit closes.** The sweep is
+  cheap: `grep` `tests/` for reads of `res://scripts` and `res://tests`.
+- **Preserve the line count when stripping.** A scan that reports `file:line`
+  is reporting into the stripped text; 066's own fault 2 was a report that
+  named a line which started nothing.
+- **Hold it mechanically.** `tests/source_scan_test.gd` enumerates every file
+  in `tests/` that reads a `.gd` source, asserts each goes through a function
+  named `_code_of()`, asserts each **defines** it, and asserts all of those
+  definitions are **byte-identical** — nine private copies of one function is
+  TRAPS 28's shape, and a drifted copy is a scan blind in a way nothing says.
+  It holds this at **file** granularity and says so: it cannot prove that
+  every needle inside a member goes through the reader. That half is held by
+  the negative controls 067 put beside each fixed scan — prose in, nothing
+  out; code in, the needle out — which assert the reader and not the wording.
+
+Found in 067, by asking TRAPS 11's question of the commit that had just
+restated TRAPS 11.
+
+> The lesson written down in the same commit as the fix is the lesson most
+> likely to be applied once.
+
+---

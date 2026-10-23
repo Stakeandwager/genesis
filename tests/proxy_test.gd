@@ -120,12 +120,24 @@ func _initialize() -> void:
 	# A guard, not a finding (TRAPS 6): if a sixth place starts comparing the
 	# key on its own, this fails rather than going quietly wrong. The only
 	# comparison lives inside key_missing_for(), on its ARGUMENT.
+	# READ OFF THE CODE (067). A commented-out comparison is not a comparison,
+	# and until 067 a comment in ai_interpreter.gd containing "api_key ==" -
+	# an explanation of the one that is there, say - would have failed this
+	# guard for a wording reason. The two reads above are NOT put through
+	# _code_of(): interpret.js and export_presets.web.cfg are JavaScript and
+	# an ini file, whose comments are "//" and ";" and not "#". That is stated
+	# rather than quietly skipped, and nothing about them was measured here.
+	# See TRAPS 64.
 	var src_path := "res://scripts/ai_interpreter.gd"
 	var sf := FileAccess.open(src_path, FileAccess.READ)
-	var src := sf.get_as_text()
+	var src := _code_of(sf.get_as_text())
 	sf.close()
 	_check(not src.contains("api_key ==") and not src.contains("api_key !="),
-		"nothing in ai_interpreter.gd compares api_key except the one function")
+		"nothing in ai_interpreter.gd compares api_key except the one function, in code and not in a comment")
+	_check(not _code_of("# api_key == \"\"\n\tvar x := 1  # api_key != \"\"\n").contains("api_key ="),
+		"and the reader it uses does not see that comparison in a comment, on its own line or after code")
+	_check(_code_of('\tif api_key == "":\n').contains("api_key =="),
+		"while it does see it in a line of code, so the guard above is not passing by seeing nothing")
 
 	# --- 057: and the sentence a refused key produces ---
 	#
@@ -168,3 +180,32 @@ func _initialize() -> void:
 
 	print("PROXY TEST failures=%d" % bad)
 	quit(bad)
+
+
+# The CODE of a .gd source: comment lines blanked and trailing comments cut,
+# with the line count preserved so a scan that reports a line number still
+# reports the right one. A question about what the code DOES is answered from
+# this. A question about what is MENTIONED anywhere is a different question
+# and reads the raw file; which one a scan is asking is decided by the
+# direction of its assertion and not by habit.
+#
+# WHY THIS EXISTS. 066 found that the first version of record_id_test's
+# session scan was satisfied by a comment saying OS.get_process_id() in
+# prose, and fixed it in that one function. 067 asked the same question of
+# every source scan in tests/ and MEASURED three more, each flipped from FAIL
+# to PASS by one comment line. See TRAPS 64.
+#
+# NOT A PARSER. A "#" inside a string literal cuts the line early, which can
+# only lose a code match and never invent one - so this is safe in the one
+# direction that matters: nothing a comment says can make a presence check
+# pass.
+static func _code_of(source: String) -> String:
+	var out := ""
+	for raw in source.split("\n"):
+		var line := str(raw)
+		if line.strip_edges().begins_with("#"):
+			out += "\n"
+			continue
+		var hash_at := line.find("#")
+		out += (line if hash_at < 0 else line.substr(0, hash_at)) + "\n"
+	return out

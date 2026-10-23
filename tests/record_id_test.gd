@@ -203,7 +203,10 @@ func _session_starts() -> Dictionary:
 		var file := FileAccess.open("res://tests/" + name, FileAccess.READ)
 		if file == null:
 			continue
-		var source := file.get_as_text()
+		# Read off the CODE (067). The per-line skip below already dropped a
+		# whole-line comment; _code_of() also cuts a trailing one, and the
+		# line count is preserved so the "file:line" this reports is right.
+		var source := _code_of(file.get_as_text())
 		file.close()
 		var found: Array = []
 		var number := 0
@@ -242,19 +245,12 @@ func _session_starts() -> Dictionary:
 # PASSED, because the comment this file's own fix added to that suite says
 # "OS.get_process_id()" in prose. A check a comment can satisfy is TRAPS 6
 # in a test rather than in the code it measures.
+# 067 moved the stripping this function did by hand into _code_of(), which is
+# now the one reader every source scan in tests/ goes through - because the
+# same blind spot was found in three more scans that had never been asked.
+# Same rule, same answer, one implementation. See TRAPS 64.
 func _asks_who_it_is(source: String) -> bool:
-	for raw in source.split("\n"):
-		var line := str(raw)
-		if line.strip_edges().begins_with("#"):
-			continue
-		# Strip a trailing comment, so a code line with a comment after it is
-		# judged on its code.
-		var hash_at := line.find("#")
-		if hash_at >= 0:
-			line = line.substr(0, hash_at)
-		if line.contains("OS.get_process_id()"):
-			return true
-	return false
+	return _code_of(source).contains("OS.get_process_id()")
 
 
 # A line of a file in scripts/, by the text that identifies it. Returns "" if
@@ -264,12 +260,10 @@ func _script_line(path: String, contains: String) -> String:
 	var file := FileAccess.open("res://scripts/" + path, FileAccess.READ)
 	if file == null:
 		return ""
-	var source := file.get_as_text()
+	var source := _code_of(file.get_as_text())
 	file.close()
 	for raw in source.split("\n"):
 		var line := str(raw)
-		if line.strip_edges().begins_with("#"):
-			continue
 		if line.contains(contains):
 			return line
 	return ""
@@ -501,3 +495,32 @@ func _run() -> void:
 
 	print("RECORD ID %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)
+
+
+# The CODE of a .gd source: comment lines blanked and trailing comments cut,
+# with the line count preserved so a scan that reports a line number still
+# reports the right one. A question about what the code DOES is answered from
+# this. A question about what is MENTIONED anywhere is a different question
+# and reads the raw file; which one a scan is asking is decided by the
+# direction of its assertion and not by habit.
+#
+# WHY THIS EXISTS. 066 found that the first version of record_id_test's
+# session scan was satisfied by a comment saying OS.get_process_id() in
+# prose, and fixed it in that one function. 067 asked the same question of
+# every source scan in tests/ and MEASURED three more, each flipped from FAIL
+# to PASS by one comment line. See TRAPS 64.
+#
+# NOT A PARSER. A "#" inside a string literal cuts the line early, which can
+# only lose a code match and never invent one - so this is safe in the one
+# direction that matters: nothing a comment says can make a presence check
+# pass.
+static func _code_of(source: String) -> String:
+	var out := ""
+	for raw in source.split("\n"):
+		var line := str(raw)
+		if line.strip_edges().begins_with("#"):
+			out += "\n"
+			continue
+		var hash_at := line.find("#")
+		out += (line if hash_at < 0 else line.substr(0, hash_at)) + "\n"
+	return out

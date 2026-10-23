@@ -192,7 +192,25 @@ const LAYOUT_BRANCHES := ["farm: nothing to lay out", "farm: lane check", "base:
 
 # --- 1. the enumeration, read off the source rather than typed ---
 
-func _categories_in_source() -> Dictionary:
+# WHICH TEXT THIS READS IS AN ARGUMENT, AND THAT IS THE POINT (067). This
+# one scan answers two questions with opposite directions, and the right text
+# differs between them:
+#
+#   "every FAILED_ name in scripts/ has a row here" - WIDE. A name that
+#   appears only in a comment still has to be answered for, because a reader
+#   of that comment will go looking for the row. Reading code only would
+#   NARROW this check, which is why TRAPS 63's blunter wording - "scan code,
+#   not comments" - is not the rule and TRAPS 64 states the direction instead.
+#
+#   "DECLARED's row still names a category scripts/ returns" - CODE. A
+#   category deleted from the code and left in a comment is exactly the stale
+#   row this assertion exists to catch, and prose would keep it alive.
+#
+# Measured when this split was made: all 16 categories are in code, 6 of them
+# are also in comments, and NONE is comment-only - so nothing in the
+# repository changes answer today. The split is what makes the second
+# question able to fail.
+func _categories_in_source(code_only: bool) -> Dictionary:
 	var found := {}
 	var dir := DirAccess.open("res://scripts")
 	if dir == null:
@@ -203,8 +221,9 @@ func _categories_in_source() -> Dictionary:
 		var file := FileAccess.open("res://scripts/" + name, FileAccess.READ)
 		if file == null:
 			continue
-		var text := file.get_as_text()
+		var raw := file.get_as_text()
 		file.close()
+		var text := _code_of(raw) if code_only else raw
 		# FAILED_ on its own is not a category: experiment_runner strips the
 		# prefix off one with replace("FAILED_", ""). A name needs a letter.
 		var re := RegEx.create_from_string("FAILED_[A-Z][A-Z_]*")
@@ -218,14 +237,33 @@ func _categories_in_source() -> Dictionary:
 
 
 func _enumeration() -> void:
-	var found := _categories_in_source()
-	_check(found.size() >= 16, "read %d FAILED_ categories off scripts/" % found.size())
-	for cat in found:
+	var mentioned := _categories_in_source(false)
+	var in_code := _categories_in_source(true)
+	_check(in_code.size() >= 16, "read %d FAILED_ categories off the CODE in scripts/" % in_code.size())
+	# Wide, deliberately: a name a comment mentions still has to be answered
+	# for. See the note on _categories_in_source().
+	for cat in mentioned:
 		_check(DECLARED.has(cat),
-			"%s (in %s) has a row in DECLARED" % [cat, str(found[cat])])
+			"%s (in %s) has a row in DECLARED" % [cat, str(mentioned[cat])])
+	# Code only: a category deleted from the code and left in a comment is
+	# the stale row this line is for.
 	for cat in DECLARED:
-		_check(found.has(cat),
-			"%s is still in scripts/ - a row here for a category nobody returns is stale" % cat)
+		_check(in_code.has(cat),
+			"%s is still RETURNED in scripts/, in code and not in a comment - a row here for a category nobody returns is stale" % cat)
+	# The reader's own negative control, and the measured fact that the two
+	# readings agree today: every category in a comment is also in code, so
+	# this split changed no answer when it was made.
+	var prose := "# FAILED_NOTHING_HERE on a comment line\n\tvar x := 1  # FAILED_NOTHING_HERE\n"
+	_check(not _code_of(prose).contains("FAILED_NOTHING_HERE"),
+		"and the code reader does not see a category in a comment, on its own line or after code")
+	_check(_code_of('\trecord["category"] = "FAILED_NOTHING_HERE"\n').contains("FAILED_NOTHING_HERE"),
+		"while it does see one in a line of code, so the count above is not a count of nothing")
+	var comment_only: Array = []
+	for cat in mentioned:
+		if not in_code.has(cat):
+			comment_only.append(str(cat))
+	_check(comment_only.is_empty(),
+		"and no category in scripts/ exists only in prose (%s)" % str(comment_only))
 	var module_cats := 0
 	for cat in DECLARED:
 		if str((DECLARED[cat] as Array)[0]) == "MODULE":
@@ -807,3 +845,32 @@ func _initialize() -> void:
 	_guards_fire()
 	print("REFUSAL REACH %d assertions, failures=%d" % [asserted, bad])
 	quit()
+
+
+# The CODE of a .gd source: comment lines blanked and trailing comments cut,
+# with the line count preserved so a scan that reports a line number still
+# reports the right one. A question about what the code DOES is answered from
+# this. A question about what is MENTIONED anywhere is a different question
+# and reads the raw file; which one a scan is asking is decided by the
+# direction of its assertion and not by habit.
+#
+# WHY THIS EXISTS. 066 found that the first version of record_id_test's
+# session scan was satisfied by a comment saying OS.get_process_id() in
+# prose, and fixed it in that one function. 067 asked the same question of
+# every source scan in tests/ and MEASURED three more, each flipped from FAIL
+# to PASS by one comment line. See TRAPS 64.
+#
+# NOT A PARSER. A "#" inside a string literal cuts the line early, which can
+# only lose a code match and never invent one - so this is safe in the one
+# direction that matters: nothing a comment says can make a presence check
+# pass.
+static func _code_of(source: String) -> String:
+	var out := ""
+	for raw in source.split("\n"):
+		var line := str(raw)
+		if line.strip_edges().begins_with("#"):
+			out += "\n"
+			continue
+		var hash_at := line.find("#")
+		out += (line if hash_at < 0 else line.substr(0, hash_at)) + "\n"
+	return out
