@@ -26,7 +26,7 @@ extends SceneTree
 # wearing a SINGULAR is the same fault and the regex is blind to it by
 # construction - and that is the half the farm's and the circuit's panels
 # had. On a circuit it was unconditional: a closed circuit needs at least
-# two straights and two corners, so those two counts can never be one, and
+# two straights and two turns, so those two counts can never be one, and
 # every circuit Genesis has ever built read "4 straight, 4 corner". TRAPS 6
 # at a correct assertion, the way 041 found it: not an assertion that cannot
 # fail, but one that cannot fail for half of what it covers.
@@ -279,13 +279,26 @@ func _the_remaining_doors() -> void:
 	# The feasibility gate's refusal, at a composition of one of each. The
 	# minimum is two, so this is the sentence a player meets when they have
 	# fewer - reachable, and it said "1 straight(s) and 1 corner(s)".
+	#
+	# 068: the second noun was "corner" and is now "turn", because the count
+	# it labels is a count of TrackGeometry.YAW_TYPES - corners, hairpins and
+	# banked corners - so a composition of one hairpin was reported as "1
+	# corner". THIS ASSERTION DID NOT CATCH THAT: it types the noun in, so it
+	# holds the agreement between the count and whatever noun follows it and
+	# not the CHOICE of noun. It is the reason 068's first draft of that fix
+	# turned this suite red, and the reason 068's HANDOVER entry had to be
+	# corrected: this file HAD read the sentence, by a needle built from
+	# Readback.plural() rather than by any string a grep for "composition
+	# has" would find. The choice of noun is held in prompt_bounds_test,
+	# where a composition of MIN_TURNS hairpins and no corner at all is
+	# measured through the same door.
 	var gate := FeasibilityGate.check([
 		{"type": "straight", "length": 400}, {"type": "corner", "angle": 90, "radius": 50}]) as Dictionary
 	_check(not bool(gate.get("ok", true)),
 		"one straight and one corner cannot close a circuit")
 	_remember(gate.get("reasons", []))
 	var reasons := " | ".join(PackedStringArray(gate.get("reasons", [])))
-	for expected in [Readback.plural(1, "straight"), Readback.plural(1, "corner")]:
+	for expected in [Readback.plural(1, "straight"), Readback.plural(1, "turn")]:
 		_check(_says(reasons, expected),
 			"the gate's refusal says \"%s\" (said: %s)" % [expected, reasons])
 	_check(not reasons.contains("(s)"),

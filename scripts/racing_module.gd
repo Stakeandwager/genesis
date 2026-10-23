@@ -71,9 +71,9 @@ Angles are signed: positive turns right, negative turns left. Never give a corne
 
 RULES FOR A CLOSED CIRCUIT
 - Sections join end to end, in order, starting at the start line. After the last section the track must arrive back at the start line, facing the way it started.
-- Corner and hairpin angles must add up to exactly +360 (clockwise) or -360 (anticlockwise). Chicanes do not count.
-- Travel in opposite directions must balance. Every metre the track travels away from the start line must be matched by a metre travelled back towards it, and every metre to the right of the start line by a metre back to the left. Angles adding up to 360 is necessary but not enough on its own: a hairpin reverses the direction of travel, but by itself carries the track back only by its own width, twice its radius.
-- Use %s: at least 2 straights and at least 2 corners or hairpins.
+- Corner and hairpin angles must add up to exactly %+.0f (clockwise) or %+.0f (anticlockwise). Chicanes do not count.
+- Travel in opposite directions must balance. Every metre the track travels away from the start line must be matched by a metre travelled back towards it, and every metre to the right of the start line by a metre back to the left. Angles adding up to %.0f is necessary but not enough on its own: a hairpin reverses the direction of travel, but by itself carries the track back only by its own width, twice its radius.
+- Use %s: at least %d straights and at least %d corners or hairpins.
 - The game can adjust each angle and each straight length by up to %.0f%% to close the loop, so plan where every section takes the track so that it very nearly closes by itself.
 - The road must never cross itself, and separate parts of the road must stay at least %.0f metres apart.""" % [
 		SectionValidator.STRAIGHT_LENGTH.x, SectionValidator.STRAIGHT_LENGTH.y,
@@ -82,7 +82,19 @@ RULES FOR A CLOSED CIRCUIT
 		SectionValidator.HAIRPIN_RADIUS.x, SectionValidator.HAIRPIN_RADIUS.y,
 		SectionValidator.HAIRPIN_ANGLE.x, SectionValidator.HAIRPIN_ANGLE.y,
 		SectionValidator.CHICANE_RADIUS.x, SectionValidator.CHICANE_RADIUS.y,
+		# 068: the full turn and the two composition floors are read from
+		# FeasibilityGate, which is the thing that enforces them, rather than
+		# typed out here. They were typed out here, and nothing in tests/ read
+		# either constant - FULL_TURN, MIN_STRAIGHTS and MIN_TURNS appeared in
+		# no test file at all - so the prompt could state any floor it liked
+		# and stay green. That is TRAPS 28's fault at the bounds TRAPS 28's own
+		# suite cannot see: prompt_bounds_test reads a count statement as
+		# "N to M <members>" or "at most N <members>", and "at least 2
+		# straights" is neither.
+		FeasibilityGate.FULL_TURN, -FeasibilityGate.FULL_TURN,
+		FeasibilityGate.FULL_TURN,
 		Readback.list_rule(SectionValidator.list_entry()),
+		FeasibilityGate.MIN_STRAIGHTS, FeasibilityGate.MIN_TURNS,
 		# One number for two constants: the solver may move an angle and a
 		# straight's length by the same 20%. tests/prompt_bounds_test.gd fails
 		# if MAX_ANGLE_ADJUSTMENT and MAX_LENGTH_ADJUSTMENT ever differ, and
@@ -493,9 +505,12 @@ func _before(a: Dictionary, b: Dictionary) -> bool:
 #
 # THE PLURAL. It read "%d straight, %d corner, %d hairpin, %d chicane" with
 # four SINGULAR nouns, so it was wrong at every count but one - and a closed
-# circuit needs at least two straights and two corners (FeasibilityGate), so
-# the first two can never BE one. "8  (4 straight, 4 corner, 0 hairpin, 0
-# chicane)" on every circuit Genesis has ever built. 034 put that fact in
+# circuit needs at least FeasibilityGate.MIN_STRAIGHTS straights and
+# MIN_TURNS turns, both 2 as this is written, so the first two can never BE
+# one (068: named by their constants here rather than typed out, because this
+# sentence's reasoning depends on both being above 1).
+# "8  (4 straight, 4 corner, 0 hairpin, 0 chicane)" on every circuit Genesis
+# has ever built. 034 put that fact in
 # Readback.plural() and swept the validators; this panel was not in the
 # sweep, and the sweep looks for "1 <word>s", which cannot catch a count of
 # four wearing a singular. See TRAPS 36.

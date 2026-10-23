@@ -66,9 +66,21 @@ static func check(sections: Array) -> Dictionary:
 		result["category"] = "FAILED_DEGREES_OF_FREEDOM"
 		result["reasons"] = [
 			# 042: "(s)" is the plural written out by hand, wearing a dodge.
+			# 068: and the noun was "corner" for a count of YAW_TYPES, which
+			# is corners, hairpins and banked corners - so a composition of
+			# one hairpin was reported as "1 corner". The same two words, at
+			# the same door, one line apart (TRAPS 11).
 			"composition has %s and %s" % [
-				Readback.plural(straights, "straight"), Readback.plural(turns, "corner")],
-			"closing a circuit needs at least %d straights and %d corners" % [MIN_STRAIGHTS, MIN_TURNS],
+				Readback.plural(straights, "straight"), Readback.plural(turns, "turn")],
+			# 068: "corners" understated what satisfies this door. MIN_TURNS
+			# is compared against a count of TrackGeometry.YAW_TYPES, so a
+			# hairpin answers it as well as a corner - measured, not supposed:
+			# a composition of MIN_STRAIGHTS straights and MIN_TURNS hairpins
+			# and no corner at all clears this door, which is what
+			# prompt_bounds_test's floor fixture builds. The prompt has always
+			# said "corners or hairpins"; this sentence, which is the one the
+			# PLAYER reads, said "corners".
+			"closing a circuit needs at least %d straights and %d corners or hairpins" % [MIN_STRAIGHTS, MIN_TURNS],
 		]
 		return result
 
@@ -81,7 +93,10 @@ static func check(sections: Array) -> Dictionary:
 		result["category"] = "FAILED_INFEASIBLE"
 		result["reasons"] = [
 			"proposed net turn: %+.0f deg" % net,
-			"a circuit must turn exactly +360 or -360 deg",
+			# 068: read from FULL_TURN, not typed out. The prompt stated the
+			# same number by hand in three places and this refusal in a
+			# fourth, and no file in tests/ named FULL_TURN at all.
+			"a circuit must turn exactly %+.0f or %+.0f deg" % [FULL_TURN, -FULL_TURN],
 			"with up to %.0f%% adjustment per corner, this composition reaches only %+.0f to %+.0f deg" % [MAX_ANGLE_ADJUSTMENT * 100.0, lowest, highest],
 		]
 		return result

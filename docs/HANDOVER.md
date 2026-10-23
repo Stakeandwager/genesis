@@ -24,7 +24,97 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **067**, which asked TRAPS 11's question
+- Last commit at the time of writing: **068**, which took the half of 042's
+  question 067 left: **the regex-breadth axis — for every sweep in `tests/`,
+  what is the sweep blind to?** Asked of `tests/prompt_bounds_test.gd`, the
+  suite TRAPS 28 built to compare every bound the prompt states against the
+  constant that enforces it, because its own header claims *"it does not
+  matter which sentence says it or how"*. **IT MATTERS.** Its two patterns —
+  `N to M <members>` and `(at most|up to|no more than) N <members>` — can
+  between them only match a statement naming a **MAXIMUM**, and the prompt
+  stated four bounds by hand in the other direction: `at least 2 straights`
+  and `at least 2 corners or hairpins` (`FeasibilityGate.MIN_STRAIGHTS`,
+  `MIN_TURNS`), and the full turn three times (`FULL_TURN`). **NOT ONE OF
+  THOSE THREE CONSTANTS APPEARED IN ANY FILE IN `tests/`** — grep, not memory.
+  **MEASURED BEFORE ANYTHING WAS CHANGED, in its own throwaway copy with its
+  own `config/name` (TRAPS 50): with the prompt reading *"at least 7 straights
+  and at least 9 corners or hairpins"* — a floor stated four times narrower
+  than the truth, which is TRAPS 28's own fault — and `PROMPT_FINGERPRINT`
+  moved with it the way every real prompt edit moves it, ALL 69 SUITES PASSED,
+  0 with something to look at.** The fingerprint is a change detector and
+  cannot say a prompt is wrong; the session that edits a prompt moves it in
+  the same commit.
+  **THREE MORE FINDINGS CAME OUT OF ASKING IT AS A CLASS (TRAPS 11).** The
+  full turn was stated a **fourth** time, by hand, to the **player**:
+  `FeasibilityGate`'s `FAILED_INFEASIBLE` says *"a circuit must turn exactly
+  +360 or -360 deg"*, eleven lines below the `FULL_TURN` that means it. And
+  `FeasibilityGate.MAX_ANGLE_ADJUSTMENT` is a **second declaration** of
+  `ClosureSolver.MAX_ANGLE_ADJUSTMENT` — the gate decides reachability from
+  its own copy and states its own copy to the player, while the prompt states
+  the solver's — with nothing asserting the two were the same number. Both are
+  `0.20`, so **nothing is wrong today**; what was missing is the tie. And the
+  pre-068 reader, handed the farm's floor restated as *"Use at most 24 zones,
+  and at least 9 zones"* against a declared minimum of 1, also reported
+  `failures=0`.
+  **WHAT CHANGED.** Four hand-typed numbers in `scripts/racing_module.gd`'s
+  prompt and one in `scripts/feasibility_gate.gd`'s refusal now read their
+  constants. **THE PROMPT TEXT IS BYTE-IDENTICAL AND THE FINGERPRINT DID NOT
+  MOVE** (`5a15cd39…`, asserted by the suite), so `PROMPT_VERSION` stays where
+  it is and no interpretation measured under it is split.
+  **AND ONE OF THE FINDINGS IS LIVE, which the rest are not.**
+  `FeasibilityGate`'s floor refusal told the player *"closing a circuit needs
+  at least 2 straights and 2 **corners**"*, and `MIN_TURNS` is compared
+  against a count of `TrackGeometry.YAW_TYPES` — so **a hairpin answers that
+  door as well**, as the prompt has always said and that sentence did not.
+  Measured: a composition of `MIN_STRAIGHTS` straights and `MIN_TURNS`
+  hairpins with no corner at all clears it. **The same two words were wrong
+  one line above it**: the
+  count beside the rule read `Readback.plural(turns, "corner")`, so a
+  composition of one hairpin was reported as *"1 corner"*. Both are fixed —
+  fixing one of them would have been TRAPS 11's exact shape — and the same
+  count typed out in prose in `racing_module.gd`'s comment now names its
+  constants.
+  **AND 068'S OWN FIRST CLAIM ABOUT THIS WAS WRONG AND IS LEFT IN THE RECORD
+  RATHER THAN QUIETLY FIXED (TRAPS 14).** It wrote *"nothing in `tests/` had
+  ever read that sentence"* on the strength of a `grep` for `composition has`
+  that found nothing. **`counted_said_test` reads it** — its needle is built
+  from `Readback.plural()`, so the string a grep would look for is not in the
+  file — and it **went red on the fix**, which is how the claim was caught.
+  What it asserts is the agreement between the count and whatever noun
+  follows it, with the noun **typed in**, so it could not see the noun being
+  the wrong one. Its expectation is updated and both suites say what they
+  hold. **A grep for a sentence finds the suites that quote it, not the
+  suites that construct it.**
+  `prompt_bounds_test` goes from **61 assertions to 72**: a minimum-only
+  reader (`at least|no fewer than|a minimum of N <members>`), each half of a
+  bound now compared only when the sentence states it, the two composition
+  floors and the full turn against their constants, the gate handed
+  compositions **at** the floor and one below it, both of the gate's refusal
+  sentences read off real verdicts, and the gate's adjustment limit asserted
+  equal to the solver's.
+  **69 suites, `--all`, `user://` cleared first: 0 with something to look
+  at**, against the same 69 at the 067 baseline run in this container with the
+  same binary before anything was touched; no file was added, so the list
+  length did not move. **Two full runs on the final source, both
+  BYTE-IDENTICAL to that baseline** (md5 `9bb6bd51cf700054e643edd76a4d2780`,
+  the same md5 067 recorded). **Ten deliberate
+  faults, each in its own throwaway
+  copy with its own `config/name`, FAIL lines read** — including the one that
+  matters: fault 6's wording against the **pre-068** reader is green
+  (`failures=0`) and against the new one fails naming the number.
+  **NOT VERIFIED: nothing was rendered, no window was opened, no model was
+  asked anything and no request left the container. There is no API key here.
+  Apart from that refusal wording, every one of 068's findings is LATENT** —
+  all four prompt bounds were already stating the truth and the two adjustment
+  constants already agree, so nothing else wrong was found anywhere in the
+  repository. What changed for those is that seven claims can now fail when
+  they should. New TRAPS 65; new "Human decision needed" 31.
+  **AND THE CLASS IS NOT CLOSED, which is the next task**: counted by script,
+  the assembled prompt holds **92 numerals, 41 of them distinct**, and nothing
+  asks of each one which constant produces it. 068 closed the four it found by
+  reading the prompt line by line against the code; a guard would close the
+  rest. See "Smallest useful assistant task next".
+- Before 068: **067**, which asked TRAPS 11's question
   of the commit that had just restated TRAPS 11. **066's FIRST DELIBERATE
   FAULT PASSED**, because its new scan searched whole files for
   `OS.get_process_id()` and the comment 066 had written into
@@ -8212,7 +8302,69 @@ all **done**. Candidates, in the order the assistant would take them:
     literally it narrows two checks that are wide on purpose, so the rule is
     about the DIRECTION of the assertion. See TRAPS 64 and the 067 section.
 
-    **WHAT IS LEFT OF THIS ENTRY, AND IT IS THE LARGER HALF — THE REGEX
+    **THE FIRST LIVE ENTRY, AND IT IS SMALL AND MEASURED: three
+    player-facing sentences say "corner" where the code means a TURN.**
+    `ClosureSolver.solve()` builds an adjustable variable for every
+    `TrackGeometry.YAW_TYPES` section, so it adjusts a hairpin's angle exactly
+    as it adjusts a corner's, and `feasibility_gate.gd:100`,
+    `racing_module.gd:176` and `racing_module.gd:584` all say *corner*. 068
+    fixed the two sentences of this class that state a RULE — the floor
+    refusal, where the understatement costs the player a design — and left
+    these three, which only describe what was done. The work is three words
+    and a full run; **expect a suite to read one of them even though `grep`
+    finds no reader**, because that is exactly the grep 068 got wrong about
+    the floor refusal. See the 068 section.
+
+    **068 TOOK THE REGEX-BREADTH AXIS AT ONE SUITE AND IT PAID.**
+    `prompt_bounds_test`'s two count patterns can between them only match a
+    bound that states a **maximum**, and the prompt stated four by hand in the
+    other direction — the two composition floors and the full turn — none of
+    whose constants (`FeasibilityGate.MIN_STRAIGHTS`, `MIN_TURNS`,
+    `FULL_TURN`) appeared in any file in `tests/`. Measured: a prompt reading
+    *"at least 7 straights and at least 9 corners or hairpins"*, fingerprint
+    moved, passed all 69 suites. Fixed by reading all four from their
+    constants (prompt byte-identical) and by nine new assertions, and the same
+    question found the full turn stated a fourth time to the player and a
+    second declaration of the solver's adjustment limit inside the gate. See
+    TRAPS 65 and the 068 entry in the starting state.
+
+    **WHAT IS LEFT, AND IT IS STILL THE LARGER HALF.** 068 asked the question
+    of ONE suite's patterns out of the twelve files that compile one. The
+    other seventeen `compile()` sites and nine `RegEx.create_from_string()`
+    sites have not been asked, and the method is unchanged: for each pattern,
+    name the member of its class it cannot match, feed it that member, and
+    watch the suite stay green. **The candidates 068 read and did not take**,
+    so the next session need not re-read them: `container_door_test`'s and
+    `counted_said_test`'s `\b1 [a-z_]+s\b` cannot see a plural that does not
+    end in `s`; `said_article_test`'s `\b(The|A|An) ([a-z_]+) ([0-9]+)\b`
+    cannot see an article in front of a **two-word** numbered label;
+    `claim_field_test`'s `^%s: N to M` cannot see a field bound written with a
+    dash or as *"between N and M"*. Each is a guess until it is fed its
+    member.
+
+    **AND A SECOND, WIDER QUESTION 068 MEASURED AND DID NOT ANSWER: which of
+    the numbers in the prompt is read from the thing that enforces it?**
+    Counted by script rather than remembered: the assembled prompt holds **92
+    numerals, 41 of them distinct**. 068 closed four of them by reading the
+    prompt line by line against the code, and `prompt_bounds_test` accounts
+    for the bounds it names and no others. A guard that enumerated every
+    numeral and required each to be either a constant's formatted value or a
+    declared non-bound would close the class the way `source_scan_test` closed
+    067's, and it is not small: a good part of the 41 are worked examples
+    (*"brake at 1200 stops in 0.59 m"*) and ordinary prose (*"room_1, room_2,
+    room_3"*), so the declared half would be a table of judgements that can go
+    stale. **Worth doing, worth doing deliberately, and worth reading TRAPS 59
+    first** — a guard keyed on how a number is written guards the writing.
+    One thing already measured and NOT a finding: a scan of every string
+    literal in `scripts/` carrying a digit and a bound word (*at least*, *at
+    most*, *up to*, *exactly*, *must be*, …) returns **six** sites after
+    068's fix, and all six are structural rather than bounds — *"room 1"*,
+    *"(1 to %d)"*, and the chicane's *"more than 0 and at most twice the
+    radius"*, whose `2.0 * radius` the prompt spells `2 x R` in words rather
+    than as a number.
+
+    The entry as it stood before 068:
+    **THE REGEX
     BREADTH AXIS, WHICH IS 042'S OWN FAULT AND WAS NOT LOOKED FOR IN 067.**
     042's sweep was correct and its regex could only match one word order; a
     comment cannot cause that and `_code_of()` does nothing about it. The
@@ -9689,6 +9841,292 @@ be wrong and the corrections are the useful part.
    suite reads it. It is four lines and a `match`. Whether a colour is worth
    a test is a judgement about what a panel suite is for, so it is noted
    rather than taken.
+
+## 068 — the bound stated in the one direction the suite that holds bounds could not read
+
+**Objective.** The live entry under "Smallest useful assistant task next" —
+042's question, *"for every sweep in `tests/`, what is the sweep blind to?"* —
+along the axis 067 explicitly left: **regex breadth**, which is 042's own
+fault. 067 closed the comment axis. A comment cannot cause a pattern that
+matches only one direction of its class, and `_code_of()` does nothing about
+it.
+
+**Starting state.** Branch `prototype-002a` at `5062f8b` (067). 69 suites,
+`--all`, `user://` cleared first, run in this container with
+Godot 4.7.1-stable before anything was touched: **0 with something to look
+at**.
+
+**Which suite, and why that one.** `grep` finds **27 patterns** in `tests/` —
+eighteen `RegEx.compile()` and nine `RegEx.create_from_string()`, across
+twelve files. `tests/prompt_bounds_test.gd` was taken first because its
+subject is the project's earliest claim: TRAPS 28's rule is that *a bound
+stated to the MODEL is a claim about Genesis*, and that suite is the only
+thing holding it. Its own header says what its patterns buy — *"it does not
+matter which sentence says it or how"* — which is a claim about a regular
+expression, and the kind this project has learned to distrust.
+
+### The answer, and it was two patterns blind in the same direction
+
+`_counts_stated()` read a count statement two ways:
+
+```
+(?i)([0-9]+) to ([0-9]+) (<members>)\b
+(?i)(?:at most|up to|no more than) ([0-9]+) (<members>)\b
+```
+
+Both correct. Between them they can only match a statement that names a
+**maximum** — the first requires both numbers, the second only a ceiling — and
+the loop that consumed them compared the maximum **unconditionally**, so a
+minimum-only shape could not even be added to the reader without changing the
+loop.
+
+**What the prompt was stating in that shape, read line by line against the
+code rather than searched for:** four numbers, all typed out by hand.
+
+| stated in the prompt | the thing that enforces it | named in `tests/`? |
+|---|---|---|
+| `at least 2 straights` | `FeasibilityGate.MIN_STRAIGHTS` | **nowhere** |
+| `at least 2 corners or hairpins` | `FeasibilityGate.MIN_TURNS` | **nowhere** |
+| `exactly +360 … or -360 …` | `FeasibilityGate.FULL_TURN` | **nowhere** |
+| `Angles adding up to 360` | the same `FULL_TURN` | **nowhere** |
+
+`grep` for each of the three constants across `tests/*.gd` returns nothing at
+all. A constant no test names is a constant the prompt can contradict.
+
+### Measured, in its own throwaway copy, before anything was changed
+
+With `racing_module.gd`'s line reading *"at least 7 straights and at least 9
+corners or hairpins"* — a floor stated four times narrower than the truth,
+which is TRAPS 28's own fault, the fault that suite exists for — and
+`PROMPT_FINGERPRINT` moved with it the way every real prompt edit moves it:
+
+```
+suites with something to look at: 0
+```
+
+**All 69.** And the pre-068 reader handed the farm's zone floor restated as
+*"Use at most 24 zones, and at least 9 zones"* against a declared minimum of
+1 and a validator that accepts 1: `PROMPT BOUNDS failures=0`.
+
+**`PROMPT_FINGERPRINT` is not a second net**, and this is worth saying because
+it looks like one. It fails on *any* change to the prompt and its message says
+*"move PROMPT_VERSION"*. It is a change detector, and the session that edits
+the prompt moves it in the same commit. The run above is what that looks like.
+
+### And one of them was LIVE, which the rest of 068 is not
+
+**`FeasibilityGate`'s floor refusal told the player a narrower rule than the
+gate keeps, in two sentences one line apart.** The rule read *"closing a
+circuit needs at least 2 straights and 2 corners"*, and the count beside it
+read `Readback.plural(turns, "corner")`. `MIN_TURNS` is compared against a count of
+`TrackGeometry.YAW_TYPES`, which is `["corner", "hairpin", "banked_corner"]`,
+so **a hairpin answers that door as well as a corner** — measured, not
+supposed: the floor fixture `prompt_bounds_test` now builds is `MIN_STRAIGHTS`
+straights and `MIN_TURNS` **hairpins and no corner at all**, and the
+"clears that door" assertion is the measurement that it passes. The prompt has
+always said *"corners or hairpins"*; the sentence the **player** reads said
+*"corners"*. A refusal naming a narrower set than the check accepts costs the
+player the design the check would have taken, which is TRAPS 15's shape at a
+refusal. Both are fixed and both are held by assertions that read a real
+`FAILED_DEGREES_OF_FREEDOM` verdict.
+
+**AND THE FIRST CLAIM 068 WROTE ABOUT THIS WAS WRONG. It is left in the record
+rather than quietly fixed (TRAPS 14), because the way it was caught is the
+finding.** 068 wrote *"nothing in `tests/` had ever read that sentence"* on
+the strength of a `grep` of `tests/` for `composition has`, which returns
+nothing. **`counted_said_test` reads it.** Its needle is
+`Readback.plural(1, "corner")`, built at run time, so the string a grep would
+look for is not in the file — and the suite **went red on the fix**, in the
+first full run after it, which is how the claim was caught rather than
+published. What that assertion holds is the agreement between the count and
+whatever noun follows it, with **the noun typed in**, so it could not see the
+noun being the wrong one; its own file header boasts that *"the types are read
+from `FarmModule.ZONE_TYPES` and `SectionValidator.SECTION_TYPES`, never typed
+in here"*, and at this one site they were. Its expectation now reads `turn`
+and both suites say in their comments which half they hold. **A grep for a
+sentence finds the suites that QUOTE it, not the suites that CONSTRUCT it** —
+and that is the same blind spot as the one 068 is about, one layer out: a
+search for a wording cannot see a needle that is assembled.
+
+**AND THE SAME WORD IS WRONG IN THREE MORE PLAYER-FACING SENTENCES, WHICH
+068 MEASURED AND DELIBERATELY DID NOT CHANGE.** `ClosureSolver.solve()`
+builds an adjustable variable for **every** `TrackGeometry.YAW_TYPES` section,
+so it adjusts a hairpin's angle exactly as it adjusts a corner's — and three
+sentences say *corner*:
+
+- `feasibility_gate.gd:100` — *"with up to 20% adjustment per **corner**,
+  this composition reaches only …"*;
+- `racing_module.gd:176` — *"adjustment used: **corners** up to x%, straights
+  up to y%"*;
+- `racing_module.gd:584` — *"Even after the game adjusted every **corner** and
+  straight by up to 20% …"*.
+
+`grep` finds no reader for any of the three in `tests/` — **and that is the
+grep 068 has just been burned by, so it is not evidence, only a starting
+point**. The reason they are left is not that they are harmless but that they
+are **descriptive rather than prescriptive**: none of them states a rule the
+player has to satisfy, so none of them costs a design the way the floor
+refusal did. Changing five player-facing sentences in one unattended commit is
+more than this one should carry, and the owner is the editor of what the
+player reads. **They are the first live entry under "Smallest useful assistant
+task next".** The gate's own header comment, four lines above the first of
+them, already says *"scale each corner or hairpin"* correctly.
+
+**The same count was typed out in prose a second time**, in
+`racing_module.gd`'s comment above `metric_lines()` — *"a closed circuit needs
+at least two straights and two corners (FeasibilityGate), so the first two can
+never BE one"* — where the whole point of the sentence depends on both being
+above 1. It now names the constants instead of the numbers.
+
+### Two more members, found by asking it as a class (TRAPS 11)
+
+- **The full turn is stated a fourth time, to the PLAYER.**
+  `FeasibilityGate`'s `FAILED_INFEASIBLE` reason reads *"a circuit must turn
+  exactly +360 or -360 deg"* — hand-typed, in the file that declares
+  `FULL_TURN`, eleven lines below it. Fixing the prompt alone would have left
+  it.
+- **`FeasibilityGate.MAX_ANGLE_ADJUSTMENT` is a second declaration of
+  `ClosureSolver.MAX_ANGLE_ADJUSTMENT`.** The gate decides which net turns are
+  reachable from **its** copy and states **its** copy to the player in the
+  same refusal; the prompt states the solver's; `prompt_bounds_test` already
+  asserted the solver's own pair were equal and said why, and did not know
+  about the third. Both are `0.20`, so **nothing is wrong today** — what was
+  missing is the tie. Moving the solver's limit alone would leave the gate
+  refusing compositions the solver can close, in a sentence naming the wrong
+  percentage, with every suite green.
+
+### Implementation
+
+- **`scripts/racing_module.gd`** — four numbers in `prompt_section()` now read
+  `FeasibilityGate.FULL_TURN`, `MIN_STRAIGHTS` and `MIN_TURNS`. This is the
+  rule TRAPS 28 settled and praised the two tool files for following: state
+  the bound out of the constant, do not remember it.
+- **`scripts/feasibility_gate.gd`** — `FAILED_INFEASIBLE`'s second reason now
+  reads `FULL_TURN` as well.
+- **`tests/prompt_bounds_test.gd`**, 61 assertions to 72:
+  - a minimum-only reader, `(?:at least|no fewer than|a minimum of) N
+    <members>`, and each half of a bound compared **only when the sentence
+    states it**;
+  - the two composition floors and the full turn asserted against their
+    constants;
+  - the floors measured at the **gate**, which is TRAPS 28's third link for a
+    bound that has no `lists()` declaration to sit in the middle: the gate is
+    handed a composition one straight short, one turn short, and exactly at
+    the floor, and the answer is read off the **category**
+    (`FAILED_DEGREES_OF_FREEDOM`) and not the sentence;
+  - the refusal sentence read off a real `FAILED_INFEASIBLE` verdict, from a
+    composition whose turns cancel, built from the floors so that it lands at
+    the second door;
+  - `FeasibilityGate.MAX_ANGLE_ADJUSTMENT` asserted equal to the solver's;
+  - `TrackGeometry.YAW_TYPES` asserted to hold both a corner and a hairpin,
+    because the floor fixture picks between them by the share of the full turn
+    and would otherwise change which door it measures in silence;
+  - and the floor refusal's own two sentences — the rule and the count beside
+    it — asserted to name a turn rather than a corner, read off a real
+    `FAILED_DEGREES_OF_FREEDOM` verdict.
+
+**THE PROMPT TEXT DID NOT CHANGE.** `assembled_prompt().sha256_text()` is
+`5a15cd3972ceb300e353c6204ef80ca08f991f07cf8662e30599e475bf1d9cfb`, which is
+`AIInterpreter.PROMPT_FINGERPRINT` unmoved — asserted by the suite itself, not
+eyeballed. `PROMPT_VERSION` stays at `050-no-command-for-a-question-1` and no
+interpretation measured under it is split in two.
+
+### Evidence — what was actually run
+
+- **69 suites, `--all`, `user://` cleared first: 0 with something to look
+  at**, against the same 69 at the 067 baseline run in this container with the
+  same binary before anything was touched. No file was added, so the list
+  length did not move; `prompt_bounds_test` is the only line whose assertion
+  count changed, 61 to 72, counted off its own `PASS`/`FAIL` lines in a copy
+  of `HEAD` rather than remembered — it prints no count in its result line, so
+  the run output cannot show it. **Two full runs on the final source, and both
+  are BYTE-IDENTICAL to the 067 baseline run**: md5
+  `9bb6bd51cf700054e643edd76a4d2780` all three times, which is the same md5
+  067's own message recorded.
+- **One real regression, caught by a full run and not by reasoning**:
+  `counted_said_test` went red on the refusal-noun fix (`the gate's refusal
+  says "1 corner"`). Recorded above; both the code and this file's claim were
+  corrected, and the suite is green.
+- **Ten deliberate faults, each in its own throwaway copy with its own
+  `config/name` (TRAPS 50), FAIL lines read:**
+  1. the prompt's floors hand-typed back as 7 and 9 — caught, and `1b`, the
+     same fault with `PROMPT_FINGERPRINT` recomputed as a real edit would
+     recompute it, **fails on the new assertion alone** (`failures=1`), which
+     is the whole point;
+  2. the gate enforcing `MIN_STRAIGHTS + 1` while its constant says
+     `MIN_STRAIGHTS` — caught, three failures, the first naming the cause;
+  3. `FeasibilityGate.MAX_ANGLE_ADJUSTMENT` moved to `0.25` — caught;
+  4. the prompt's full turn hand-typed as `+361/-361`, fingerprint moved —
+     caught;
+  5. the refusal's full turn hand-typed back and `FULL_TURN` moved to `350`,
+     fingerprint moved — caught, naming `+350 or -350`;
+  6. the farm's floor restated as *"at least 9 zones"*, fingerprint moved —
+     caught, `the prompt's minimum of 9 is the declared 1`;
+  7. **negative control**: the same wording with the **correct** floor, *"at
+     least 1 zones"* — `failures=0`, so the new reader reads the number and
+     not the wording (TRAPS 6);
+  8. **the one that justifies the change**: fault 6's prompt against the
+     **pre-068** reader — `failures=0`;
+  9. the floor refusal narrowed back to *"%d corners"* — caught;
+  10. the count beside it reverted to `plural(turns, "corner")` — caught.
+- Fault 6's first run was discarded and is recorded rather than quoted: the
+  injection removed a `%s` from the farm prompt without removing its argument,
+  so eleven unrelated assertions failed from one fixture fault (TRAPS 55). Rerun
+  with the argument removed, it is the single clean failure above.
+- The infeasible fixture's first draft was written with two straights and
+  fault 2 pushed it back to the first door; it is now built from the floors,
+  and the comment above it states that at the width it is true (TRAPS 15).
+
+### What the tests did NOT prove
+
+- **Nothing was rendered, no window was opened, no model was asked anything
+  and no request left the container.** There is no API key here. Whether
+  telling the model these floors in these words changes what it sends is the
+  owner's editor session.
+- **One of 068's findings was live and the rest are LATENT.** The floor
+  refusal's *"2 corners"* was a wrong claim in a sentence a player can read
+  today, and it is fixed. The four prompt bounds were already stating the
+  truth and the two adjustment constants already agree, so **nothing else
+  wrong was found anywhere in the repository**: what changed for those is that
+  six claims can now fail when they should.
+- **The live one was not reached by a sweep.** It was found by reading
+  `feasibility_gate.gd` while moving the hand-typed numbers in it, which is
+  worth saying because 068's method was a question about patterns and this
+  came out of reading the file the patterns pointed at.
+- **The three new prompt assertions are narrower than the rest of the file and
+  say so in its header.** They match the prompt's own wording around the
+  numbers, because a number with no list noun beside it cannot be found any
+  other way, so they will fail on a rewording that keeps the numbers true.
+  That is the safe direction and it is still a cost.
+- **The minimum-only reader has no live subject.** `Readback.list_rule()`
+  writes *"N to M members"* or *"up to N members"* and never that shape, so
+  today the pattern matches nothing. It is held by faults 6 and 7 and by
+  nothing else.
+- **Twenty-three of the twenty-seven patterns in `tests/` have not been
+  asked.** 068 asked one suite's two. See "Smallest useful assistant task
+  next" for the three candidates read and not taken.
+- **The 92 numerals in the prompt are not accounted for.** 41 distinct,
+  counted by script. Four are now read from their constants and the bounds
+  `prompt_bounds_test` already names are read from theirs; the rest are
+  unasked.
+- **No secret was set and no workflow file was edited.** 064's finding stands:
+  the web build has failed on every push since 14 October and the live site is
+  still `71b065f`.
+
+### Next action
+
+**The three sentences that say "corner" where the code means a turn**, listed
+above with their line numbers: `feasibility_gate.gd:100`,
+`racing_module.gd:176`, `racing_module.gd:584`. Three words and a full run,
+and the full run is the point — `grep` finds no reader for any of them and
+`grep` is what 068 got wrong about the floor refusal.
+
+**Then the regex-breadth axis at the remaining twenty-three patterns**, by the
+same method and in the order the candidates are listed under "Smallest useful
+assistant task next" — each is a guess until the pattern has been fed the
+member of its class it cannot match. The wider question behind it, the
+prompt's 92 numerals, is written up in the same place with what it would
+cost.
 
 ## 067 — the rule written down in one commit and applied to one function
 
@@ -13043,3 +13481,36 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     **It is the owner's because it is a decision about where the harness
     lives**, and because the only option that is purely mechanical is the one
     whose verification needs a Windows machine.
+
+31. **Whether `FeasibilityGate` should declare the solver's adjustment limit
+    or read it.** Found in 068 while asking which numbers in the prompt are
+    read from the thing that enforces them, and **not** acted on, because it
+    is a decision about which way two modules depend on each other.
+
+    The fact, measured rather than argued: `ClosureSolver.MAX_ANGLE_ADJUSTMENT`
+    and `FeasibilityGate.MAX_ANGLE_ADJUSTMENT` are **two declarations of one
+    number**, `0.20`. The gate decides which net turns a composition can reach
+    from **its** copy, states **its** copy to the player in
+    `FAILED_INFEASIBLE`'s third reason, and the prompt states the
+    **solver's**. Nothing asserted the two were the same, so moving the
+    solver's limit alone would have left the gate refusing compositions the
+    solver can close, in a sentence naming the wrong percentage, with every
+    suite green. **Nothing is wrong today**; 068 added the assertion, which is
+    the part that does not need a decision.
+
+    The options:
+
+    - **Leave both and keep the assertion.** The gate stays readable on its
+      own — its header derives the reachable range from the limit in the two
+      lines above the constant — and the suite catches a divergence.
+    - **The gate reads `ClosureSolver.MAX_ANGLE_ADJUSTMENT`.** One
+      declaration, and the assertion becomes unnecessary. It makes the gate,
+      which runs **before** anything is solved, name the solver.
+    - **Both read a third place.** No new dependency either way, and a new
+      file or constant block for one number.
+
+    **It is the owner's because it is about the shape of the pipeline**, not
+    about a wrong answer: `check()` runs before any geometry is built, and
+    whether the thing that decides feasibility is allowed to know about the
+    thing that solves is the sort of ordering decision this project has kept
+    deliberate.

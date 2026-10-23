@@ -4129,3 +4129,115 @@ restated TRAPS 11.
 > likely to be applied once.
 
 ---
+
+## 65. The bound the model is told in a shape the suite that holds bounds cannot read
+
+**Signature:** a suite exists for the express purpose of comparing every bound
+the prompt states against the constant that enforces it. The prompt states
+four bounds the suite has never read, and no file in `tests/` names the
+constants behind them at all.
+
+**Cause.** `tests/prompt_bounds_test.gd` reads a count statement with two
+regular expressions — `N to M <members>` and `(at most|up to|no more than) N
+<members>` — and its own header said what that buys: *"it does not matter
+which sentence says it or how"*. It does matter. Between them the two patterns
+can only match a statement that names a **maximum**, and the prompt stated:
+
+- `at least 2 straights and at least 2 corners or hairpins`
+  (`FeasibilityGate.MIN_STRAIGHTS`, `MIN_TURNS`), typed out by hand;
+- `exactly +360 (clockwise) or -360 (anticlockwise)` and `adding up to 360`
+  (`FeasibilityGate.FULL_TURN`), typed out by hand twice more.
+
+`FULL_TURN`, `MIN_STRAIGHTS` and `MIN_TURNS` appeared in **no file in
+`tests/`** — grep, not memory. So the prompt could state any floor it liked.
+
+**Measured rather than reasoned about.** With the prompt reading *"at least 7
+straights and at least 9 corners or hairpins"* — a floor stated four times
+narrower than the truth, which is TRAPS 28's own fault — and
+`PROMPT_FINGERPRINT` moved with it the way every real prompt edit moves it,
+**all 69 suites passed: 0 with something to look at.** And the pre-068 reader,
+handed the farm's zone floor restated as *"Use at most 24 zones, and at least
+9 zones"* against a declared minimum of 1, also reported `failures=0`.
+
+**The fingerprint is not a second net.** `PROMPT_FINGERPRINT` fails on *any*
+change to the prompt and its failure says *"move PROMPT_VERSION"*. It is a
+change detector. It cannot say the prompt is **wrong**, and the session that
+edits a prompt moves it in the same commit — so any claim resting on it is a
+claim about nobody having edited the prompt.
+
+**The same number at a fourth door, which is the TRAPS 11 half.**
+`FeasibilityGate`'s `FAILED_INFEASIBLE` tells the **player** *"a circuit must
+turn exactly +360 or -360 deg"* — typed out by hand, in the file that declares
+`FULL_TURN`, eleven lines below it. Fixing the prompt alone would have left
+that one.
+
+**And the one that was LIVE, at the player's door, in two sentences one line
+apart.** The same gate's floor refusal read *"closing a circuit needs at least
+2 straights and 2 **corners**"*, and the count beside it read
+`Readback.plural(turns, "corner")`, so a composition of one hairpin was
+reported as *"1 corner"*.
+`MIN_TURNS` is compared against a count of `TrackGeometry.YAW_TYPES` —
+`["corner", "hairpin", "banked_corner"]` — so a **hairpin** answers that door
+as well, which the prompt has always said and that sentence did not. Measured:
+a composition of `MIN_STRAIGHTS` straights and `MIN_TURNS` hairpins with no
+corner at all clears it. **A refusal naming a narrower set than the check
+accepts costs the player the design the check would have taken** —
+TRAPS 15's shape, at a refusal, in the same file as the hand-typed numbers and
+found only because moving them meant reading it. **Both were fixed**: fixing
+the rule and leaving the count one line above it would have been TRAPS 11
+inside four lines.
+
+**And 068 claimed nothing in `tests/` had ever read those sentences, and that
+was false.** The claim rested on a `grep` of `tests/` for `composition has`,
+which returns nothing. `counted_said_test` reads that sentence with a needle
+built at run time from `Readback.plural(1, "corner")`, so the string a grep
+looks for is not in the file — and the suite went **red** on the fix, in the
+first full run after it. What it asserts is the agreement between a count and
+whatever noun follows it, **with the noun typed in**, so it could not see the
+noun being the wrong one; its own header says the suite never types nouns in,
+and at that one site it did. **A grep for a sentence finds the suites that
+QUOTE it, not the suites that CONSTRUCT it** — which is this trap's own blind
+spot one layer out.
+
+**And a third copy of a constant, found by the same question.**
+`FeasibilityGate.MAX_ANGLE_ADJUSTMENT` is a second declaration of
+`ClosureSolver.MAX_ANGLE_ADJUSTMENT`: the gate decides which net turns are
+reachable from **its** copy and states **its** copy to the player, while the
+prompt states the solver's. Nothing asserted the two were the same number.
+Both are `0.20` today, so nothing is wrong — what was missing is the tie.
+
+**Do:**
+
+- **Ask of every pattern in a suite what member of its class it cannot
+  match**, and then feed it that member and watch the suite stay green. Two
+  correct patterns can be blind in the same direction; these two were, and the
+  direction was *minimum*.
+- **A reader that compares one half of a bound must say which half it read.**
+  The loop here compared the maximum **unconditionally**, which is why a
+  minimum-only shape could not simply be added to the reader: it had to be
+  made to compare each half only when the sentence stated it.
+- **A guard whose subject is a number has to name the constant.** Not one of
+  `FULL_TURN`, `MIN_STRAIGHTS`, `MIN_TURNS` was named anywhere in `tests/`.
+  A constant no test names is a constant the prompt can contradict.
+- **Count the doors before fixing one.** The full turn was stated in the
+  prompt three times and in a player-facing refusal a fourth. TRAPS 11.
+- **A change detector is not a truth check.** Say which one a guard is.
+- **When a sweep points you at a file, read the file.** 068's live finding was
+  not caught by any pattern or sweep: it was two words in a sentence eleven
+  lines from a constant 068 was already editing.
+- **"Nothing reads this" is a claim, and a grep is not the measurement.** A
+  suite that builds its needle from a function does not contain the string.
+  Run the suite against the change before writing that sentence down.
+- A reader with **no live subject** — the minimum-only pattern matches nothing
+  in today's prompt, because `Readback.list_rule()` never writes that shape —
+  is a check that cannot fail (TRAPS 6). It is held by a pair of negative
+  controls instead: the same wording with the **wrong** floor fails naming the
+  number, and with the **right** floor passes.
+
+Found in 068, taking the regex-breadth half of 042's question that 067 left:
+*for every sweep in `tests/`, what is the sweep blind to?*
+
+> A suite that reads a claim through a pattern holds the claims that pattern
+> can spell. The project will state the next one in the other direction.
+
+---

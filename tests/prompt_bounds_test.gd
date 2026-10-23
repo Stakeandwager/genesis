@@ -57,9 +57,52 @@ extends SceneTree
 # module's own lists(), never written out here, so a world added later is
 # covered without editing this file.
 #
+# FINDING, 068. The two composition floors and the full turn are stated to
+# the model and enforced by FeasibilityGate, and are not a declared list's
+# size, so the reader above cannot see them at all. Until 068 no file in
+# tests/ named FULL_TURN, MIN_STRAIGHTS or MIN_TURNS: the prompt stated all
+# three BY HAND and the gate's own FAILED_INFEASIBLE sentence stated the full
+# turn by hand a fourth time. Measured: a prompt reading "at least 7
+# straights and at least 9 corners or hairpins", with PROMPT_FINGERPRINT
+# moved with it the way a real prompt edit moves it, passed all 69 suites.
+# The four numbers are now read from the constants and compared here, and the
+# gate is handed compositions at the floor and one below it.
+#
+# FINDING, 068, AND THE ONLY ONE OF THEM THAT WAS LIVE. The floor refusal told
+# the player "at least N straights and N corners", and the count beside it
+# said "corner" too - but MIN_TURNS is compared against a count of
+# TrackGeometry.YAW_TYPES, so a HAIRPIN answers that door as well, which the
+# prompt has always said and those two sentences did not. Measured: the floor
+# fixture below is MIN_TURNS hairpins and no corner at all whenever the full
+# turn splits above 120 deg, and it clears the door.
+#
+# AND THE CLAIM 068 FIRST WROTE HERE WAS WRONG, which is left in the record
+# rather than quietly fixed (TRAPS 14). It said nothing in tests/ had ever
+# read those two sentences, on the strength of a grep for "composition has"
+# that found nothing. counted_said_test reads them - its needle is built from
+# Readback.plural(), so the string a grep would look for is not in the file -
+# and it went RED on the fix. What it asserts is the agreement between the
+# count and whatever noun follows it, with the noun typed in; it could not
+# see the noun being the wrong one. A grep for a sentence finds the suites
+# that quote it, not the suites that construct it.
+#
 # NOT ASSERTED, deliberately: that any particular sentence exists. Nothing
 # here requires the prompt to say "Use" or "at most", and every sentence in
-# it can be rewritten freely as long as the numbers in it stay true.
+# it can be rewritten freely as long as the numbers in it stay true. THE 068
+# ASSERTIONS ARE THE EXCEPTION AND SAY SO: the two prompt bounds below, and
+# the three sentences read off the gate's own verdicts, match the wording
+# around their numbers, because a number with no list noun beside it cannot
+# be found any other way. They are a narrower guard than the rest of this
+# file and will fail on a rewording that keeps the numbers true. No count of
+# them is given here on purpose - a count in a comment is TRAPS 24's shape,
+# and the figure in the suite's result line is the one that cannot go stale.
+#
+# NOT ASSERTED: that every number in the prompt is read from the thing that
+# enforces it. Counted by script in 068 rather than remembered: the assembled
+# prompt holds 92 numerals, 41 of them distinct, and this file accounts for
+# the bounds it names and no others. The rest are a mixture of enforced
+# bounds, worked examples and ordinary prose, and separating them is the next
+# task - see HANDOVER.
 #
 # NOT ASSERTED: that the model obeys any of it. No model has read this
 # prompt. Whether telling the model the section count changes what it sends
@@ -103,7 +146,56 @@ func _counts_stated(prompt: String, entry: Dictionary) -> Array:
 	for m in capped.search_all(prompt):
 		found.append([-1, int(m.get_string(1))])
 
+	# 068: and a MINIMUM stated on its own, which neither pattern above can
+	# see. This is the regex-breadth axis of 042's question asked of this
+	# file: the two patterns above are correct and between them they can only
+	# match a bound that states a maximum. A sentence that states the ceiling
+	# in a shape they CAN see and the floor in one they cannot leaves
+	# `stated` non-empty, so the "states how many are allowed" assertion
+	# passes and the floor is never compared with anything.
+	#
+	# Readback.list_rule() writes "N to M members" or "up to N members" and
+	# never this shape, so TODAY no declared list's statement matches here
+	# and this pattern reads nothing. That is said plainly because a reader
+	# with no live subject is a check that cannot fail (TRAPS 6): its value
+	# is held by a negative control instead - 068 reworded the farm's
+	# sentence to "Use at most 24 zones, and at least 9 zones." in a
+	# throwaway copy and read the FAIL line naming 9 against the declared 1.
+	var floored := RegEx.new()
+	floored.compile("(?i)(?:at least|no fewer than|a minimum of) ([0-9]+) (%s)\\b" % nouns)
+	for m in floored.search_all(prompt):
+		found.append([int(m.get_string(1)), -1])
+
 	return found
+
+
+# A composition of `straights` straights and `turns` turns, handed to the gate
+# directly. Nothing here is a request: FeasibilityGate.check() runs after
+# SectionValidator, so the fields only have to be the ones the gate reads -
+# the type, and an angle on every turn. The turn angle is FULL_TURN split
+# between them so that a composition which clears the floor is not then
+# refused as infeasible for an unrelated reason.
+func _composition(straights: int, turns: int) -> Array:
+	var sections: Array = []
+	for i in maxi(straights, 0):
+		sections.append({"type": "straight", "length": 100.0})
+	var share := FeasibilityGate.FULL_TURN / float(maxi(turns, 1))
+	for i in maxi(turns, 0):
+		sections.append({
+			"type": "hairpin" if share > 120.0 else "corner",
+			"radius": 50.0,
+			"angle": share,
+		})
+	return sections
+
+
+# Does the gate refuse this composition FOR ITS COMPOSITION? Read off the
+# category and not the sentence, so a reworded reason does not move the
+# answer, and so that a composition refused one door along - FAILED_INFEASIBLE
+# - is not counted as this door answering.
+func _floor_refused(straights: int, turns: int) -> bool:
+	var verdict: Dictionary = FeasibilityGate.check(_composition(straights, turns))
+	return str(verdict.get("category", "")) == "FAILED_DEGREES_OF_FREEDOM"
 
 
 # A member of this list, made distinct from the others. Doors are pairs of
@@ -215,7 +307,11 @@ func _initialize() -> void:
 		for s in stated:
 			var said_low: int = (s as Array)[0]
 			var said_high: int = (s as Array)[1]
-			_check(said_high == high, "%s: the prompt's maximum of %d is the declared %d" % [where, said_high, high])
+			# 068: each half is compared only when the sentence stated it. It
+			# used to compare the maximum unconditionally, which is why a
+			# minimum-only shape could not simply be added to the reader.
+			if said_high >= 0:
+				_check(said_high == high, "%s: the prompt's maximum of %d is the declared %d" % [where, said_high, high])
 			if said_low >= 0:
 				_check(said_low == low, "%s: the prompt's minimum of %d is the declared %d" % [where, said_low, low])
 
@@ -266,6 +362,134 @@ func _initialize() -> void:
 	# be split - and this is where that is found out.
 	_check(is_equal_approx(ClosureSolver.MAX_ANGLE_ADJUSTMENT, ClosureSolver.MAX_LENGTH_ADJUSTMENT),
 		"the solver adjusts an angle and a length by the same fraction, which the prompt says once")
+
+	# 068: and a THIRD constant holds the same fraction. FeasibilityGate
+	# carries its own MAX_ANGLE_ADJUSTMENT and decides off it which net turns
+	# are reachable, and it states its own copy to the player in
+	# FAILED_INFEASIBLE's third reason. The prompt states ClosureSolver's.
+	# Nothing asserted the two were the same number, so moving the solver's
+	# limit alone would leave the gate refusing compositions the solver can
+	# close, in a sentence naming the wrong percentage, with every suite
+	# green. grep for MAX_ANGLE_ADJUSTMENT: these two files are the whole
+	# class, and MAX_LENGTH_ADJUSTMENT exists in one place only.
+	_check(is_equal_approx(FeasibilityGate.MAX_ANGLE_ADJUSTMENT, ClosureSolver.MAX_ANGLE_ADJUSTMENT),
+		"the gate decides reachability with the solver's own adjustment limit")
+
+	# --- 068: the two composition floors and the full turn ---
+	#
+	# These are bounds the model is told and FeasibilityGate enforces, and
+	# they are not a declared list's size, so _counts_stated() cannot see
+	# them: "at least 2 straights" is neither "N to M members" nor "at most N
+	# members", and the straights are a subset of the sections list rather
+	# than a list of their own.
+	#
+	# MEASURED BEFORE THIS WAS WRITTEN, not supposed. No file in tests/ named
+	# FULL_TURN, MIN_STRAIGHTS or MIN_TURNS at all. With the prompt reading
+	# "at least 7 straights and at least 9 corners or hairpins" - a floor
+	# stated four times narrower than the truth, which is TRAPS 28's own
+	# fault - and PROMPT_FINGERPRINT moved with it the way any real prompt
+	# edit moves it, all 69 suites passed: 0 with something to look at. The
+	# fingerprint says the prompt CHANGED. It cannot say the prompt is wrong.
+	_check(prompt.contains("at least %d straights and at least %d corners or hairpins" % [
+			FeasibilityGate.MIN_STRAIGHTS, FeasibilityGate.MIN_TURNS]),
+		"the prompt states the composition floors as %d straights and %d turns" % [
+			FeasibilityGate.MIN_STRAIGHTS, FeasibilityGate.MIN_TURNS])
+	_check(prompt.contains("%+.0f (clockwise) or %+.0f (anticlockwise)" % [
+			FeasibilityGate.FULL_TURN, -FeasibilityGate.FULL_TURN]),
+		"the prompt states the full turn as %+.0f and %+.0f degrees" % [
+			FeasibilityGate.FULL_TURN, -FeasibilityGate.FULL_TURN])
+
+	# And the floors are the GATE'S, handed compositions rather than trusted.
+	# This is the third link of TRAPS 28's chain - prompt, declaration,
+	# enforcer - for a bound that has no declaration to sit between them, so
+	# the prompt is compared with the constant above and the constant with
+	# the running check here. A constant edited to match a wrong sentence
+	# fails on these three.
+	_check(_floor_refused(FeasibilityGate.MIN_STRAIGHTS - 1, FeasibilityGate.MIN_TURNS),
+		"%d straights is refused for the composition" % (FeasibilityGate.MIN_STRAIGHTS - 1))
+	_check(_floor_refused(FeasibilityGate.MIN_STRAIGHTS, FeasibilityGate.MIN_TURNS - 1),
+		"%d turns is refused for the composition" % (FeasibilityGate.MIN_TURNS - 1))
+	_check(not _floor_refused(FeasibilityGate.MIN_STRAIGHTS, FeasibilityGate.MIN_TURNS),
+		"the declared floor of %d straights and %d turns clears that door" % [
+			FeasibilityGate.MIN_STRAIGHTS, FeasibilityGate.MIN_TURNS])
+
+	# THE FOURTH DOOR THAT STATES THE FULL TURN, held here beside the prompt's
+	# rather than in a file of its own, so that the next session fixing one of
+	# them sees the other (TRAPS 11). FAILED_INFEASIBLE's second reason is a
+	# claim about Genesis made to the PLAYER, and it typed +360 and -360 out
+	# by hand next to the constant it was describing. A composition whose
+	# turns cancel reaches a net turn of 0 and no adjustment can take it to
+	# either full turn, which is the shortest way to that door.
+	# Built from the floors rather than from two and two, so that this pair
+	# measures the SECOND door for any value of the floors THE GATE KEEPS.
+	# Stated at that width on purpose (TRAPS 15): if the gate ever enforces a
+	# floor its own constant does not name, a fixture built from the constant
+	# lands at the first door instead and these two fail as well - measured,
+	# that is what 068's fault 2 did, and the assertion above it names the
+	# cause. What the construction removes is the version of that confusion
+	# that a mere change of MIN_STRAIGHTS would have caused.
+	var cancelled: Array = []
+	for i in maxi(FeasibilityGate.MIN_STRAIGHTS, 1):
+		cancelled.append({"type": "straight", "length": 100.0})
+	var pairs: int = maxi(FeasibilityGate.MIN_TURNS, 2)
+	if pairs % 2 == 1:
+		pairs += 1
+	for i in pairs:
+		cancelled.append({
+			"type": "corner", "radius": 50.0,
+			"angle": 60.0 if i % 2 == 0 else -60.0,
+		})
+	var infeasible: Dictionary = FeasibilityGate.check(cancelled)
+	_check(str(infeasible.get("category", "")) == "FAILED_INFEASIBLE",
+		"a composition whose turns cancel is refused as infeasible (%s)" % str(infeasible.get("category", "")))
+	var said_turn := "exactly %+.0f or %+.0f deg" % [FeasibilityGate.FULL_TURN, -FeasibilityGate.FULL_TURN]
+	var names_turn := false
+	for r in (infeasible.get("reasons", []) as Array):
+		if str(r).contains(said_turn):
+			names_turn = true
+	_check(names_turn, "and it tells the player the full turn as \"%s\"" % said_turn)
+
+	# A hairpin is a turn, which is what the prompt's "corners or hairpins"
+	# claims and what TrackGeometry.YAW_TYPES decides. Asserted because the
+	# floor fixture above is built out of whichever of the two the share of
+	# the full turn fits, so a hairpin dropping out of YAW_TYPES would
+	# silently change which door those three assertions are measuring.
+	_check("hairpin" in TrackGeometry.YAW_TYPES and "corner" in TrackGeometry.YAW_TYPES,
+		"the gate counts both a corner and a hairpin as a turn")
+
+	# And the sentence the PLAYER reads at that door has to say so. It said
+	# "at least 2 straights and 2 corners" until 068, which is narrower than
+	# what clears it: the floor fixture above is MIN_TURNS hairpins and no
+	# corner at all when the full turn splits above 120 deg, and the
+	# "clears that door" assertion is the measurement that it passes. A
+	# refusal naming a narrower set than the check accepts costs the player
+	# the design the check would have taken.
+	var short_floor: Dictionary = FeasibilityGate.check(
+		_composition(maxi(FeasibilityGate.MIN_STRAIGHTS - 1, 0), FeasibilityGate.MIN_TURNS))
+	var names_turns := false
+	for r in (short_floor.get("reasons", []) as Array):
+		if str(r).contains("%d straights and %d corners or hairpins" % [
+				FeasibilityGate.MIN_STRAIGHTS, FeasibilityGate.MIN_TURNS]):
+			names_turns = true
+	_check(names_turns,
+		"the floor refusal names both a corner and a hairpin, as the gate counts them")
+
+	# And the COUNT line one above it, which said "corner" for the same count
+	# of YAW_TYPES and reported a composition of one hairpin as "1 corner".
+	# Held here rather than left to the sentence above, because the two words
+	# are one line apart and fixing one of them is TRAPS 11's exact shape.
+	#
+	# The WORD is typed in here, as it is in counted_said_test. What is
+	# measured rather than spelled is the FACT behind it: the YAW_TYPES
+	# assertion below, and the "clears that door" assertion above, which is
+	# built from MIN_TURNS hairpins and no corner at all.
+	var names_count := false
+	for r in (short_floor.get("reasons", []) as Array):
+		if str(r).contains("composition has ") and str(r).contains(Readback.plural(
+				int(short_floor.get("turns", 0)), "turn")):
+			names_count = true
+	_check(names_count,
+		"and the count beside it says turns, not corners")
 	_check(prompt.contains("by up to %.0f%%" % (ClosureSolver.MAX_ANGLE_ADJUSTMENT * 100.0)),
 		"the prompt states the solver's adjustment as %.0f%%" % (ClosureSolver.MAX_ANGLE_ADJUSTMENT * 100.0))
 
