@@ -4588,3 +4588,92 @@ closes the axis.
 > not read, so the day the bound changed shape it quietly stopped asking.
 
 ---
+
+## 70. Ninety-two numbers in a prompt, and a class too big to check one at a time
+
+**Signature:** a class of claims is measured, found to be large, and left open
+because the obvious guard would be a table of judgements. The entry sits in
+the handover for five commits. Meanwhile the one property that decides which
+members *can* be wrong goes unasked, and it is cheap.
+
+**Cause.** 068 counted the numerals in `AIInterpreter.assembled_prompt()` by
+script: **92, 41 of them distinct.** It closed four by reading the prompt line
+by line against the code and wrote the rest up honestly — *"a good part of the
+41 are worked examples and ordinary prose, so the declared half would be a
+table of judgements that can go stale"* — then left it. 069 through 072 each
+took a narrower axis instead. The entry was still open at 073.
+
+The question 068 asked was **"is this number the constant's number?"**, and it
+is the expensive one: it needs a reader per number and a judgement about what
+each number means. The question one layer behind it is nearly free:
+
+> was this number **TYPED** into the prompt, or **PRODUCED** by the code?
+
+A number that arrives through a `%`-substitution is the same expression the
+prompt is built from, so **it cannot drift from the thing that produced it**. A
+number typed into the template can drift from anything. Of the 92, **74 are
+substituted and 18 are typed** — so seventy-four of them never needed a
+judgement at all, and the table of judgements is eighteen rows and not
+forty-one.
+
+**And the fault the distinction is named after is 068's own.** The composition
+floors were typed out beside the constants that enforce them, and a prompt
+reading *"at least 7 straights and at least 9 corners or hairpins"* — four
+times narrower than the truth, with `PROMPT_FINGERPRINT` moved the way a real
+prompt edit moves it — passed all 69 suites. That is TRAPS 28's shape, and
+035's farm bound before it. The recurring fault in this project's prompt is
+**a number typed beside the constant that enforces it.**
+
+**Measured rather than argued.** `tests/prompt_numeral_test.gd` was written to
+ask the typed/produced question of the class, and the fault that justifies it
+is the one no existing reader can see: *"A circuit may use at most 3
+chicanes"* added to the racing section — a limit stated to the model that
+nothing enforces. With the fingerprint moved, **`prompt_bounds_test` reports
+`failures=0` and `claim_field_test` reports `failures=0`**, and the new file
+fails naming the numeral and the line it is typed on. `prompt_bounds_test`
+reads counts of a *declared list's members* and the field ranges it names; a
+number with no list noun beside it is outside both.
+
+**Do:**
+
+- **When a class is too big to check member by member, ask what makes a member
+  capable of being wrong, and check for that property instead.** Here it split
+  92 claims into 74 that cannot drift and 18 that can. The expensive question
+  only has to be asked of the 18.
+- **Answer "where did this number come from?" from the SOURCE, not the
+  sentence.** The rendered prompt cannot tell you; the template can, and the
+  answer does not move when the prose around the number is rewritten. Four
+  prompt sentences reworded with their numbers untouched left the new suite
+  green at the same assertion count (TRAPS 6).
+- **Prove the scan is reading the right text.** A scan keyed on how the prompt
+  happens to be written is TRAPS 59 waiting to happen: the project will find
+  another way to write it. Each template is split on its format specifiers and
+  every literal fragment required to appear in the rendered section **in
+  order**, so a section rebuilt by concatenation fails instead of being
+  skipped — measured, with `look_tool`'s template turned into `+` joins:
+  **1 failure here, `prompt_bounds_test` green.**
+- **Close the enumeration at both ends.** Every file in `scripts/` holding a
+  template must be one of the contributors the registries name, and every
+  contributor must hold exactly one. A stray template in `readback.gd` fails
+  by name. Without that half the scan could only see the files it already knew
+  (TRAPS 69).
+- **Declare with a COUNT, not with a name.** A numeral declared as prose would
+  otherwise launder a bound typed as *"at most 3 doors"* into a file where `3`
+  is already declared. The count is asserted in both directions, so a
+  declaration that has gone stale fails the day it does — the opposite of a
+  count in a comment (TRAPS 24).
+- **Where a typed number states a fact, assert the FACT and not the number.**
+  The seven typed `1`s promise "numbered from 1"; they are held by handing the
+  validators a door `[0, 1]`, a thing in room `0`, and a dungeon whose doors
+  avoid room 1. Widening `if a < 1` to `if a < 0` in `dungeon_module.gd` fails
+  there. A declaration that only says *"ordinal"* would not have moved.
+
+Found in 073, by reading the entry 068 left rather than the axis 072 closed.
+**There was no live fault: all 18 typed numbers were already true.** What
+changed is that a nineteenth cannot arrive unexamined, which is the only thing
+that would have caught 068 at the commit that wrote it.
+
+> A number the code produces cannot disagree with the code. Only a number
+> somebody typed can, so ask which kind it is before asking what it means.
+
+---

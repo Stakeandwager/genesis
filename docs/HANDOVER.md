@@ -24,7 +24,92 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **072**, which took the last of the
+- Last commit at the time of writing: **073**, which took the entry 068 left
+  open and five commits had stepped around: **"NOT ASSERTED: that every number
+  in the prompt is read from the thing that enforces it"**, 92 numerals and 41
+  distinct, written up as a table of judgements too large to be worth
+  building.
+  **IT IS NOT 41 JUDGEMENTS, WHICH IS THE FINDING.** 068's question — *is this
+  number the constant's number?* — needs a reader per number. The question one
+  layer behind it is nearly free: **was this number TYPED into the prompt, or
+  PRODUCED by the code?** A number arriving through a `%`-substitution is the
+  same expression the prompt is built from and **cannot drift from what
+  produced it**; only a typed one can. Measured before anything was written:
+  of the 92, **74 are substituted and 18 are typed.** Seventy-four never
+  needed a judgement, and the table is eighteen rows.
+  **ALL EIGHTEEN WERE ALREADY TRUE. THERE IS NO LIVE FAULT IN THIS COMMIT**,
+  and nothing in `scripts/` or `scenes/` changed. One of the eighteen is a
+  bound — *"Up to 4 steps"* — and `prompt_bounds_test` already reads it
+  through the plan's declared list; two are the chicane's *"more than 0 and at
+  most 2 x R"*, which `formula_test` measures; **seven** are the `1`s that
+  promise *"numbered from 1"*, measured here against the validators; and
+  **eight** are prose. One, two, seven and eight, counted one at a time off
+  the templates rather than apportioned.
+  **THE FAULT THAT JUSTIFIES THE FILE is the one no existing reader can see:**
+  *"A circuit may use at most 3 chicanes"* added to the racing section — a
+  limit stated to the model that nothing enforces. With `PROMPT_FINGERPRINT`
+  moved the way a real prompt edit moves it, **`prompt_bounds_test` reports
+  `failures=0` and `claim_field_test` reports `failures=0`**, and the new file
+  fails naming the numeral and the line it is typed on. `prompt_bounds_test`
+  reads counts of a declared list's members and the field ranges it names; a
+  number with no list noun beside it is outside both.
+  **WHAT CHANGED.** One new file in `tests/`,
+  `prompt_numeral_test.gd`, **97 assertions**. The contributors are enumerated
+  from the registries (a new one is **scanned** without the file being edited
+  and **fails until it is classified**); every file in `scripts/` holding a
+  template must be one of them and must hold exactly one; each template is **proved** to be its
+  section's source by requiring every literal fragment between its format
+  specifiers to appear in the rendered section **in order**; every typed
+  numeral must be declared **with its count**, asserted both ways. Where a
+  typed number states a fact the fact is measured, not declared: the typed
+  `1`s against a door `[0, 1]`, a thing in room `0` and a dungeon whose doors
+  avoid room 1; the chicane's `0` and `2` at both ends; and the orders
+  section's worked example — *"a dungeon whose rooms are called large_hall,
+  room_1, room_2, room_3 ... so 'room 3' means room_3 — not the third room in
+  the list"* — read **off the prompt** and measured both halves, which nothing
+  in `tests/` had ever done: a grep for `large_hall` found two suites,
+  `log_022_test` and `log_023_test`, and neither is about this.
+  **TEN DELIBERATE FAULTS, each in its own throwaway copy with its own
+  `config/name` (TRAPS 50) and with the fingerprint moved, FAIL lines READ.**
+  The typed bound above: 1, with `prompt_bounds_test` and `claim_field_test`
+  both green. A typed bound reusing an already-declared numeral: 1, green
+  elsewhere — which is why the table is keyed on counts. `Up to 4 steps`
+  drifted to 6: 3 here and 1 in `prompt_bounds_test`. A section rebuilt by
+  concatenation instead of a template: 1, green elsewhere. A stray template in
+  `readback.gd`: 1, by name. A typed numeral deleted from the dungeon section:
+  1, saying the row is out of date. `if a < 1` widened to `if a < 0` in
+  `dungeon_module.gd`: 1. The example reworded so the pattern misses: 2, and
+  it **fails rather than skipping** (TRAPS 69). The example changed so name
+  and number give the same room: 1, on the assertion that is not a
+  restatement. And **068's own fault** — the floors typed by hand: 2 here and
+  1 in `prompt_bounds_test`.
+  **TWO MUST-PASS CONTROLS PASS, both checked for passing for the RIGHT
+  reason.** Four prompt sentences reworded with their numbers untouched: green
+  at the same **97**, and the prompt still 92 numerals — so the file reads
+  where a number came from and not how the sentence reads (TRAPS 6). A
+  **brand-new numeric field on a tool** (`wobble`, `1 to 9`, in
+  `car_tool.gd`, stated through a substitution): green at **97**, with the
+  prompt's numeral count **92 → 95** read off the output — the three new
+  numbers really did arrive, and none of them is typed.
+  **71 → 72 suites, `--all`, `user://` cleared first: 0 with something to look
+  at**, against a baseline in this container **byte-identical to the md5 072
+  recorded** (`f9b0d8cf50968a31a41d42023deab0ef`); the lists were **diffed**
+  and the only difference is **one added line**. **Three full runs on the
+  change, all byte-identical** (md5 `0fdf976cb74056e853ae2a8f7b62fcb1`), the
+  third with nothing changing during it. Neither runner needed an
+  edit: `run_tests.sh`'s three lists and `run_tests.bat`'s `findstr`
+  substrings were **RUN** against the name rather than eyeballed (TRAPS 4) and
+  none matches.
+  **NOT VERIFIED: nothing was rendered, no window was opened, no model was
+  asked anything and no request left the container. There is no API key
+  here.** `PROMPT_VERSION` did not move and the prompt is byte-identical. **It
+  is NOT asserted that the 74 substituted numerals come from the RIGHT
+  constant** — a substitution cannot drift from its own expression but can be
+  wired to the wrong one, and that is `prompt_bounds_test`'s and
+  `claim_field_test`'s question. No secret was set and no workflow file was
+  edited; 064's finding stands and the live site is still `71b065f`. **No new
+  "Human decision needed."** New TRAPS 70.
+- Before 073: **072**, which took the last of the
   three regex-breadth candidates — `claim_field_test`'s `^%s: N to M`, said
   to be unable to see a bound written with a dash or as *"between N and M"* —
   and found that **this time the entry's quote of the pattern was right, and
@@ -2016,10 +2101,18 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-72 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **70 suites**, counted with `ls tests/*.gd` rather than
+**74** files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **72 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
-broken. `--all` adds the two slow racing suites.
+broken. `--all` adds the two slow racing suites, which are counted in the 72
+and are skipped without it.
+**THESE TWO NUMBERS WERE STALE BY ONE WHEN 073 READ THEM**, and 073
+re-counted rather than carrying them forward: they said 72 files and 70
+suites, while `ls tests/*.gd` returned **73** and the 072 baseline run in this
+container reported **71** suites. Which commit left them behind is not
+recorded and is not guessed at here. A count in a document is TRAPS 24's
+shape, and this paragraph is the one place in this file that invites you to
+run the `ls` — so run it.
 
 **RUN THEM ONE AT A TIME.** Every copy of this project has the same
 `config/name` in `project.godot`, and Godot derives `user://` from it — so
@@ -2029,7 +2122,28 @@ worlds, and suites fail for reasons that have nothing to do with the code.
 055 took four answers off such a run before noticing. If a run is being used
 as a measurement, clear `user://` before it, baseline included (TRAPS 50).
 
-Last full run (067, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+Last full run (073, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+headless, in a cloud container, every run sequential with `user://` cleared
+first): **suites with something to look at: 0** on all **72**, with `--all`.
+The baseline in this container before anything was touched was the same on
+**71** and was **byte-identical to the md5 072 recorded**
+(`f9b0d8cf50968a31a41d42023deab0ef`), so the record and the container agreed
+before the change. The lists were **diffed**: the only difference is **one
+added line**, `prompt_numeral_test`, 97 assertions. **No existing suite's
+result line moved** — `source_scan_test`'s included, which is the one to watch,
+because 073's file is a **tenth** member of the class that suite holds: it
+reads `scripts/` source, so it defines `_code_of()` itself, byte-identical to
+the other nine.
+`prompt_numeral_test` needs no entry in either runner: `run_tests.sh`'s three
+lists match on whole words and `run_tests.bat`'s `findstr` patterns match on
+substrings, and **both were RUN** against the name rather than eyeballed
+(TRAPS 4) — none matches. It steps no physics and takes under a second.
+
+The run before it (072, measured the same way): **0 with something to look at**
+on all **71**, with `--all`, byte-identical to the 071 baseline — which 072
+said plainly was expected, since it added no suite and changed no verdict.
+
+The run before that (067, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
 headless, in a cloud container, every run sequential with `user://` cleared
 first): **suites with something to look at: 0** on all **69**, with `--all`.
 The baseline at 066, measured the same way in the same container with the same
@@ -8744,6 +8858,26 @@ all **done**. Candidates, in the order the assistant would take them:
 
     **AND A SECOND, WIDER QUESTION 068 MEASURED AND DID NOT ANSWER: which of
     the numbers in the prompt is read from the thing that enforces it?**
+    ~~**THE NEXT ONE AFTER THE AXIS ABOVE.**~~ **DONE IN 073, and not the way
+    this entry asked for.** The paragraph below says the guard would be "a
+    table of judgements that can go stale" and that the 41 would have to be
+    separated into enforced bounds, worked examples and prose. 073 did not
+    build that table. It asked the question one layer behind it — **was this
+    number TYPED into the prompt, or PRODUCED by the code?** — and measured
+    that **74 of the 92 are substituted and 18 are typed**, so seventy-four of
+    them never needed a judgement and the table is eighteen rows.
+    `tests/prompt_numeral_test.gd` holds the 18, declared with their counts,
+    with the facts behind them measured rather than declared. **All eighteen
+    were already true; there was no live fault.** The entry is left here with
+    its original text below rather than deleted, because the paragraph's
+    reasoning is the record of why it sat open for five commits — and because
+    the lesson is 066's: an entry is satisfied by the capability arriving, not
+    by the shape it imagined. Grep for the capability before trusting the
+    entry. The half 073 does NOT answer is still this file's and
+    `claim_field_test`'s: whether a substituted numeral comes from the
+    **right** constant.
+
+    The entry as it stood before 073:
     Counted by script rather than remembered: the assembled prompt holds **92
     numerals, 41 of them distinct**. 068 closed four of them by reading the
     prompt line by line against the code, and `prompt_bounds_test` accounts
@@ -10241,6 +10375,236 @@ be wrong and the corrections are the useful part.
    suite reads it. It is four lines and a `match`. Whether a colour is worth
    a test is a judgement about what a panel suite is for, so it is noted
    rather than taken.
+
+## 073 — seventy-four numbers that cannot be wrong, and eighteen that can
+
+**Objective.** The entry 068 wrote into `prompt_bounds_test`'s header and into
+this file, and that 069 through 072 each stepped around in favour of a
+narrower axis: *"NOT ASSERTED: that every number in the prompt is read from
+the thing that enforces it. Counted by script: the assembled prompt holds 92
+numerals, 41 of them distinct."* 068's own write-up said why it was left —
+*"a good part of the 41 are worked examples and ordinary prose, so the
+declared half would be a table of judgements that can go stale"* — and told
+the next session to read TRAPS 59 first, because a guard keyed on how a
+number is written guards the writing.
+
+**Starting state.** Branch `prototype-002a` at `74e4c86` (072). Baseline
+`--all` in this container with `user://` cleared first: **71 suites, 0 with
+something to look at**, md5 `f9b0d8cf50968a31a41d42023deab0ef` —
+**byte-identical to the md5 072 recorded**, so the record and the container
+agree before anything is touched. The count agrees too: a throwaway copy with
+its own `config/name` dumped `assembled_prompt()` and it holds **92 numerals,
+41 distinct**, exactly as recorded.
+
+### The class is not 41 judgements, which is the finding
+
+068 asked, of the numbers it could find: **is this number the constant's
+number?** That question needs a reader per number and a judgement about what
+each number means, which is the table nobody wanted to build. The question one
+layer behind it is nearly free:
+
+> was this number **TYPED** into the prompt, or **PRODUCED** by the code?
+
+A number that arrives through a `%`-substitution is the same expression the
+prompt is built from, so **it cannot drift from the thing that produced it**.
+A number typed into the template can drift from anything — and that is the
+recurring fault in this project's prompt: 035's farm bound, TRAPS 28's shape,
+and 068's own live fault, the composition floors typed out beside the
+constants that enforce them.
+
+**Measured before anything was written.** The prompt templates are the
+triple-quoted literals in the eight files the registries name, and with the
+format specifiers removed first — so the `0` in `%.0f` is not read as a number
+the prompt states — the split is:
+
+| where | typed numerals |
+|---|---|
+| `ai_interpreter.gd` (`SYSTEM_PROMPT`) | `4`, `1`, `2`, `3` |
+| `dungeon_module.gd` | `1` x 4 |
+| `racing_module.gd` | `0`, `2` |
+| `npc_goals.gd` | `1` x 3, `2`, `3` x 4 |
+| `farm_module.gd`, `boots_tool.gd`, `car_tool.gd`, `look_tool.gd` | none |
+
+**Eighteen typed, seventy-four substituted.** Seventy-four of the ninety-two
+never needed a judgement at all.
+
+### All eighteen were already true
+
+**Nothing in `scripts/` or `scenes/` changed.** Read one at a time:
+
+- **One states a bound**: *"Up to 4 steps"*, and `GameController.MAX_PLAN_STEPS`
+  is 4. `prompt_bounds_test` already reads it, through the plan's declared
+  list and its *"up to N `<members>`"* pattern — checked by grep before it was
+  claimed otherwise (TRAPS 14), because the first guess was that nothing read
+  it.
+- **Two state arithmetic**: the chicane's *"more than 0 and at most 2 x R"*,
+  which `formula_test` measures at both ends and outside.
+- **Seven are ordinals** — *"1 for the first"* (the plan's step), *"room
+  numbers, 1 for the first room in your list"*, *"its number counting from
+  1"* in the dungeon section and again in the orders section, *"Counting from
+  1 is only for a player who says 'the third room'"*, *"Room 1 is the
+  entrance"* and *"reachable from room 1"*. They promise that members are
+  numbered from 1, and the validators do.
+- **Eight are prose**: *"go to room 2, then fetch the key"* and *"to room 3"*
+  in the same sentence, and the room names in the orders section's worked
+  example — `room_1`, `room_2` and `room_3` four times.
+
+**One, two, seven and eight**, counted one at a time off the templates rather
+than apportioned, and they come to eighteen.
+
+### What changed — one new file in `tests/`
+
+`tests/prompt_numeral_test.gd`, **97 assertions**, which asks the typed /
+produced question of the class and holds the eighteen:
+
+- **The contributors are enumerated from the registries**, never listed in the
+  file, so a world or tool added later is **scanned** without it being edited
+  — and **fails until a row is added for it**, which is the point rather than
+  an oversight: its numbers have to be looked at by somebody. A new numeric
+  **field** on an existing tool needs no edit at all, because it is stated
+  through a substitution, and that is the second control below. The
+  two outside the registries — the constant the prompt starts with and the
+  orders section — have their paths read off `ProjectSettings.get_global_class_list()`
+  rather than typed, so a renamed file fails instead of quietly reading
+  nothing.
+- **The enumeration is closed at both ends.** Every file in `scripts/` holding
+  a template must be a contributor, and every contributor must hold exactly
+  one. Without that half the scan could only ever see the files it already
+  knew, which is TRAPS 69's shape and 072's finding.
+- **Each template is PROVED to be its section's source.** The template is
+  split on its format specifiers and every literal fragment required to appear
+  in the rendered section **in order**. This is the answer to TRAPS 59: a scan
+  keyed on the prompt happening to be written as a triple-quoted literal would
+  be green the day somebody writes one with `+`, so the suite fails on that
+  rather than skipping it.
+- **Every typed numeral must be declared WITH ITS COUNT**, asserted both ways:
+  an undeclared numeral fails naming the file and the line, and a declared
+  numeral that has left the prompt fails saying the row is out of date and
+  should be struck rather than relaxed. Keying on the count and not the
+  numeral alone is deliberate — a bound typed as *"at most 3 doors"* into a
+  file where `3` is already declared as prose would otherwise pass.
+- **Where a typed number states a fact, the FACT is measured and not the
+  number.** The typed `1`s: a door `[1, 2]` is accepted and `[0, 1]` refused,
+  a thing `"in": 1` lands in the FIRST room and `"in": 0` is refused, an order
+  to room 1 resolves to the first room, and the reachability walk starts at
+  room 1 — four rooms joined in a triangle that leaves room 1 out are
+  schema-valid and refused `FAILED_UNREACHABLE`, while the same four joined to
+  room 1 are accepted, so the refusal is about room 1 and not about the door
+  count.
+- **And the worked example in the orders section, which nothing had ever
+  read.** *"A dungeon whose rooms are called large_hall, room_1, room_2,
+  room_3 has a room called room_3, so 'room 3' means room_3 — not the third
+  room in the list."* Before 073, a grep of `tests/` for `large_hall` found
+  **two** suites — `log_022_test` and `log_023_test` — and neither is about
+  this. The names are **read out of the prompt** and
+  both halves measured: the name resolves to `room_3` (room 4 of 4), the
+  player's own *"room 3"* resolves there too, the **number** 3 resolves to the
+  third room, and the two are **different rooms** — which is the whole point
+  of the sentence. This is the one wording-keyed assertion in the file and
+  says so; a pattern miss **fails** rather than skipping.
+
+### Evidence — what was actually run
+
+**TEN DELIBERATE FAULTS, each in its own throwaway copy with its own
+`config/name` (TRAPS 50), each with `PROMPT_FINGERPRINT` recomputed and moved
+the way a real prompt edit moves it, FAIL lines READ:**
+
+| fault | result |
+|---|---|
+| *"A circuit may use at most 3 chicanes"* added to the racing section — **the one that justifies the file** | **1 failure**, naming the numeral and its line; **`prompt_bounds_test` and `claim_field_test` both `failures=0`** |
+| the same bound typed as *"at most 2 chicanes"*, reusing a numeral already declared as arithmetic | 1 failure on the count; `prompt_bounds_test` green |
+| *"Up to 4 steps"* drifted to *"Up to 6 steps"* with `MAX_PLAN_STEPS` left at 4 | 3 failures here, 1 in `prompt_bounds_test` |
+| `look_tool`'s section rebuilt from `+` joins instead of a template | 1 failure; `prompt_bounds_test` green |
+| a stray template added to `readback.gd` | 1 failure, by name |
+| *"Room 1 is the entrance"* reworded to *"The first room in your list"*, so a declared numeral leaves | 1 failure, saying the row is out of date |
+| `if a < 1` widened to `if a < 0` in `dungeon_module.gd`, so room 0 is a room | 1 failure |
+| the worked example reworded so the pattern cannot find it | 2 failures — it does not skip |
+| the example's `large_hall` dropped, so name and number give the same room | 1 failure, on the check that is not a restatement |
+| **068's own fault**: the composition floors typed by hand as *"at least 7 straights and at least 9 corners or hairpins"* | 2 failures here, 1 in `prompt_bounds_test` |
+
+**One fault was discarded and is recorded rather than quoted (TRAPS 55).** The
+stray-template injection's first attempt put the `const` above
+`readback.gd`'s `class_name`, which does not parse; the run hung until it was
+killed and proved nothing. Rerun with the const appended at the end of the
+file, it is the single clean failure above.
+
+**TWO MUST-PASS CONTROLS PASS, and both were checked for passing for the RIGHT
+reason rather than merely passing:**
+
+- **Four prompt sentences reworded with their numbers untouched** — the road
+  separation sentence, the car's `power` line, the dungeon's entrance line and
+  the boots' `weight` line: green at the same **97**, and the prompt still
+  **92** numerals. The file reads where a number came from, not how the
+  sentence reads (TRAPS 6).
+- **A brand-new numeric field on a tool, stated through a substitution**
+  (`wobble`, `1 to 9`, in `car_tool.gd`): green at **97**, and the prompt's
+  numeral count **92 → 95**, read off the suite's own output rather than
+  assumed. The three new numbers really did arrive in the prompt and none of
+  them is typed, which is the case the file must not fire on.
+
+**72 suites, `--all`, `user://` cleared first: 0 with something to look at.**
+**THREE full runs**, `user://` cleared before each, all **byte-identical** to
+each other (md5 `0fdf976cb74056e853ae2a8f7b62fcb1`). Said as three rather than
+two because the first two each had one **comment-only** edit land in `tests/`
+mid-run, in a file that had already run in it; the third was taken on the
+final tree with nothing changing during it, and it is identical to both — so
+the edits demonstrably changed nothing, which is measured rather than argued.
+Against the 071/072 baseline of 71 in this container with the same binary, the
+lists were **diffed**: the only difference is **one added line**,
+`prompt_numeral_test`, 97 assertions. No existing suite's result line moved —
+`source_scan_test`'s included, which matters because this file is a **tenth**
+member of the class that suite holds: it reads `scripts/` source, so it
+defines `_code_of()` itself, byte-identical to the other nine.
+
+**Neither runner needed an edit, and that was RUN rather than eyeballed
+(TRAPS 4).** `run_tests.sh`'s `TIMED`, `SLOW` and `NOT_A_SUITE` lists match on
+whole words and `run_tests.bat`'s `findstr /c:` patterns match on substrings;
+both were executed against the name `prompt_numeral_test` and none matches. It
+steps no physics and takes under a second.
+
+### What the tests did NOT prove
+
+- **NOTHING IS REACHABLE FROM A MODEL HERE.** Nothing was rendered, no window
+  was opened, no model was asked anything and no request left the container.
+  There is no API key here.
+- **That the 74 substituted numerals come from the RIGHT constant.** A
+  substitution cannot drift from its own expression, but it can be wired to a
+  constant that is not the enforcer. That is `prompt_bounds_test`'s question
+  for the worlds and `claim_field_test`'s for the tools, and between them they
+  account for every range the prompt states. This file does not re-ask it, and
+  the two questions together are what closes the class.
+- **That the nine PROSE numerals mean anything.** No assertion stands behind
+  them. What holds them is the count: a tenth cannot appear without this file
+  being edited. That half is a judgement and is marked as one in the table.
+- **That any model is helped by it.** No model has read this prompt.
+- **The prompt is byte-identical.** `PROMPT_FINGERPRINT` did not move and
+  `PROMPT_VERSION` stays at `050-no-command-for-a-question-1`.
+- **No secret was set and no workflow file was edited.** 064's finding stands:
+  the web build has failed on every push since 14 October and the live site is
+  still `71b065f`.
+- **No new "Human decision needed."**
+
+### Next action
+
+**THE PROMPT-NUMERAL CLASS IS NOW CLOSED AT BOTH QUESTIONS**, and the sentence
+in `prompt_bounds_test`'s header that said otherwise has been struck. 92
+numerals: 74 produced by a substitution and held by `prompt_bounds_test` and
+`claim_field_test` where they are bounds, 18 typed and held by
+`prompt_numeral_test`. **Do not re-open it by building 068's table of 41.**
+
+**The remaining twenty-three patterns in `tests/` are still unasked**, and
+072's warning stands: the method that has paid is *what has the subject never
+supplied?*, not *what can the pattern not match?* Three entries on that axis
+in a row asked for a widening and all three times the widening was wrong.
+
+**And one thing this commit found and deliberately did not do.** The eight
+PROSE numerals are the only part of the eighteen with nothing behind them, and
+six of the eight are the room names in one worked example. A second worked
+example anywhere in the prompt would arrive as prose and be declared as prose.
+If that half is ever worth more, the move is **fewer worked examples in the
+prompt, not more declarations** — and whether the prompt should carry worked
+examples at all is a question about what the model needs, which is the owner's
+screen and not an unattended session's.
 
 ## 072 — the bound nothing read, and the lookup that skipped in silence
 

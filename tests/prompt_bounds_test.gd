@@ -97,12 +97,26 @@ extends SceneTree
 # them is given here on purpose - a count in a comment is TRAPS 24's shape,
 # and the figure in the suite's result line is the one that cannot go stale.
 #
-# NOT ASSERTED: that every number in the prompt is read from the thing that
-# enforces it. Counted by script in 068 rather than remembered: the assembled
-# prompt holds 92 numerals, 41 of them distinct, and this file accounts for
-# the bounds it names and no others. The rest are a mixture of enforced
-# bounds, worked examples and ordinary prose, and separating them is the next
-# task - see HANDOVER.
+# NOT ASSERTED HERE, AND NO LONGER UNASKED. 068 counted 92 numerals in the
+# assembled prompt, 41 of them distinct, and left this file accounting for the
+# bounds it names and no others, with the rest - enforced bounds, worked
+# examples and ordinary prose - described as the next task. 073 took it, and
+# split it the other way: a numeral that arrives through a %-substitution is
+# the same expression the prompt is built from and cannot drift from what
+# produced it, while a numeral TYPED into the template can drift from
+# anything. Measured: 74 of the 92 are substituted and 18 are typed.
+# tests/prompt_numeral_test.gd holds the 18 - every one of them declared with
+# its count, and the facts behind them measured rather than declared - and it
+# does NOT re-ask whether a substituted numeral comes from the right
+# constant, which is this file's question for the worlds and
+# claim_field_test's for the tools. The two halves together are what accounts
+# for the 92.
+#
+# The sentence this paragraph replaces said "separating them is the next task"
+# and stood for five commits. It is struck rather than deleted because the
+# lesson is 066's: an entry is satisfied by the capability arriving, not by
+# the file named in it being touched, so grep for the capability before
+# trusting the entry (TRAPS 14, TRAPS 66).
 #
 # NOT ASSERTED: that the model obeys any of it. No model has read this
 # prompt. Whether telling the model the section count changes what it sends
