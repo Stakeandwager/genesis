@@ -97,7 +97,15 @@ static func check(sections: Array) -> Dictionary:
 			# same number by hand in three places and this refusal in a
 			# fourth, and no file in tests/ named FULL_TURN at all.
 			"a circuit must turn exactly %+.0f or %+.0f deg" % [FULL_TURN, -FULL_TURN],
-			"with up to %.0f%% adjustment per corner, this composition reaches only %+.0f to %+.0f deg" % [MAX_ANGLE_ADJUSTMENT * 100.0, lowest, highest],
+			# 069: "per corner" named a narrower set than the number covers. The
+			# reach this sentence reports is computed from right_total and left_total
+			# above, which are summed over TrackGeometry.YAW_TYPES - corner, hairpin
+			# and banked_corner - so a hairpin's angle is adjusted by exactly this
+			# percentage and the sentence said it was not. The noun is the SET the
+			# measurement covers, which is a turn. 068 fixed the two sentences of
+			# this class that state a RULE and left the four that DESCRIBE; this is
+			# one of them (TRAPS 11).
+			"with up to %.0f%% adjustment per turn, this composition reaches only %+.0f to %+.0f deg" % [MAX_ANGLE_ADJUSTMENT * 100.0, lowest, highest],
 		]
 		return result
 

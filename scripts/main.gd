@@ -842,7 +842,17 @@ func _describe_changes(before: Dictionary, after: Dictionary) -> String:
 	if m0.has("total_length") and absf(float(m1.get("total_length", 0.0)) - float(m0["total_length"])) >= 5.0:
 		parts.append("length %.0f -> %.0f m" % [float(m0["total_length"]), float(m1.get("total_length", 0.0))])
 	if m0.has("minimum_radius") and absf(float(m1.get("minimum_radius", 0.0)) - float(m0["minimum_radius"])) >= 1.0:
-		parts.append("tightest corner %.0f -> %.0f m radius" % [float(m0["minimum_radius"]), float(m1.get("minimum_radius", 0.0))])
+		# 069: "tightest corner" for a number TrackMetrics takes over
+		# TrackGeometry.CURVED_TYPES - corner, hairpin, banked_corner, chicane and
+		# loop_segment - so on a circuit whose tightest radius belongs to a hairpin
+		# or a chicane the line named the wrong section type. A FIFTH member of the
+		# class, and also not in HANDOVER's list of three; it is a different set
+		# (CURVED_TYPES, not YAW_TYPES) and the same fault. The same metric is
+		# already named correctly in the two other places that state it -
+		# racing_module.gd's "TIGHTEST RADIUS" row and experiment_runner.gd's
+		# "tightest radius" - so this was the one reading of three that drifted,
+		# and the wording is taken from them rather than invented.
+		parts.append("tightest radius %.0f -> %.0f m" % [float(m0["minimum_radius"]), float(m1.get("minimum_radius", 0.0))])
 	if m0.has("longest_straight") and absf(float(m1.get("longest_straight", 0.0)) - float(m0["longest_straight"])) >= 5.0:
 		parts.append("longest straight %.0f -> %.0f m" % [float(m0["longest_straight"]), float(m1.get("longest_straight", 0.0))])
 	var c0: Dictionary = m0.get("counts", {})

@@ -4241,3 +4241,56 @@ Found in 068, taking the regex-breadth half of 042's question that 067 left:
 > can spell. The project will state the next one in the other direction.
 
 ---
+
+## 66. A list in a document taken as the class it was a reading of
+
+**Signature:** a handover entry names the members of a fault class with line
+numbers, the next session fixes exactly those, and the member that costs a
+player the most is not among them.
+
+**Cause:** 068 found that `FeasibilityGate`'s floor refusal said *"corners"*
+for a count of `TrackGeometry.YAW_TYPES`, fixed it, and wrote the rest of the
+class into HANDOVER as *"three player-facing sentences say corner where the
+code means a TURN"* — `feasibility_gate.gd:100`, `racing_module.gd:176`,
+`racing_module.gd:584` — and called the remaining work *"three words and a
+full run"*.
+
+It was **five sentences in three files**. Grepping `corner` across
+`scripts/` rather than opening the three files named found:
+
+- `racing_module.gd:566`, the `SOLVER CHANGE` **panel row**, reading the same
+  `max_angle_adjustment` over the same `YAW_TYPES`. All three on the list are
+  reached only by a **refusal**; this one is shown on every circuit that was
+  **built**, so it is the member of the class a player actually meets.
+- `main.gd:845`, *"tightest corner"* for `minimum_radius`, which
+  `TrackMetrics` takes over `TrackGeometry.CURVED_TYPES` — corner, hairpin,
+  banked_corner, chicane and loop_segment. The same fault over a **wider set**,
+  and the one reading of three that had drifted: `racing_module.gd`'s
+  `TIGHTEST RADIUS` row and `experiment_runner.gd`'s *"tightest radius"*
+  already named that number correctly.
+
+TRAPS 31 already says a list in a document is a reading and not the class.
+068 wrote that sentence into its own commit message and then left a list of
+three to be taken as the class — which is TRAPS 11's shape applied to the
+handover instead of to the code.
+
+**Do:** when a previous session hands over a fault class **with line
+numbers**, treat the line numbers as where to start reading and never as the
+membership. Re-derive the class from the code — grep the word, then ask of
+each hit which set the number beside it is taken over — before fixing any of
+the ones named. Where the same quantity is stated in several places, the
+places that agree are evidence about the one that does not: three readings
+of `minimum_radius` and one of them worded differently is the drifted one,
+and nothing but reading all three says which.
+
+And the general rule the class produced, which is worth more than the five
+fixes: **a player-facing sentence that names a section type is making a claim
+about which sections the number beside it was taken over, and it is true only
+if the noun names that whole set.** The solver's angle adjustment is taken
+over `YAW_TYPES`, so its noun is *turn*. The tightest radius is taken over
+`CURVED_TYPES`, so its noun is *radius* and no type at all.
+
+> A handover that names three members of a class has described three members
+> of a class. The next session owes the class a grep, not a patch.
+
+---

@@ -24,7 +24,83 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **068**, which took the half of 042's
+- Last commit at the time of writing: **069**, which took HANDOVER's own first
+  live entry — **three player-facing sentences say "corner" where the code
+  means a TURN**, named with line numbers and called *"three words and a full
+  run"*. **IT WAS FIVE SENTENCES IN THREE FILES. The list of three was a
+  reading and not the class (TRAPS 31), and the two it missed are the two that
+  matter most.**
+  **THE MEMBER A PLAYER ACTUALLY MEETS WAS NOT ON THE LIST.**
+  `racing_module.gd:566` is the `SOLVER CHANGE` **panel row**, reading the
+  same `max_angle_adjustment` over the same `TrackGeometry.YAW_TYPES` as the
+  three that were named — and all three of those are reached only by a
+  **refusal**, while this one is shown on **every circuit that was built**.
+  **AND THE FIFTH IS THE SAME FAULT OVER A WIDER SET.** `main.gd:845` said
+  *"tightest corner"* for `minimum_radius`, which `TrackMetrics` takes over
+  `TrackGeometry.CURVED_TYPES` — corner, hairpin, banked_corner, chicane and
+  loop_segment. It is also **the one reading of three that had drifted**:
+  `racing_module.gd`'s `TIGHTEST RADIUS` row and `experiment_runner.gd`'s
+  *"tightest radius"* already named that number correctly, so 069's wording is
+  taken from them rather than invented.
+  **THE GENERAL RULE, which is worth more than the five fixes:** a
+  player-facing sentence that names a section type is making a claim about
+  which sections the number beside it was taken over, and it is true only if
+  the noun names that whole set. The solver's angle adjustment is taken over
+  `YAW_TYPES`, so its noun is *turn*; the tightest radius is taken over
+  `CURVED_TYPES`, so its noun is *radius* and no type at all.
+  **WHAT CHANGED.** Five nouns, in `scripts/feasibility_gate.gd` (1),
+  `scripts/racing_module.gd` (3) and `scripts/main.gd` (1), each with the set
+  it names written at the site. **No logic changed and the prompt text did not
+  change** — `prompt_bounds_test` still asserts `PROMPT_FINGERPRINT` unmoved,
+  so `PROMPT_VERSION` stays at `050-no-command-for-a-question-1`.
+  **NEW SUITE: `tests/said_set_test.gd`, 31 assertions.** It asserts the
+  **fact and not the wording** (TRAPS 6): every fixture is straights and
+  hairpins with **no corner in it**, asserted on the sections actually passed
+  in, so a sentence using the word *corner* is **false about the thing it
+  describes**. Each sentence is also asserted to be **present and to carry its
+  number**, because a sentence that vanished would pass a "does not say
+  corner" check on its own.
+  **NINE DELIBERATE FAULTS, each in its own throwaway copy with its own
+  `config/name` (TRAPS 50), FAIL lines read.** All five reverted nouns are
+  caught and named. **Fault 6 is the one that matters: `per turn` reworded to
+  `per section that turns` PASSES**, so the suite reads the set and not the
+  word. Fault 7 (the sentence deleted) fails on the *present* assertion, so it
+  is not vacuous. Fault 8 (`hairpin` removed from `YAW_TYPES`) fails 6
+  assertions. Fault 9 (`uphill` added to `OFFERED_TYPES`) fails the pin
+  described below.
+  **AND 069 MEASURED A FAULT THAT WAS NOT ONE, and the claim is recorded
+  rather than dropped (TRAPS 14).** Its first fixture helper put both
+  straights before both turns, which it then described as a paperclip and
+  measured a **160 m closure miss** on — which reads like a solver that breaks
+  a circuit that already closes. **It is not.** A paperclip alternates straight
+  and turn, and `ClosureSolver` closes the real one **exactly**: proposal
+  distance `0.0000`, `ok=true`, zero adjustment, measured. The fixture was
+  wrong, not the code. The corrected claim is written into the helper's own
+  comment in the suite.
+  **70 suites, `--all`, `user://` cleared first: 0 with something to look
+  at.** The baseline run in this container before anything was touched was
+  **byte-identical to the md5 068 recorded** (`9bb6bd51cf700054e643edd76a4d2780`),
+  and the after-run differs from it by **exactly the one new suite line**. Two
+  full runs on the final source, both byte-identical
+  (`304df3c8d47eb0085b131d5d5ad70423`).
+  **NOT VERIFIED: nothing was rendered, no window was opened, no model was
+  asked anything and no request left the container. There is no API key here.
+  No secret was set and no workflow file was edited.** 064's finding stands:
+  the web build has failed on every push since 14 October and the live site is
+  still `71b065f`.
+  **ONE HALF OF THE SAME CLASS IS DELIBERATELY LEFT, and it is the owner's.**
+  All four sentences that name *"turns"* name *"straights"* beside it, and the
+  solver length-adjusts every section in `TrackGeometry.STRAIGHT_FAMILY` —
+  straight, uphill, downhill, crest and dip. **That is the identical fault one
+  word along.** It is latent for exactly one reason: of `YAW_TYPES` two of
+  three members are in `SectionValidator.OFFERED_TYPES` and of
+  `STRAIGHT_FAMILY` only one of five is, because the four slope types are the
+  subject of **"Human decision needed" 1**. Choosing the word a player reads
+  for a set the owner has not decided to open is not this session's call. The
+  suite **pins the fact** so it cannot be forgotten: it fails if a slope type
+  ever becomes offered while those sentences still say *"straights"*. New
+  TRAPS 66.
+- Before 069: **068**, which took the half of 042's
   question 067 left: **the regex-breadth axis — for every sweep in `tests/`,
   what is the sweep blind to?** Asked of `tests/prompt_bounds_test.gd`, the
   suite TRAPS 28 built to compare every bound the prompt states against the
@@ -1700,8 +1776,8 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-71 files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **69 suites**, counted with `ls tests/*.gd` rather than
+72 files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **70 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites.
 
@@ -8302,18 +8378,55 @@ all **done**. Candidates, in the order the assistant would take them:
     literally it narrows two checks that are wide on purpose, so the rule is
     about the DIRECTION of the assertion. See TRAPS 64 and the 067 section.
 
-    **THE FIRST LIVE ENTRY, AND IT IS SMALL AND MEASURED: three
-    player-facing sentences say "corner" where the code means a TURN.**
-    `ClosureSolver.solve()` builds an adjustable variable for every
-    `TrackGeometry.YAW_TYPES` section, so it adjusts a hairpin's angle exactly
-    as it adjusts a corner's, and `feasibility_gate.gd:100`,
-    `racing_module.gd:176` and `racing_module.gd:584` all say *corner*. 068
-    fixed the two sentences of this class that state a RULE — the floor
-    refusal, where the understatement costs the player a design — and left
-    these three, which only describe what was done. The work is three words
-    and a full run; **expect a suite to read one of them even though `grep`
-    finds no reader**, because that is exactly the grep 068 got wrong about
-    the floor refusal. See the 068 section.
+    ~~**THE FIRST LIVE ENTRY, AND IT IS SMALL AND MEASURED: three
+    player-facing sentences say "corner" where the code means a TURN.**~~
+    **DONE IN 069, AND IT WAS FIVE SENTENCES IN THREE FILES, NOT THREE.**
+    This entry named `feasibility_gate.gd:100`, `racing_module.gd:176` and
+    `racing_module.gd:584` and called the work *"three words and a full run"*.
+    A grep of the class found two more, **and they are the two that matter
+    most**: `racing_module.gd:566` is the `SOLVER CHANGE` **panel row**, which
+    a player meets on every circuit that was BUILT, while all three named here
+    are reached only by a refusal; and `main.gd:845` said *"tightest corner"*
+    for `minimum_radius`, which `TrackMetrics` takes over
+    `TrackGeometry.CURVED_TYPES` — the same fault over a wider set, and the
+    one reading of three that had drifted (`racing_module.gd`'s `TIGHTEST
+    RADIUS` row and `experiment_runner.gd`'s *"tightest radius"* were already
+    right, so the wording came from them and not from invention). Left struck
+    rather than deleted because the lesson is the one worth carrying and it is
+    about THIS FILE: **a list in a handover is a reading and not the class,
+    line numbers included** — TRAPS 31's own rule, applied to the handover
+    instead of to the code. TRAPS 66. `tests/said_set_test.gd` holds the
+    class, 31 assertions, asserting the set and not the word: fault 6 rewords
+    *per turn* to *per section that turns* and PASSES.
+    **This entry's own prediction was wrong, in the harmless direction**: it
+    said to expect a suite to read one of the three even though `grep` finds
+    no reader, and none did — the suite that touches these numbers
+    (`procedure_test`) reads `max_angle_adjustment` **numerically**, never its
+    sentence. The grep was right this time; what was short was the list.
+
+    **AND ONE HALF OF THE SAME CLASS IS LEFT UNDONE DELIBERATELY, which is
+    the first live entry now.** All four sentences that now say *"turns"* say
+    *"straights"* beside it, and the solver length-adjusts every section in
+    `TrackGeometry.STRAIGHT_FAMILY` — straight, uphill, downhill, crest, dip.
+    **Identical fault, one word along (TRAPS 11).** It is latent only because
+    `SectionValidator.OFFERED_TYPES` holds two of three `YAW_TYPES` members
+    and one of five `STRAIGHT_FAMILY` members, the four slopes being the
+    subject of **"Human decision needed" 1**. The word a player reads for a
+    set the owner has not decided to open is **his call, not an assistant's**,
+    so it is written here and not changed. `said_set_test` pins the fact: it
+    fails if a slope type ever becomes offered while those sentences still say
+    *"straights"*. **If "Human decision needed" 1 is answered (a) leave it,
+    nothing needs doing** — the sentences are already true for every
+    composition a player can compose today.
+
+    **THE NEXT LIVE ENTRY, AND IT CONTINUES THE AXIS 068 OPENED: the three
+    regex candidates 068 read and did not take**, named below so they need not
+    be re-read, each a guess until it is fed its member. The method has now
+    paid in 041, 042, 043, 052, 066, 067 and 068: name the member the pattern
+    cannot match, feed it that member, watch the suite stay green. **Expect
+    the blind spot to be in the check** — and 069 is one more reason to read
+    the class off the code before trusting any enumeration of it, this file's
+    own included (TRAPS 66).
 
     **068 TOOK THE REGEX-BREADTH AXIS AT ONE SUITE AND IT PAID.**
     `prompt_bounds_test`'s two count patterns can between them only match a
@@ -9841,6 +9954,164 @@ be wrong and the corrections are the useful part.
    suite reads it. It is four lines and a `match`. Whether a colour is worth
    a test is a judgement about what a panel suite is for, so it is noted
    rather than taken.
+
+## 069 — the list of three that was a class of five, and the member a player actually meets
+
+**Objective.** The live entry under "Smallest useful assistant task next",
+which named itself small and measured: **three player-facing sentences say
+"corner" where the code means a TURN**, with line numbers —
+`feasibility_gate.gd:100`, `racing_module.gd:176`, `racing_module.gd:584` —
+and with the work estimated as *"three words and a full run"*.
+
+**Starting state.** Branch `prototype-002a` at `dc4f567` (068). The baseline
+`--all` run in this container, `user://` cleared first, was **byte-identical
+to the md5 068's own message recorded** —
+`9bb6bd51cf700054e643edd76a4d2780`, 69 suites, 0 with something to look at —
+so the container reproduces 068's measurement exactly and everything below is
+measured against a baseline that is known to agree with the record.
+
+**Decision, and it is the finding.** The three line numbers were read as
+where to start and not as the membership, because TRAPS 31 says a list in a
+document is a reading and not the class. `grep corner scripts/*.gd` over the
+string literals, then asking of each hit **which set the number beside it is
+taken over**, found **five sentences in three files**. The two the entry did
+not name are the two that matter most:
+
+- **`racing_module.gd:566` — the `SOLVER CHANGE` panel row.** It reads
+  `drift.max_angle_adjustment`, the solver's maximum over
+  `TrackGeometry.YAW_TYPES`, which is the same number the three named
+  sentences report. **All three of those are reached only by a REFUSAL. This
+  one is a panel row, shown on every circuit that was BUILT** — so it is the
+  member of the class a player actually meets, and it was not on the list.
+- **`main.gd:845` — "tightest corner %.0f -> %.0f m radius".** It reads
+  `metrics.minimum_radius`, which `TrackMetrics.measure()` takes over
+  `TrackGeometry.CURVED_TYPES` — corner, hairpin, banked_corner, chicane and
+  loop_segment. The same fault over a **wider set**, and **the one reading of
+  three that had drifted**: `racing_module.gd:547`'s `TIGHTEST RADIUS` row and
+  `experiment_runner.gd:247`'s *"tightest radius"* already named that number
+  correctly. The wording is taken from those two rather than invented.
+
+**The general rule, stated so it can be applied.** A sentence shown to a
+player that names a section type is making a claim about **which sections the
+number beside it was taken over**, and the claim is true only if the noun
+names that whole set. The solver's angle adjustment is taken over
+`YAW_TYPES`, so its noun is *turn*. The tightest radius is taken over
+`CURVED_TYPES`, so its noun is *radius* and no section type at all.
+
+**What it cost, measured rather than inferred.** `ClosureSolver.solve()`
+builds an angle variable for every `YAW_TYPES` section, so a hairpin's angle
+is adjusted exactly as a corner's is — measured, not supposed: on a
+composition of straights and **hairpins only**, the solver reports
+`max_angle_adjustment = 0.20`, the full limit, and `FeasibilityGate` reports a
+reach of exactly ±20% of those hairpins' own angles. Four sentences then told
+the player that number was about corners, on a circuit that had none.
+
+**Implementation.** Five nouns, each with the set it names written at the
+site: `scripts/feasibility_gate.gd` (1), `scripts/racing_module.gd` (3),
+`scripts/main.gd` (1). **No logic changed.** The prompt text is untouched and
+`prompt_bounds_test` still asserts `PROMPT_FINGERPRINT` unmoved, so
+`PROMPT_VERSION` stays at `050-no-command-for-a-question-1` and no
+interpretation measured under it is split.
+
+**New suite: `tests/said_set_test.gd`, 31 assertions.**
+
+### What it asserts, and why it is a fact and not a wording (TRAPS 6)
+
+Every fixture is straights and **hairpins** with **no corner in it** —
+asserted by `_no_corner_in()` on the sections actually handed to the code, not
+assumed from the builder. A sentence about such a composition that uses the
+word *corner* is therefore **false about the thing it describes**. The
+assertions are paired: for each sentence the suite first measures **the fact
+the sentence reports** (that the solver really moved a hairpin's angle, that
+the gate's reach really is computed from a hairpin's angle, that
+`minimum_radius` really is a hairpin's radius) and then reads the sentence,
+which is also asserted to be **present and to carry its number** — a sentence
+that vanished would pass a "does not say corner" check on its own.
+
+### Evidence — what was actually run
+
+- Godot 4.7.1 headless on Linux (`4.7.1.stable.official.a13da4feb`),
+  downloaded in this container.
+- **Baseline before anything was changed:** 69 suites, `--all`, `user://`
+  cleared, 0 with something to look at, md5
+  `9bb6bd51cf700054e643edd76a4d2780` — **the md5 068 recorded**.
+- **After:** 70 suites, `--all`, `user://` cleared, 0 with something to look
+  at. The output **differs from the baseline by exactly one line**, the new
+  suite's. Two full runs on the final source, both byte-identical, md5
+  `304df3c8d47eb0085b131d5d5ad70423`.
+- **NINE DELIBERATE FAULTS, each in its own throwaway copy with its own
+  `config/name` (TRAPS 50), FAIL lines read:**
+  1. `gate:100` reverted to *per corner* → 1 failure, naming the sentence.
+  2. `racing:176` reverted to *corners up to* → 1 failure.
+  3. `racing:566` reverted to *corners* → 1 failure.
+  4. `racing:584` reverted to *every corner and straight* → 1 failure.
+  5. `main:845` reverted to *tightest corner* → 1 failure.
+  6. **`per turn` reworded to `per section that turns` → PASSES.** This is the
+     fault that matters: the suite reads the **set**, not the word, so a
+     rewording that stays true of a hairpin is not broken by it (TRAPS 6).
+  7. The `racing:176` sentence **deleted** → fails on the *present* assertion,
+     so the "does not say corner" check is not vacuous.
+  8. `hairpin` removed from `YAW_TYPES` → **6 failures**, all of them facts.
+  9. `uphill` added to `OFFERED_TYPES` → fails the slope pin described below.
+
+### A claim 069 made, measured, and corrected before publishing (TRAPS 14)
+
+069's first fixture helper put both straights before both turns, described the
+result as a paperclip, and measured a **160 m closure miss** on it — which
+reads like a solver that breaks a circuit that already closes, and would have
+been a serious finding. **It is not one.** A paperclip **alternates** straight
+and turn, and `ClosureSolver` closes the real one **exactly**: proposal
+distance `0.0000`, net turn `360.000`, `ok=true`, zero adjustment, measured
+directly. **The fixture was wrong, not the code.** The corrected claim is
+written into the helper's own comment in the suite rather than quietly
+dropped, because the next session reading a 160 m miss in a scratch probe
+should know what it was.
+
+### What the tests did NOT prove
+
+- **Nothing was rendered, no window was opened, no model was asked anything
+  and no request left the container. There is no API key here.** Whether a
+  model ever composes a hairpin is unmeasured; what is measured is what
+  Genesis says when one does.
+- **No secret was set and no workflow file was edited.** 064's finding stands:
+  the web build has failed on every push since 14 October and the live site is
+  still `71b065f`.
+- **That the adjusted angle is the RIGHT angle.** That is `procedure_test`'s
+  subject, which already holds `max_angle_adjustment` against `angle_limit`.
+  This suite is about the noun.
+- **The straight-family half of the same four sentences**, which is the next
+  item.
+
+### One half of the class is deliberately left, and it is the owner's
+
+All four sentences that now say *"turns"* say *"straights"* beside them, and
+the solver length-adjusts every section in `TrackGeometry.STRAIGHT_FAMILY` —
+straight, uphill, downhill, crest, dip. **That is the identical fault one word
+along, and it is TRAPS 11's exact shape.** It is latent for one reason, which
+is measured and not assumed: `SectionValidator.OFFERED_TYPES` holds **two of
+three** `YAW_TYPES` members and **one of five** `STRAIGHT_FAMILY` members,
+because the four slope types are the subject of **"Human decision needed" 1**
+(the validator accepts ten types, the prompt offers four and says *"only these
+four"*, and `GENESIS_BRIEF.md` records that nothing drives the vertical axis
+safely yet).
+
+Choosing the word a player reads for a set the owner has not decided to open
+is product direction, so it is written here and not changed.
+`said_set_test` **pins the fact so it cannot be forgotten**: it fails if a
+slope type ever becomes offered while those sentences still say *"straights"*
+(fault 9 above). **If "Human decision needed" 1 is answered (a) leave it,
+nothing needs doing** — the sentences are already true of every composition a
+player can compose today.
+
+**Next action.** The three regex candidates 068 read and did not take,
+continuing the regex-breadth axis: `container_door_test`'s and
+`counted_said_test`'s `\b1 [a-z_]+s\b`, `said_article_test`'s
+`\b(The|A|An) ([a-z_]+) ([0-9]+)\b`, and `claim_field_test`'s `^%s: N to M`.
+See "Smallest useful assistant task next", which now carries 069's warning as
+well: **read the class off the code before trusting any enumeration of it,
+that list included.** New TRAPS 66. **No new "Human decision needed"** — the
+straight-family half belongs to 1, which is already open.
+
 
 ## 068 — the bound stated in the one direction the suite that holds bounds could not read
 

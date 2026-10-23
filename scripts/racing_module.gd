@@ -173,7 +173,12 @@ func solve(content: Dictionary) -> Dictionary:
 		out["reasons"] = [
 			"best attempt ends %.1f m from the start, heading off by %.1f deg" % [solved["closure_distance"], solved["closure_heading_error"]],
 			"closed means within %.1f m and %.0f deg" % [solved["distance_tolerance"], solved["heading_tolerance"]],
-			"adjustment used: corners up to %.1f%%, straights up to %.1f%% (limit %.0f%%)" % [solved["max_angle_adjustment"] * 100.0, solved["max_length_adjustment"] * 100.0, solved["angle_limit"] * 100.0],
+			# 069: "corners" named a narrower set than the number covers.
+			# max_angle_adjustment is the largest angle change the solver made, and
+			# ClosureSolver.solve() builds an angle variable for every section in
+			# TrackGeometry.YAW_TYPES, so a hairpin's angle is one of the numbers
+			# this maximum is taken over. The noun is the set: a turn.
+			"adjustment used: turns up to %.1f%%, straights up to %.1f%% (limit %.0f%%)" % [solved["max_angle_adjustment"] * 100.0, solved["max_length_adjustment"] * 100.0, solved["angle_limit"] * 100.0],
 		]
 	return out
 
@@ -563,7 +568,13 @@ func metric_lines(metrics: Dictionary, record: Dictionary) -> Array:
 			lines.append(["MIN SEPARATION", "%.1f m" % float(sep["minimum_separation"])])
 	if record.has("drift"):
 		var d: Dictionary = record["drift"]
-		lines.append(["SOLVER CHANGE", "corners %.1f%%, straights %.1f%%" % [
+		# 069: the same noun for the same quantity, and THIS ONE WAS NOT IN
+		# HANDOVER's list of three. It reads drift.max_angle_adjustment, which is
+		# the solver's maximum over TrackGeometry.YAW_TYPES, and it is a panel row
+		# - so a player meets it after every circuit that was BUILT, not only on a
+		# refusal. Found by grepping the class rather than taking the list
+		# (TRAPS 31: a list in a document is a reading, not the class).
+		lines.append(["SOLVER CHANGE", "turns %.1f%%, straights %.1f%%" % [
 			float(d["max_angle_adjustment"]) * 100.0, float(d["max_length_adjustment"]) * 100.0]])
 	return lines
 
@@ -581,7 +592,12 @@ func correction_feedback(result: Dictionary) -> String:
 		_along(float(p["ahead"])), _across(float(p["right"])), _above(float(p["height"]))])
 	lines.append("They end %.0f m from the start line. A closed circuit must end exactly on it." % float(p["distance"]))
 	lines.append("Your sections turn a total of %+.0f degrees. A closed circuit must turn exactly %+.0f degrees." % [float(p["net_turn"]), float(p["target_turn"])])
-	lines.append("Even after the game adjusted every corner and straight by up to %.0f%%, the track still ended %.0f m from the start line, and it must be within %.0f m." % [
+	# 069: "every corner and straight" - the solver adjusts every YAW_TYPES
+	# section's angle and every STRAIGHT_FAMILY section's length, so "every
+	# corner" is false about a composition whose turns are hairpins. The
+	# sentence fourteen lines below already says "keeping your turns as they
+	# are" for the same set, which is the vocabulary this one should have used.
+	lines.append("Even after the game adjusted every turn and straight by up to %.0f%%, the track still ended %.0f m from the start line, and it must be within %.0f m." % [
 		float(solved["angle_limit"]) * 100.0, float(solved["closure_distance"]), float(solved["distance_tolerance"])])
 	var reach: Dictionary = solved["length_reach"]
 	if not bool(reach["closable"]):
