@@ -2238,8 +2238,14 @@ line was added or removed, so neither runner needed an edit: 074 changes the
 body of two existing files and nothing about how they run. `ls tests/*.gd`
 returned **74** and the run reported **72** suites, which is what the
 paragraph above says and was re-run rather than carried forward.
-**Two full runs on the final tree, `user://` cleared before each, are
-byte-identical to each other** (md5 `d13d97d014eeefea52f43e4076a4fb06`).
+**THREE full runs on the final tree, `user://` cleared before each, all
+byte-identical** (md5 `d13d97d014eeefea52f43e4076a4fb06`). Three rather than
+two because 074's doc edits landed after the second, and three suites mention
+`docs/` — `agreement_test`, `capability_test` and `retry_test`. Checked rather
+than reasoned about: all three hits are prose inside comments and **nothing in
+`tests/` opens a path under `docs/`** (grepped for `res://docs`, `"docs/` and
+`DirAccess.open`). The third run was taken on the **clean, pushed tree**
+anyway, so the md5 above covers exactly what is on the remote.
 
 The run before it (073, measured the same way): **0 with something to look at**
 on all **72**, with `--all`. Its baseline was the same on
@@ -10646,9 +10652,10 @@ The baseline before anything was touched was **byte-identical to the md5 073
 recorded** (`0fdf976cb74056e853ae2a8f7b62fcb1`). Against it the lists were
 **diffed**: the only differences are **two assertion counts**,
 `prompt_numeral_test` 97 → 116 and `refusal_reach_test` 99 → 105. No other
-suite's result line moved, and no line was added or removed. **Two full runs
-on the final tree are byte-identical to each other**, md5
-`d13d97d014eeefea52f43e4076a4fb06`.
+suite's result line moved, and no line was added or removed. **THREE full runs
+on the final tree, all byte-identical**, md5
+`d13d97d014eeefea52f43e4076a4fb06`, the third on the clean pushed tree — see
+"Run the tests first" for why three and for the `docs/` question it settles.
 
 ### What the tests did NOT prove
 
