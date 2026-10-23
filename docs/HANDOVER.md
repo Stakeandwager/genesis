@@ -24,7 +24,102 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **070**, which took the live entry — the
+- Last commit at the time of writing: **071**, which took the second of the
+  three regex-breadth candidates — `said_article_test`'s sweep, said by the
+  entry below to be unable to see *"an article in front of a two-word
+  numbered label"* — and found that **the widening it asked for was again the
+  wrong fix, and that the blind spot was not in the pattern but in every
+  fixture list behind it.**
+  **THE ENTRY'S QUOTE OF THE PATTERN HAD DRIFTED, as the entry itself warned.**
+  Read off the file (TRAPS 66): it is `\b([Tt]he|[Aa]n?) ([a-z_]+) ([0-9]+)\b`,
+  case-folded in its first letter, where the entry wrote `\b(The|A|An)`.
+  **AND THE WIDENING WAS MEASURED AND REJECTED, for the second time running on
+  this axis.** The comment already sitting on that pattern had measured it:
+  with two words allowed it matches *"a track needs 2 to 40 sections"*, and
+  the `is_label()` guard behind it **cannot rule that out**, because
+  `is_label("track needs 2")` is `true`. **A regex over free text cannot tell
+  a name from a verb**, so no breadth makes it the right instrument. 070's
+  entry found the same shape one candidate earlier (TRAPS 67).
+  **WHAT THE BLIND SPOT WAS ACTUALLY WORTH, measured before anything was
+  touched.** `Readback.is_label()` says a label is a name whose LAST word is a
+  number, and says nothing about how many words come before it — correctly,
+  because `great hall 2` is as much a label as `room 2`. But **every name any
+  fixture had ever handed it had exactly one**: `room 2`, `room_2`,
+  `chamber 3`, `level 2`, `key 2`. So narrowing the function from
+  `words.size() < 2` to `words.size() != 2` — **one character** — gave
+  `the("great_hall_2")` the answer *"the great hall 2"* and put **three
+  articles on numbered names into one dungeon readback**, and
+  **all 71 suites stayed green with the `--all` output BYTE-IDENTICAL to the
+  baseline** (md5 `f9b0d8cf50968a31a41d42023deab0ef` both ways, diffed).
+  **IT IS REACHABLE, which was checked and not assumed (TRAPS 14).**
+  `DungeonModule.validate()` lowercases and trims whatever name the model sent
+  and stores it with **no shape constraint at all**, so a room called
+  `great hall 2` — real spaces — validates `ok=true, errors=[]` and is read
+  back verbatim. Both spellings are now in the fixtures because the validator
+  accepts both.
+  **AND NOTHING IN `scripts/` WAS WRONG — NO FILE IN `scripts/` OR `scenes/`
+  CHANGED.** Every sentence family in the class was fed a multi-word numbered
+  name before anything was touched — `NpcGoals`' ten sentences, the no-door
+  refusal, the dungeon readback measured and unmeasured — and **every one was
+  already correct**, because every one already reads `the()` or `article()`.
+  The fault was not present. It was **unpreventable**, and that is a claim
+  about the guard and not about Genesis.
+  **THE SAME LIST LIVED IN TWO SUITES (TRAPS 11).** `log_022_test` holds the
+  `is_label` fact too, with the same shape of list, and the same one-character
+  fault passed it as well. Both are fixed; the fix is not in the suite the
+  entry named alone.
+  **WHAT CHANGED.** Two files, both in `tests/`. The label fact is asserted
+  for multi-word names in both suites; `the()` and `article()` are asserted
+  over them; the fixtures put a multi-word numbered name into every sentence
+  family, in both spellings; and **the sweep was moved off the pattern and
+  onto the names the fixtures actually use** — a `names_used` registry filled
+  by the fixtures themselves, so a name added to a fixture is swept without
+  anybody editing the sweep. TRAPS 59's rule, one layer in: guard against the
+  state, not against the spelling. **The old pattern is kept beside it** as
+  the backstop for a numbered name no fixture registered, unchanged, so no
+  false positive was introduced.
+  **`said_article_test` goes from 112 to 181 assertions**, counted off its own
+  PASS lines.
+  **TEN DELIBERATE FAULTS, each in its own throwaway copy with its own
+  `config/name` (TRAPS 50), FAIL lines read.** `is_label` narrowed to exactly
+  two words: **46 failures across the two suites** where it was byte-identical
+  green before. `is_label` reading the first word instead of the last: 93 and
+  16. `the()` and `article()` each stopped reading `is_label`: 60/7 and 26/2.
+  **THE ONE THAT MATTERS MOST is the hand-written article at a single site**
+  — `dungeon_module.gd:1653`'s `Readback.the(...)` replaced by `"the " + name`
+  — because **both sweeps ran on it in the same output and the old one saw
+  half**: the pattern named only `room 1`, the new state-keyed sweep named
+  `room 1` **and** `great hall 2`.
+  **THREE MUST-PASS CONTROLS PASS.** A sentence's tail reworded (*"is in"* ->
+  *"sits in"*) and both suites stay green, so the guard reads the fact and not
+  the wording. A **brand-new** multi-word name added to a fixture only
+  (`north_wing_4`) is **named by the sweep without the sweep being edited**.
+  And the containment helper was measured in both directions: **disabled, 32
+  false positives** (`hall` reported bare inside `great hall 2`), so it is
+  load-bearing; **enabled, all four genuinely bare names still named**, so it
+  masks nothing — which is why it is done per occurrence and not per line.
+  **AND THIS COMMIT'S OWN FIRST DRAFT ASSERTED A JUDGEMENT INSTEAD OF A FACT,
+  recorded rather than quietly fixed (TRAPS 14).** It typed in that
+  `"room 2 of 5"` is not a label. It ends in a number, so `is_label()` says it
+  is — defensibly, *"you are in room 2 of 5"* takes no article — and the suite
+  failed on the fixture rather than on the code. Replaced with
+  `"room 2 exit"`, which tests the actual rule: a number anywhere but the end
+  does not make a label.
+  **71 suites, `--all`, `user://` cleared first: 0 with something to look
+  at.** The baseline in this container before anything was touched was
+  **byte-identical to the md5 070 recorded**
+  (`f9b0d8cf50968a31a41d42023deab0ef`), and **the after-run is byte-identical
+  to it as well** — expected and worth stating plainly: **no suite was added
+  and no verdict changed, so the run output cannot move.** What changed is
+  what can now fail, and that is measured by the ten faults and not by the
+  run. Three full runs on the final tree, all byte-identical.
+  **NOT VERIFIED: nothing was rendered, no window was opened, no model was
+  asked anything and no request left the container. There is no API key
+  here. No secret was set and no workflow file was edited.** 064's finding
+  stands: the web build has failed on every push since 14 October and the
+  live site is still `71b065f`. New TRAPS 68. **No new "Human decision
+  needed."**
+- Before 071: **070**, which took the live entry — the
   regex-breadth axis at the first of the three candidates 069 handed on — and
   found that **the entry named one pattern where there were two, and that the
   widening it asked for would have flagged a sentence that was right.**
@@ -8516,11 +8611,33 @@ all **done**. Candidates, in the order the assistant would take them:
     live fault** — `session_report.gd:242` decided its verb by hand and was
     right at one count of four — and the class was **nine sites**, the AI
     prompt among them. See the 070 section and TRAPS 67.
-    **WHAT IS LEFT OF THIS ENTRY IS TWO OF THE THREE**, and the first thing to
-    do with either is **open the file and read the pattern there**: the entry's
-    text for `said_article_test` has already drifted from the code. Of the
-    **27 regex sites in `tests/`** that grep finds, 068 and 070 between them
-    have asked the question of three.
+    **071 TOOK THE SECOND AND THE ANSWER WAS THE SAME SHAPE AS 070'S.** The
+    entry's text for `said_article_test` **had** drifted — the pattern is
+    `\b([Tt]he|[Aa]n?) ...`, case-folded in its first letter — and **the
+    widening it asked for was again wrong**, for a reason the comment on that
+    pattern had already measured: two words allowed matches *"a track needs 2
+    to 40 sections"*, and `is_label("track needs 2")` is `true`, so the guard
+    behind it cannot rule it out. **A regex over free text cannot tell a name
+    from a verb.** The blind spot was **not in the pattern but in every
+    fixture list behind it**: every name any fixture had handed `is_label()`
+    was one word and a number, so narrowing the function to
+    `words.size() != 2` put three articles on numbered names into one dungeon
+    readback with **all 71 suites byte-identical green**. Fixed by moving the
+    sweep onto the names the fixtures use, in **two** suites, not the one this
+    entry named (`log_022_test` held the same list). **Nothing in `scripts/`
+    was wrong.** See the 071 section and TRAPS 68.
+
+    **WHAT IS LEFT OF THIS ENTRY IS ONE OF THE THREE**, and the first thing to
+    do with it is **open the file and read the pattern there** — the drift has
+    now been found in the entry's text twice running (070 for the `\b1 ...s\b`
+    pair, 071 for this one). Of the **27 regex sites in `tests/`** that grep
+    finds, 068, 070 and 071 between them have asked the question of four.
+    **And the axis has now turned up the same answer three times, which is
+    worth more than the remaining candidate:** on all three the widening the
+    entry asked for was wrong, and twice the real hole was one layer behind
+    the pattern — in what the fixtures had ever supplied (071) or in which of
+    two patterns was being quoted (070). **Ask what the fixtures have never
+    supplied before asking what the pattern cannot match.**
     The entry as it stood, each a guess until it is fed its member. The method has now
     paid in 041, 042, 043, 052, 066, 067 and 068: name the member the pattern
     cannot match, feed it that member, watch the suite stay green. **Expect
@@ -8549,11 +8666,14 @@ all **done**. Candidates, in the order the assistant would take them:
     watch the suite stay green. **The candidates 068 read and did not take**,
     so the next session need not re-read them: `container_door_test`'s and
     `counted_said_test`'s `\b1 [a-z_]+s\b` cannot see a plural that does not
-    end in `s`; `said_article_test`'s `\b(The|A|An) ([a-z_]+) ([0-9]+)\b`
-    cannot see an article in front of a **two-word** numbered label;
-    `claim_field_test`'s `^%s: N to M` cannot see a field bound written with a
-    dash or as *"between N and M"*. Each is a guess until it is fed its
-    member.
+    end in `s` (**taken in 070**); ~~`said_article_test`'s
+    `\b(The|A|An) ([a-z_]+) ([0-9]+)\b` cannot see an article in front of a
+    **two-word** numbered label~~ (**taken in 071**: the quote had drifted,
+    the widening was wrong, and the hole was in the fixtures — TRAPS 68);
+    **`claim_field_test`'s `^%s: N to M` cannot see a field bound written with
+    a dash or as *"between N and M"* — THE ONE LEFT.** Each is a guess until
+    it is fed its member, and two of the three guesses have now been wrong
+    about where the hole was.
 
     **AND A SECOND, WIDER QUESTION 068 MEASURED AND DID NOT ANSWER: which of
     the numbers in the prompt is read from the thing that enforces it?**
@@ -10054,6 +10174,189 @@ be wrong and the corrections are the useful part.
    suite reads it. It is four lines and a `match`. Whether a colour is worth
    a test is a judgement about what a panel suite is for, so it is noted
    rather than taken.
+
+## 071 — five names that were the same name five times
+
+**Objective.** The live entry under "Smallest useful assistant task next",
+the second of the three regex-breadth candidates 068 listed and 070 narrowed
+to two: *"`said_article_test`'s `\b(The|A|An) ([a-z_]+) ([0-9]+)\b` cannot see
+an article in front of a two-word numbered label."* The entry's own
+instruction was to **open the file and read the pattern there**, because its
+text for this suite had already drifted.
+
+**Starting state.** Branch `prototype-002a` at `a331e40` (070). Baseline
+`--all` in this container, `user://` cleared first: **71 suites, 0 with
+something to look at**, md5 `f9b0d8cf50968a31a41d42023deab0ef` —
+**byte-identical to the md5 070 recorded**, which is the strongest
+confirmation available here that the tree and the binary match the record.
+
+### The entry was wrong twice, and the second way is the finding
+
+**The quote had drifted.** The pattern is
+`\b([Tt]he|[Aa]n?) ([a-z_]+) ([0-9]+)\b` — case-folded in its first letter,
+where the entry wrote `\b(The|A|An)`. Read off `tests/said_article_test.gd`
+rather than taken from the entry (TRAPS 66). Second commit running that this
+file's quote of a pattern has been wrong.
+
+**The widening was wrong.** The comment sitting on that pattern had already
+measured it: with two words allowed it matches *"a track needs 2 to 40
+sections"*, and the `is_label()` guard behind it **cannot rule that out**,
+because `is_label("track needs 2")` is `true` — confirmed in Godot, not
+inferred. **A regex over free text cannot tell a name from a verb**, so no
+breadth makes it the right instrument. 070 found the same shape one candidate
+earlier (TRAPS 67); this is twice running.
+
+**And the blind spot was one layer behind the pattern.**
+`Readback.is_label()` says a label is a name whose **last** word is a number
+and says nothing about how many words come before it — correctly, because
+`great hall 2` is as much a label as `room 2`. But **every name any fixture
+had ever handed it had exactly one**: `room 2`, `room_2`, `chamber 3`,
+`level 2`, `key 2`. The pattern's narrowness was a *consequence* of that, not
+the cause.
+
+### What the gap was worth, measured before anything was touched
+
+One character in `scripts/readback.gd` — `words.size() < 2` to
+`words.size() != 2`:
+
+```
+the("great_hall_2")      ->  "the great hall 2"
+article("great hall 2")  ->  "a great hall 2"
+readback                 ->  "... entered through a 12 m great hall 2 ...
+                              with a spare key 2 in the great hall 2"
+```
+
+Three articles on numbered names in one sentence a player reads, and
+**all 71 suites green with the `--all` output BYTE-IDENTICAL to the
+baseline**, diffed rather than eyeballed.
+
+**It is reachable, checked rather than assumed (TRAPS 14).**
+`DungeonModule.validate()` lowercases and trims whatever name the model sent
+and stores it with **no shape constraint at all**: a room called
+`great hall 2` — real spaces — validates `ok=true, errors=[]` and is rendered
+verbatim. Both spellings are in the fixtures now because the validator
+accepts both.
+
+### Nothing in scripts/ was wrong
+
+Every sentence family in the class was fed a multi-word numbered name before
+anything was changed — `NpcGoals`' ten sentences, the no-door refusal, the
+dungeon readback measured and unmeasured — and **every one was already
+correct**, because every one already reads `the()` or `article()`.
+**No file in `scripts/` or `scenes/` changed.** The fault was not present; it
+was **unpreventable**. That is a claim about the guard, not about Genesis, and
+it is the whole of what this commit is worth.
+
+### Two suites, not one (TRAPS 11)
+
+`tests/log_022_test.gd` holds the `is_label` fact too, with the same shape of
+list, and the same one-character fault passed it as well. A grep for the
+function found it; reading only the suite the entry named would have left half
+the class open.
+
+### Implementation
+
+Two files, both in `tests/`:
+
+- `said_article_test.gd`: the label fact asserted for multi-word names in both
+  directions; `the()` and `article()` asserted over them; fixtures put a
+  multi-word numbered name into every sentence family in both spellings; and
+  **the sweep moved off the pattern onto `names_used`** — a registry the
+  fixtures fill by calling `_use()`, so a name added to a fixture is swept
+  without the sweep being edited. TRAPS 59 one layer in: guard against the
+  state, not against the spelling. The old pattern is **kept beside it**,
+  unchanged, as the backstop for a numbered name no fixture registered, so no
+  false positive was introduced. 112 assertions to **181**, counted off its own
+  PASS lines.
+- `log_022_test.gd`: the same list widened, with the reason at the site.
+
+`_occurrences()` / `_inside_longer()` handle a name standing inside a longer
+one — `great hall 2` contains `hall` — **per occurrence and not per line**,
+deliberately, so a sentence carrying both `the hall` and `great hall 2` still
+fails on the first.
+
+### Evidence — what was actually run
+
+- **Baseline**, `--all`, `user://` cleared: 71 suites, 0 to look at,
+  byte-identical to 070's md5.
+- **After**, three full `--all` runs on the final tree, `user://` cleared each
+  time: 0 to look at, all byte-identical — **and byte-identical to the
+  baseline too, which is expected and is stated rather than dressed up: no
+  suite was added and no verdict changed, so the run output cannot move.**
+  What changed is what can now fail, and the run does not measure that. The
+  faults do.
+- **Ten deliberate faults, each in its own throwaway copy with its own
+  `config/name` (TRAPS 50), FAIL lines read:**
+
+  | fault | said_article | log_022 |
+  |---|---|---|
+  | `is_label` exactly two words (the original) | **43** | **3** |
+  | `is_label` reads first word, not last | 93 | 16 |
+  | `the()` stops reading `is_label` | 60 | 7 |
+  | `article()` stops reading `is_label` | 26 | 2 |
+  | `names_used` left empty | 3 (the pins, only) | 0 |
+  | hand-written `"the "` at `dungeon_module.gd:1653` | 11 | 0 |
+  | containment disabled | 1 (32 false positives) | 0 |
+  | `the()` never adds an article | 21 | 2 |
+
+- **The one that matters most** is the hand-written article, because **both
+  sweeps ran on it in the same output and the old one saw half**: the pattern
+  named only `room 1`; the new state-keyed sweep named `room 1` **and**
+  `great hall 2`.
+- **Three must-pass controls pass.** A sentence's tail reworded (*"is in"* ->
+  *"sits in"*): both suites green, so the guard reads the fact and not the
+  wording. A **brand-new** multi-word name added to a fixture only
+  (`north_wing_4`): **named by the sweep without the sweep being edited**. The
+  containment helper measured both ways: disabled, **32 false positives**
+  (`hall` reported bare inside `great hall 2`), so it is load-bearing;
+  enabled, **all four genuinely bare names still named**, so it masks nothing.
+
+### And this commit's own first draft asserted a judgement, not a fact
+
+Recorded rather than quietly fixed (TRAPS 14). It typed in that
+`"room 2 of 5"` is **not** a label. It ends in a number, so `is_label()` says
+it is — defensibly: *"you are in room 2 of 5"* takes no article. **The suite
+failed on the fixture rather than on the code**, which is the suite working.
+Replaced with `"room 2 exit"`, which tests the rule that was actually meant: a
+number anywhere but the end does not make a label.
+
+**And a second unchecked number, caught the same way.** The first draft of
+this section said the suite went *"from 160 to 181 assertions"*. 160 was
+remembered from a neighbouring suite's entry in this file, not counted; the
+pre-071 suite prints **112** PASS lines, measured by running the `HEAD`
+version in its own copy. Both are small and neither reached a commit, but
+they are the two mistakes this project is about, made twice in one session by
+the thing writing the warnings down: **a number in a document is a claim and
+gets counted, including when it is about the document's own work.**
+
+### What the tests did NOT prove
+
+- **That any of this is reachable from a model.** Every name was typed by
+  hand. Nothing was rendered, no window was opened, no model was asked
+  anything and no request left the container. **There is no API key here.**
+- **That `great hall 2` is a name a model would ever send.** What is measured
+  is that `validate()` accepts and stores it, so Genesis has no defence
+  against it and the readback must be right for it. Whether Gemini produces
+  multi-word numbered names is the owner's screen, not this harness.
+- **That the run output moving would have meant anything.** It did not move,
+  and could not have: no suite was added. The ten faults are the measurement.
+- **That the backstop pattern is now sound.** It is unchanged and still
+  cannot see an article in front of a numbered name **no fixture
+  registered** — the state-keyed sweep covers only names the suite put into
+  play. A name invented inside production code and never handed to a fixture
+  is covered by the old pattern only, with the old narrowness.
+- **That the letter half of `article()` is right.** *"an hour"* and *"a
+  unicorn"* still come out wrong; that needs pronunciation and is untouched.
+- **No secret was set and no workflow file was edited.** 064's finding stands:
+  the web build has failed on every push since 14 October and the live site is
+  still `71b065f`.
+
+**Next action.** The last of the three regex-breadth candidates:
+`claim_field_test`'s `^%s: N to M`, which is said to be unable to see a field
+bound written with a dash or as *"between N and M"*. **Read the pattern off
+the file first** — the entry's text has now been wrong twice running — and
+**ask what the fixtures have never supplied before asking what the pattern
+cannot match**, because that is where the hole was in 071 and in 070.
 
 ## 070 — two patterns named as one, and the verb a count never agreed with
 

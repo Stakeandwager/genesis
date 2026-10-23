@@ -240,9 +240,18 @@ func _defect_2_articles() -> void:
 	_check(things.contains("a red key"), "and a thing with a name still takes one: '%s'" % things)
 
 	# The fact itself, so the two readers cannot be given different answers.
-	for label in ["room 2", "room_2", "chamber 3", "level 2"]:
+	#
+	# 071: this list and said_article_test's were the same list, and both
+	# held only names of ONE word plus a number - so narrowing is_label()
+	# to `words.size() != 2` passed both (TRAPS 11: the same assertion in
+	# two suites is two sites of one fault). A room name has no shape
+	# constraint in DungeonModule.validate(), so a multi-word numbered name
+	# is a name a player can be shown.
+	for label in ["room 2", "room_2", "chamber 3", "level 2",
+			"great hall 2", "great_hall_2", "the long hall 12"]:
 		_check(Readback.is_label(label), "'%s' is a label" % label)
-	for name in ["vault", "large hall", "red key", "2", ""]:
+	for name in ["vault", "large hall", "red key", "2", "",
+			"great hall", "room 2 exit"]:
 		_check(not Readback.is_label(name), "'%s' is not a label" % name)
 
 

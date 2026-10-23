@@ -4411,3 +4411,89 @@ the three candidates 069 handed on.
 > flag to see one was true.
 
 ---
+
+## 68. Every name the fixtures had ever supplied was one word and a number
+
+**Signature:** a suite exists to hold the rule "an article never stands in
+front of a numbered name", enumerates the rule's two readers, sweeps every
+sentence it produced in both directions, carries 112 assertions — and a
+one-character change to the function it is about leaves it green.
+
+**Cause:** `Readback.is_label()` is the one reading of what a label is:
+
+```gdscript
+var words := name.replace("_", " ").strip_edges().split(" ", false)
+if words.size() < 2:
+	return false
+return str(words[words.size() - 1]).is_valid_int()
+```
+
+Nothing in it says how many words come before the number, and nothing should:
+`great hall 2` is as much a label as `room 2`. But **every name any fixture
+had ever handed it had exactly one** — `room 2`, `room_2`, `chamber 3`,
+`level 2`, `key 2` in `said_article_test`, the same four in `log_022_test`.
+So narrowing the function to `words.size() != 2` — one character — left
+**all 71 suites green and the `--all` output byte-identical to the
+baseline** (md5 `f9b0d8cf50968a31a41d42023deab0ef` both ways), while:
+
+```
+the("great_hall_2")        ->  "the great hall 2"
+article("great hall 2")    ->  "a great hall 2"
+dungeon readback           ->  "entered through a 12 m great hall 2 ...
+                                with a spare key 2 in the great hall 2"
+```
+
+Three articles on numbered names in one sentence a player reads.
+
+**It is reachable, which is the part that had to be checked rather than
+assumed.** `DungeonModule.validate()` lowercases and trims whatever the model
+sent for a room's name and stores it with **no shape constraint at all**, so
+a room called `great hall 2` — real spaces — comes back `ok=true,
+errors=[]` and is rendered verbatim. Both spellings reach a player.
+
+**And the widening the handover asked for was the wrong fix.** The entry said
+the sweep's `\b([Tt]he|[Aa]n?) ([a-z_]+) ([0-9]+)\b` "cannot see an article in
+front of a two-word numbered label" and asked for it to be widened. The
+comment sitting on that pattern had already measured the widening and
+rejected it: with two words allowed it matches *"a track needs 2 to 40
+sections"*, and the `is_label()` guard behind it **cannot rule that out**,
+because `is_label("track needs 2")` is `true`. **A regex over free text
+cannot tell a name from a verb**, so no breadth makes it the right
+instrument — the second time running that an entry on this axis asked for a
+widening that would have flagged a true sentence (TRAPS 67).
+
+**Nothing in `scripts/` was wrong.** Every sentence family in the class was
+fed a multi-word numbered name before anything was touched and every one was
+already correct, because every one already reads `the()` or `article()`. The
+fault was not present; it was **unpreventable**.
+
+**Do:**
+
+- Ask of every fixture list: **which member of the class has it never
+  supplied?** Not which value — which *shape*. A list of five names that are
+  all one word and a number is a list of one case written five times.
+- When a guard's class comes from a pattern, the pattern is a **guess about
+  what the subject looks like**. Move the guard onto the subject the suite
+  actually has — here, the names the fixtures used — and the guess goes away.
+  TRAPS 59, one layer in.
+- **The same assertion in two suites is two sites of one fault** (TRAPS 11).
+  Grep for the function before fixing the suite you are reading.
+- A containment check is load-bearing the moment a multi-word name enters a
+  fixture: `great hall 2` contains `hall`, so a per-name sweep reports the
+  shorter name bare in a sentence that is correct. Do it **per occurrence**,
+  not per line — a sentence with both `the hall` and `great hall 2` must still
+  fail on the first. Measured both ways: disabled, 32 false positives;
+  enabled, all four genuinely bare names still named.
+- **An assertion typed in as a judgement about English is not a fact.** This
+  commit's own first draft asserted `"room 2 of 5"` was not a label; it ends
+  in a number, so `is_label()` says it is, and the suite caught the fixture
+  rather than the code (TRAPS 6, from the other side).
+
+Found in 071, taking the second of the three candidates 068 listed and 070
+narrowed to two.
+
+> The suite asked its question of five names and they were the same name
+> five times. The function was right; nothing could have told us if it
+> stopped being right.
+
+---

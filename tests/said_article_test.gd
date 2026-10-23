@@ -71,6 +71,42 @@ extends SceneTree
 # out wrong and NOTHING HERE CLAIMS OTHERWISE: that needs pronunciation,
 # which Genesis does not have. And this is the article; the plural on the
 # other end of the noun is counted_said_test's.
+#
+# --- 071: every name this suite was ever given had ONE word and a number ---
+#
+# HANDOVER's live entry said this suite's sweep "cannot see an article in
+# front of a two-word numbered label" and asked for the pattern to be
+# widened. Read off the file rather than taken from the entry (TRAPS 66),
+# the pattern is \b([Tt]he|[Aa]n?) ([a-z_]+) ([0-9]+)\b - the entry quoted
+# \b(The|A|An) and the code is case-folded in its first letter - and THE
+# WIDENING IS THE WRONG FIX, for the reason the comment on that pattern
+# already gave: with two words allowed it matches "a track needs 2 to 40
+# sections", and is_label() cannot rule it out, because
+# is_label("track needs 2") is TRUE. A regex over free text cannot tell a
+# name from a verb. So the breadth was not widened; the sweep was moved
+# onto the NAMES THE FIXTURES ACTUALLY USE (names_used below), which is
+# TRAPS 59's rule - guard against the state, not against the spelling.
+#
+# WHAT THE BLIND SPOT WAS WORTH, measured before anything was changed.
+# One character in Readback.is_label() - `words.size() < 2` to
+# `words.size() != 2` - makes every multi-word numbered name take an
+# article: the("great_hall_2") returns "the great hall 2", and one dungeon
+# readback carries THREE of them. All 71 suites stayed green and the
+# `--all` output was BYTE-IDENTICAL to the baseline. It is reachable, not
+# hypothetical: DungeonModule.validate() lowercases and trims whatever
+# name the model sent and stores it with no shape constraint, so a room
+# called "great hall 2" validates ok, errors=[], and is read back verbatim.
+#
+# AND NOTHING IN scripts/ WAS WRONG. Every sentence family in this class
+# was fed a multi-word numbered name before anything was touched and all of
+# them were already correct, because all of them already read
+# Readback.the() or article(). This commit changed no file in scripts/. The
+# fault it closes is one that could be INTRODUCED without any suite saying
+# so, which is a claim about the guard and not about Genesis.
+#
+# THE SAME LIST LIVED IN TWO SUITES (TRAPS 11). log_022_test holds the
+# is_label fact too, with the same shape of list, and the same one-character
+# fault passed it. Both are fixed.
 
 const SPOKEN_AN := ["8", "11", "18", "80", "88", "800", "888", "8000", "11000", "18000"]
 const SPOKEN_A := ["1", "2", "4", "7", "9", "10", "12", "20", "40", "110", "180", "1100", "1800", "110000"]
@@ -78,6 +114,13 @@ const SPOKEN_A := ["1", "2", "4", "7", "9", "10", "12", "20", "40", "110", "180"
 var failures: Array = []
 var lines: Array = []
 var said: Array = []        # every sentence this suite caused to be produced
+
+# 071: every NAME this suite put into play, in the form a sentence renders it
+# (underscores already spaces). The sweep below reads this instead of a list
+# typed into it: a name added to a fixture is swept without anybody
+# remembering to add it in a second place, which is the half of TRAPS 59 a
+# regex cannot do - "guard against the state, not against the spelling".
+var names_used: Dictionary = {}
 
 
 func _check(ok: bool, what: String) -> void:
@@ -117,9 +160,61 @@ func _named_as(text: String, want: String) -> bool:
 	return stray.search(text) == null
 
 
+# 071: every position in `line` where `name` stands as a whole word AND is
+# not part of a longer name the suite also put into play.
+#
+# The containment matters as soon as a fixture uses a multi-word name:
+# "great hall 2" contains "hall", and _says() finds it there because " hall
+# " has a boundary either side - so checking "hall" for a dropped article in
+# a sentence that says "12 m great hall 2" would report a fault that is not
+# one. Done PER OCCURRENCE rather than per line, deliberately: a sentence
+# that says both "the hall" and "great hall 2" must still fail on the first,
+# and a per-line skip would hide it.
+func _occurrences(line: String, name: String) -> Array:
+	var out: Array = []
+	var find := RegEx.new()
+	find.compile("(^|[^0-9A-Za-z_])(%s)([^0-9A-Za-z_]|$)" % name.replace(" ", "[ ]"))
+	var from := 0
+	while from <= line.length():
+		var hit := find.search(line, from)
+		if hit == null:
+			break
+		var at := hit.get_start(2)
+		from = maxi(at + 1, hit.get_end(2))
+		if not _inside_longer(line, at, name):
+			out.append(at)
+	return out
+
+
+# Is the occurrence of `name` at `at` the inside of a longer registered
+# name standing at the position that would put it there?
+func _inside_longer(line: String, at: int, name: String) -> bool:
+	for key in names_used:
+		var other := str(key)
+		if other.length() <= name.length() or not other.contains(name):
+			continue
+		var offset := other.find(name)
+		var start := at - offset
+		if start < 0 or start + other.length() > line.length():
+			continue
+		if line.substr(start, other.length()) == other:
+			return true
+	return false
+
+
 func _remember(texts) -> void:
 	for t in texts:
 		said.append(str(t))
+
+
+# Register a name the suite is about to put into a sentence, and hand it
+# back unchanged so a call site reads as it did before. The PLAIN form is
+# what gets stored, because that is the form a sentence carries.
+func _use(raw) -> String:
+	var plain := str(raw).replace("_", " ").strip_edges()
+	if plain != "":
+		names_used[plain] = true
+	return str(raw)
 
 
 func _initialize() -> void:
@@ -139,14 +234,37 @@ func _initialize() -> void:
 
 # --- the fact itself, and the two readers of it ---
 func _the_one_reading() -> void:
-	for label in ["room 2", "room_2", "chamber 3", "level 2", "key 2"]:
+	# 071: A LABEL IS A NAME WHOSE LAST WORD IS A NUMBER, and nothing in
+	# is_label() says how many words come before it. Every member this list
+	# used to hold had exactly ONE, so narrowing the function from
+	# `words.size() < 2` to `words.size() != 2` - one character - left all
+	# 71 suites byte-identical while the("great_hall_2") came back "the
+	# great hall 2" and one dungeon readback carried THREE articles in front
+	# of numbered names. Measured, not reasoned about.
+	#
+	# It is reachable: DungeonModule.validate() lowercases and trims
+	# whatever name the model sent and stores it with NO shape constraint,
+	# so a room called "great hall 2" - with real spaces - validates ok,
+	# errors=[], and is rendered to the player verbatim. Both spellings are
+	# here because the validator accepts both.
+	for label in ["room 2", "room_2", "chamber 3", "level 2", "key 2",
+			"great hall 2", "great_hall_2", "spare key 2", "small_vault_3",
+			"the long hall 12"]:
 		_check(Readback.is_label(label), "'%s' is a label" % label)
-	for name in ["vault", "large hall", "red key", "2", ""]:
+	# A number anywhere but the END does not make a label, however many
+	# words are in front of it.
+	for name in ["vault", "large hall", "red key", "2", "",
+			"great hall", "spare key", "hall 2 a", "room 2 exit"]:
 		_check(not Readback.is_label(name), "'%s' is not a label" % name)
 
 	# the() and article() are two readers of the same fact: whatever
 	# is_label() says, BOTH must act on it, in both directions.
-	for name in ["room_1", "chamber 3", "hall", "red key", "great hall"]:
+	# 071: the multi-word labels are in here too, because the() and
+	# article() are the two readers that a narrowed is_label() makes wrong,
+	# and "great hall" (not a label) sits beside "great hall 2" (a label)
+	# so the pair cannot both pass by accident.
+	for name in ["room_1", "chamber 3", "hall", "red key", "great hall",
+			"great_hall_2", "great hall 2", "spare_key_2", "small vault 3"]:
 		var plain := str(name).replace("_", " ")
 		var definite := Readback.the(name)
 		var indefinite := Readback.article(plain)
@@ -189,13 +307,22 @@ func _the_sound_not_the_letter() -> void:
 # call with only the name changed, so a function that always dropped the
 # article would fail the second half.
 func _an_errand() -> void:
+	# 071: the third pair is the member the first two were standing in for -
+	# a numbered name of MORE THAN ONE WORD, in the underscored spelling and
+	# (below) in the real-space spelling, both of which
+	# DungeonModule.validate() accepts and stores verbatim. Nothing in this
+	# family needed changing for it: every one of these sentences already
+	# reads Readback.the(). What needed changing was that no fixture had
+	# ever handed them one.
 	var pairs := [
 		{"thing": "key_2", "room": "room_1", "labelled": true},
-		{"thing": "red_key", "room": "vault", "labelled": false}]
+		{"thing": "red_key", "room": "vault", "labelled": false},
+		{"thing": "spare_key_2", "room": "great_hall_2", "labelled": true},
+		{"thing": "spare key 2", "room": "great hall 2", "labelled": true}]
 	for entry in pairs:
 		var case: Dictionary = entry
-		var thing := str(case["thing"]).replace("_", " ")
-		var room := str(case["room"]).replace("_", " ")
+		var thing := _use(str(case["thing"]).replace("_", " "))
+		var room := _use(str(case["room"]).replace("_", " "))
 		var labelled: bool = case["labelled"]
 		var want_thing := thing if labelled else "the " + thing
 		var want_room := room if labelled else "the " + room
@@ -209,8 +336,8 @@ func _an_errand() -> void:
 			NpcGoals.missing_thing_line(str(case["thing"]), "gone"),
 			NpcGoals.missing_thing_line(str(case["thing"]), "roomless"),
 			NpcGoals.outcome_line("ARRIVED", str(case["room"]), 10.0, 4.0),
-			NpcGoals.door_readback({"between": [case["room"], "other"]}, true),
-			NpcGoals.door_line({"a_name": case["room"], "b_name": "other"}, true, true)])
+			NpcGoals.door_readback({"between": [case["room"], _use("other")]}, true),
+			NpcGoals.door_line({"a_name": case["room"], "b_name": _use("other")}, true, true)])
 		_remember(sentences)
 		for s in sentences:
 			var text := str(s)
@@ -224,10 +351,12 @@ func _an_errand() -> void:
 	# The no-door refusal, which named two rooms at once and read neither
 	# through _place().
 	for entry in [{"names": ["room_1", "room_2"], "labelled": true},
-			{"names": ["hall", "vault"], "labelled": false}]:
+			{"names": ["hall", "vault"], "labelled": false},
+			{"names": ["great_hall_2", "small vault 3"], "labelled": true}]:
 		var case: Dictionary = entry
 		var rooms: Array = []
 		for n in (case["names"] as Array):
+			_use(n)
 			rooms.append({"name": n})
 		var result := NpcGoals.validate_door(
 			{"between": (case["names"] as Array).duplicate()}, rooms, {"doors": []})
@@ -247,11 +376,20 @@ func _an_errand() -> void:
 func _a_dungeon_readback() -> void:
 	var d := DungeonModule.new()
 	for sized in [true, false]:
+		# 071: the third case is a MULTI-WORD numbered room and thing, and
+		# the fourth is the same names spelled with real spaces, which is
+		# how DungeonModule.validate() stores them when the model sends
+		# them that way. The measured half matters most: a size is rendered
+		# in front of the name ("12 m great hall 2"), which is the shape
+		# that hides an article from a pattern anchored on the name.
 		for entry in [{"rooms": ["room_1", "room_2"], "thing": "key_2", "labelled": true},
-				{"rooms": ["hall", "vault"], "thing": "red_key", "labelled": false}]:
+				{"rooms": ["hall", "vault"], "thing": "red_key", "labelled": false},
+				{"rooms": ["great_hall_2", "small_vault_3"], "thing": "spare_key_2", "labelled": true},
+				{"rooms": ["great hall 2", "small vault 3"], "thing": "spare key 2", "labelled": true}]:
 			var case: Dictionary = entry
 			var rooms: Array = []
 			for n in (case["rooms"] as Array):
+				_use(n)
 				rooms.append({"name": n, "width": 12 if sized else null, "depth": 12 if sized else null})
 			var text := d.readback({"rooms": rooms, "doors": [[1, 2]],
 				"things": [{"name": case["thing"], "in": 1}]})
@@ -264,7 +402,7 @@ func _a_dungeon_readback() -> void:
 				_check(_named_as(text, want),
 					"a %s room reads as article() renders it ('%s'): %s" % [
 						"measured" if sized else "unmeasured", want, text])
-			var thing := str(case["thing"]).replace("_", " ")
+			var thing := _use(str(case["thing"]).replace("_", " "))
 			var want_thing := thing if labelled else Readback.article(thing)
 			_check(_named_as(text, want_thing),
 				"the thing reads as article() renders it ('%s'): %s" % [want_thing, text])
@@ -275,7 +413,7 @@ func _a_dungeon_readback() -> void:
 				"and the room it is in reads as the() renders it: %s" % text)
 
 	# An 8 m room, which is the size the letter test got wrong.
-	var eight := d.readback({"rooms": [{"name": "hall", "width": 8, "depth": 8}], "doors": []})
+	var eight := d.readback({"rooms": [{"name": _use("hall"), "width": 8, "depth": 8}], "doors": []})
 	_remember([eight])
 	_check(_says(eight, "an 8 m hall"), "an 8 m room is spoken with a vowel: %s" % eight)
 
@@ -330,24 +468,66 @@ func _sweep() -> void:
 	_check(caught.is_empty(), "no sentence puts an article in front of a numbered name%s" % (
 		"" if caught.is_empty() else " - %s" % "; ".join(PackedStringArray(caught))))
 
-	# The other direction: an ordinary name that LOST the article it should
-	# have. A function that returned the bare name always would pass the
-	# sweep above and fail this one, which is the point of having both -
-	# 034's regex could see one direction and that is how 042's fault
-	# survived it.
+	# --- 071: the same two directions, asked of THE NAMES IN PLAY ---
+	#
+	# The pattern above guesses what a name looks like, and the guess is
+	# "one word then a number". That is why it cannot see "the great hall
+	# 2", and it is why widening it is not the fix: with two words allowed
+	# it matches "a track needs 2 to 40 sections", and is_label() cannot
+	# save it, because is_label("track needs 2") is TRUE. A regex over
+	# free text cannot tell a name from a verb, so no amount of widening
+	# makes it the right instrument.
+	#
+	# These two loops read names_used instead - every name a fixture
+	# actually handed to a sentence - so nothing has to be guessed and
+	# nothing has to be typed in twice. TRAPS 59: guard against the state,
+	# not against the spelling. The pattern stays above it as the backstop
+	# for a numbered name no fixture registered.
 	#
 	# A size sits between the article and the name ("an 8 m hall"), so the
-	# measurement is allowed through; anything else is not.
+	# measurement is allowed through in both directions; anything else is
+	# not.
+	# Anchored at the END of the text in FRONT of the name, so what is read
+	# is the article immediately before this occurrence and not one
+	# somewhere else in the sentence.
+	var leading := RegEx.new()
+	leading.compile("\\b([Tt]he|[Aa]n?) (?:[0-9.]+(?: by [0-9.]+)? m )?$")
+	var on_label: Array = []
 	var dropped: Array = []
-	for name in ["hall", "vault", "red key", "other"]:
-		var has_article := RegEx.new()
-		has_article.compile("\\b([Tt]he|[Aa]n?) (?:[0-9.]+(?: by [0-9.]+)? m )?%s\\b" % (
-			name.replace(" ", "[ ]")))
+	for key in names_used:
+		var name := str(key)
+		var is_label: bool = Readback.is_label(name)
 		for sentence in said:
-			var line := str(sentence)
-			if not _says(line, name):
-				continue
-			if has_article.search(line) == null:
-				dropped.append("'%s' bare in: %s" % [name, line])
+			for raw in str(sentence).split("\n"):
+				var line := str(raw)
+				for at in _occurrences(line, name):
+					var has := leading.search(line.substr(0, at)) != null
+					if is_label and has:
+						on_label.append("'%s' in: %s" % [name, line])
+					elif not is_label and not has:
+						dropped.append("'%s' bare in: %s" % [name, line])
+	_check(on_label.is_empty(),
+		"no sentence puts an article in front of any numbered name it was given%s" % (
+			"" if on_label.is_empty() else " - %s" % "; ".join(PackedStringArray(on_label))))
 	_check(dropped.is_empty(), "and no ordinary name loses the article it should have%s" % (
 		"" if dropped.is_empty() else " - %s" % "; ".join(PackedStringArray(dropped))))
+
+	# ANTI-VACUITY, because both loops above are over a collection the
+	# suite fills itself: an empty names_used would pass them silently,
+	# which is 067's lesson about a scan whose class comes from the thing
+	# it is checking. Pinned to the shapes that must be in there, not to a
+	# count that drifts: at least one multi-word numbered name, at least
+	# one one-word numbered name, and at least one ordinary name.
+	var shapes := {"multi_label": false, "one_label": false, "ordinary": false}
+	for key in names_used:
+		var name := str(key)
+		var words := name.split(" ", false).size()
+		if Readback.is_label(name):
+			shapes["multi_label"] = bool(shapes["multi_label"]) or words > 2
+			shapes["one_label"] = bool(shapes["one_label"]) or words == 2
+		else:
+			shapes["ordinary"] = true
+	for shape in shapes:
+		_check(bool(shapes[shape]),
+			"the sweep was given a %s name to sweep (%d names in play)" % [
+				shape, names_used.size()])
