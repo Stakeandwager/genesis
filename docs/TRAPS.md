@@ -4677,3 +4677,107 @@ that would have caught 068 at the commit that wrote it.
 > somebody typed can, so ask which kind it is before asking what it means.
 
 ---
+
+## 71. The kind filed under the value, and the count asserted against its own array
+
+**Signature:** a table classifies things and the suite over it is green, but
+the classification itself is never asserted — only the thing it hangs off. Or
+an assertion reads a literal declared a few lines above it, and its *message*
+claims a measurement it never took. Deleting the measured thing leaves the
+line green and still claiming it happened.
+
+**Cause, first half.** 073 built `tests/prompt_numeral_test.gd` to ask of
+every numeral typed into the prompt: which file, how many times, and **what
+kind of number is it** — `BOUND`, `ORDINAL`, `ARITHMETIC` or `PROSE`. The row
+was keyed on `(file, numeral)`:
+
+```
+"npc_goals.gd": [["1", 3, "ORDINAL"], ...]
+```
+
+`npc_goals` types `1` three times. Twice it is the promise that rooms are
+numbered from 1 — *"its number counting from 1"* — and once it is the `1`
+inside **`room_1`**, a room *name* in the worked example whose entire purpose
+is that a name carrying a number is not a position. **The kind belongs to the
+occurrence and the key was the value**, so all three went under `ORDINAL`, the
+one kind the file measures against the validators. Nothing failed, because
+what the suite asserted was the count of the numeral and never the kind of the
+occurrence.
+
+**And the file's own prose had it right.** Its header listed the prose
+numerals as *"'go to room 2', 'to room 3', and the example's own room_1,
+room_2 and its four room_3s"* — eight, with `room_1` among them — and summed
+the eighteen as *"one BOUND, two ARITHMETIC, seven ORDINAL and eight PROSE"*.
+The table it sat on said **eight ORDINAL and seven PROSE**. 073's own commit
+message counted it correctly and said so. The transposition went into the
+table, the header, and `HANDOVER.md`, and nothing could catch it because
+**the four per-kind totals were a count in a comment** — TRAPS 24's shape in
+the file whose header claims to have avoided it. It had avoided it per *row*
+and not per *kind*.
+
+**Cause, second half, and it is the same fault with no table at all.**
+`tests/refusal_reach_test.gd` ended its guard section with:
+
+```
+_check(LAYOUT_BRANCHES.size() == 3, "all three FAILED_LAYOUT branches were fired")
+_check(SHARED_WITH_CONTROLLER.size() == 1,
+    "and one category name has an owner outside the module pipeline")
+```
+
+Both bodies read the length of an array literal declared forty lines above
+them. Both messages claim a fact about the run. **Measured:** with branch 3's
+block deleted outright, the pre-074 suite reported **98 assertions,
+failures=0** — the branch was gone and the suite still counted a passing line
+saying all three fired. With `FAILED_UNWALKABLE` renamed in
+`game_controller.gd` so the shared name no longer *has* an owner outside the
+module pipeline, the pre-074 suite reported **1 failure** — the enumeration's,
+not that line's — and the sentence about the owner outside the pipeline passed
+while being false.
+
+`controller_reach_test`'s `BRANCHES.size() == 28` is the same shape and is
+**not** this trap, because its message claims only what it checks — *"28
+controller refusal branches declared"* — and the three assertions under it do
+the real work against the source. That is the difference: a guard that says it
+is a guard, versus a guard wearing a measurement's words.
+
+**Do:**
+
+- **Key the row on the occurrence when the property belongs to the
+  occurrence.** A numeral may now appear on several rows with several kinds,
+  and the rows' counts must **sum** to what is typed. Collapsing them was what
+  hid `room_1`.
+- **Assert the classification, not just the thing classified.** Each kind's
+  claim is now checkable: an `ORDINAL` numeral must be the `1` that *"numbered
+  from 1"* is about, and no `BOUND`, `ORDINAL` or `ARITHMETIC` occurrence may
+  be **welded into an identifier** — the `1` in `room_1` states nothing the
+  code can enforce and cannot drift, so it is prose by construction. Restoring
+  073's row fails **3** times, the first naming the fault exactly; the same
+  fault with the totals edited to agree still fails **2**, so the bare check is
+  not a restatement of the totals.
+- **Derive a total from the table and assert it.** The four per-kind totals and
+  the typed total are read off the rows now. A ninth prose numeral added to the
+  prompt *and duly declared on its row* fails **2** times — which is what the
+  header's claim *"a ninth cannot appear without this file being edited"*
+  needed in order to be true of a number rather than of a sentence.
+- **An assertion's message must claim only what its body read.** The branch
+  lines now record each branch where it actually fires and assert the fired set
+  against the declared one, both directions: deleting a branch fails **2**,
+  and a fourth undeclared branch firing fails **2**. The shared-name line now
+  reads the source for an owner inside the module pipeline and one outside it.
+- **When you cannot measure the fact, say which fact you did measure.** Branch
+  2's refusal is read at `FarmModule._check_reachable` and not through
+  `solve()`, because `solve()` lays the zones out itself and throws the pinched
+  positions away — **measured in 074: `solve({"zones": pinched})` returns
+  `ok=true`.** The branch is real and its refusal is measured; that a player
+  can reach it is **not** claimed, and `farm_module.gd`'s own comment already
+  says so.
+
+Found in 074, by tallying the table 073 wrote rather than reading the sentence
+above it. **No file in `scripts/` or `scenes/` was wrong and neither changed.**
+The prompt is byte-identical; what changed is one misfiled row in a test table
+and two assertions that claimed more than they read.
+
+> A count that sits next to the thing it counts is a comment. Derive it, or
+> expect it to be transposed. And an assertion may only say what its body read.
+
+---

@@ -189,6 +189,16 @@ const SHARED_WITH_CONTROLLER := ["FAILED_UNWALKABLE"]
 # below; the name alone would hide two of them.
 const LAYOUT_BRANCHES := ["farm: nothing to lay out", "farm: lane check", "base: no solver"]
 
+# 074: which of those three this run actually drove to FAILED_LAYOUT, appended
+# where each one fires. Until 074 the closing line of _guards_fire() was
+# `_check(LAYOUT_BRANCHES.size() == 3, "all three FAILED_LAYOUT branches were
+# fired")` - an assertion about the length of the array three lines above it,
+# whose MESSAGE claimed a firing it never read. Deleting a branch's block left
+# it green and still saying all three were fired. TRAPS 6's shape with the
+# label of a measurement, and the same fault as 073's numeral table one layer
+# out: a count typed beside the thing it claims to have counted.
+var layout_fired: Array = []
+
 
 # --- 1. the enumeration, read off the source rather than typed ---
 
@@ -798,6 +808,8 @@ func _guards_fire() -> void:
 	var nothing: Dictionary = fm.solve({"zones": []})
 	_check(str(nothing["category"]) == "FAILED_LAYOUT",
 		"a farm of no zones: solve says %s" % str(nothing["category"]))
+	if str(nothing["category"]) == "FAILED_LAYOUT":
+		layout_fired.append("farm: nothing to lay out")
 
 	# FAILED_LAYOUT, branch 2: two zones with no lane between them. 052's
 	# assertion, repeated here so this file's row for FAILED_LAYOUT covers
@@ -824,16 +836,56 @@ func _guards_fire() -> void:
 			"x": float(i % 3) * 26.0, "z": float(i / 3) * 26.0})
 	_check(bool((fm._check_reachable({"zones": roomy_zones, "lane_width": fm.LANE_WIDTH}))["ok"]),
 		"and the same nine zones a lane apart pass")
+	# Recorded where it fires, and recorded at _check_reachable rather than at
+	# solve() ON PURPOSE. Measured 074: solve({"zones": pinched_zones}) returns
+	# ok=true, because solve() lays the zones out itself and throws the pinched
+	# x/z away - so this branch is NOT reachable by handing solve() a request,
+	# which is what farm_module.gd's own comment above the guard says and is
+	# already the owner's to move. The branch is real and its refusal is
+	# measured; what is not claimed is that a player can get to it.
+	if not bool(pinched["ok"]):
+		layout_fired.append("farm: lane check")
 
 	# FAILED_LAYOUT, branch 3: a module that does not override solve().
 	var base := WorldModule.new()
 	var no_solver: Dictionary = base.solve({})
 	_check(str(no_solver["category"]) == "FAILED_LAYOUT",
 		"the base module's own solve says %s" % str(no_solver["category"]))
+	if str(no_solver["category"]) == "FAILED_LAYOUT":
+		layout_fired.append("base: no solver")
 
-	_check(LAYOUT_BRANCHES.size() == 3, "all three FAILED_LAYOUT branches were fired")
-	_check(SHARED_WITH_CONTROLLER.size() == 1,
-		"and one category name has an owner outside the module pipeline")
+	# 074. What this used to assert was LAYOUT_BRANCHES.size() == 3, which is
+	# the length of a literal three lines above. It now asserts the branches
+	# this run actually drove to a refusal, by name and both ways, so deleting
+	# a branch's block fails here instead of leaving a green line that says it
+	# fired.
+	for branch in LAYOUT_BRANCHES:
+		_check(layout_fired.has(branch),
+			"the FAILED_LAYOUT branch '%s' was driven to its own refusal in this run" % str(branch))
+	for branch in layout_fired:
+		_check(LAYOUT_BRANCHES.has(branch),
+			"the branch '%s' that fired is one this file declares" % str(branch))
+	_check(layout_fired.size() == LAYOUT_BRANCHES.size(),
+		"all %d declared FAILED_LAYOUT branches fired and no others (%d fired)" % [
+			LAYOUT_BRANCHES.size(), layout_fired.size()])
+
+	# 074. And the same for the shared name: this used to assert that an array
+	# of one name has one element. The FACT it claims is that the name has an
+	# owner OUTSIDE the module pipeline, so that is what is read - off the
+	# source, with the reader this file already has.
+	var owners := _categories_in_source(true)
+	for name in SHARED_WITH_CONTROLLER:
+		var files: Array = owners.get(str(name), []) as Array
+		var in_module := false
+		var outside := false
+		for f in files:
+			if str(f).ends_with("_module.gd"):
+				in_module = true
+			else:
+				outside = true
+		_check(in_module and outside,
+			"%s is returned both inside the module pipeline and outside it (%s)" % [
+				str(name), str(files)])
 
 
 func _initialize() -> void:

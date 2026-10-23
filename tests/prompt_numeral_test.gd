@@ -108,10 +108,11 @@ extends SceneTree
 # NOT ASSERTED: that the PROSE numerals mean anything. EIGHT of the eighteen
 # are illustrative - "go to room 2", "to room 3", and the example's own room_1,
 # room_2 and its four room_3s - and no assertion stands behind them. That half
-# is a judgement and is marked as one in the table. What holds it is the count:
-# a ninth cannot appear without this file being edited. The eighteen are one
-# BOUND, two ARITHMETIC, seven ORDINAL and eight PROSE, counted one at a time
-# off the templates rather than apportioned.
+# is a judgement and is marked as one in the table. What holds it is the count,
+# and since 074 the count is an ASSERTION and not this sentence: KIND_TOTALS
+# below is read off the table and a ninth PROSE numeral fails until it is
+# moved. The eighteen are one BOUND, seven ORDINAL, two ARITHMETIC and eight
+# PROSE.
 #
 # NOT ASSERTED: that the model obeys any of it. No model has read this prompt.
 #
@@ -125,7 +126,20 @@ var failures: Array = []
 var lines: Array = []
 var asserted := 0
 
-# numeral -> [how many times it is typed, which kind it is]
+# [numeral, how many occurrences, which kind those occurrences are]
+#
+# THE KEY IS THE OCCURRENCE AND NOT THE NUMERAL, WHICH IS 074's FINDING AND
+# THE REASON THIS TABLE HAS FOUR ROWS FOR npc_goals WHERE 073 WROTE THREE.
+# 073 keyed a row on (file, numeral) and read the kind off it, so every
+# occurrence of a numeral in a file was filed under one kind whether or not it
+# meant one thing. npc_goals types "1" three times: twice as the promise that
+# rooms are numbered from 1, and once as the "1" INSIDE room_1, a room NAME in
+# the worked example whose whole purpose is that a name carrying a number is
+# not a position. All three went under ORDINAL - the one kind the suite
+# measures against the validators - and the suite was green, because what it
+# asserted was the count of the numeral and never the kind of the occurrence.
+# A numeral may now appear on more than one row with more than one kind, and
+# the rows' counts must SUM to what is typed.
 #
 # The kinds, and what each one costs: BOUND is asserted against its constant,
 # ORDINAL against the validators, ARITHMETIC against the section validator,
@@ -140,10 +154,30 @@ const DECLARED := {
 	"boots_tool.gd": [],
 	"car_tool.gd": [],
 	"look_tool.gd": [],
-	"npc_goals.gd": [["1", 3, "ORDINAL"], ["2", 1, "PROSE"], ["3", 4, "PROSE"]],
+	# "1" twice as an ordinal ("counting from 1", "Counting from 1"), once as
+	# the character inside the name room_1. That split is the finding above.
+	"npc_goals.gd": [["1", 2, "ORDINAL"], ["1", 1, "PROSE"], ["2", 1, "PROSE"], ["3", 4, "PROSE"]],
 }
 
 const KINDS := ["BOUND", "ORDINAL", "ARITHMETIC", "PROSE"]
+
+# The kinds a number must be BARE to be - that is, not a character inside an
+# identifier. A number welded into a name is not a number the prompt states:
+# nothing can enforce the "1" in room_1, and no rewording of the code can make
+# it drift, so it is prose by construction. The three measured kinds are the
+# ones a drift would matter to, so each of their occurrences must be bare.
+const BARE_KINDS := ["BOUND", "ORDINAL", "ARITHMETIC"]
+
+# Read off the table above, and asserted against it. 073 stated these four
+# numbers in a comment beside the table and two of them were transposed -
+# seven ORDINAL and eight PROSE, where the table it sat on said eight and
+# seven. A count in a comment is TRAPS 24's shape and this file's own header
+# claims to have avoided it; it had avoided it per ROW and not per KIND.
+const KIND_TOTALS := {"BOUND": 1, "ORDINAL": 7, "ARITHMETIC": 2, "PROSE": 8}
+
+# Every numeral typed into any template, counted. A nineteenth cannot arrive
+# without this number moving.
+const TYPED_TOTAL := 18
 
 
 func _check(ok: bool, what: String) -> void:
@@ -215,6 +249,28 @@ func _typed(template: String) -> Dictionary:
 	var number := RegEx.create_from_string("[0-9]+(?:\\.[0-9]+)?")
 	var out := {}
 	for m in number.search_all(bare):
+		var found := m.get_string()
+		out[found] = int(out.get(found, 0)) + 1
+	return out
+
+
+# Every numeral typed into a template that is NOT part of an identifier, as
+# numeral -> count. Counted off the same specifier-stripped text as _typed(),
+# so the two are comparable occurrence for occurrence: _typed() minus this is
+# the numerals welded into a name. A substitution has been replaced by \u0001,
+# which is deliberately not a word character - a number next to a %s is a
+# number the prompt states, not part of a name.
+func _typed_bare(template: String) -> Dictionary:
+	var spec := RegEx.create_from_string("%%|%[-+# 0]*[0-9]*(?:\\.[0-9]+)?[a-zA-Z]")
+	var stripped := spec.sub(template, "\u0001", true)
+	var number := RegEx.create_from_string("[0-9]+(?:\\.[0-9]+)?")
+	var word := RegEx.create_from_string("^[A-Za-z0-9_]$")
+	var out := {}
+	for m in number.search_all(stripped):
+		var before := "" if m.get_start() == 0 else stripped.substr(m.get_start() - 1, 1)
+		var after := "" if m.get_end() >= stripped.length() else stripped.substr(m.get_end(), 1)
+		if word.search(before) != null or word.search(after) != null:
+			continue
 		var found := m.get_string()
 		out[found] = int(out.get(found, 0)) + 1
 	return out
@@ -335,22 +391,36 @@ func _initialize() -> void:
 
 	# --- 4. every typed numeral is declared, and every declaration is live ---
 	var kinds_used := {}
+	var kind_tally := {}
+	var typed_total := 0
 	for name in templates:
 		var template: String = templates[name]
 		var typed := _typed(template)
+		var bare := _typed_bare(template)
 		_check(DECLARED.has(name), "%s has a row in the table" % name)
+		# numeral -> total occurrences declared, and numeral -> occurrences
+		# declared under a kind that has to be bare. Summed across rows,
+		# because the kind belongs to the occurrence and one numeral may be
+		# two things in one file.
 		var declared := {}
+		var declared_bare := {}
 		for row in (DECLARED.get(name, []) as Array):
 			var r: Array = row
-			declared[str(r[0])] = r
-			kinds_used[str(r[2])] = true
+			var numeral := str(r[0])
+			var kind := str(r[2])
+			declared[numeral] = int(declared.get(numeral, 0)) + int(r[1])
+			if BARE_KINDS.has(kind):
+				declared_bare[numeral] = int(declared_bare.get(numeral, 0)) + int(r[1])
+			kinds_used[kind] = true
+			kind_tally[kind] = int(kind_tally.get(kind, 0)) + int(r[1])
 		for numeral in typed:
 			var how_many := int(typed[numeral])
+			typed_total += how_many
 			if not declared.has(numeral):
 				_check(false, "%s: the numeral %s is typed into the prompt %d time(s) at %s and is not declared - a number the model is told that nothing here accounts for" % [
 					name, numeral, how_many, _where(template, str(numeral))])
 				continue
-			var expected := int((declared[numeral] as Array)[1])
+			var expected := int(declared[numeral])
 			_check(how_many == expected,
 				"%s: the numeral %s is typed %d time(s) and %d are declared%s" % [
 					name, numeral, how_many, expected,
@@ -358,6 +428,19 @@ func _initialize() -> void:
 					else (" - one of them is at %s and is not accounted for" % _where(template, str(numeral))
 						if how_many > expected
 						else " - the row here is out of date and should be struck, not relaxed")])
+			# 074. A numeral welded into an identifier - the 1 in room_1 - is
+			# not a number the prompt states and nothing can enforce it. So no
+			# more of its occurrences may be declared BOUND, ORDINAL or
+			# ARITHMETIC than are typed BARE. This is the assertion the kind
+			# column was missing: 073 filed all three of npc_goals' "1"s under
+			# ORDINAL, two bare and one inside room_1, and nothing noticed.
+			var want_bare := int(declared_bare.get(numeral, 0))
+			var is_bare := int(bare.get(numeral, 0))
+			_check(want_bare <= is_bare,
+				"%s: of the %d occurrence(s) of %s, %d are typed bare and %d are declared as a kind that must be (%s)" % [
+					name, how_many, numeral, is_bare, want_bare,
+					"ok" if want_bare <= is_bare
+					else "an occurrence inside an identifier is declared as a number the code enforces - it is prose"])
 		for numeral in declared:
 			_check(typed.has(numeral),
 				"%s: the declared numeral %s is still typed into the prompt" % [name, numeral])
@@ -366,6 +449,30 @@ func _initialize() -> void:
 			"the kind %s has a live subject in the table" % kind)
 	for kind in kinds_used:
 		_check(KINDS.has(str(kind)), "the kind %s is one this file knows" % str(kind))
+	# 074. The per-kind totals, read off the table rather than typed beside it.
+	# These are the four numbers 073 stated in a comment and transposed two of.
+	for kind in KINDS:
+		_check(int(kind_tally.get(kind, 0)) == int(KIND_TOTALS[kind]),
+			"the table files %d occurrence(s) as %s and %d are declared" % [
+				int(kind_tally.get(kind, 0)), kind, int(KIND_TOTALS[kind])])
+	_check(typed_total == TYPED_TOTAL,
+		"%d numerals are typed into the prompt's templates and %d are declared" % [
+			typed_total, TYPED_TOTAL])
+	var totals_sum := 0
+	for kind in KINDS:
+		totals_sum += int(KIND_TOTALS[kind])
+	_check(totals_sum == TYPED_TOTAL,
+		"the four kind totals sum to the typed total (%d of %d)" % [totals_sum, TYPED_TOTAL])
+	# And the kind whose claim is a promise about numbering can only be the
+	# numeral that promise is about. A 2 filed as an ORDINAL fails here rather
+	# than riding section 6's measurement of the 1s.
+	for name in DECLARED:
+		for row in (DECLARED[name] as Array):
+			var r: Array = row
+			if str(r[2]) == "ORDINAL":
+				_check(str(r[0]) == "1",
+					"%s: the ORDINAL numeral %s is the 1 that \"numbered from 1\" is about" % [
+						name, str(r[0])])
 
 	# --- 5. BOUND: the typed 4 is the constant that refuses the fifth step ---
 	var plan_template: String = str(templates.get("ai_interpreter.gd", ""))

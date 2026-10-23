@@ -24,7 +24,100 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **073**, which took the entry 068 left
+- Last commit at the time of writing: **074**, which tallied the table 073
+  wrote instead of reading the sentence above it, and found **the kind filed
+  under the value**. `prompt_numeral_test`'s rows were keyed on
+  `(file, numeral)` with the kind read off the row, so every occurrence of a
+  numeral in a file got one kind. `npc_goals` types `1` three times: twice as
+  the promise that rooms are *"numbered from 1"*, and once as the `1` inside
+  **`room_1`** — a room NAME in the worked example whose whole purpose is that
+  a name carrying a number is not a position. All three were filed `ORDINAL`,
+  the one kind the file measures against the validators, and **nothing failed,
+  because the counts were asserted per numeral and the kind was asserted of
+  nothing.**
+  **THE FILE'S OWN PROSE HAD IT RIGHT AND THE TABLE DID NOT.** Its header
+  names the prose numerals as *"'go to room 2', 'to room 3', and the example's
+  own room_1, room_2 and its four room_3s"* — eight, `room_1` among them — and
+  sums the eighteen as *"one BOUND, two ARITHMETIC, seven ORDINAL and eight
+  PROSE"*. The table said **eight ORDINAL and seven PROSE**. 073's commit
+  message counted it correctly and said so in as many words; the
+  transposition went into the table, the header and this file. Nothing could
+  catch it, because **the four per-kind totals were a count in a comment** —
+  TRAPS 24's shape inside the file whose header claims to have avoided it. It
+  had avoided it per ROW and not per KIND.
+  **AND THE SAME FAULT WITH NO TABLE AT ALL, FOUND BY ASKING THE CLASS
+  QUESTION (TRAPS 11).** A sweep of `tests/` for an assertion on a constant's
+  own length found three. `controller_reach_test`'s `BRANCHES.size() == 28` is
+  **not** the fault — its message claims only *"28 declared"* and three
+  assertions under it do the real work against the source.
+  `refusal_reach_test`'s two are: `LAYOUT_BRANCHES.size() == 3` said *"all
+  three FAILED_LAYOUT branches were fired"* and `SHARED_WITH_CONTROLLER.size()
+  == 1` said *"one category name has an owner outside the module pipeline"*.
+  Both bodies read an array literal declared forty lines above. **Measured,
+  not argued:** with branch 3's block deleted outright the **pre-074 suite
+  reported 98 assertions, failures=0** — the branch gone and the suite still
+  counting a passing line that said all three fired. With
+  `FAILED_UNWALKABLE` renamed in `game_controller.gd` so the shared name has
+  no owner outside the pipeline, the pre-074 suite reported **1 failure**, the
+  enumeration's, while that sentence passed and was false.
+  **NOTHING IN `scripts/` OR `scenes/` WAS WRONG AND NEITHER CHANGED.** The
+  eighteen typed numbers are the same eighteen and all still true; the three
+  FAILED_LAYOUT branches all genuinely fire. The faults were in a test
+  table's key and in two assertions' wording. The prompt is byte-identical,
+  `PROMPT_FINGERPRINT` did not move and `PROMPT_VERSION` stays at
+  `050-no-command-for-a-question-1`.
+  **WHAT CHANGED.** Two files in `tests/`, no file added or removed, so
+  neither runner needed an edit. `prompt_numeral_test` **97 -> 116
+  assertions**: a numeral may now appear on several rows with several kinds
+  and the rows' counts must SUM to what is typed; no `BOUND`, `ORDINAL` or
+  `ARITHMETIC` occurrence may be **welded into an identifier**, measured off
+  the same specifier-stripped text as the count so the two are comparable
+  occurrence for occurrence (13 bare, 5 embedded, 18 together — the five are
+  the worked example's room names); an `ORDINAL` numeral must be the `1` that
+  *"numbered from 1"* is about; and the four per-kind totals and the typed
+  total are **read off the rows and asserted**.
+  `refusal_reach_test` **99 -> 105**: each FAILED_LAYOUT branch is recorded
+  where it actually fires and the fired set asserted against the declared one
+  in both directions, and the shared name is read from the source for an owner
+  inside the module pipeline and one outside it.
+  **SEVEN DELIBERATE FAULTS, each in its own throwaway copy with its own
+  `config/name` (TRAPS 50), FAIL lines READ.** 073's row restored: **3**, the
+  first naming the fault exactly. A bare prose numeral refiled `ORDINAL`:
+  **3**. A ninth prose numeral added to the prompt **and duly declared on its
+  row**, fingerprint moved the way a real prompt edit moves it: **2**, with
+  `prompt_bounds_test` green — which is what the header's *"a ninth cannot
+  appear"* needed to be true of a number rather than of a sentence. A numeral
+  welded into an identifier declared `ORDINAL` **with the totals edited to
+  agree**: **2**, so the bare check is not a restatement of the totals.
+  Branch 3's block deleted: **2** where the pre-074 suite was green at 98. An
+  undeclared fourth branch firing: **2**, the other direction. The shared name
+  losing its outside owner: **2** against the pre-074 suite's 1.
+  **TWO MUST-PASS CONTROLS PASS, both checked for passing for the RIGHT
+  reason.** Two prompt sentences reworded with their numbers untouched — the
+  dungeon's entrance line and the orders section's one-character line: green
+  at the same **116**, so the file still reads where a number came from and
+  not how the sentence reads (TRAPS 6). And a **brand-new numeric field on a
+  tool, stated through a substitution** (`wobble`, `1 to 9`, in `car_tool.gd`):
+  green at **116** with the suite **byte-identical** to the committed one
+  (`diff` run, not eyeballed), and the prompt's numeral count **92 -> 95 read
+  off the output** — the three new numbers really did arrive, none is typed,
+  and `TYPED_TOTAL` correctly did not move.
+  **72 suites, `--all`, `user://` cleared first: 0 with something to look at**,
+  against a baseline in this container **byte-identical to the md5 073
+  recorded** (`0fdf976cb74056e853ae2a8f7b62fcb1`) before anything was touched.
+  **NOT VERIFIED: nothing was rendered, no window was opened, no model was
+  asked anything and no request left the container. There is no API key
+  here.** It is still NOT asserted that the 74 substituted numerals come from
+  the RIGHT constant, nor that the eight prose numerals mean anything — what
+  holds them is now an assertion on their count and not a sentence. **That a
+  player can reach the farm's lane-check branch is NOT claimed**: measured,
+  `solve({"zones": pinched})` returns `ok=true`, because `solve()` lays the
+  zones out itself and throws the pinched positions away, which
+  `farm_module.gd`'s own comment already says and is the owner's to move. No
+  secret was set and no workflow file was edited; 064's finding stands and the
+  live site is still `71b065f`. **No new "Human decision needed."** New
+  TRAPS 71.
+- Before 074: **073**, which took the entry 068 left
   open and five commits had stepped around: **"NOT ASSERTED: that every number
   in the prompt is read from the thing that enforces it"**, 92 numerals and 41
   distinct, written up as a table of judgements too large to be worth
@@ -45,6 +138,14 @@ that the owner has not ruled on.** Do not promote one to the other.
   promise *"numbered from 1"*, measured here against the validators; and
   **eight** are prose. One, two, seven and eight, counted one at a time off
   the templates rather than apportioned.
+  **THAT SPLIT IS RIGHT AND THE TABLE 073 WROTE DISAGREED WITH IT, WHICH IS
+  074's FINDING.** The table said eight `ORDINAL` and seven `PROSE`: it keyed
+  a row on `(file, numeral)` and read the kind off it, so all three of
+  `npc_goals`' typed `1`s went under `ORDINAL` — including the `1` inside
+  **`room_1`**, a room *name* in the worked example whose whole point is that
+  a name carrying a number is not a position. Nothing failed, because the
+  counts were asserted per numeral and the *kind* was asserted of nothing. See
+  074 and TRAPS 71.
   **THE FAULT THAT JUSTIFIES THE FILE is the one no existing reader can see:**
   *"A circuit may use at most 3 chicanes"* added to the racing section — a
   limit stated to the model that nothing enforces. With `PROMPT_FINGERPRINT`
@@ -109,7 +210,7 @@ that the owner has not ruled on.** Do not promote one to the other.
   `claim_field_test`'s question. No secret was set and no workflow file was
   edited; 064's finding stands and the live site is still `71b065f`. **No new
   "Human decision needed."** New TRAPS 70.
-- Before 073: **072**, which took the last of the
+- Before 073 (see above, corrected in place by 074): **072**, which took the last of the
   three regex-breadth candidates — `claim_field_test`'s `^%s: N to M`, said
   to be unable to see a bound written with a dash or as *"between N and M"* —
   and found that **this time the entry's quote of the pattern was right, and
@@ -2112,7 +2213,10 @@ suites, while `ls tests/*.gd` returned **73** and the 072 baseline run in this
 container reported **71** suites. Which commit left them behind is not
 recorded and is not guessed at here. A count in a document is TRAPS 24's
 shape, and this paragraph is the one place in this file that invites you to
-run the `ls` — so run it.
+run the `ls` — so run it. **074 ran it: 74 files and 72 suites, which is
+what the two numbers above now say.** They are right today and will be wrong
+the day somebody adds a file without reading this paragraph; that is the
+whole reason the paragraph tells you to count rather than to trust it.
 
 **RUN THEM ONE AT A TIME.** Every copy of this project has the same
 `config/name` in `project.godot`, and Godot derives `user://` from it — so
@@ -2122,10 +2226,23 @@ worlds, and suites fail for reasons that have nothing to do with the code.
 055 took four answers off such a run before noticing. If a run is being used
 as a measurement, clear `user://` before it, baseline included (TRAPS 50).
 
-Last full run (073, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+Last full run (074, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
 headless, in a cloud container, every run sequential with `user://` cleared
 first): **suites with something to look at: 0** on all **72**, with `--all`.
 The baseline in this container before anything was touched was the same on
+**72** and was **byte-identical to the md5 073 recorded**
+(`0fdf976cb74056e853ae2a8f7b62fcb1`). The lists were **diffed** and the only
+differences are **two assertion counts** — `prompt_numeral_test` 97 → 116 and
+`refusal_reach_test` 99 → 105. **No other suite's result line moved**, and no
+line was added or removed, so neither runner needed an edit: 074 changes the
+body of two existing files and nothing about how they run. `ls tests/*.gd`
+returned **74** and the run reported **72** suites, which is what the
+paragraph above says and was re-run rather than carried forward.
+**Two full runs on the final tree, `user://` cleared before each, are
+byte-identical to each other** (md5 `d13d97d014eeefea52f43e4076a4fb06`).
+
+The run before it (073, measured the same way): **0 with something to look at**
+on all **72**, with `--all`. Its baseline was the same on
 **71** and was **byte-identical to the md5 072 recorded**
 (`f9b0d8cf50968a31a41d42023deab0ef`), so the record and the container agreed
 before the change. The lists were **diffed**: the only difference is **one
@@ -10376,6 +10493,209 @@ be wrong and the corrections are the useful part.
    a test is a judgement about what a panel suite is for, so it is noted
    rather than taken.
 
+## 074 — the kind filed under the value, and two counts asserted against their own arrays
+
+**Objective.** Read the repository first, as instructed, and take the highest
+thing that is honestly useful. There is no unaddressed owner finding — the
+last owner session is 2026-10-16 and 048's *"there is no way to ASK Genesis
+anything"* was written up in 050 as far as it goes without him. So: finish
+something already started rather than start something new, which meant
+checking 073's own file rather than opening the regex-breadth axis its "Next
+action" warns about.
+
+**Starting state.** `prototype-002a` at `0116bab` (073). Baseline in this
+container, `--all`, `user://` cleared first: **72 suites, 0 with something to
+look at**, and the output **byte-identical to the md5 073 recorded**
+(`0fdf976cb74056e853ae2a8f7b62fcb1`). The record and the container agreed
+before anything was touched.
+
+### The finding, and it is not the transposed number
+
+073's table is keyed on `(file, numeral)` with the kind read off the row:
+
+```
+"npc_goals.gd": [["1", 3, "ORDINAL"], ["2", 1, "PROSE"], ["3", 4, "PROSE"]],
+```
+
+`npc_goals` types `1` three times. **Twice** it is the promise that rooms are
+numbered from 1 — *"its number counting from 1"*, *"Counting from 1 is only
+for a player who says 'the third room'"*. **Once** it is the `1` inside
+**`room_1`**, a room name in the worked example, and that example exists
+precisely to say that a name carrying a number is not a position:
+
+> *A dungeon whose rooms are called large_hall, room_1, room_2, room_3 has a
+> room called room_3, so "room 3" means room_3 — not the third room in the
+> list.*
+
+**The kind belongs to the occurrence; the key was the value.** So all three
+went under `ORDINAL`, the one kind the file measures against the validators,
+and the suite stayed green — because what it asserted was the count of the
+numeral and never the kind of the occurrence. Section 6 measures four doors
+with a door `[0, 1]`, a thing in room `0`, an order to room 1 and a
+reachability walk; none of them is reachable from `room_1`, and nothing said
+so.
+
+**The file's own prose had it right.** Its header lists the prose numerals as
+*"'go to room 2', 'to room 3', and the example's own room_1, room_2 and its
+four room_3s"* — eight, `room_1` among them — and sums the eighteen as *"one
+BOUND, two ARITHMETIC, seven ORDINAL and eight PROSE"*. The table said
+**eight ORDINAL and seven PROSE**. 073's commit message counted it correctly
+and said so. Nothing could catch the disagreement, because **the four
+per-kind totals were a count in a comment** — TRAPS 24's shape in the file
+whose header claims to have avoided it. It had avoided it per ROW, not per
+KIND.
+
+Measured before anything was written, off the templates rather than off the
+sentence: **18 typed numerals, 13 bare and 5 welded into an identifier**, and
+the five are exactly the worked example's `room_1`, `room_2` and three of its
+`room_3`s. Seven bare `1`s, which is the *"seven"* the prose always said.
+
+### And the same fault with no table at all (TRAPS 11)
+
+A sweep of `tests/` for an assertion on a constant's own length found three.
+
+| | |
+|---|---|
+| `controller_reach_test`: `BRANCHES.size() == 28` | **not this fault** — its message claims only *"28 declared"*, and three assertions under it check every source site against a row, every row against a site, and the per-category counts |
+| `refusal_reach_test`: `LAYOUT_BRANCHES.size() == 3` | message: *"all three FAILED_LAYOUT branches were fired"* |
+| `refusal_reach_test`: `SHARED_WITH_CONTROLLER.size() == 1` | message: *"and one category name has an owner outside the module pipeline"* |
+
+Both of the latter read an array literal declared forty lines above them.
+Both messages claim a fact about the run. **Measured rather than argued:**
+
+- With **branch 3's block deleted outright**, the **pre-074 suite reported 98
+  assertions, failures=0.** The branch was gone and the suite still counted a
+  passing line saying all three fired.
+- With `FAILED_UNWALKABLE` renamed in `game_controller.gd` so the shared name
+  no longer has an owner outside the module pipeline, the **pre-074 suite
+  reported 1 failure** — the enumeration's, not that line's — while the
+  sentence about the owner outside the pipeline passed and was false.
+
+That is the difference the sweep is for: a guard that says it is a guard
+(TRAPS 6 allows that, and labels it) versus a guard wearing a measurement's
+words.
+
+### Implementation
+
+Two files in `tests/`. **No file in `scripts/` or `scenes/` was wrong and
+neither changed.** No file was added or removed, so neither runner needed an
+edit.
+
+`tests/prompt_numeral_test.gd`, **97 → 116 assertions**:
+
+- A numeral may appear on **several rows with several kinds**, and the rows'
+  counts must **sum** to what is typed. `npc_goals`' `1` is now two rows,
+  `["1", 2, "ORDINAL"]` and `["1", 1, "PROSE"]`.
+- `_typed_bare()` counts the occurrences that are **not** part of an
+  identifier, off the same specifier-stripped text as `_typed()` so the two
+  are comparable occurrence for occurrence. `\u0001` stands in for a
+  substitution and is deliberately not a word character: a number beside a
+  `%s` is a number the prompt states, not part of a name.
+- **No `BOUND`, `ORDINAL` or `ARITHMETIC` occurrence may be welded into an
+  identifier.** The `1` in `room_1` states nothing the code can enforce and
+  cannot drift from anything, so it is prose by construction.
+- An **`ORDINAL` numeral must be the `1`** that *"numbered from 1"* is about.
+  A `2` filed as an ordinal fails here instead of riding section 6's
+  measurement of the ones.
+- `KIND_TOTALS` and `TYPED_TOTAL` are **read off the rows and asserted**, and
+  the four totals must sum to the typed total.
+
+`tests/refusal_reach_test.gd`, **99 → 105 assertions**:
+
+- Each FAILED_LAYOUT branch appends its name to `layout_fired` **where it
+  actually fires**, and the fired set is asserted against `LAYOUT_BRANCHES`
+  **in both directions** plus the size.
+- The shared name is read **from the source** with the reader the file already
+  has: `FAILED_UNWALKABLE` must be returned by a `*_module.gd` and by
+  something that is not one.
+
+### Evidence — what was actually run
+
+Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`, headless, in a cloud
+container, every run sequential with `user://` cleared first.
+
+**SEVEN DELIBERATE FAULTS, each in its own throwaway copy with its own
+`config/name` (TRAPS 50), FAIL lines READ:**
+
+| fault | result |
+|---|---|
+| **073's own row restored** — all three `npc_goals` `1`s under `ORDINAL` | **3 failures**, the first naming it exactly: *"an occurrence inside an identifier is declared as a number the code enforces — it is prose"* |
+| a **bare** prose numeral refiled `ORDINAL` (`ai_interpreter`'s `3`) | 3 failures |
+| a **ninth prose numeral** added to the prompt **and duly declared on its row**, fingerprint moved the way a real prompt edit moves it | 2 failures, with `prompt_bounds_test` green |
+| a numeral **welded into an identifier declared `ORDINAL`** (`room_5`) **with `KIND_TOTALS` and `TYPED_TOTAL` edited to agree** | 2 failures — so the bare check is not a restatement of the totals |
+| branch 3's block **deleted** | 2 failures, where the **pre-074 suite was green at 98** |
+| an **undeclared fourth branch** firing | 2 failures — the other direction |
+| the shared name **losing its owner outside the pipeline** | 2 failures, against the pre-074 suite's 1 |
+
+**TWO MUST-PASS CONTROLS PASS, both checked for passing for the RIGHT reason
+rather than merely passing:**
+
+- **Two prompt sentences reworded with their numbers untouched** — the
+  dungeon's *"Room 1 is the entrance"* and the orders section's *"There is one
+  character"*: green at the same **116**, and the eighteen still eighteen. The
+  file reads where a number came from, not how the sentence reads (TRAPS 6).
+- **A brand-new numeric field on a tool, stated through a substitution**
+  (`wobble`, `1 to 9`, in `car_tool.gd`): green at **116** with the suite
+  **byte-identical** to the committed one — `diff` RUN, not eyeballed — and
+  the prompt's numeral count **92 → 95 read off the output**. The three new
+  numbers really did arrive, none of them is typed, and `TYPED_TOTAL`
+  correctly did not move. That is the case this file must not fire on.
+
+**72 suites, `--all`, `user://` cleared first: 0 with something to look at.**
+The baseline before anything was touched was **byte-identical to the md5 073
+recorded** (`0fdf976cb74056e853ae2a8f7b62fcb1`). Against it the lists were
+**diffed**: the only differences are **two assertion counts**,
+`prompt_numeral_test` 97 → 116 and `refusal_reach_test` 99 → 105. No other
+suite's result line moved, and no line was added or removed. **Two full runs
+on the final tree are byte-identical to each other**, md5
+`d13d97d014eeefea52f43e4076a4fb06`.
+
+### What the tests did NOT prove
+
+- **NOTHING IS REACHABLE FROM A MODEL HERE.** Nothing was rendered, no window
+  was opened, no model was asked anything and no request left the container.
+  There is no API key here.
+- **The prompt is byte-identical.** `PROMPT_FINGERPRINT` did not move and
+  `PROMPT_VERSION` stays at `050-no-command-for-a-question-1`. No number the
+  model is told changed; one row in a test table and two assertions did.
+- **That the 74 substituted numerals come from the RIGHT constant.** Still
+  `prompt_bounds_test`'s and `claim_field_test`'s question, and 074 does not
+  re-ask it.
+- **That the eight PROSE numerals mean anything.** Nothing stands behind them
+  and nothing here pretends to. What holds them is now an **assertion** on
+  their count rather than a sentence about it.
+- **That a player can reach the farm's lane-check branch.** Measured in 074:
+  `FarmModule.solve({"zones": pinched_zones})` returns **`ok=true`**, because
+  `solve()` lays the zones out itself and throws the pinched positions away.
+  The branch is real and its refusal is measured at `_check_reachable`, which
+  is the function `solve()` returns `FAILED_LAYOUT` from; that a request can
+  get to it is **not** claimed. `farm_module.gd`'s own comment says the same
+  and records moving it to `post_check()` as the owner's.
+- **No secret was set and no workflow file was edited.** 064's finding stands:
+  the web build has failed on every push since 14 October and the live site is
+  still `71b065f`.
+- **No new "Human decision needed."**
+
+### Next action
+
+**The prompt-numeral class stays closed** and 073's warning stands: do not
+re-open it by building 068's table of 41. What 074 changed is that the kind
+column now means something and the totals are derived.
+
+**The honest remainder of the tautology sweep is done.** All three assertions
+on a constant's own length in `tests/` have been read; one was correctly
+labelled and two were not, and both are fixed. If a fourth is written, this
+is the sweep to re-run — `grep -n "_check(\s*[A-Z_][A-Z_0-9]*\.size() =="
+tests/*.gd`.
+
+**The live axis is still the one 072 and 073 named, and its method still
+holds**: *what has the subject never supplied?*, not *what can the pattern not
+match?* The remaining pattern-breadth entries in `tests/` are unasked, and
+three entries on that axis in a row asked for a widening that was the wrong
+fix. 074 is a fourth data point for the same lesson from a different
+direction: the fault was not that a scan could not match something, but that
+a classification was keyed one layer too coarse.
+
 ## 073 — seventy-four numbers that cannot be wrong, and eighteen that can
 
 **Objective.** The entry 068 wrote into `prompt_bounds_test`'s header and into
@@ -10573,9 +10893,14 @@ steps no physics and takes under a second.
   for the worlds and `claim_field_test`'s for the tools, and between them they
   account for every range the prompt states. This file does not re-ask it, and
   the two questions together are what closes the class.
-- **That the nine PROSE numerals mean anything.** No assertion stands behind
-  them. What holds them is the count: a tenth cannot appear without this file
+- **That the EIGHT PROSE numerals mean anything.** No assertion stands behind
+  them. What holds them is the count: a ninth cannot appear without this file
   being edited. That half is a judgement and is marked as one in the table.
+  (This clause said *"nine"* and *"a tenth"* when 073 wrote it, in the same
+  commit whose message had already counted the prose at eight and corrected
+  itself. Fixed in place in 074 rather than left to be read as current — and
+  the count is now an assertion, so the next version of this sentence cannot
+  go stale quietly. TRAPS 14, TRAPS 71.)
 - **That any model is helped by it.** No model has read this prompt.
 - **The prompt is byte-identical.** `PROMPT_FINGERPRINT` did not move and
   `PROMPT_VERSION` stays at `050-no-command-for-a-question-1`.
