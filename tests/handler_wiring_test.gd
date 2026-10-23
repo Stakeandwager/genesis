@@ -110,7 +110,26 @@ var asserted := 0
 var bad := 0
 var notes: Array = []
 
-const SESSION_NAME := "handler_wiring"
+# 066: the session name carries THIS PROCESS, and that is not decoration.
+#
+# It was the bare string "handler_wiring" until 066, and a bare string is a
+# name a second writer can also have. The session id main.gd mints is
+# "<name> <datetime to the second>" (main.gd:515), so two processes running
+# this suite inside one wall-clock second mint the SAME session id - and
+# _session_records() reads records back by that id, out of a user:// every
+# copy of this project shares (TRAPS 50). Measured, not reasoned about: six
+# paired concurrent runs against one ledger, and in FIVE of the six one of
+# the pair failed "the ledger gained exactly one ai_unavailable event (got
+# 3)" and then returned early, scoring 44 assertions where a clean run
+# scores 47. A varying assertion count under a treatment that cannot reach
+# the suite is TRAPS 56's signature exactly, and that is the trap that cost
+# 059 a day of sweep measurements.
+#
+# OS.get_process_id() is the fix TRAPS 56 names: a clock is not an identity
+# at any granularity, because the question is not how precise it is but
+# whether two writers can read the same value. See record_id_test section 4,
+# which holds this rule for every suite in tests/ rather than for this one.
+var session_name := "handler_wiring-%d" % OS.get_process_id()
 # What _build_metrics_panel() writes into the panel at main.gd:978, before
 # anything is measured. Kept here because an assertion that the panel is
 # merely "not blank" cannot tell this apart from a real measurement, and the
@@ -545,7 +564,7 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 
-	main._run_local_command("/session " + SESSION_NAME)
+	main._run_local_command("/session " + session_name)
 	await process_frame
 	_check(not TrackLog.session.is_empty(),
 		"a session is running, without which TrackLog.event() writes nothing at all")

@@ -24,7 +24,50 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **065**, the task 063's "Next action"
+- Last commit at the time of writing: **066**, which did two things and the
+  first is about this file. **"Next action" item 2 — *hold the four
+  `connect()` rows 059 found unheld* — HAD BEEN DONE IN 060**, in
+  `tests/player_door_test.gd`, and this section's own 065 entry called it
+  "the live next task". One grep of `tests/` for `text_submitted` refutes it.
+  TRAPS 14, in the file that is the project's only continuity. It survived
+  because the entry named `handler_wiring_test` as "the file to extend" and
+  060 satisfied it by writing a **new file** instead, so nobody struck it.
+  **An entry here is satisfied when the capability arrives, not when the
+  file named in it is touched.**
+  The second is **a reproducible fault, and it is the harness's.** 059's id
+  class was counted as three — the record id (fixed) and two that are the
+  owner's (HD 22). That is a count of what **Genesis** mints, not of where
+  the rule holds. `main.gd:515` mints a session id as
+  `"<name> <datetime to the second>"` and `read_session()` reads records back
+  by it, out of one `user://` every copy of this project shares (TRAPS 50) —
+  and **two of the three suites that start a session used a fixed string**,
+  while the third defended itself with `Time.get_ticks_msec()`, **a clock,
+  which is the one thing TRAPS 56 says does not qualify**. Reproduced, not
+  reasoned about: **six paired concurrent runs of `handler_wiring_test`
+  against one ledger, and in FIVE of the six one of the pair failed** *"the
+  ledger gained exactly one ai_unavailable event (got 3)"* and returned
+  early, **44 assertions where a clean run scores 47** — TRAPS 56's
+  varying-count signature, the trap that cost 059 a day. **After the fix: six
+  of six, 47 and 0 both sides.** All three names now carry
+  `OS.get_process_id()`; `record_id_test` gains **sections 8 and 9** (22
+  assertions, up from 12) which hold the rule for the class by scanning
+  `tests/` and `scripts/`, because until now it lived only in prose.
+  **NO FILE IN `scripts/` CHANGED and HD 22 IS NOT ANSWERED**: the product's
+  session id and `run_id` are byte-identical, asserted as a labelled
+  `OPEN (Human decision 22)` fact so the day the owner moves either, the next
+  session is told. **68 suites, `--all`, `user://` cleared first: 0 with
+  something to look at**, the same 68 as 065 because no file was added.
+  **NINE deliberate faults**, each in its own throwaway copy, FAIL lines read
+  — and **the first one PASSED**, because section 8's first version searched
+  whole files and the comment the fix had just added says
+  `OS.get_process_id()` in prose. A check a comment can satisfy is TRAPS 6
+  inside a test. New TRAPS 63; new "Human decision needed" 29, whether a
+  suite may delete the shared ledger (`session_test` does, and 066 did not
+  change it).
+  **NOT VERIFIED: nothing was rendered, no model was asked anything, no
+  request left the container, and `session_test` is still not safe to run
+  twice at once** — it deletes the ledger, which a session name cannot fix.
+- Before 066: **065**, the task 063's "Next action"
   named: **the command panel's anchors and the strings in the scene — the last
   of 061's six visual differences, which are now all read by something.** One
   new test file, `tests/scene_ui_test.gd`, 43 assertions; **no code, no scene
@@ -6888,11 +6931,22 @@ and recorded because it is what made this commit's own suite vacuous.
 ## Next action
 
 **AS OF 065 THE VISUAL-LAYER AXIS IS CLOSED** — 061's six differences all
-have a reader now, which is what 062, 063 and 065 were each one step of. So
-the two items below are no longer queued behind it: they are the live next
-task, and the first has been passed over by six consecutive commits.
+have a reader now, which is what 062, 063 and 065 were each one step of.
 
-**For the assistant, in this order, and the first is the smaller:**
+**066 FOUND THAT ONE OF THE TWO ITEMS BELOW WAS ALREADY DONE, AND THAT THIS
+SECTION HAD BEEN SAYING OTHERWISE FOR FIVE COMMITS.** Item 2 — *hold the
+four `connect()` rows 059 found unheld* — **was done in 060**, in
+`tests/player_door_test.gd`, with all four walked through a real emit. 065's
+own sentence here called both items "the live next task". That is TRAPS 14 in
+this file: a claim about Genesis that a one-minute grep of `tests/` would
+have refuted, left where the next unattended session would read it and spend
+its two hours re-doing 060's work. **The lesson, which is the part worth
+keeping: 060 satisfied the entry by writing a NEW FILE, where the entry said
+`handler_wiring_test` was "the file to extend" — so nobody struck it.** An
+entry here is satisfied by the capability arriving, not by the file named in
+it being touched. Grep for the capability before trusting the entry.
+
+**For the assistant:**
 
 1. **Finish the id class — it is two thirds undone (TRAPS 11, TRAPS 56).**
    059 fixed the record id and left the **session id** (`main.gd:514-515`, a
@@ -6903,10 +6957,38 @@ task, and the first has been passed over by six consecutive commits.
    that writer has.* Neither is urgent — the session id also carries the
    name, and `run_id` needs a key — and the session id appears in reports
    the owner already has, so **ask before changing its shape**: it is
-   "Human decision needed" 22. `ledger_audit_test.gd:111` already salts its
-   own session name, which is somebody meeting this once.
-2. **Hold the four connect rows 059 found unheld, all four reachable with no
-   key.** 058 is the method and `handler_wiring_test` is the file to extend.
+   "Human decision needed" 22. `ledger_audit_test.gd` already salted its own
+   session name, which is somebody meeting this once.
+
+   **066 DID THE HALF OF THIS THAT IS NOT THE OWNER'S, AND IT TURNED OUT TO
+   BE A REPRODUCIBLE FAULT RATHER THAN A TIDY-UP.** The product's two
+   identifiers are untouched and still "Human decision needed" 22. What 066
+   changed is the **harness**: three suites in `tests/` start a session, and
+   a session id is `"<name> <datetime to the second>"` out of a `user://`
+   every copy of this project shares, so a fixed name is a name a second
+   writer can mint too. Measured: **six paired concurrent runs of
+   `handler_wiring_test` against one ledger, and in five of the six one of
+   the pair failed** *"the ledger gained exactly one ai_unavailable event
+   (got 3)"*, scoring 44 assertions where a clean run scores 47 — TRAPS 56's
+   varying-count signature, the trap that cost 059 a day. All three names
+   now carry `OS.get_process_id()`; after the fix, **six of six paired runs
+   scored 47 and 0 both sides**. `record_id_test` sections 8 and 9 hold the
+   rule for the class and name the two members that are still the owner's.
+   See the 066 section and TRAPS 63.
+
+   **What is LEFT of this item is only the owner's two.** Nothing an
+   assistant can honestly do remains.
+2. ~~**Hold the four connect rows 059 found unheld, all four reachable with no
+   key.** 058 is the method and `handler_wiring_test` is the file to extend.~~
+   **DONE IN 060**, in `tests/player_door_test.gd` — a new file rather than
+   an extension of `handler_wiring_test`, which is why this entry survived
+   five commits after it was satisfied. All four are walked through a real
+   emit: the real `Button`'s signal, the real `LineEdit`'s signal, the real
+   `CheckpointTracker` counting a lap off the car's own position, and the
+   real `RaceDirector`'s countdown under real physics. **Left here rather
+   than deleted, with the original text struck, because the sketch below is
+   the record of what was asked for and 060's section records what was
+   actually built.**
    In rising order of cost:
    - **`lap_completed` (93)** is the cheapest. `update_progress()` is pure
      geometry (`checkpoint_tracker.gd:40`) — walk positions past the twelve
@@ -9517,6 +9599,188 @@ be wrong and the corrections are the useful part.
    suite reads it. It is four lines and a `match`. Whether a colour is worth
    a test is a judgement about what a panel suite is for, so it is noted
    rather than taken.
+
+## 066 — the salt that was a clock, and the entry that had been done for five commits
+
+**Objective.** Read the repository first, as the standing instruction says,
+and work the first item that is honestly available. "Next action" offered
+two. **One of them had been finished five commits earlier and this file was
+still calling it live** (see below). The other — *finish the id class* — is
+two thirds the owner's. What was left was the third part nobody had counted:
+the names the **suite** hands Genesis.
+
+**Starting state.** Branch `prototype-002a` at `2df275f` (065). **68 suites,
+`--all`, `user://` cleared first: 0 with something to look at**, run before
+anything was touched.
+
+### THE FIRST FINDING IS ABOUT THIS FILE
+
+**"Next action" item 2 — *hold the four `connect()` rows 059 found unheld* —
+was done in 060**, in `tests/player_door_test.gd`, all four through a real
+emit. 065's own sentence at the top of that section called both items "the
+live next task". One grep of `tests/` for `text_submitted` refutes it.
+
+That is **TRAPS 14 in the file the project depends on for continuity**: the
+next unattended session, following this file literally, would have spent its
+two hours re-doing 060's work. **Why it survived is the part worth keeping:
+the entry said `handler_wiring_test` was "the file to extend", and 060
+satisfied it by writing a NEW FILE instead — so nobody struck it.** An entry
+is satisfied when the capability arrives, not when the file named in it is
+touched. The entry is now struck in place rather than deleted, with 060's
+answer against it.
+
+### THE SECOND FINDING IS A REPRODUCIBLE FAULT, AND IT IS THE HARNESS'S
+
+059 fixed `TrackLog.next_id()` and named the class as three: the record id
+(fixed), the session id and the experiment `run_id` (both left, both "Human
+decision needed" 22, because the first changes reports the owner already has
+and the second needs a key). **That count of three is a count of what GENESIS
+mints. It is not a count of the places the rule holds.**
+
+`main.gd:515` mints a session id as `"<name> <datetime to the second>"`, and
+`TrackLog.read_session()` returns every record carrying that id out of one
+`user://track_log.jsonl` that every copy of this project shares (TRAPS 50).
+**Three suites start a session.** Before 066:
+
+| suite | session name | defence |
+|---|---|---|
+| `handler_wiring_test` | `"handler_wiring"` | **none** |
+| `session_test` | `"Sam Jones"` | **none** |
+| `ledger_audit_test` | `"audit-" + Time.get_ticks_msec()` | **a clock** |
+
+**Reproduced before anything was changed** (throwaway copy, its own
+`config/name`, TRAPS 50): six paired concurrent runs of
+`handler_wiring_test` against one ledger. **In FIVE of the six, one of the
+pair failed** *"the ledger gained exactly one ai_unavailable event (got 3)"*
+— its own two events plus the other process's one — and then returned early
+at that section's `if events.size() != 1: return`, **scoring 44 assertions
+where a clean run scores 47.** A varying assertion count under a treatment
+that cannot reach the suite is TRAPS 56's signature exactly, and that is the
+trap that cost 059 a day of sweep measurements. **After the fix: six of six,
+47 assertions and 0 failures on both sides.**
+
+**AND THE ONE SUITE THAT HAD DEFENDED ITSELF DID IT WITH THE ONE THING TRAPS
+56 SAYS DOES NOT QUALIFY.** `Time.get_ticks_msec()` counts **engine uptime**,
+which is mostly deterministic startup work, so it is *narrower* than
+wall-clock, not wider. Measured over **20 headless runs** of this project,
+the value read at the top of a suite spanned **123..199 ms**, and in 20
+samples `129` came up three times and `172` twice.
+
+### What changed, asked of the class and not the instance (TRAPS 11)
+
+**No file in `scripts/` was touched. `PROMPT_VERSION` did not move. Nothing a
+player can reach behaves differently.** Four files in `tests/`:
+
+- `handler_wiring_test.gd` — `"handler_wiring-%d" % OS.get_process_id()`
+- `session_test.gd` — `"Sam Jones %d" % OS.get_process_id()`. **The space is
+  kept deliberately**: the assertion under it is about a name with a space in
+  it reaching `TrackLog` intact. The report print below it built the header
+  from the literal `"Session 'Sam Jones'"`; it now builds it from the same
+  variable, because typed out it returned `-1` from `rfind()` and
+  `substr(-1)` printed the whole history instead of the report (TRAPS 28, a
+  string written twice — print-only, and fixed).
+- `ledger_audit_test.gd` — the `ticks_msec` salt becomes
+  `OS.get_process_id()`.
+- `record_id_test.gd` — **two new sections, 11 new assertions, 22 in all.**
+  TRAPS 56's "Do" ends *"then ask it of the class and write down the size of
+  the answer, grepped rather than remembered"*, and this file had not. Prose
+  is not a reader.
+  - **Section 8 holds the rule for the harness.** It scans every `.gd` in
+    `tests/`, finds every session **start** (`"/session <something not
+    end>"`, outside comments and outside `_check()` messages) and asserts
+    that a file which starts one also asks the OS who it is, **in code**. A
+    fourth suite that starts a session unprotected fails here **by file and
+    line**.
+  - **Section 9 holds the owner's two as a FACT, labelled `OPEN (Human
+    decision 22)`.** It finds each of the three mints in `scripts/` by the
+    text that identifies it, asserts the record id's carries
+    `OS.get_process_id()` and the other two still do not, and asserts the
+    class is **three**. **A suite does not get to answer a question that is
+    the owner's** — what it can do is say the answer has not changed, so that
+    the day he moves either, the next session is told instead of grepping for
+    it.
+- `record_id_test`'s `quit()` is now `quit(bad)`. Stated plainly because it
+  is not part of the task: the suite printed its failures and exited 0, which
+  `run_tests.sh` does not read (it greps the printed line) but anyone running
+  the file directly does. Every other suite of this shape already does it.
+
+### Evidence — what was actually run
+
+- **68 suites, `--all`, `user://` cleared first: 0 with something to look
+  at**, the same 68 as the 065 baseline, because **no file was added or
+  removed** — the two new sections went into a suite that already existed.
+  The baseline above was run before anything was touched, in this container,
+  with the same binary.
+- `record_id_test` alone: **22 assertions, failures=0**, up from 12.
+- **Six paired concurrent runs before the fix: 5 of 6 showed one side at 44
+  assertions / 1 failure.** Six after: **6 of 6 at 47 / 0 both sides.**
+- **NINE DELIBERATE FAULTS**, each in its own throwaway copy of the project
+  outside the repository with its own `config/name` so it could not share
+  `user://` (TRAPS 50), and the FAIL lines **read, not counted**:
+
+  1. `handler_wiring_test`'s name back to the bare string → named the file
+     and line. **This one PASSED on the first attempt and that is the most
+     useful result in the commit**: section 8 searched whole files for
+     `OS.get_process_id()`, and the comment the fix had just added to that
+     suite says the call **in prose**. A check a comment can satisfy is TRAPS
+     6 inside a test. Section 8 now scans code only, and the fault fails.
+  2. `session_test`'s name back to the bare string → named it. **Its report
+     listed `session_test.gd:62`, which starts nothing**: the scan was
+     counting an assertion *message*, `_check(..., "/session alone reports
+     the running session")`. Harmless where the file does start a session
+     elsewhere; a file whose only mention was in a message would have been
+     flagged for nothing. Narrowed, and re-run (fault 2b) it names line 58
+     alone.
+  3. `ledger_audit_test`'s salt removed → named it.
+  4. **A fourth suite added to `tests/` that starts a session with a bare
+     name** → named the new file and line. This is the closure working.
+  5. `OS.get_process_id()` removed from `next_id()` → **4 failures**: the
+     three-field assertion, the writer assertion, the `FIXED (059)` one, and
+     the class count fell to 2.
+  6. A process id **added** to `main.gd`'s session id — the owner answering
+     HD 22 — → the `OPEN` assertion for the session id failed, which is the
+     behaviour it is for.
+  7. A process id added to `run_id` → the other `OPEN` assertion failed.
+  8. `main.gd`'s session mint renamed → "minted in one place in `main.gd`"
+     failed, and the class count fell to 2. A site that **moves** reports as
+     moved rather than as fixed.
+  9. **A negative control**: a suite whose only mention is `/session end`
+     → correctly **not** flagged, 0 failures.
+
+### What this does NOT prove
+
+- **It does not make `session_test` safe to run twice at once, and 066 does
+  not claim it.** That suite **deletes** `user://track_log.jsonl` at its
+  first line, so a concurrent pair destroys each other's ledger for reasons
+  that have nothing to do with a session name. **Measured both ways rather
+  than reasoned about.** Before the fix, three paired runs scored **8 and 8,
+  8 and 7, 8 and 8** failures — *both* sides, every time. After the fix, two
+  paired runs scored **1 and 2, then 1 and 1**, and the surviving failure is
+  the same one in every process: *"all 26 records in the session are tagged
+  with the tester"*. That is `_log_lines()` walking the whole shared file and
+  finding the **other** process's untagged records inside its own session
+  window — the deletion, not the id. So the fix removed what it claimed to
+  remove and nothing more. **Nothing was changed about the deletion**:
+  whether a suite may delete a shared ledger is its own question and it is
+  written up under "Human decision needed" 29.
+- **Nothing was rendered, no window was opened, no model was asked anything
+  and no request left the container.** No API key is present here.
+- **It does not answer "Human decision needed" 22.** The product's session id
+  and `run_id` are byte-identical to 065's.
+- **Two real OS processes are still not proved never to collide**, for the
+  reason `record_id_test`'s own header gives: that needs a second process
+  spawned from a suite, and a test that races a clock passes or fails on
+  where the second boundary falls. The paired runs above were driven from the
+  shell, by hand, and are recorded as a count rather than asserted.
+- **No secret was set and no workflow file was edited.** 064's finding
+  stands: the `web build` has failed on every push since 14 October and the
+  live site is still `71b065f`.
+
+### Next action
+
+See "Next action" above. Item 1 is now **only** the owner's two identifiers;
+item 2 is struck as done in 060. The next assistant task is the first live
+entry under them.
 
 ## 065 — the last of 061's six, and the eight pixels nothing was holding
 
@@ -12174,6 +12438,26 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     somebody meeting this once and defending one call site rather than the
     class.
 
+    **066: STILL YOURS, STILL NOTHING MOVED, AND TWO THINGS ARE NOW
+    DIFFERENT ABOUT THE ANSWER.**
+
+    - **The harness no longer depends on your decision.** All three suites
+      that start a session now name it with `OS.get_process_id()`. The
+      `ledger_audit_test` salt above was `Time.get_ticks_msec()`, and that
+      was the weakest of the three defences rather than the strongest:
+      `ticks_msec` counts engine uptime, which is mostly deterministic
+      startup work. Measured over 20 headless runs of this project, the
+      value read at the top of a suite spanned **123..199 ms**, and in 20
+      samples `129` came up three times and `172` twice. So whichever way
+      you decide, the suite is not what is waiting on it.
+    - **The question announces its own answer now.** `record_id_test`
+      section 9 asserts, as a labelled `OPEN (Human decision 22)` fact, that
+      the session id and `run_id` still carry no writer. The day you move
+      either, that assertion fails and the next session is told the decision
+      was made instead of having to grep for it. Proved able to fail: both
+      were given a process id in a throwaway copy and both assertions went
+      red (066's faults 6 and 7).
+
 23. **What the input box should keep after a request it did not send.**
     Found in 059 while measuring the two input-door connects, and
     deliberately NOT changed, because it may well be deliberate and it is a
@@ -12400,3 +12684,40 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
       and the new string goes in the same edit.
 
     It is the owner's because the words a player is shown first are product.
+
+29. **Whether a suite may delete the ledger every copy of this project
+    shares.** Found in 066 while measuring the session-id collision, and
+    deliberately not changed.
+
+    `tests/session_test.gd` opens by deleting `user://track_log.jsonl`
+    outright, so that its own `_log_lines()` walk sees only its own records.
+    Every copy of the project shares one `user://` (TRAPS 50) and
+    `run_tests.sh` starts sixty-odd processes against it, so **two
+    overlapping runs of that suite destroy each other's ledger** — and, while
+    it is running, any other suite's records written before the delete.
+
+    **Measured both ways.** Before 066's fix — so for both causes together —
+    three paired concurrent runs of `session_test` scored **8 and 8, 8 and 7,
+    8 and 8** failures, *both* sides, every pair. After it, two paired runs
+    scored **1 and 2, then 1 and 1**, and **the surviving failure is the same
+    assertion in every process**: *"all 26 records in the session are tagged
+    with the tester"*. `_log_lines()` walks the whole shared file, so the
+    other process's untagged records land inside this one's session window.
+    **That is the deletion, and a session name cannot fix it.**
+
+    The options:
+
+    - **Leave it.** Nothing in the harness runs two copies of one suite at
+      once on purpose; the two overlapping unattended runs of 2026-10-16 are
+      the case where it bites, and that is rare.
+    - **Stop deleting and read only this session's records**, which is what
+      every other ledger-reading suite does (`read_session()` by id). The
+      suite's `_log_lines()` walk exists to assert that records *before* the
+      session are untagged, which is why it wanted a clean file — so this is
+      a real change to what that suite proves, not a one-liner.
+    - **Give the suite its own `user://`**, which no suite does today and
+      which would be this project's first per-suite project config.
+
+    **It is the owner's because the second option narrows what a suite
+    asserts**, and a suite that quietly proves less than it used to is the
+    failure mode this whole document exists to prevent.

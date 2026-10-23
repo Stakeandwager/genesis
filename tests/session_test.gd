@@ -45,8 +45,18 @@ func _run() -> void:
 	main._run_local_command("/session end")
 	_check(_history().contains("No session is running"), "/session end with nothing running says so")
 
-	main._run_local_command("/session Sam Jones")
-	_check(TrackLog.session.get("name", "") == "Sam Jones", "session started with a name containing a space")
+	# 066: the name carries THIS PROCESS. It was the bare string "Sam Jones",
+	# and the session id main.gd mints is "<name> <datetime to the second>"
+	# (main.gd:515), so two processes running this suite inside one wall-clock
+	# second mint the SAME id - and line 87 below reads this session's records
+	# back by that id and asserts seven exact counts off them, out of a
+	# user:// every copy of this project shares (TRAPS 50). The space is kept
+	# deliberately: the assertion under it is about a name with a space in it
+	# reaching TrackLog intact, and a process id appended does not weaken
+	# that. See record_id_test section 4 and TRAPS 63.
+	var tester := "Sam Jones %d" % OS.get_process_id()
+	main._run_local_command("/session " + tester)
+	_check(TrackLog.session.get("name", "") == tester, "session started with a name containing a space")
 	_check(c.last_build.is_empty() and c.has_drivable(), "a new session starts from the startup circuit, not the last tester's world")
 	main._run_local_command("/session")
 	_check(_history().contains("running since"), "/session alone reports the running session")
@@ -81,7 +91,11 @@ func _run() -> void:
 	main._run_local_command("/session end")
 	var text := _history()
 	print("---- report ----")
-	print(text.substr(text.rfind("Session 'Sam Jones'")))
+	# 066: built from `tester` rather than typed out, because the name now
+	# carries the process id. Typed out, rfind() returned -1 and substr(-1)
+	# printed the whole history instead of the report - a print-only line, and
+	# exactly the shape TRAPS 28 is about: a string written twice.
+	print(text.substr(text.rfind("Session '" + tester + "'")))
 	print("----------------")
 
 	var s := SessionReport.summarise(TrackLog.read_session(session_id))

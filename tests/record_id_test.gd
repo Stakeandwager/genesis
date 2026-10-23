@@ -169,6 +169,112 @@ func _writerless(ids: Array) -> Array:
 	return out
 
 
+# --- 066: the id class, read off the source rather than remembered ---
+#
+# TRAPS 56's "Do" ends with an instruction this file did not follow: "then ask
+# it of the class and write down the size of the answer, grepped rather than
+# remembered." 059 fixed ONE member of the class and the other two were
+# written into HANDOVER and TRAPS as prose. Prose is not a reader: nothing in
+# this repository would have said anything if a fourth time-minted identifier
+# had been added, and nothing said anything about the two that were left.
+#
+# Sections 8 and 9 are that reader. 8 is about the HARNESS and holds a rule;
+# 9 is about GENESIS and holds a fact, because the product's two unmoved
+# identifiers are "Human decision needed" 22 and a suite does not get to
+# answer that.
+
+# Every file in tests/ that starts a named session, and the lines it does it
+# on. A session start is "/session <something other than end>"; "/session end"
+# and a bare "/session" are not starts.
+#
+# The needle is BUILT rather than typed, so that this file does not match
+# itself: every line below that talks about the command would otherwise be a
+# session start as far as this scan is concerned.
+func _session_starts() -> Dictionary:
+	var needle := "\"/" + "session "
+	var out := {}
+	var dir := DirAccess.open("res://tests")
+	if dir == null:
+		return out
+	for file_name in dir.get_files():
+		var name := str(file_name)
+		if not name.ends_with(".gd"):
+			continue
+		var file := FileAccess.open("res://tests/" + name, FileAccess.READ)
+		if file == null:
+			continue
+		var source := file.get_as_text()
+		file.close()
+		var found: Array = []
+		var number := 0
+		for raw in source.split("\n"):
+			var line := str(raw)
+			number += 1
+			if line.strip_edges().begins_with("#"):
+				continue
+			var at := line.find(needle)
+			if at < 0:
+				continue
+			# An assertion MESSAGE is not a session start. Found by fault 2:
+			# session_test.gd:62 reads _check(..., "/session alone reports the
+			# running session"), and the first version of this scan counted it,
+			# so the fault's report named a line that starts nothing. Harmless
+			# where the file does start a session elsewhere; a file whose ONLY
+			# mention of the command is in a message would have been flagged
+			# for nothing. Nothing in tests/ runs a command from inside a
+			# _check() argument, so this cannot hide a real start.
+			if line.contains("_check("):
+				continue
+			# What follows the command word. "end" is not a start.
+			var rest := line.substr(at + needle.length()).strip_edges()
+			if rest.begins_with("end"):
+				continue
+			found.append("%s:%d" % [name, number])
+		if not found.is_empty():
+			out[name] = found
+	return out
+
+
+# Does this source ask the OS who this process is, IN CODE? Comment lines are
+# skipped, and that is not fastidiousness: the first version of section 8
+# read the whole file, and the FIRST deliberate fault - reverting
+# handler_wiring_test's session name to the bare string it had before 066 -
+# PASSED, because the comment this file's own fix added to that suite says
+# "OS.get_process_id()" in prose. A check a comment can satisfy is TRAPS 6
+# in a test rather than in the code it measures.
+func _asks_who_it_is(source: String) -> bool:
+	for raw in source.split("\n"):
+		var line := str(raw)
+		if line.strip_edges().begins_with("#"):
+			continue
+		# Strip a trailing comment, so a code line with a comment after it is
+		# judged on its code.
+		var hash_at := line.find("#")
+		if hash_at >= 0:
+			line = line.substr(0, hash_at)
+		if line.contains("OS.get_process_id()"):
+			return true
+	return false
+
+
+# A line of a file in scripts/, by the text that identifies it. Returns "" if
+# no line contains it, so an assertion can say the site has moved rather than
+# failing on something unrelated.
+func _script_line(path: String, contains: String) -> String:
+	var file := FileAccess.open("res://scripts/" + path, FileAccess.READ)
+	if file == null:
+		return ""
+	var source := file.get_as_text()
+	file.close()
+	for raw in source.split("\n"):
+		var line := str(raw)
+		if line.strip_edges().begins_with("#"):
+			continue
+		if line.contains(contains):
+			return line
+	return ""
+
+
 func _run() -> void:
 	print("--- 059: a record id is a unique handle, or it is not a handle ---")
 
@@ -289,5 +395,109 @@ func _run() -> void:
 		"and the two records this suite wrote are on disk (%d ids before, %d after)" % [
 			before.size(), after.size()])
 
+	# --- 8. THE HARNESS: every suite that starts a session names its own
+	#        process (066, TRAPS 63) ---
+	#
+	# WHY THIS IS A SUITE AND NOT A NOTE. main.gd:515 mints a session id as
+	# "<name> <datetime to the second>", and TrackLog.read_session() returns
+	# every record carrying that id out of one user:// that every copy of this
+	# project shares (TRAPS 50). So a suite that starts a session under a
+	# fixed name, and then reads its own records back by id, is reading any
+	# other process's records that started a session of the same name in the
+	# same second.
+	#
+	# REPRODUCED BEFORE IT WAS FIXED, six paired concurrent runs of
+	# handler_wiring_test against one ledger: in FIVE of the six, one of the
+	# pair failed "the ledger gained exactly one ai_unavailable event (got 3)"
+	# and returned early, scoring 44 assertions where a clean run scores 47.
+	# A varying assertion count under a treatment that cannot reach the suite
+	# is TRAPS 56's signature, and it is the trap that cost 059 a day.
+	#
+	# THE RULE, APPLIED TO THE CLASS AND NOT THE INSTANCE (TRAPS 11): a suite
+	# that starts a session must name it with something only that process has.
+	# Before 066 there were three such suites and ONE defended itself -
+	# ledger_audit_test, with Time.get_ticks_msec(), which is a clock and
+	# therefore the one thing TRAPS 56 says does not qualify at any
+	# granularity.
+	#
+	# This is checked at FILE granularity on purpose: the name may be built
+	# anywhere in the file (handler_wiring_test keeps it in a member, this
+	# file's own fix to session_test keeps it in a local), so what is asserted
+	# is that a file which starts a session also asks the OS who it is. A
+	# fourth suite that starts a session without doing so fails here, by name.
+	var starts := _session_starts()
+	_check(not starts.is_empty(),
+		"at least one suite in tests/ starts a session, so this section is measuring something (%d)" % starts.size())
+	var undefended: Array = []
+	for file_name in starts:
+		var file := FileAccess.open("res://tests/" + str(file_name), FileAccess.READ)
+		if file == null:
+			undefended.append(str(file_name) + " (unreadable)")
+			continue
+		var source := file.get_as_text()
+		file.close()
+		if not _asks_who_it_is(source):
+			undefended.append("%s (%s)" % [file_name, ", ".join(PackedStringArray(starts[file_name]))])
+	_check(undefended.is_empty(),
+		"every suite that starts a session names its own process: %s" % str(starts.keys()) if undefended.is_empty() else
+		"a suite starts a session under a name another process could mint too: " + ", ".join(PackedStringArray(undefended)))
+
+	# --- 9. GENESIS: the three members of the class, and which two are still
+	#        the owner's to decide (066) ---
+	#
+	# NOT A RULE. A FACT, and labelled so nobody reads it as approval. The
+	# session id and the experiment run_id are "Human decision needed" 22:
+	# changing the session id changes session reports the owner already has,
+	# and run_id needs an API key this harness does not have. 059 left both
+	# deliberately and asked. Until he answers, what a suite can honestly do
+	# is say that the answer has not changed - so that the day it does, the
+	# next session is told rather than left to grep for it.
+	#
+	# Each site is found by the text that identifies it, so a site that MOVES
+	# reports as moved rather than as fixed.
+	var mint_record := _script_line("track_log.gd", "static func next_id")
+	_check(mint_record != "",
+		"the record id is minted in track_log.gd's next_id(), which is where this file's sections 1-7 found it")
+	var track_log := FileAccess.open("res://scripts/track_log.gd", FileAccess.READ)
+	var record_body := ""
+	if track_log != null:
+		var track_log_source := track_log.get_as_text()
+		track_log.close()
+		if _asks_who_it_is(track_log_source):
+			record_body = "track_log.gd"
+	_check(record_body != "",
+		"FIXED (059): the record id's mint asks the OS who this process is, in code and not in a comment")
+
+	var mint_session := _script_line("main.gd", "TrackLog.session = {\"name\"")
+	_check(mint_session != "",
+		"the session id is minted in one place in main.gd, and this is it")
+	if mint_session != "":
+		# The capability, not the wording: what matters is whether a second
+		# writer can read every value this recipe uses, not how the string
+		# reads. `started` is a wall-clock datetime; nothing here is the
+		# writer's own.
+		_check(not mint_session.contains("OS.get_process_id()"),
+			"OPEN (Human decision 22): the session id still carries no writer, so two testers of one name in one second still share it")
+		_check(mint_session.contains("started"),
+			"and what it carries instead is a wall-clock second, which TRAPS 56 says is not an identity")
+
+	var mint_run := _script_line("experiment_runner.gd", "run_id = ")
+	_check(mint_run != "",
+		"the experiment run_id is minted in one place in experiment_runner.gd, and this is it")
+	if mint_run != "":
+		_check(not mint_run.contains("OS.get_process_id()") and mint_run.contains("Time."),
+			"OPEN (Human decision 22): run_id is still a clock and nothing else - the weakest of the three, and it needs a key to reach")
+
+	# The size of the class, stated rather than remembered. Three mints of an
+	# identifier in scripts/, one fixed and two open. A fourth cannot be added
+	# in silence: it has to come through one of these three functions or this
+	# count is wrong.
+	var mints := 0
+	for line in [record_body, mint_session, mint_run]:
+		if str(line) != "":
+			mints += 1
+	_check(mints == 3,
+		"the class is three members - the record id, the session id and the experiment run_id (found %d)" % mints)
+
 	print("RECORD ID %d assertions, failures=%d" % [asserted, bad])
-	quit()
+	quit(bad)

@@ -96,7 +96,17 @@ func _run() -> void:
 
 	# A session of its own, so the audit reads only this run's records even
 	# though the ledger is a file that outlives it.
-	await _type("/session audit-%d" % Time.get_ticks_msec())
+	#
+	# 066: the salt was Time.get_ticks_msec() and is now the process id. This
+	# was the ONE call site in tests/ that defended itself against a shared
+	# session id, and it defended itself with a clock - the one thing TRAPS 56
+	# says does not qualify at any granularity. Worse than wall-clock here:
+	# ticks_msec counts engine uptime, which is mostly deterministic startup
+	# work, so two processes read values from a narrow window rather than a
+	# wide one. Measured over 20 runs of this project headless: the value read
+	# at the top of a suite spanned 123..199 ms, and in 20 samples 129 came up
+	# three times and 172 twice. OS.get_process_id() cannot collide.
+	await _type("/session audit-%d" % OS.get_process_id())
 	# The session's id is its name AND the moment it started, so the real id
 	# has to be read rather than guessed - which is the same rule the whole
 	# project runs on, applied to a test.

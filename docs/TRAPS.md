@@ -3986,3 +3986,67 @@ the suite's own section 1 claimed the rect needed frames stepped, and failed,
 because by then a frame had begun.
 
 ---
+
+## 63. The one defence against a shared id was built from a clock
+
+**Signature:** a suite fails a varying number of assertions under changes
+that cannot reach it, and a pristine control run of the same copy passes —
+TRAPS 56's signature, two releases after TRAPS 56 was written and the record
+id was fixed.
+
+**Cause:** 059 fixed one member of a three-member class — `TrackLog.next_id()`
+now carries `OS.get_process_id()` — and wrote the rule down for the other two.
+What nobody asked was whether the same rule had a **fourth** place to hold:
+not the identifiers Genesis mints, but the names the **suite** hands it.
+
+`main.gd:515` mints a session id as `"<name> <datetime to the second>"`, and
+`TrackLog.read_session()` returns every record carrying that id out of one
+`user://track_log.jsonl` that every copy of this project shares (TRAPS 50).
+Three suites start a session. Two used a fixed string — `"handler_wiring"`
+and `"Sam Jones"` — so two processes reaching that line inside one wall-clock
+second get **the same session id**, and each then reads the other's records
+back as its own.
+
+Measured rather than reasoned about: **six paired concurrent runs of
+`handler_wiring_test` against one ledger, and in five of the six one of the
+pair failed** *"the ledger gained exactly one ai_unavailable event (got 3)"*
+and returned early, scoring **44 assertions where a clean run scores 47**.
+After the fix, **six of six scored 47 and 0 on both sides.**
+
+**And the one suite that had defended itself did it with a clock.**
+`ledger_audit_test` salted its session name with `Time.get_ticks_msec()`,
+which is the single thing TRAPS 56 says does not qualify — and it is weaker
+here than wall-clock, not stronger: `ticks_msec` counts engine uptime, which
+is mostly deterministic startup work, so two processes read from a narrow
+window rather than a wide one. Measured over 20 headless runs of this
+project, the value at the top of a suite spanned **123..199 ms**, and in 20
+samples `129` came up three times and `172` twice.
+
+**Do:**
+
+- When a fault is fixed in the thing a program mints, ask the same question
+  of the **names the tests hand it**. The harness is a writer to the same
+  ledger, and TRAPS 11 does not stop at the boundary of `scripts/`.
+- A salt that is a clock is not a defence. `OS.get_process_id()` cannot
+  collide and says which process wrote the record.
+- **Hold the rule mechanically, not in prose.** The rule had been written in
+  this file and in HANDOVER since 059 and nothing in the repository could
+  read either. `record_id_test` sections 8 and 9 now scan `tests/` for every
+  session start and `scripts/` for every identifier mint, so a fourth suite
+  that starts a session unprotected fails by name and line.
+- **A check a comment can satisfy is not a check.** The first version of
+  section 8 searched whole files for `OS.get_process_id()` and the first
+  deliberate fault — reverting `handler_wiring_test`'s name to its old bare
+  string — **passed**, because the comment the fix had just added to that
+  suite says the call in prose. Scan code, not comments. The second version
+  then counted an assertion *message* (`_check(..., "/session alone reports
+  the running session")`) as a session start, which is the same mistake from
+  the other side.
+
+Found in 066, by asking what was left of 059's class and discovering that the
+two members everybody had been counting were both the owner's — and that a
+third, nobody's, was reproducibly broken.
+
+> The harness writes to the ledger too.
+
+---
