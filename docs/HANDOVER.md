@@ -2327,9 +2327,10 @@ assertions**. No other suite's result line moved and no line was added or
 removed, so neither runner needed an edit: 075 changes the body of two
 existing files and adds none. **TWO full runs on the final tree, `user://`
 cleared before each, byte-identical** (md5
-`69eb8489ca8e4586238a7a2ad7743a9e`), and a **THIRD on the clean pushed tree**
-recorded in the 075 section — taken because the doc edits land after the
-second, exactly as 074a's did. Checked rather than reasoned about (TRAPS 4):
+`69eb8489ca8e4586238a7a2ad7743a9e`), and a **THIRD on the clean pushed tree at
+`5cefad6`, BYTE-IDENTICAL to both** — taken because the doc edits landed after
+the second, exactly as 074a's did, so the md5 above demonstrably covers what is
+on the remote. Checked rather than reasoned about (TRAPS 4):
 the four `docs/` mentions in `tests/` — `agreement_test`, `capability_test`,
 `retry_test` and now `formula_test` — are all prose inside comments, and
 **every `DirAccess.open` in `tests/` targets `res://scripts` or
