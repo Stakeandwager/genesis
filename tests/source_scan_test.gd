@@ -70,6 +70,11 @@ var bad := 0
 const KNOWN := [
 	"check_wiring_test.gd",
 	"controller_reach_test.gd",
+	# 075: formula_test joined the class when its new rule-claim rows stopped
+	# asserting that a named suite's FILE exists and started reading that
+	# suite's CODE for the constant the rule is about. This suite caught it
+	# the same run: two FAILs, by name.
+	"formula_test.gd",
 	"handler_wiring_test.gd",
 	"player_door_test.gd",
 	"proxy_test.gd",

@@ -50,8 +50,10 @@ extends SceneTree
 # meaning what the code does. A sentence this cannot parse FAILS rather than
 # passing, because the failure mode of a sweep is silence (TRAPS 31).
 #
-# The other five arithmetic claims are measured rather than read, each by
-# building the thing the sentence describes:
+# The other SIX claims are measured rather than read, each by building the
+# thing the sentence describes. 039's own header said FIVE and listed five
+# while section 8 below measured a sixth from the same commit - a count in a
+# comment, which is TRAPS 24's shape, wrong on the day it was written:
 #
 #   "O is more than 0 and at most 2 x R"              at both ends and outside
 #   "A chicane steps the track sideways by O metres
@@ -60,6 +62,57 @@ extends SceneTree
 #    its own width, twice its radius"                 at three radii
 #   "Chicanes do not count" toward the +/-360         by difference
 #   "Angles are signed: positive turns right"         both signs
+#   "Never give a corner, hairpin or chicane a
+#    length; it is calculated"                        all three types
+#
+# --- 075: the claim measured, and the sentence the prompt makes it with ---
+#
+# AND "MEASURED RATHER THAN READ" WAS THE WHOLE FAULT, which this commit
+# measured before it changed anything. Sections 3 to 8 measure what Genesis
+# DOES. Not one of them read the prompt. So a rule could leave the prompt
+# entirely and the PASS line quoting it kept printing, which is TRAPS 24 one
+# layer along: the body removed and the success string left behind.
+#
+# EIGHT DELIBERATE FAULTS, each deleting one rule from racing_module.gd's
+# template in its own throwaway copy with its own config/name (TRAPS 50), with
+# PROMPT_FINGERPRINT moved the way a real prompt edit moves it, full suite run
+# each time. SEVEN OF THE EIGHT PASSED - 70 suites, 0 with something to look
+# at, the rule gone from the prompt:
+#
+#   "Sections join end to end ... arrive back at the start line"   0
+#   "A chicane steps the track sideways by O metres ..."           0
+#   "... carries the track back only by its own width, twice ..."  0
+#   "Chicanes do not count."                                       0
+#   "Angles are signed: positive turns right, negative turns left." 0
+#   "Never give a corner, hairpin or chicane a length ..."          0
+#   "The road must never cross itself, and"                         0
+#   "O is more than 0 and at most 2 x R"      prompt_numeral_test: 3
+#
+# THE ONE THAT WAS HELD IS THE ONE CARRYING TYPED NUMBERS, and that is the
+# general shape: the racing rules are held where they state a NUMBER - by
+# prompt_bounds_test and prompt_numeral_test, which read numbers - and held by
+# nothing where they are PROSE. It is 073's and 074's finding about the
+# prompt's own numerals from the other side: the numbers have readers and the
+# sentences around them do not.
+#
+# WHAT SECTION 9 HOLDS. Every rule unit of the racing section is read off the
+# RENDERED section - a type declaration, a sentence in the SECTION TYPES block
+# about all of them, or a "- " bullet under RULES FOR A CLOSED CIRCUIT - keyed
+# on the JSON and on the bullet mark rather than on any English. Every unit
+# must be claimed by a row, so a rule ADDED to the prompt fails until it is
+# classified; every row must find its unit, so a row gone stale fails rather
+# than passing; and the rows that say "here" are compared with the
+# measurements that actually ran, in BOTH directions and against each other
+# rather than against a number typed here (TRAPS 71).
+#
+# WHAT IT DOES NOT PROVE, said plainly. A row naming another suite is a
+# POINTER, not a measurement: it asserts the rule is still in the prompt and
+# that the file is there, and it does not watch that suite measure anything.
+# And a needle is wording - a rule reworded while staying true fails here and
+# the row has to be updated. That is the cost of the only check available for
+# a prose claim, and it is the right way round: a rule that changes shape
+# should stop a session and make it re-read, which is what the seven faults
+# above did not do.
 #
 # THE DIRECTION, which is the half that was false and the half a formula can
 # get wrong while still producing plausible numbers: raising push raises top
@@ -69,6 +122,12 @@ extends SceneTree
 
 var failures: Array = []
 var lines: Array = []
+
+# 075: the key of every rule this suite MEASURES, appended by the measurement
+# itself as it runs. Compared with the rows that claim "here" in both
+# directions, so a measurement deleted leaves its row unclaimed and a row with
+# no measurement behind it fails - neither is a number typed here (TRAPS 71).
+var measured_rules: Array = []
 
 
 func _check(ok: bool, what: String) -> void:
@@ -162,6 +221,79 @@ func _formula_clauses(section: String, fields: Array) -> Array:
 	return found
 
 
+# 075: the rule units of the racing section, read off the RENDERED section.
+# A unit is a section-type declaration, a sentence in the SECTION TYPES block
+# that is about all of them, or a "- " bullet under RULES FOR A CLOSED CIRCUIT.
+# The block is found by its heading and the members by the bullet mark, so a
+# reworded rule is still a unit and still has to be claimed by a row.
+func _rule_units(section: String) -> Array:
+	var units: Array = []
+	var where := ""
+	for raw in section.split("\n"):
+		var line := str(raw).strip_edges()
+		if line == "":
+			continue
+		if line.begins_with("SECTION TYPES"):
+			where = "types"
+			continue
+		if line.begins_with("RULES FOR"):
+			where = "rules"
+			continue
+		if where == "types":
+			units.append(line)
+		elif where == "rules" and line.begins_with("- "):
+			units.append(line)
+	return units
+
+
+# 075: every rule the racing section states, the claim that identifies it, and
+# where the behaviour behind it is measured. Built rather than declared const
+# because the numbered claims are RENDERED from the constants that enforce
+# them (TRAPS 28) - a number typed here would be the fault this suite exists
+# to catch. "here" means a measurement in this file, keyed to it; any other
+# value is the suite that measures it, and that row is a pointer (see header).
+func _rule_claims() -> Array:
+	return [
+		{"key": "straight type", "claim": "straight: {\"type\": \"straight\", \"length\": L}",
+			"by": "prompt_bounds_test.gd", "evidence": "STRAIGHT_LENGTH"},
+		{"key": "corner type", "claim": "corner: {\"type\": \"corner\", \"radius\": R, \"angle\": A}",
+			"by": "prompt_bounds_test.gd", "evidence": "CORNER_RADIUS"},
+		{"key": "hairpin type", "claim": "hairpin: {\"type\": \"hairpin\", \"radius\": R, \"angle\": A}",
+			"by": "prompt_bounds_test.gd", "evidence": "HAIRPIN_RADIUS"},
+		{"key": "chicane type", "claim": "chicane: {\"type\": \"chicane\", \"radius\": R, \"offset\": O, \"direction\": \"left\" or \"right\"}",
+			"by": "prompt_bounds_test.gd", "evidence": "CHICANE_RADIUS"},
+		{"key": "chicane offset", "claim": "O is more than 0 and at most 2 x R", "by": "here"},
+		{"key": "angle sign", "claim": "Angles are signed: positive turns right, negative turns left.",
+			"by": "here"},
+		{"key": "length calculated",
+			"claim": "Never give a corner, hairpin or chicane a length; it is calculated.", "by": "here"},
+		{"key": "chicane step",
+			"claim": "A chicane steps the track sideways by O metres and returns to its original direction.",
+			"by": "here"},
+		{"key": "closure",
+			"claim": "After the last section the track must arrive back at the start line, facing the way it started.",
+			"by": "procedure_test.gd", "evidence": "ClosureSolver"},
+		{"key": "full turn",
+			"claim": "must add up to exactly %+.0f (clockwise) or %+.0f (anticlockwise)" % [
+				FeasibilityGate.FULL_TURN, -FeasibilityGate.FULL_TURN],
+			"by": "prompt_bounds_test.gd", "evidence": "FULL_TURN"},
+		{"key": "chicanes excluded", "claim": "Chicanes do not count.", "by": "here"},
+		{"key": "balance", "claim": "Travel in opposite directions must balance.",
+			"by": "prompt_bounds_test.gd", "evidence": "FAILED_INFEASIBLE"},
+		{"key": "hairpin width",
+			"claim": "carries the track back only by its own width, twice its radius", "by": "here"},
+		{"key": "composition floor",
+			"claim": "at least %d straights and at least %d corners or hairpins" % [
+				FeasibilityGate.MIN_STRAIGHTS, FeasibilityGate.MIN_TURNS],
+			"by": "prompt_bounds_test.gd", "evidence": "MIN_STRAIGHTS"},
+		{"key": "adjustment", "claim": "by up to %.0f%%" % (ClosureSolver.MAX_ANGLE_ADJUSTMENT * 100.0),
+			"by": "prompt_bounds_test.gd", "evidence": "MAX_ANGLE_ADJUSTMENT"},
+		{"key": "no crossing", "claim": "The road must never cross itself", "by": "limits_test.gd", "evidence": "SeparationCheck"},
+		{"key": "separation", "claim": "at least %.0f metres apart" % SeparationCheck.MIN_SEPARATION,
+			"by": "prompt_bounds_test.gd", "evidence": "MIN_SEPARATION"},
+	]
+
+
 func _initialize() -> void:
 	var prompt := AIInterpreter.assembled_prompt()
 
@@ -236,6 +368,7 @@ func _initialize() -> void:
 	# 3. "O is more than 0 and at most 2 x R" - a relation between two
 	#    fields of the same section, checked at both ends and outside.
 	# --------------------------------------------------------------------
+	measured_rules.append("chicane offset")
 	for radius in [SectionValidator.CHICANE_RADIUS[0], 50.0, SectionValidator.CHICANE_RADIUS[1]]:
 		for pair in [[0.0, false], [-1.0, false], [0.01, true], [2.0 * radius, true], [2.0 * radius + 0.5, false]]:
 			var offset := float(pair[0])
@@ -249,6 +382,7 @@ func _initialize() -> void:
 	# 4. "A chicane steps the track sideways by O metres and returns to its
 	#    original direction." Measured, both halves, including a left one.
 	# --------------------------------------------------------------------
+	measured_rules.append("chicane step")
 	for radius in [15.0, 50.0, 150.0]:
 		for offset in [1.0, radius, 2.0 * radius]:
 			for direction in ["right", "left"]:
@@ -265,6 +399,7 @@ func _initialize() -> void:
 	# 5. "a hairpin ... carries the track back only by its own width, twice
 	#    its radius."
 	# --------------------------------------------------------------------
+	measured_rules.append("hairpin width")
 	for radius in [SectionValidator.HAIRPIN_RADIUS[0], 40.0, SectionValidator.HAIRPIN_RADIUS[1]]:
 		var pose: Array = TrackGeometry.advance(Vector3.ZERO, 0.0,
 			{"type": "hairpin", "radius": radius, "angle": 180.0})
@@ -279,6 +414,7 @@ func _initialize() -> void:
 	#    do not count." Measured by DIFFERENCE: adding a chicane to a
 	#    composition the gate accepts must not move its net turn.
 	# --------------------------------------------------------------------
+	measured_rules.append("chicanes excluded")
 	var square: Array = []
 	for i in 4:
 		square.append({"type": "straight", "length": 200.0})
@@ -297,6 +433,7 @@ func _initialize() -> void:
 	# 7. "Angles are signed: positive turns right, negative turns left."
 	#    Right is +X at heading 0, which is what TrackGeometry.right() says.
 	# --------------------------------------------------------------------
+	measured_rules.append("angle sign")
 	for angle in [10.0, 90.0, 120.0]:
 		for sign in [1.0, -1.0]:
 			var pose: Array = TrackGeometry.advance(Vector3.ZERO, 0.0,
@@ -312,6 +449,7 @@ func _initialize() -> void:
 	#    calculated." Both halves, and for all three types rather than the
 	#    one that happened to be tried (TRAPS 11).
 	# --------------------------------------------------------------------
+	measured_rules.append("length calculated")
 	for given in [["corner", {"radius": 50.0, "angle": 90.0}], ["hairpin", {"radius": 40.0, "angle": 180.0}],
 			["chicane", {"radius": 50.0, "offset": 40.0, "direction": "right"}]]:
 		var section: Dictionary = (given[1] as Dictionary).duplicate()
@@ -327,11 +465,99 @@ func _initialize() -> void:
 		_check(TrackGeometry.section_length(clean) > 0.0,
 			"a %s's length is calculated: %.3f m" % [str(given[0]), TrackGeometry.section_length(clean)])
 
+	# --------------------------------------------------------------------
+	# 9. 075: every rule the racing section states to the model, and the row
+	#    that claims it. Sections 3 to 8 measure what Genesis DOES; until
+	#    this section nothing asserted the prompt still SAYS it, and seven of
+	#    the eight rules could be deleted outright with all 70 suites green.
+	#    See the header for the eight faults and their FAIL counts.
+	# --------------------------------------------------------------------
+	var racing_section := ""
+	# Found by the COMMAND it owns rather than by a name typed here, so the
+	# section is the one the registry actually hands the model.
+	for entry in WorldRegistry.modules():
+		if (entry as WorldModule).command() == "CREATE_TRACK":
+			racing_section = (entry as WorldModule).prompt_section()
+	_check(racing_section != "",
+		"the CREATE_TRACK section is readable from WorldRegistry")
+	_check(prompt.contains(racing_section), "and it is the section in the assembled prompt")
+
+	var units := _rule_units(racing_section)
+	var claims := _rule_claims()
+	_check(units.size() > 0, "the racing section states %d rule units" % units.size())
+
+	# Each row must find its claim in exactly one unit. A rule deleted from
+	# the prompt, or reworded out of the shape the row names, lands here.
+	var claimed_units: Dictionary = {}
+	var here_rows: Array = []
+	for row in claims:
+		var entry: Dictionary = row
+		var claim := str(entry["claim"])
+		var key := str(entry["key"])
+		var hits: Array = []
+		for i in units.size():
+			if str(units[i]).contains(claim):
+				hits.append(i)
+		_check(hits.size() == 1,
+			"the rule \"%s\" is stated in exactly one unit of the racing section (found %d)" % [
+				key, hits.size()])
+		for i in hits:
+			claimed_units[i] = true
+		if str(entry["by"]) == "here":
+			here_rows.append(key)
+		else:
+			# A pointer, not a measurement (said plainly in the header): the
+			# named suite's CODE must name the thing this rule is about, read
+			# through _code_of() so a comment mentioning it cannot answer for
+			# it (TRAPS 63). It does not watch that suite measure anything.
+			var where := str(entry["by"])
+			var evidence := str(entry["evidence"])
+			var handle := FileAccess.open("res://tests/" + where, FileAccess.READ)
+			_check(handle != null, "\"%s\" names a suite that exists: %s" % [key, where])
+			if handle != null:
+				var code := _code_of(handle.get_as_text())
+				handle.close()
+				_check(code.contains(evidence),
+					"and %s's code names %s, which is what \"%s\" is about" % [
+						where, evidence, key])
+
+	# And every unit must be claimed, so a rule ADDED to the prompt fails here
+	# until somebody classifies it rather than arriving unremarked (TRAPS 14).
+	for i in units.size():
+		_check(claimed_units.has(i),
+			"every rule the racing section states is claimed by a row - unit %d: \"%s\"" % [
+				i + 1, str(units[i]).substr(0, 60)])
+
+	# The rows that say "here" against the measurements that actually ran,
+	# both directions, each read off its own array (TRAPS 71).
+	for key in here_rows:
+		_check(measured_rules.has(key),
+			"the rule \"%s\" says it is measured here, and a measurement above registered it" % key)
+	for key in measured_rules:
+		_check(here_rows.has(str(key)),
+			"the measurement \"%s\" that ran above has a row claiming its rule" % str(key))
+	_check(here_rows.size() == measured_rules.size(),
+		"%d rules are measured here and %d measurements ran" % [here_rows.size(), measured_rules.size()])
+
 	for line in lines:
 		print(line)
 	print("")
-	print("FORMULA failures=%d" % failures.size())
+	print("FORMULA %d assertions, failures=%d" % [lines.size() - _notes(), failures.size()])
 	quit(1 if failures.size() > 0 else 0)
+
+
+# 075: the result line carried no assertion count, so an assertion that ceased
+# to exist did not move it - 072's fault was found by DIFFING the PASS list.
+# 56 of the 72 suites print no count; this is one of them and it is fixed here
+# because this commit cannot otherwise be verified from the result lists. THE
+# CLASS IS OPEN and is recorded in docs/HANDOVER.md (TRAPS 11): fixing one
+# member is not fixing the list.
+func _notes() -> int:
+	var n := 0
+	for line in lines:
+		if str(line).begins_with("      "):
+			n += 1
+	return n
 
 
 func _offset_refused(radius: float, offset: float) -> bool:
@@ -341,3 +567,18 @@ func _offset_refused(radius: float, offset: float) -> bool:
 		if str(error).contains("offset"):
 			return true
 	return false
+
+
+# Byte-identical to the definition the other members of this class carry;
+# tests/ has no shared library, so source_scan_test holds the class by
+# requiring every scanner to define it and every definition to agree.
+static func _code_of(source: String) -> String:
+	var out := ""
+	for raw in source.split("\n"):
+		var line := str(raw)
+		if line.strip_edges().begins_with("#"):
+			out += "\n"
+			continue
+		var hash_at := line.find("#")
+		out += (line if hash_at < 0 else line.substr(0, hash_at)) + "\n"
+	return out

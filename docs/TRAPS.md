@@ -4781,3 +4781,86 @@ and two assertions that claimed more than they read.
 > expect it to be transposed. And an assertion may only say what its body read.
 
 ---
+
+## 72. A suite that measured the behaviour and never asked whether the prompt still said it
+
+**Signature:** a suite exists to hold *"the arithmetic the prompt states is
+the arithmetic Genesis does"*. Delete one of those statements from the prompt
+outright and the suite passes, still printing a PASS line that quotes it.
+
+**Cause.** `tests/formula_test.gd` has two halves and only one of them reads
+the prompt. The tool half enumerates its claim from the prompt, parses it as
+arithmetic, and asserts the count it found — so a reworded or added tool
+formula fails. **Sections 3 to 8 do none of that.** Each quotes a racing rule
+in a comment and measures the behaviour behind it against `TrackGeometry`,
+`FeasibilityGate` or `SectionValidator`. The sentence is read from nothing.
+That is TRAPS 24 one layer along: the body removed and the success string left
+behind — except here the body is in `scripts/` and the success string is in
+`tests/`, so no sweep of either file alone could see it.
+
+**Measured rather than argued.** Eight deliberate faults, each deleting one
+rule from `racing_module.gd`'s template in its own throwaway copy with its own
+`config/name` (TRAPS 50), with `PROMPT_FINGERPRINT` moved the way a real
+prompt edit moves it, the full suite run each time. **Seven of the eight
+passed** — 70 suites, 0 with something to look at, the rule gone from the
+prompt:
+
+```
+"Sections join end to end ... arrive back at the start line"      0
+"A chicane steps the track sideways by O metres ..."              0
+"... carries the track back only by its own width, twice ..."     0
+"Chicanes do not count."                                          0
+"Angles are signed: positive turns right, negative turns left."   0
+"Never give a corner, hairpin or chicane a length ..."            0
+"The road must never cross itself, and"                           0
+"O is more than 0 and at most 2 x R"         prompt_numeral_test: 3
+```
+
+**And the one that was held is the one carrying typed numbers, which is the
+general shape.** The racing rules are held where they state a NUMBER — by
+`prompt_bounds_test` and `prompt_numeral_test`, which read numbers — and held
+by nothing where they are PROSE. It is 073's and 074's finding about the
+prompt's own numerals seen from the other side: the numbers acquired readers
+and the sentences around them never did. A rule with no number in it had no
+owner at all.
+
+**Do:**
+
+- **Measuring the behaviour behind a claim is half the claim.** The other half
+  is that the claim is still being made. A suite that holds only the first
+  half goes on passing after the sentence leaves, and its PASS lines quote the
+  sentence, so the next session reads them as evidence it is still there.
+- **Enumerate the claims from the subject, structurally.** Read the rule units
+  off the RENDERED section — a type declaration, a sentence in the types block
+  about all of them, a `- ` bullet under the rules heading — keyed on the JSON
+  and the bullet mark, never on English. Then every unit must be claimed by a
+  row, so a rule ADDED fails until somebody classifies it, and every row must
+  find its unit, so a row gone stale fails rather than passing. Both
+  directions, each read off its own array (TRAPS 71).
+- **A pointer is not a measurement, and should say so.** A row naming another
+  suite asserts that the rule is still stated and that the named suite's
+  **code** names the constant the rule is about, read through `_code_of()` so
+  a comment cannot answer for it (TRAPS 63). It does not watch that suite
+  measure anything, and the header says as much.
+- **A needle is wording, and for a prose claim it is the only check there is.**
+  A rule reworded while staying true fails here and the row has to be updated.
+  That is the right way round: a rule changing shape should stop a session and
+  make it re-read. The seven faults above did not stop anything.
+- **Writing "measured rather than read" in a header is not a mitigation.**
+  039's header said exactly that, honestly, about the half that had no reader
+  — and the gap sat there for 36 commits because the sentence described the
+  method instead of naming the consequence.
+
+**And the count in the same header was wrong on the day it was written.** It
+said *"the other FIVE arithmetic claims"* and listed five, while section 8 of
+the same commit measured a sixth. TRAPS 24's shape again, inside the file
+whose own fault is a comment standing in for a reader.
+
+Found in 075, taking the live axis's own method — *what has the subject never
+supplied?* — and finding that the question one layer behind it was better:
+*what has the subject supplied that nothing reads?*
+
+> The suite proved Genesis does the arithmetic and never once asked whether
+> Genesis still says it. Seven rules could have left the prompt in silence.
+
+---

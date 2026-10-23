@@ -24,7 +24,95 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **074**, which tallied the table 073
+- Last commit at the time of writing: **075**, which asked the live axis's
+  question of `tests/formula_test.gd` and found that **the question one layer
+  behind it was the better one**. The axis asks *what has the subject never
+  supplied?*; measured first, the subject supplies exactly ONE formula clause
+  and the pattern sees it, so a widening had no subject — the FOURTH entry on
+  that axis in a row with nothing to widen. The question that paid was
+  **what has the subject supplied that nothing reads?**
+  **THE SUITE THAT HOLDS "THE ARITHMETIC THE PROMPT STATES IS THE ARITHMETIC
+  GENESIS DOES" NEVER ASKED WHETHER THE PROMPT STILL STATED IT.** Its tool
+  half enumerates its claim from the prompt, parses it as arithmetic and
+  asserts the count it found, so a reworded or added tool formula fails.
+  **Sections 3 to 8 read the prompt at all.** Each quotes a racing rule in a
+  comment and measures the behaviour behind it against `TrackGeometry`,
+  `FeasibilityGate` or `SectionValidator`; the sentence is read from nothing.
+  **MEASURED, NOT ARGUED: eight deliberate faults, each deleting one rule
+  from `racing_module.gd`'s template in its own throwaway copy with its own
+  `config/name` (TRAPS 50), `PROMPT_FINGERPRINT` moved the way a real prompt
+  edit moves it, the full suite run each time. SEVEN OF THE EIGHT PASSED** —
+  70 suites, 0 with something to look at, the rule gone from the prompt:
+  *"Sections join end to end ... arrive back at the start line"*, *"A chicane
+  steps the track sideways by O metres ..."*, *"... carries the track back
+  only by its own width, twice its radius"*, *"Chicanes do not count."*,
+  *"Angles are signed: positive turns right, negative turns left."*, *"Never
+  give a corner, hairpin or chicane a length ..."* and *"The road must never
+  cross itself, and"*. The eighth, the chicane's *"O is more than 0 and at
+  most 2 x R"*, failed **3** in `prompt_numeral_test`.
+  **THE ONE THAT WAS HELD IS THE ONE CARRYING TYPED NUMBERS, AND THAT IS THE
+  GENERAL SHAPE.** The racing rules are held where they state a NUMBER — by
+  `prompt_bounds_test` and `prompt_numeral_test`, which read numbers — and
+  held by nothing where they are PROSE. It is 073's and 074's finding about
+  the prompt's own numerals seen from the other side: the numbers acquired
+  readers and the sentences around them never did.
+  **WHAT CHANGED.** Two files in `tests/`, no file added or removed, so
+  neither runner needed an edit. `formula_test` **failures=0 -> 147
+  assertions, failures=0**: every rule unit of the racing section is read off
+  the RENDERED section — a type declaration, a sentence in the types block
+  about all of them, or a `- ` bullet under the rules heading, keyed on the
+  JSON and the bullet mark and never on English — **11 units**, each claimed
+  by one of **17 rows**; every row must find its claim in exactly one unit,
+  every unit must be claimed, and the six rows saying *"here"* are compared
+  with the six measurements that actually registered, **in both directions
+  and against each other rather than against a number typed in the file**
+  (TRAPS 71). A row naming another suite reads that suite's **code** through
+  `_code_of()` for the constant the rule is about, which put `formula_test`
+  into 067's source-scanner class — **`source_scan_test` caught that in the
+  same run, two FAILs by name**, and it is now its tenth member, **24 -> 25
+  assertions**.
+  **TWELVE DELIBERATE FAULTS, FAIL LINES READ, EACH FAILING ON THE ASSERTION
+  IT SHOULD AND NAMING THE FAULT.** The eight deletions above, every one now
+  **1 suite with something to look at** where seven were 0 (d3 is 2, with
+  `prompt_numeral_test` beside it). A **new bullet** added to the racing
+  rules: **148 assertions, failures=1**, *"unit 12 ... is claimed by a row"* —
+  the added-rule direction. The **"angle sign" row deleted**: 145, failures=2,
+  *"the measurement ... has a row claiming its rule"* and *"5 rules are
+  measured here and 6 measurements ran"*. Its **registration deleted**: 146,
+  failures=2, the other direction and the count again. And a row's evidence
+  needle set to a string the named suite carries **only in a comment**
+  (*"TRAPS 28"*): failures=1, so `_code_of()` is doing the work and a comment
+  cannot answer a pointer (TRAPS 63).
+  **TWO MUST-PASS CONTROLS PASS, both checked for passing for the RIGHT
+  reason.** A **dungeon** sentence reworded with its numbers untouched: green
+  at the same **147**. And — the control that matters — the **unclaimed half
+  of a claimed bullet** reworded (*"Sections join end to end, in order,
+  starting at the start line."* -> *"Sections are joined end to end, in the
+  order you give them, from the start line onward."*, while the claimed
+  second sentence was left alone): green at the same **147**. So the rows pin
+  the CLAIM and not the bullet.
+  **AND THE SAME FILE'S OWN COUNT WAS WRONG ON THE DAY IT WAS WRITTEN.** 039's
+  header said *"the other FIVE arithmetic claims"* and listed five, while
+  section 8 of the same commit measured a sixth — TRAPS 24's shape inside the
+  file whose fault is a comment standing in for a reader. Corrected, with the
+  sixth listed.
+  **NOTHING IN `scripts/` OR `scenes/` CHANGED.** The prompt is
+  byte-identical, `PROMPT_FINGERPRINT` did not move and `PROMPT_VERSION` stays
+  at `050-no-command-for-a-question-1`. No number and no sentence the model is
+  told changed; what changed is that seven of them now have a reader.
+  **NOT VERIFIED: nothing was rendered, no window was opened, no model was
+  asked anything and no request left the container. There is no API key
+  here.** A row naming another suite is a **POINTER and not a measurement** —
+  it asserts the rule is still stated and that the named suite's code names
+  the constant, and it does not watch that suite measure anything. A needle is
+  **wording**: a rule reworded while staying true fails here and the row has
+  to be updated, which is the only check available for a prose claim and is
+  the right way round. No secret was set and no workflow file was edited;
+  064's finding stands and the live site is still `71b065f`. **No new "Human
+  decision needed."** New TRAPS 72. **AND ONE CLASS IS LEFT OPEN AND SAID SO
+  RATHER THAN HALF-FIXED** — see "Next action": **56 of the 72 suites print no
+  assertion count on their result line.**
+- Before 075: **074**, which tallied the table 073
   wrote instead of reading the sentence above it, and found **the kind filed
   under the value**. `prompt_numeral_test`'s rows were keyed on
   `(file, numeral)` with the kind read off the row, so every occurrence of a
@@ -2226,9 +2314,37 @@ worlds, and suites fail for reasons that have nothing to do with the code.
 055 took four answers off such a run before noticing. If a run is being used
 as a measurement, clear `user://` before it, baseline included (TRAPS 50).
 
-Last full run (074, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+Last full run (075, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
 headless, in a cloud container, every run sequential with `user://` cleared
 first): **suites with something to look at: 0** on all **72**, with `--all`.
+`ls tests/*.gd` returned **74** and the run reported **72**, re-counted rather
+than carried forward. The baseline in this container before anything was
+touched was the same on **72** and was **byte-identical to the md5 074a
+recorded** (`d13d97d014eeefea52f43e4076a4fb06`). The lists were **diffed** and
+**exactly two lines moved**: `formula_test` `FORMULA failures=0` ->
+`FORMULA 147 assertions, failures=0` and `source_scan_test` **24 -> 25
+assertions**. No other suite's result line moved and no line was added or
+removed, so neither runner needed an edit: 075 changes the body of two
+existing files and adds none. **TWO full runs on the final tree, `user://`
+cleared before each, byte-identical** (md5
+`69eb8489ca8e4586238a7a2ad7743a9e`), and a **THIRD on the clean pushed tree**
+recorded in the 075 section — taken because the doc edits land after the
+second, exactly as 074a's did. Checked rather than reasoned about (TRAPS 4):
+the four `docs/` mentions in `tests/` — `agreement_test`, `capability_test`,
+`retry_test` and now `formula_test` — are all prose inside comments, and
+**every `DirAccess.open` in `tests/` targets `res://scripts` or
+`res://tests`**, so no suite can read anything under `docs/`.
+
+**NOTE ON THE RESULT LINES, because it changes what a diff of them is worth.**
+**56 of the 72 suites print no assertion count** — 15 print one and
+`sweep_test` prints a VERDICT by design — so for those 56 a vanished assertion
+does **not** move the line, and only a diff of the full PASS lists would catch
+it. `formula_test` was given a count in 075 because the change could not
+otherwise be verified from the result lists at all. The class is the first
+entry under "Next action", and closing it will reset every line here once.
+
+The run before it (074, measured the same way): **0 with something to look at**
+on all **72**, with `--all`.
 The baseline in this container before anything was touched was the same on
 **72** and was **byte-identical to the md5 073 recorded**
 (`0fdf976cb74056e853ae2a8f7b62fcb1`). The lists were **diffed** and the only
@@ -10499,6 +10615,250 @@ be wrong and the corrections are the useful part.
    a test is a judgement about what a panel suite is for, so it is noted
    rather than taken.
 
+## 075 — the rules the prompt stated and no suite read
+
+**Objective.** Read the repository first, as instructed, and take the highest
+thing that is honestly useful. There is **no unaddressed owner finding** — the
+last owner session is 2026-10-16 and 048's *"there is no way to ASK Genesis
+anything"* was written up in 050 as far as it goes without him. So: the live
+axis, which 072, 073 and 074 all leave as *the remaining patterns in `tests/`
+are unasked*, by the method that has paid — **not** *what can the pattern not
+match?*
+
+**Starting state.** `prototype-002a` at `6532049` (074a). Baseline in this
+container, `--all`, `user://` cleared first: **72 suites, 0 with something to
+look at**, and the output **byte-identical to the md5 074a recorded**
+(`d13d97d014eeefea52f43e4076a4fb06`). `ls tests/*.gd` returned **74** and the
+run reported **72** suites, re-counted rather than carried forward, which is
+what "Run the tests first" says. The record and the container agreed before
+anything was touched.
+
+### The pattern inventory, and why it is not the number this file said
+
+**Counted rather than trusted**, because a count in a document is TRAPS 24's
+shape: `grep -c 'RegEx.new' tests/*.gd` returns **22** and
+`RegEx.create_from_string` another **20** — **42 pattern sites in 14 files**,
+not the *"twenty-three"* this file has carried since 072. Which commit left
+that behind is not recorded and is not guessed at here. The number is not the
+finding; it is the reason the entry could not be taken as written.
+
+### The question one layer behind the axis
+
+Asked of `formula_test`, the suite 039 built to hold *"the arithmetic the
+prompt states is the arithmetic Genesis does"*. Its clause reader is a
+pattern, so the axis's question applies: what can it not match?
+
+**Measured before anything was written**, by printing every tool section and
+every line of the assembled prompt carrying an arithmetic operator word: the
+subject supplies **exactly one formula clause** — `push divided by (weight x
+footing)` — and the pattern sees it, and only **four** prompt lines carry an
+operator word at all, all four accounted for. **A widening had no subject.
+That is the fourth entry on this axis in a row with nothing to widen**, and
+072's warning is now a measurement rather than a caution.
+
+**So the question was turned round: what has the subject supplied that nothing
+reads?** And that one paid immediately.
+
+### The finding
+
+`formula_test` has two halves and **only one of them reads the prompt**.
+
+The tool half enumerates its claim from the prompt, parses it as arithmetic,
+evaluates it over a 27-spec grid against `BootsTool.top_speed()`, and asserts
+`formulas == 1` — so a tool formula reworded out of the pattern's shape, or a
+second one added, **fails**. That half is sound and 075 did not touch it.
+
+**Sections 3 to 8 read the prompt at all.** Each quotes a racing rule in a
+comment and measures the behaviour behind it against `TrackGeometry`,
+`FeasibilityGate` or `SectionValidator`. The sentence is read from nothing. So
+the rule could leave the prompt entirely and the PASS line quoting it would
+keep printing — **TRAPS 24 one layer along**, with the body in `scripts/` and
+the success string in `tests/`, which is why no sweep of either file alone
+could see it.
+
+**EIGHT DELIBERATE FAULTS, each deleting one rule from `racing_module.gd`'s
+template in its own throwaway copy with its own `config/name` (TRAPS 50), with
+`PROMPT_FINGERPRINT` moved the way a real prompt edit moves it, the full suite
+run each time. SEVEN OF THE EIGHT PASSED:**
+
+```
+rule deleted from the prompt                                 before   after
+"Sections join end to end ... arrive back at the start line"      0       1
+"A chicane steps the track sideways by O metres ..."              0       1
+"... carries the track back only by its own width, twice ..."     0       1
+"Chicanes do not count."                                          0       1
+"Angles are signed: positive turns right, negative turns left."   0       1
+"Never give a corner, hairpin or chicane a length ..."            0       1
+"The road must never cross itself, and"                           0       1
+"O is more than 0 and at most 2 x R"                              1       2
+```
+
+*before* is the committed suite at 074a; *after* is this commit's. The column
+is **suites with something to look at**, full suite, 70 suites each run.
+
+**The one that was held is the one carrying typed numbers, and that is the
+general shape.** The racing rules are held where they state a **NUMBER** — by
+`prompt_bounds_test` and `prompt_numeral_test`, which read numbers — and held
+by **nothing** where they are **PROSE**. It is 073's and 074's finding about
+the prompt's own 92 numerals seen from the other side: the numbers acquired
+readers, and the sentences around them never did. A rule with no number in it
+had no owner at all.
+
+### What section 9 holds
+
+Every **rule unit** of the racing section is read off the **rendered** section:
+a section-type declaration, a sentence in the `SECTION TYPES` block that is
+about all of them, or a `- ` bullet under `RULES FOR A CLOSED CIRCUIT`. The
+block is found by its heading and the members by the bullet mark and the JSON,
+**never by any English**, so a reworded rule is still a unit and still has to
+be claimed. **11 units today, counted by the suite and not declared.**
+
+**17 rows** claim them. Each row carries the claim that identifies its rule,
+rendered from the constant where it carries a number (TRAPS 28) — the full
+turn from `FeasibilityGate.FULL_TURN`, the floors from `MIN_STRAIGHTS` and
+`MIN_TURNS`, the adjustment from `ClosureSolver.MAX_ANGLE_ADJUSTMENT`, the
+separation from `SeparationCheck.MIN_SEPARATION` — so a number typed into the
+table would be the very fault the suite exists to catch. Asserted:
+
+- **every row finds its claim in exactly one unit** — a rule deleted, or
+  reworded out of the shape the row names, fails here;
+- **every unit is claimed by a row** — a rule **added** to the prompt fails
+  until somebody classifies it, rather than arriving unremarked (TRAPS 14);
+- **the six rows that say "here" against the six measurements that actually
+  registered**, in both directions and against each other, each read off its
+  own array rather than against a number typed in the file (TRAPS 71).
+
+A row naming another suite reads **that suite's code** through `_code_of()`
+for the constant the rule is about. That put `formula_test` into 067's
+source-scanner class, and **`source_scan_test` caught it in the same run — two
+FAILs, by name**, which is the guard doing exactly its job. `formula_test` is
+now its tenth member and the canonical `_code_of()` is byte-identical;
+`source_scan_test` goes **24 -> 25 assertions**.
+
+### Twelve deliberate faults, FAIL lines read
+
+Each fails on the assertion it should and names the fault:
+
+- the **eight deletions** above — the seven that were silent now report
+  **1 suite with something to look at**, `formula_test` **failures=1**, the
+  FAIL naming the rule: *"the rule \"chicane step\" is stated in exactly one
+  unit of the racing section (found 0)"*.
+- a **new bullet** added to the racing rules (*"Keep the track flat; no
+  section may change height."*): **148 assertions, failures=1** — *"every rule
+  the racing section states is claimed by a row - unit 12"*. The added-rule
+  direction.
+- the **"angle sign" row deleted** from the table: **145, failures=2** — *"the
+  measurement \"angle sign\" that ran above has a row claiming its rule"* and
+  *"5 rules are measured here and 6 measurements ran"*.
+- its **registration deleted** instead: **146, failures=2** — the other
+  direction, and the count again. Neither count is typed; each is read off its
+  own array.
+- a row's evidence needle set to a string the named suite carries **only in a
+  comment** (*"TRAPS 28"* in `prompt_bounds_test`): **failures=1**, so
+  `_code_of()` is doing the work and a comment cannot answer a pointer
+  (TRAPS 63).
+
+### Two must-pass controls, both checked for passing for the right reason
+
+- a **dungeon** sentence reworded with its numbers untouched (*"Room 1 is the
+  entrance, where the player comes in."*): green at the same **147**, so the
+  file does not read wordings in sections it makes no claim about.
+- **the control that matters** — the **unclaimed half of a claimed bullet**
+  reworded, while the claimed half was left alone: *"Sections join end to end,
+  in order, starting at the start line."* -> *"Sections are joined end to end,
+  in the order you give them, from the start line onward."*, with the
+  second sentence (the one the `closure` row claims) untouched. Green at the
+  same **147**. **So the rows pin the CLAIM and not the bullet**, which is the
+  difference between this and a test of the prompt's prose.
+
+### And the same file's own count was wrong on the day it was written
+
+039's header says *"The other five arithmetic claims are measured rather than
+read"* and lists five, while **section 8 of the same commit measures a sixth**
+— *"Never give a corner, hairpin or chicane a length; it is calculated"*.
+TRAPS 24's shape inside the file whose own fault is a comment standing in for
+a reader. Corrected, with the sixth listed. **And "measured rather than read"
+turned out to be the whole fault, stated honestly for 36 commits**: the
+sentence described the method and never named the consequence.
+
+### What the tests did NOT prove
+
+- **NOTHING IS REACHABLE FROM A MODEL HERE.** Nothing was rendered, no window
+  was opened, no model was asked anything and no request left the container.
+  There is no API key here.
+- **The prompt is byte-identical.** `PROMPT_FINGERPRINT` did not move and
+  `PROMPT_VERSION` stays at `050-no-command-for-a-question-1`. Nothing in
+  `scripts/` or `scenes/` changed. No number and no sentence the model is told
+  changed; what changed is that seven of them now have a reader.
+- **A row naming another suite is a POINTER, not a measurement.** It asserts
+  the rule is still stated and that the named suite's code names the constant
+  the rule is about. **It does not watch that suite measure anything**, and
+  the header says so in as many words.
+- **A needle is wording.** A rule reworded while staying true fails here and
+  the row has to be updated. That is the only check available for a prose
+  claim, and it is the right way round — a rule changing shape should stop a
+  session and make it re-read, which is what the seven faults did not do. The
+  cost is a false failure on a true rewording, and `c14` above is the measure
+  of how narrow that cost is: only the claimed sentence is pinned.
+- **That the other suites named in the rows measure what the rows say.**
+  `procedure_test` names `ClosureSolver` and `limits_test` names
+  `SeparationCheck`; that those measurements are the right ones is read from
+  their code naming the constant, not from watching them run.
+- **That the eight PROSE numerals mean anything** — 074's gap, untouched.
+- **No secret was set and no workflow file was edited.** 064's finding stands:
+  the web build has failed on every push since 14 October and the live site is
+  still `71b065f`.
+- **No new "Human decision needed."**
+
+### Next action
+
+**THE FIRST LIVE ENTRY, AND IT IS A CLASS THIS COMMIT DELIBERATELY DID NOT
+CLOSE: 56 of the 72 suites print no assertion count on their result line.**
+Counted off the baseline run, not remembered: 15 print one, `sweep_test` prints
+a VERDICT by design, and the rest print only `failures=0`. **This is the one
+signal that would have made 072's fault visible without a diff** — that fault
+was found by diffing the PASS list and seeing four lines gone, and 073 and 074
+each had to diff the full output against a recorded md5 to be sure nothing had
+silently stopped asserting. A count on the result line makes a vanished
+assertion visible in the run output itself.
+**`formula_test` was given one here, and ONLY because this commit could not
+otherwise be verified from the result lists** — its line would not have moved
+at all. That is **fixing one member of a list**, which is TRAPS 11, and it is
+said here rather than left to look like a class fix. The remaining **55** are
+mechanical and low-risk, touch only `tests/`, and would reset every result
+line in one commit — so the run record below becomes the last comparable
+baseline and the next session should take a fresh one in the same commit,
+verifying the change by stripping the counts and diffing against it, which
+must come back byte-identical. **That verification is the whole of the work;
+the edit is trivial.**
+
+**THEN THE CLASS QUESTION 075 ANSWERED FOR ONE SECTION AND NOT FOR THE PROMPT:
+which lines of the assembled prompt can be deleted with no suite failing?**
+075 answered it for the **racing** section's 11 rule units by deleting eight of
+them one at a time. The prompt has **112 non-blank lines** and **11 suites read
+it** (`boots_test`, `capability_test`, `claim_field_test`,
+`container_door_test`, `formula_test`, `intent_door_test`, `look_test`,
+`order_test`, `procedure_test`, `prompt_bounds_test`, `prompt_numeral_test` —
+`prompt_test` and `replay` are tools). Doing it by deletion is 112 runs and the
+rendered line does not map one-to-one onto a source line, so **screen it
+cheaply first**: collect every string literal in the eleven suites' CODE
+(through `_code_of()`), ask which prompt lines no literal reaches, and only
+then measure the candidates by deletion. Expect the answer to follow 075's
+shape — **the lines with numbers in them are held and the prose is not** — and
+expect the dungeon and farm sections to be where it bites, since 074 already
+recorded that the eight PROSE numerals have nothing standing behind them.
+
+**The prompt-numeral class stays closed** and 073's warning stands: do not
+re-open it by building 068's table of 41.
+
+**And do not take the pattern-breadth axis as written.** Four entries in a row
+have now asked for a widening and all four times the widening had no subject.
+075's is the fourth and it was measured before a line was changed. The
+question that has paid twice running is the one BEHIND the pattern: 072's *what
+has the subject never supplied?* and 075's *what has the subject supplied that
+nothing reads?* If a fifth entry on that axis is taken, measure the subject
+first and expect to spend the commit somewhere else.
+
 ## 074 — the kind filed under the value, and two counts asserted against their own arrays
 
 **Objective.** Read the repository first, as instructed, and take the highest
@@ -10924,7 +11284,10 @@ numerals: 74 produced by a substitution and held by `prompt_bounds_test` and
 `claim_field_test` where they are bounds, 18 typed and held by
 `prompt_numeral_test`. **Do not re-open it by building 068's table of 41.**
 
-**The remaining twenty-three patterns in `tests/` are still unasked**, and
+**The remaining twenty-three patterns in `tests/` are still unasked**
+*[075: counted rather than trusted — `RegEx.new` returns 22 and
+`RegEx.create_from_string` another 20, so it is 42 sites in 14 files. The
+twenty-three was stale by the time this was written; see the 075 section.]*, and
 072's warning stands: the method that has paid is *what has the subject never
 supplied?*, not *what can the pattern not match?* Three entries on that axis
 in a row asked for a widening and all three times the widening was wrong.
@@ -11120,7 +11483,10 @@ candidates 069 handed on, and all three went the same way:** the widening the
 entry asked for was wrong every time, and the fault was a layer behind the
 pattern every time. Do not re-open it by widening a pattern.
 
-**The remaining twenty-three patterns in `tests/` are still unasked**, and the
+**The remaining twenty-three patterns in `tests/` are still unasked**
+*[075: counted rather than trusted — `RegEx.new` returns 22 and
+`RegEx.create_from_string` another 20, so it is 42 sites in 14 files. The
+twenty-three was stale by the time this was written; see the 075 section.]*, and the
 method that has now paid three times is: *what has the subject never
 supplied?* — not *what can the pattern not match?*
 
