@@ -4951,3 +4951,85 @@ naming as its own.
 > The green was true and it was not the whole truth.
 
 ---
+## 74. The class was counted in suites, and the fault was in result lines
+
+**Signature:** a class is closed, the commit that closed it says so in detail
+and names what it did not do — and the thing it enumerated was one unit larger
+than the thing with the fault in it. Every suite has a count; two result lines
+still do not. Nothing fails, because the survivors are on paths that do not
+run.
+
+**Cause.** 076 fixed TRAPS 73 by walking `tests/` and giving each **suite** an
+assertion count. That is the natural unit — one file, one result line — and it
+is wrong for three files. A suite that gives up before its body runs prints
+its own result line from the early exit, and 076 touched one of those
+(`report_test`, which it rewrote and said so) without asking how many there
+were. There were three. The two it did not touch were:
+
+```
+look_test.gd:32        "LOOK TEST failures=%d"    the picture it could not write
+load_check_test.gd:62  "LOAD CHECK failures=%d"   the dungeon it could not measure
+```
+
+Both are unreachable on a healthy tree, which is why no run has ever printed
+them and why no diff of any PASS list could ever have caught them. **A member
+of a class on a path that does not run is still a member**, and the only
+reader that can see it is one that reads the code rather than the output.
+
+**And the second one was worse than a missing count.** `_measure()` has two
+ways out that return `{}`. One calls `_check(false, ...)` first, so `bad` is 1
+and the line read `failures=1`. The other — `measure()` returning nothing at
+all — recorded nothing, so the line read **`LOAD CHECK failures=0`** and the
+suite called `quit(1)`. `run_tests.sh` reads the **line**, not the exit code.
+A load check that had measured nothing whatsoever would have been counted as a
+pass. That is missing evidence becoming success, which `PROTOCOL.md` names by
+name.
+
+**And the other channel had quietly stopped being connected.** A suite reports
+its result twice — the line it prints and the code it exits with. Measured
+across every result line in `tests/` — 74 before the scan existed, 75 with its
+own — **five suites ended `quit()` or `quit(0)`** below a
+line reporting a variable number of failures. Measured rather than argued, in
+a throwaway copy with one deliberate `_check(false, ...)` added:
+
+```
+layout_key_test, quit()      LAYOUT KEYS 65 assertions, failures=1   -> $? = 0
+layout_key_test, quit(bad)   LAYOUT KEYS 65 assertions, failures=1   -> $? = 1
+```
+
+Neither runner reads the exit code (`run_tests.sh` uses it only to spot a
+timeout, `run_tests.bat` not at all), so nothing was mis-reported in a full
+run. What was true is that a person running one suite alone — which this
+project's own runner tells you to do when something looks wrong — got `$? = 0`
+on a failing suite.
+
+**Do:**
+
+- **Enumerate the class at the granularity of the thing with the fault, not
+  the granularity of the file.** "Every suite has a count" and "every result
+  line has a count" differ by three files and two faults. Before closing a
+  class, write down the unit you counted and ask whether the fault lives in
+  that unit or inside it.
+- **A path that does not run is still in the class.** Its members cannot be
+  found by diffing output against a recorded md5, because they have never
+  appeared in any output. Only a reader of the code finds them.
+- **A result line and an exit code are two reports of the same thing, and
+  both are read by somebody.** Keep them agreeing: `quit(bad)`, not `quit()`.
+- **Give a class a reader before declaring it closed.** 076 closed TRAPS 73 by
+  hand, 71 files, carefully, and wrote down that nothing asserted the result.
+  Eleven lines of scan found seven faults in it the same afternoon. The gap
+  between "I did this correctly" and "something checks that it is still done"
+  is where the next 55 members will come from.
+- **Derive the exclusions, do not list them.** `tests/result_line_test.gd`
+  does not carry a list of suites. It asks which files print a result line,
+  and asserts that every `.gd` in `tests/` is either one of those or carries a
+  row saying why not. A suite added tomorrow is in the class by arriving; a
+  tool added tomorrow has to be accounted for. A hand-maintained list of 71
+  would have gone stale the way the "Next action" entry in TRAPS 66 did.
+
+Found in 077, reading the paragraph 076 wrote about what it had not done.
+
+> The suites all had a count. The result lines did not, and the result line
+> is the thing that gets read.
+
+---

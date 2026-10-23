@@ -622,7 +622,7 @@ func _run() -> void:
 	print("PROCEDURE %d assertions, failures=%d" % [asserted, failures.size()])
 	for f in failures:
 		print("  - %s" % str(f))
-	quit(0)
+	quit(failures.size())
 
 
 # A line of doors joining every room, with a and b joined exactly once. Built

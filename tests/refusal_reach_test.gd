@@ -896,7 +896,7 @@ func _initialize() -> void:
 	_reached_how()
 	_guards_fire()
 	print("REFUSAL REACH %d assertions, failures=%d" % [asserted, bad])
-	quit()
+	quit(bad)
 
 
 # The CODE of a .gd source: comment lines blanked and trailing comments cut,

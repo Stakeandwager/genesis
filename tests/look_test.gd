@@ -29,7 +29,10 @@ func _initialize() -> void:
 	var real := _make_a_picture()
 	if real == "":
 		_check(false, "could not write a test picture to disk")
-		print("LOOK TEST failures=%d" % bad)
+		# 077: this line carried no assertion count. The _check above has run,
+		# so it was true - and a line that cannot say how many ran cannot say
+		# one stopped running (TRAPS 73). One of the two 076 left.
+		print("LOOK TEST %d assertions, failures=%d" % [asserted, bad])
 		quit(1)
 		return
 

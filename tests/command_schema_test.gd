@@ -473,4 +473,4 @@ func _run() -> void:
 	print("COMMAND SCHEMA %d assertions, failures=%d" % [asserted, failures.size()])
 	for f in failures:
 		print("  - " + f)
-	quit()
+	quit(failures.size())

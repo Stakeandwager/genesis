@@ -329,7 +329,7 @@ func _initialize() -> void:
 	_no_legal_farm_is_refused()
 
 	print("LAYOUT KEYS %d assertions, failures=%d" % [asserted, bad])
-	quit()
+	quit(bad)
 
 
 # --- 1b: how far "read" goes, for the one key where it is one bit ---

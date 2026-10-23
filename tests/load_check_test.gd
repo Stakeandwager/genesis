@@ -59,7 +59,15 @@ func _initialize() -> void:
 
 	var measured := _measure(three)
 	if measured.is_empty():
-		print("LOAD CHECK failures=%d" % bad)
+		# 077: _measure() has TWO ways out that return {}. The first calls
+		# _check(false) and so reports itself; the second - measure()
+		# returning nothing at all - recorded nothing, and this line used to
+		# read "LOAD CHECK failures=0". run_tests.sh reads the line and not
+		# the exit code, so a load check that had measured nothing whatsoever
+		# was counted as a pass. Missing evidence must not become success.
+		if bad == 0:
+			_check(false, "the dungeon was measured (measure() returned nothing, and nothing above said why)")
+		print("LOAD CHECK %d assertions, failures=%d" % [asserted, bad])
 		quit(1)
 		return
 

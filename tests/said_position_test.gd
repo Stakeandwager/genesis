@@ -407,4 +407,4 @@ func _initialize() -> void:
 		print(line)
 	print("")
 	print("SAID POSITION %d assertions, failures=%d" % [asserted, failures.size()])
-	quit()
+	quit(failures.size())

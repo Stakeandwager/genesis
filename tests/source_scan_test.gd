@@ -64,9 +64,15 @@ extends SceneTree
 var asserted := 0
 var bad := 0
 
-# The nine members as of 067, so a file that STOPS scanning source is noticed
-# too. A row here that has left the class is not a failure of the code - it is
-# a row to strike - but it should never go unremarked (TRAPS 14).
+# The members, so a file that STOPS scanning source is noticed too. A row here
+# that has left the class is not a failure of the code - it is a row to strike
+# - but it should never go unremarked (TRAPS 14).
+#
+# NO COUNT IS WRITTEN IN THIS SENTENCE. It said "the nine members as of 067"
+# while the list held ten, because 075 added formula_test and left the number;
+# 077 added an eleventh and struck the number rather than correcting it, since
+# a count in a comment beside the array it counts is TRAPS 24's shape and the
+# array is right there to be read. Section 1 asserts against KNOWN.size().
 const KNOWN := [
 	"check_wiring_test.gd",
 	"controller_reach_test.gd",
@@ -80,6 +86,10 @@ const KNOWN := [
 	"proxy_test.gd",
 	"record_id_test.gd",
 	"refusal_reach_test.gd",
+	# 077: result_line_test reads every suite's CODE to find the line it
+	# prints, so it is in this class by the same door formula_test came in
+	# by: a question about what the code DOES, answered from the code.
+	"result_line_test.gd",
 	"scene_light_test.gd",
 	"view_frame_test.gd",
 ]

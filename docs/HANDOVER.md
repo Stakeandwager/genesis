@@ -24,7 +24,99 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **076**, which closed the class 075
+- Last commit at the time of writing: **077**, which built the reader 076 said
+  did not exist, and the reader found **seven faults in 076's own class on its
+  first run**. 076 closed TRAPS 73 by hand — 71 suites, a count on every result
+  line — and wrote down plainly, in TRAPS 73 and in its own "Next action", that
+  *"nothing asserts the counts ... a suite added without a count would be
+  caught by nobody"*. `tests/result_line_test.gd` is that reader: **322
+  assertions**.
+  **THE UNIT 076 COUNTED WAS SUITES AND THE FAULT LIVES IN RESULT LINES**, and
+  those differ by three files. A suite that gives up before its body runs
+  prints its own line from the early exit. 076 rewrote one of those
+  (`report_test`) and said so; it did not ask how many there were. There were
+  three, and the two it did not touch still printed no count:
+  **`look_test.gd:32`** (*"LOOK TEST failures=%d"*, the picture it could not
+  write) and **`load_check_test.gd:62`** (*"LOAD CHECK failures=%d"*, the
+  dungeon it could not measure). Both sit on paths that never run on a healthy
+  tree, so **no diff of any PASS list against any md5 could ever have caught
+  them** — only a reader of the code. TRAPS 11, one commit after the commit
+  that quoted TRAPS 11 at itself.
+  **AND THE SECOND ONE WAS NOT ONLY MISSING A COUNT.** `_measure()` has two
+  ways out that return `{}`. One calls `_check(false, ...)` first, so the line
+  read `failures=1`. The other — `measure()` returning nothing at all —
+  recorded nothing, so the line read **`LOAD CHECK failures=0`** and the suite
+  called `quit(1)`. **`run_tests.sh` reads the LINE and not the exit code**, so
+  a load check that had measured nothing whatsoever would have been counted as
+  a pass. Missing evidence becoming success is the one thing `PROTOCOL.md`
+  names by name. That path now records the failure before it prints.
+  **AND THE OTHER CHANNEL HAD STOPPED BEING CONNECTED TO ANYTHING.** A suite
+  reports its result twice — the line it prints and the code it exits with.
+  Across every result line in `tests/` — **74 before this commit, 75 with the
+  new suite's own** — **five suites ended `quit()` or `quit(0)`** below
+  a line reporting a variable number of failures: `command_schema_test`,
+  `layout_key_test`, `procedure_test` (`quit(0)`), `refusal_reach_test` and
+  `said_position_test`. **MEASURED IN BOTH DIRECTIONS**, one deliberate
+  `_check(false, ...)` added to `layout_key_test` in a throwaway copy with its
+  own `config/name` (TRAPS 50): with `quit()` it printed *"LAYOUT KEYS 65
+  assertions, failures=1"* and exited **0**; with `quit(bad)`, the same line
+  and the same 65, exited **1**. Neither runner reads the exit code
+  (`run_tests.sh` uses it only to spot a timeout, `run_tests.bat` not at all —
+  both **read**, not assumed), so nothing was mis-reported in a full run; what
+  was true is that a person running one suite alone, which this project's own
+  runner tells you to do when something looks wrong, got `$? = 0` on a failing
+  suite. All five are fixed.
+  **THE CLASS IS DERIVED, NOT LISTED, AND THAT IS A DELIBERATE DEPARTURE FROM
+  076'S ENTRY.** The entry asked for the exceptions to be *"read from the same
+  lists `run_tests.sh` holds rather than retyped"*. They are not. The suite
+  asks which files in `tests/` print a line naming one of the two verdict words
+  the runners match on, and asserts that **every `.gd` in `tests/` is either
+  one of those or carries a row saying why not** — `prompt_test`, `replay` and
+  `sweep_test`, each with its reason asserted rather than assumed. That is
+  strictly stronger: it does not depend on a shell file being parsed from
+  GDScript, and it notices a file that **gains** a result line as well as one
+  that lacks a count. A suite added tomorrow is in the class by arriving; a
+  tool added tomorrow has to be accounted for.
+  **MEASURED, NOT ARGUED: seven deliberate faults, each in its own throwaway
+  copy with its own `config/name` (TRAPS 50), every one caught and naming
+  itself by file and line.** A new suite printing no count (2 FAILs, and the
+  count moved 322 -> 326, so the class tracks its own size); a new tool file
+  with no row (*"helper_tool.gd prints no result line and has no row here"*);
+  a count typed into the format string as `21` rather than `%d`; a count
+  argument replaced by the literal `21`; a `quit(bad)` reverted to `quit()`;
+  `sweep_test` given a result line (4 FAILs, including *"prints a result line
+  AND carries a row here saying it does not"*); and `session_test`'s `extends`
+  broken (3 FAILs).
+  **TWO MUST-PASS CONTROLS PASS AT THE SAME 322** — a result line's prose
+  reworded (*"LOOK TEST"* -> *"THE LOOK SUITE REPORTS"*) with the count left
+  alone, and a `quit(bad)` rewritten as `quit(1 if bad > 0 else 0)`. So the
+  suite pins the capability and not the wording (TRAPS 6).
+  **WHAT CHANGED.** One file added to `tests/` and seven edited; nothing in
+  `scripts/`, `scenes/` or either runner. `source_scan_test` gains the new file
+  as the **eleventh** member of the source-scanner class it holds (25 -> 26
+  assertions), and the new file's `_code_of()` was checked byte-identical to
+  the reference copy before it was run. **Neither runner needs an entry**:
+  `run_tests.sh`'s three lists match on whole words and `run_tests.bat`'s
+  `findstr` patterns on substrings, and both were **RUN** against the name
+  rather than eyeballed (TRAPS 4) — none matches.
+  **NOT VERIFIED, and the gaps are the part to read.** The suite reads SOURCE,
+  not output: it cannot run 72 suites to see what they print, so it reads what
+  each result line *will* print. **It does not prove a count is CORRECT** —
+  only that it is printed and fed by something the suite increments or appends
+  to. **Whether a counter is incremented at every site that decides pass or
+  fail is still held by nothing**; that was 076's per-file hand work, member by
+  member, and this file does not re-do it. It does not prove `quit(1)` is the
+  right code on a path, only that the path cannot exit 0 while its line reports
+  failures. It reads **one** `extends` into `tests/` to find an inherited
+  counter, because `session_test` has one; two levels would not be found, and
+  section 6 asserts the one level is load-bearing rather than decorative.
+  **Nothing was rendered, no window was opened, no model was asked anything and
+  no request left the container. There is no API key here.** The prompt is
+  byte-identical, `PROMPT_FINGERPRINT` did not move and `PROMPT_VERSION` stays
+  at `050-no-command-for-a-question-1`. No secret was set and no workflow file
+  was edited; 064's finding stands and the live site is still `71b065f`. **No
+  new "Human decision needed."** New TRAPS 74.
+- Before 077: **076**, which closed the class 075
   named as its own TRAPS 11 and did not fix: **55 of the 72 suites printed
   `failures=0` and nothing else, so an assertion could be deleted from any of
   them and the run output would not move.** Only a diff of the full PASS list
@@ -2354,11 +2446,12 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-**74** files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **72 suites**, counted with `ls tests/*.gd` rather than
+**75** files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **73 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
-broken. `--all` adds the two slow racing suites, which are counted in the 72
+broken. `--all` adds the two slow racing suites, which are counted in the 73
 and are skipped without it.
+**077 ADDED ONE** (`result_line_test`) and re-ran the `ls`: **75 and 73**.
 **THESE TWO NUMBERS WERE STALE BY ONE WHEN 073 READ THEM**, and 073
 re-counted rather than carrying them forward: they said 72 files and 70
 suites, while `ls tests/*.gd` returned **73** and the 072 baseline run in this
@@ -2378,7 +2471,40 @@ worlds, and suites fail for reasons that have nothing to do with the code.
 055 took four answers off such a run before noticing. If a run is being used
 as a measurement, clear `user://` before it, baseline included (TRAPS 50).
 
-Last full run (076, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+Last full run (077, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+headless, in a cloud container, every run sequential with `user://` cleared
+first): **suites with something to look at: 0** on all **73**, with `--all`.
+`ls tests/*.gd` returned **75** and the run reported **73**, re-counted rather
+than carried forward.
+The baseline in this container before anything was touched was the same on
+**72** and was **byte-identical to the md5 076a recorded on the clean pushed
+tree** (`dddf8006012399e50eb9470da9e29af6`), so the record and the container
+agreed before anything was touched.
+**THE LISTS WERE DIFFED AND EXACTLY TWO THINGS MOVED, WHICH IS WHAT 077
+PREDICTED BEFORE RUNNING**: one line **added**, `result_line_test` at 322
+assertions, and one count moved, `source_scan_test` **25 -> 26** for the new
+file's row in its `KNOWN` list. **No other suite's result line moved** — in
+particular `look_test` stayed at 18 and `load_check_test` at 40, which is the
+measurement saying the two early-exit lines 077 fixed are on paths that do not
+run on a healthy tree, and therefore could never have shown in any run output.
+No suite's verdict moved. **THREE full runs, `user://` cleared before each,
+all byte-identical** (md5 `eacbafcdd519e7fd4caf08361e8a066c`). Three rather
+than two because a comment in `source_scan_test` was edited after the second,
+and 074a, 075a and 076a each had to take a third run for exactly that reason:
+**the third was taken on the final code tree**, and every doc edit after it is
+covered by the paragraph below rather than by a guess.
+**077 adds a suite, so the md5 above is a fresh baseline and 076's is not
+comparable to it.** There is nothing to strip-and-diff here the way 075 and
+076 needed: 077 changes no existing result line's FORMAT, so the raw diff
+above is the comparison.
+Checked rather than reasoned about (TRAPS 4), and re-run in 077 rather than
+carried forward: **every `DirAccess.open` in `tests/` targets `res://scripts`
+or `res://tests`** — `result_line_test`'s included — and **no file in `tests/`
+contains `res://docs` or `"docs/` at all**, not even in a comment. So no suite
+can read anything under `docs/` and the doc edits could not have moved any
+suite's result.
+
+The run before it (076, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
 headless, in a cloud container, every run sequential with `user://` cleared
 first): **suites with something to look at: 0** on all **72**, with `--all`.
 `ls tests/*.gd` returned **74** and the run reported **72**, re-counted rather
@@ -2431,12 +2557,19 @@ the four `docs/` mentions in `tests/` — `agreement_test`, `capability_test`,
 `res://tests`**, so no suite can read anything under `docs/`.
 
 **NOTE ON THE RESULT LINES — AS OF 076 EVERY SUITE CARRIES AN ASSERTION
-COUNT.** **71 of the 72 print `<N> assertions, failures=<M>`**; `sweep_test`
-prints a VERDICT by design and is the whole remainder. So a vanished assertion
-now moves the run output itself, and a diff of the full PASS lists is no
-longer the only thing that would catch it. **This reset every result line
-once**, which is why the md5 recorded above for 076 is the first comparable
-baseline and 075's is not.
+COUNT, AND AS OF 077 EVERY RESULT LINE DOES AND SOMETHING ASSERTS IT.**
+**72 of the 73 print `<N> assertions, failures=<M>`**; `sweep_test` prints a
+VERDICT by design and is the whole remainder. So a vanished assertion moves
+the run output itself, and a diff of the full PASS lists is no longer the only
+thing that would catch it. **076 reset every result line once**, which is why
+its md5 was the first comparable baseline and 075's was not.
+**077 is the reader for this paragraph.** `tests/result_line_test.gd` derives
+the class from the directory and asserts of **every result line** — not every
+suite — that it carries a count fed by a live counter and exits with a code
+that can report a failure. It found two lines 076 missed, both on early-exit
+paths that never run, which is why they are not in any of the counts above and
+never were. **Do not maintain this paragraph by hand against that suite**: run
+it, and it will say which files are in the class and why the others are not.
 **WHAT THIS PARAGRAPH SAID BEFORE, AND WHY IT IS RECORDED RATHER THAN
 OVERWRITTEN.** It said *"56 of the 72 suites print no assertion count — 15
 print one"* while also saying, two sentences later, that `formula_test` had
@@ -7869,6 +8002,34 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
+**THE LIVE ENTRY AS OF 077, AND IT IS THE LAST THING IN THE RESULT-LINE CLASS
+WITH NO READER: nothing holds that `asserted` is incremented at every site
+that decides pass or fail.** 077 holds that a count is printed and that it is
+fed by something the suite increments; it cannot see whether the increment
+happens on every path. 076 did that reading by hand, 71 files, and TRAPS 73
+records the shape it costs when it is wrong: one condition removed from a
+six-case loop in `tool_test` cost **six** assertions, not one. Two ways in,
+and the first is the cheap one:
+  - **A suite that funnels every assertion through one helper is safe by
+    construction** — one failure site, one increment, inside it — and that is
+    a property a scan CAN read. **Measured in 077 as a screen, not as a
+    finding** (one grep, not a suite, so treat it as a starting point and
+    re-measure): **58 of the 72 members have exactly one line that increments
+    a counter; 14 do not** — `agreement_test`, `farm_test`, `formula_test`,
+    `judge_test`, `physics_test`, `plan_said_test`, `range_test`,
+    `report_test`, `said_fields_test`, `session_test`, `things_said_test`,
+    `tool_test`, `walk_negative`, `walk_test`. Three of those fourteen have
+    **zero** and are the interesting ones: `agreement_test` and
+    `formula_test` count a list rather than increment, and `session_test`
+    inherits.
+  - **The fourteen are where a count can drift from its paths**, and they
+    include `tool_test`, which is the suite TRAPS 73's worst row came from.
+    Those are the ones worth a per-file assertion or a deliberate deletion.
+  Do the first half before the second: it is a scan, it is in
+  `result_line_test`'s family, and it turns an unbounded reading job into a
+  named short list. **Do not attempt to hold this by raising a number.** TRAPS
+  73: *"A count is not a score."*
+
 **AS OF 065 THE VISUAL-LAYER AXIS IS CLOSED** — 061's six differences all
 have a reader now, which is what 062, 063 and 065 were each one step of.
 
@@ -10719,6 +10880,62 @@ be wrong and the corrections are the useful part.
    a test is a judgement about what a panel suite is for, so it is noted
    rather than taken.
 
+## 077 — the class was counted in suites, and the fault was in result lines
+
+**Objective.** Read the repository first, as instructed, and take the highest
+thing that is honestly useful. There is **no unaddressed owner finding** — the
+last owner session recorded in this file is still 2026-10-14/16, and nothing
+since. So: the **first live entry under 076's "Next action"**, which 076 wrote
+about itself and left open in as many words — *"nothing asserts the counts. No
+suite checks that a result line carries one ... A suite added without a count
+would be caught by nobody."*
+
+**Starting state.** `prototype-002a` at `9c66d4f` (076a). Baseline in this
+container before anything was touched: `ls tests/*.gd` returned **74** and the
+run reported **72 suites**, `--all`, `user://` cleared first, **0 suites
+with something to look at**, and the output **byte-identical to the md5 076a
+recorded on the clean pushed tree** (`dddf8006012399e50eb9470da9e29af6`). The
+record and the container agreed before a line was changed.
+
+**Decision.** Build the reader, and let it say what is wrong rather than
+deciding that in advance. The one deliberate departure from 076's entry is
+written up under "Starting state" above: the exceptions are **derived** from
+which files print a result line, not read out of `run_tests.sh`'s lists, which
+is stronger in both directions and does not couple a GDScript suite to a shell
+file.
+
+**What it found, on its first run, before anything was fixed: seven faults, in
+three classes.** Two result lines with no assertion count, both on early-exit
+paths (`look_test.gd:32`, `load_check_test.gd:62`); one of those printing
+`failures=0` on a path that had measured nothing and `quit(1)`, which
+`run_tests.sh` would have counted as a pass; and five suites exiting 0 no
+matter what their line said. All seven are detailed under "Starting state"
+above and the general lesson is TRAPS 74.
+
+**Implementation.** `tests/result_line_test.gd` added (322 assertions, six
+sections). `tests/look_test.gd` and `tests/load_check_test.gd`: the early-exit
+line gains a count, and `load_check_test`'s records the failure first on the
+path that recorded none. `tests/command_schema_test.gd`,
+`tests/layout_key_test.gd`, `tests/procedure_test.gd`,
+`tests/refusal_reach_test.gd`, `tests/said_position_test.gd`: `quit()` /
+`quit(0)` becomes the failure count. `tests/source_scan_test.gd`: the new file
+added to `KNOWN` as the eleventh source scanner. Nothing in `scripts/`,
+`scenes/`, `docs/harness/` or either runner.
+
+**Evidence.** Seven deliberate faults and two must-pass controls, each in its
+own throwaway copy with its own `config/name`; the exit-code fix measured in
+both directions; two full runs on the final tree, byte-identical; the diff
+against the baseline exactly as predicted. All of it is recorded under
+"Starting state" and "Run the tests first" rather than repeated here.
+
+**Limitations.** The suite reads source, not output. It cannot prove a count
+is correct, only that it is printed and live. Nothing holds that a counter is
+incremented at every site that decides pass or fail — that is still 076's
+hand-reading, and it is the next thing in this class with no reader. See
+"Next action".
+
+**Human decision needed.** None new.
+
 ## 076 — fifty-five suites that could lose an assertion and still print failures=0
 
 **Objective.** Read the repository first, as instructed, and take the highest
@@ -10869,6 +11086,16 @@ container, every run sequential with `user://` cleared first.
 - **No new "Human decision needed."** New TRAPS 73.
 
 ### Next action
+
+**DONE IN 077 — `tests/result_line_test.gd`, and it found seven faults in
+this commit's own class on its first run: two result lines with no count (both
+on early-exit paths that never run, so no md5 diff could ever have seen them),
+one of those printing `failures=0` on a path that had measured nothing, and
+five suites exiting 0 whatever their line said. The exceptions are DERIVED
+rather than read out of `run_tests.sh`, which is a deliberate departure from
+the entry below and is explained in the 077 section. The entry's own caveat
+was right and is now the live gap: it does not catch an `asserted` that stops
+incrementing. See TRAPS 74 and "Next action" at the top of this file.**
 
 **THE FIRST LIVE ENTRY, AND IT IS THE GAP THIS COMMIT OPENED: nothing holds
 the counts it just added.** The class-holder to write is a source scan over
