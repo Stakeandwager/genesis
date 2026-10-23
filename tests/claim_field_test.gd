@@ -62,11 +62,53 @@ extends SceneTree
 # their bounds from their constants - which they do, and which says nothing
 # about whether the constants are legal.
 #
+# FINDING (072), and it is about this file rather than about Genesis. The
+# check above was written as a LOOKUP PER FIELD - find this field's bound in
+# the prompt, and `continue` if the pattern does not match. A lookup that
+# misses is indistinguishable from a field that has no bound, so a bound
+# reworded out of the pattern's shape left its field unchecked, silently, in
+# the suite that exists to hold bounds. TRAPS 65's shape. The answer is not a
+# wider pattern: it is a reader that sweeps the section for EVERY range it
+# states and reports the ones it cannot place. Measured before it was
+# written: the three tools state ten ranges, nine are field bounds, and the
+# tenth was read by nothing in tests/.
+#
+# FINDING (072). That tenth is BootsTool.TOP_SPEED - "It must come to 2 to 12
+# metres a second" - a bound stated to the model, enforced in validate(), and
+# unreachable by any loop over defaults().keys() because top speed is not a
+# field. It is now checked the way the fields are, with one addition that is
+# not a restatement: both ends must be REACHABLE with legal field values. A
+# narrowed push or weight range can leave an end of a derived bound
+# unreachable while both constants sit exactly where they were, and the
+# player is then told about a bound they cannot have. Nothing was wrong -
+# both ends are reachable and accepted, measured - and what changed is that
+# it can now fail.
+#
+# FINDING (072). A numeric field that states NO bound is now a failure. Every
+# numeric field in every tool states one today, so this is a pin and not a
+# fix.
+#
 # GUARD. The claims are enumerated from AIInterpreter.assembled_prompt() and
 # the tools from ToolRegistry.tools(), never written out here, so a tool added
 # later, or a fourth sentence of this shape, is covered without editing this
 # file - and a sentence whose field is not a field of its own tool fails
 # rather than passing unexamined.
+#
+# GUARD (072). Which fields are numeric is read off defaults() rather than
+# listed, so a field added later is covered without editing this file. The
+# one hand-written list left is the table of DERIVED bounds, and its weakness
+# is stated at the table: a derived bound added to a tool is not in it. That
+# is held by the unaccounted-range check, which fails on any range the table
+# does not claim - so a new one cannot pass unexamined, it has to be added.
+# Making tools declare their derived bounds would remove the list, and is a
+# change to scripts/ for one suite's benefit; it is in HANDOVER, not done.
+#
+# NOT ASSERTED (072): anything about the worlds' bounds, which are 035's and
+# prompt_bounds_test's. This sweep runs over the three tool sections only.
+# NOT ASSERTED (072): that a range written on a TEXT field's line is wrong.
+# It is deliberately left unattributed so that it lands in the unaccounted
+# list and has to be ruled on, because nothing in any tool enforces a bound
+# on a text field. There is no such range today.
 #
 # NOT ASSERTED, deliberately: that any particular sentence exists, or what any
 # of them say. The regex requires only the shape that carries the claim. Every
@@ -153,6 +195,72 @@ func _stated_bound(section: String, field: String) -> Array:
 	return [m.get_string(1).to_float(), m.get_string(2).to_float()]
 
 
+# EVERY "N to M" the section states, with the numeric field whose bound it is
+# or "" where it is not one. Read off the SECTION rather than looked up per
+# field, and that is the whole difference: a lookup that misses returns
+# nothing and says nothing, where a sweep standing on the statement cannot
+# fail to see it. 072 found the lookup above being skipped in silence by
+# `if bound.is_empty(): continue` - the shape TRAPS 65 names - and the answer
+# is not a wider pattern but a reader that reports what it could not place.
+#
+# Attribution is to NUMERIC fields only. A range written on a text field's
+# line - "nickname: 3 to 8 words" - is deliberately left unattributed so that
+# it lands in the unaccounted list below and has to be ruled on, because
+# nothing in any tool enforces a bound on a text field.
+func _ranges_in(section: String, numeric_fields: Array) -> Array:
+	var out: Array = []
+	var re := RegEx.new()
+	re.compile("([0-9]+(?:\\.[0-9]+)?) to ([0-9]+(?:\\.[0-9]+)?)\\b")
+	for m in re.search_all(section):
+		var ls := section.rfind("\n", m.get_start())
+		var le := section.find("\n", m.get_start())
+		if le < 0:
+			le = section.length()
+		var line := section.substr(ls + 1, le - ls - 1)
+		var owner := ""
+		for f in numeric_fields:
+			if line.begins_with(str(f) + ":"):
+				owner = str(f)
+				break
+		out.append({
+			"low": m.get_string(1).to_float(),
+			"high": m.get_string(2).to_float(),
+			"field": owner,
+			"line": line,
+		})
+	return out
+
+
+# The declared fields whose ordinary value is a number, so the fields a stated
+# bound is meaningful for. Taken from defaults() rather than listed, so a
+# field added later is covered without editing this file.
+func _numeric_fields(tool_mod: ToolModule) -> Array:
+	var out: Array = []
+	for k in tool_mod.defaults().keys():
+		if typeof(tool_mod.defaults()[k]) in [TYPE_INT, TYPE_FLOAT]:
+			out.append(str(k))
+	return out
+
+
+# A legal boots spec whose top speed is `target`, DERIVED from the constants
+# rather than typed in: top speed is push / (weight x footing), so push is
+# solved for at the corners of the weight and footing ranges until the push it
+# needs is itself legal. Returns {} when no corner reaches it - which fails
+# the check below rather than skipping it, and that failure is the point. A
+# bound the prompt states that no legal combination of fields can reach is a
+# bound a player is told about and cannot have.
+func _boots_spec_reaching(target: float) -> Dictionary:
+	for w in [BootsTool.WEIGHT[0], BootsTool.WEIGHT[1]]:
+		for f in [BootsTool.FOOTING[0], BootsTool.FOOTING[1]]:
+			var push: float = target * float(w) * float(f)
+			if push < float(BootsTool.PUSH[0]) or push > float(BootsTool.PUSH[1]):
+				continue
+			var spec := {"push": push, "weight": float(w), "footing": float(f)}
+			if is_equal_approx(BootsTool.top_speed(spec), target):
+				return spec
+	return {}
+
+
 # What BootsTool can measure about a spec. Each entry is a name and a reading,
 # and a field's claim is checked against every one of them except the one the
 # player asked about - which is why there must be more than one for the check
@@ -195,21 +303,148 @@ func _initialize() -> void:
 			_check(key in params,
 				"%s: the declared list '%s' is in the skeleton" % [module.command(), key])
 
-	# --- every bound the prompt states for a tool's field, at both ends ---
+	# --- every bound the prompt states for a tool, at both ends ---
+	#
+	# 072: this used to loop over the fields and ask the prompt for each
+	# one's bound, skipping in silence when the pattern did not match - so a
+	# bound reworded out of the shape the pattern reads left the field
+	# unchecked and the suite green, with nothing printed. TRAPS 65's shape,
+	# inside a suite that exists to hold bounds. Two things are wrong with a
+	# per-field lookup and only one of them is the pattern:
+	#
+	#   1. a miss is indistinguishable from a field that has no bound, and
+	#   2. a bound the prompt states about something that is NOT a field
+	#      cannot be reached by a loop over fields at all.
+	#
+	# Both are answered by sweeping the section for every range it states and
+	# requiring each one to be ACCOUNTED FOR, rather than asking per field and
+	# accepting silence. Measured before it was written: the three tools state
+	# ten ranges between them, nine are field bounds and the tenth is boots'
+	# top speed, which no file in tests/ read.
+
+	# The bounds a tool states that are not a field's. Each names the constant
+	# that holds it and a way to build a spec that reaches a given value of
+	# it, so the check below is the same check the fields get: the numbers are
+	# read from the constant, and both ends are tried against the validator.
+	#
+	# WHAT THIS TABLE IS WEAK AT, said rather than discovered later: it is
+	# written out by hand, so a derived bound added to a tool is not covered
+	# by it. That is held by the unaccounted-range check below, which fails on
+	# a range this table does not claim - so a new one cannot pass unexamined,
+	# it simply has to be added here. Making tools declare their derived
+	# bounds would remove the hand-written list and is a change to scripts/
+	# for one suite's benefit; it is in HANDOVER rather than done here.
+	var derived: Array = [{
+		"tool": "boots",
+		"what": "top speed",
+		"bound": [float(BootsTool.TOP_SPEED[0]), float(BootsTool.TOP_SPEED[1])],
+		"reach": func(target: float) -> Dictionary: return _boots_spec_reaching(target),
+	}]
 
 	for t in tools:
 		var tool_mod: ToolModule = t
-		for k in tool_mod.defaults().keys():
-			var field := str(k)
-			var bound := _stated_bound(tool_mod.prompt_section(), field)
+		var section_t := tool_mod.prompt_section()
+		var numeric := _numeric_fields(tool_mod)
+		var ranges := _ranges_in(section_t, numeric)
+
+		# A numeric field with no bound stated is now a FAILURE and not a
+		# skip. The model is told what every other number may be; a field
+		# left out of that is a field it has to guess at.
+		var attributed: Array = []
+		for field in numeric:
+			var bound := _stated_bound(section_t, field)
+			_check(not bound.is_empty(),
+				"EQUIP %s: '%s' is a number, so the prompt states its bound" % [tool_mod.name(), field])
 			if bound.is_empty():
 				continue
+			attributed.append(field)
+			# The two readers must agree, so neither can drift away from the
+			# other and leave one of them reading a bound nobody states.
+			var swept: Array = []
+			for r in ranges:
+				if str((r as Dictionary)["field"]) == field:
+					swept.append(r)
+			_check(swept.size() == 1,
+				"EQUIP %s: '%s' states exactly one bound (%d found)" % [tool_mod.name(), field, swept.size()])
+			if swept.size() == 1:
+				var one: Dictionary = swept[0]
+				_check(is_equal_approx(float(one["low"]), bound[0]) and is_equal_approx(float(one["high"]), bound[1]),
+					"EQUIP %s: '%s' reads the same bound both ways (%s-%s and %s-%s)" % [
+						tool_mod.name(), field, str(one["low"]), str(one["high"]), str(bound[0]), str(bound[1])])
 			for end in bound:
 				var result: Dictionary = tool_mod.validate({"tool": tool_mod.name(), "spec": {field: end}})
 				_check(bool(result.get("ok", false)),
 					"EQUIP %s: the stated bound %s for '%s' is accepted%s" % [
 						tool_mod.name(), str(end), field,
 						"" if bool(result.get("ok", false)) else " - refused: %s" % str(result.get("errors", []))])
+
+		# Every range the section states is either a numeric field's bound or
+		# one this suite has declared and checks below. An unaccounted range
+		# fails: it is a number the model was given that nothing here reads.
+		var mine: Array = []
+		for d in derived:
+			if str((d as Dictionary)["tool"]) == tool_mod.name():
+				mine.append(d)
+		var unaccounted: Array = []
+		for r in ranges:
+			if str((r as Dictionary)["field"]) != "":
+				continue
+			var claimed := false
+			for d in mine:
+				var b: Array = (d as Dictionary)["bound"]
+				if is_equal_approx(float((r as Dictionary)["low"]), b[0]) and is_equal_approx(float((r as Dictionary)["high"]), b[1]):
+					claimed = true
+					break
+			if not claimed:
+				unaccounted.append("%s to %s in \"%s\"" % [
+					str((r as Dictionary)["low"]), str((r as Dictionary)["high"]),
+					str((r as Dictionary)["line"]).substr(0, 60)])
+		_check(unaccounted.is_empty(),
+			"EQUIP %s: every bound it states is read by this suite%s" % [
+				tool_mod.name(),
+				"" if unaccounted.is_empty() else " - not read: %s" % str(unaccounted)])
+		_note("EQUIP %s: %d ranges stated, %d are field bounds, %d derived" % [
+			tool_mod.name(), ranges.size(), attributed.size(), mine.size()])
+		_check(ranges.size() == attributed.size() + mine.size(),
+			"EQUIP %s: the %d ranges stated are the %d field bounds and the %d derived ones" % [
+				tool_mod.name(), ranges.size(), attributed.size(), mine.size()])
+
+	# The derived bounds, given the same two checks a field's bound gets: the
+	# numbers are the constant's, and both ends are reachable with legal
+	# fields AND accepted. The second is not a restatement of the first - a
+	# narrowed field range can leave an end of a derived bound unreachable
+	# while both constants stay exactly where they were.
+	for d in derived:
+		var entry: Dictionary = d
+		var tool_mod: ToolModule = ToolRegistry.find(str(entry["tool"]))
+		_check(tool_mod != null, "the derived bound '%s' names a tool that exists" % str(entry["what"]))
+		if tool_mod == null:
+			continue
+		var b: Array = entry["bound"]
+		var stated := _ranges_in(tool_mod.prompt_section(), _numeric_fields(tool_mod))
+		var said := false
+		for r in stated:
+			if str((r as Dictionary)["field"]) != "":
+				continue
+			if is_equal_approx(float((r as Dictionary)["low"]), b[0]) and is_equal_approx(float((r as Dictionary)["high"]), b[1]):
+				said = true
+				break
+		_check(said, "EQUIP %s: the prompt states the %s bound %s to %s the constant holds" % [
+			str(entry["tool"]), str(entry["what"]), str(b[0]), str(b[1])])
+		var reach: Callable = entry["reach"]
+		for end in b:
+			var spec: Dictionary = reach.call(float(end))
+			_check(not spec.is_empty(),
+				"EQUIP %s: %s %s is reachable with legal fields" % [
+					str(entry["tool"]), str(entry["what"]), str(end)])
+			if spec.is_empty():
+				continue
+			var result: Dictionary = tool_mod.validate({"tool": str(entry["tool"]), "spec": spec})
+			_note("EQUIP %s: %s %s reached by %s" % [str(entry["tool"]), str(entry["what"]), str(end), str(spec)])
+			_check(bool(result.get("ok", false)),
+				"EQUIP %s: the stated %s bound %s is accepted%s" % [
+					str(entry["tool"]), str(entry["what"]), str(end),
+					"" if bool(result.get("ok", false)) else " - refused: %s" % str(result.get("errors", []))])
 
 	# --- every claim that a named field is the one that does a named thing ---
 	#
@@ -285,15 +520,25 @@ func _initialize() -> void:
 	var plain := _boots_readings(ordinary, walk)
 
 	var measured_any := false
+	# 072: counted, not just "at least one". `measured_any` alone is satisfied
+	# by ANY claim being measured, so a boots claim whose bound stopped being
+	# readable dropped out here in silence while the other one kept the
+	# assertion green - the same hole as the bound lookup above, one loop
+	# along. The claims this suite is able to measure are counted first and
+	# the count is asserted at the end.
+	var boots_claims: Array = []
 	for c in claims:
+		if boots.defaults().has(str(c["field"])) and boots.prompt_section().contains(str(c["phrase"])):
+			boots_claims.append(c)
+	var measured: Array = []
+	for c in boots_claims:
 		var field := str(c["field"])
-		if not boots.defaults().has(field):
-			continue
-		if not boots.prompt_section().contains(str(c["phrase"])):
-			continue
 		var bound := _stated_bound(boots.prompt_section(), field)
+		# A numeric field is asserted above to state a bound, so an empty one
+		# here is a failure and no longer a note.
+		_check(not bound.is_empty(),
+			"\"%s\": '%s' states a bound, so there is an end to take it to" % [str(c["phrase"]), field])
 		if bound.is_empty():
-			_note("'%s' states no numeric bound, so there is no end to take it to" % field)
 			continue
 		var ends: Array = []
 		match str(c["verb"]):
@@ -307,6 +552,8 @@ func _initialize() -> void:
 			if not bool(result.get("ok", false)):
 				continue
 			measured_any = true
+			if not field in measured:
+				measured.append(field)
 			var moved := _boots_readings(result["spec"], walk)
 			var changed: Array = []
 			for what in moved:
@@ -320,6 +567,10 @@ func _initialize() -> void:
 					str(c["phrase"]), field, str(end), changed.size(), plain.size(),
 					"" if changed.size() <= 1 else " (%s)" % ", ".join(PackedStringArray(changed))])
 	_check(measured_any, "at least one claim was measured rather than only read")
+	_check(measured.size() == boots_claims.size(),
+		"every boots claim was measured and not only read: %d of %d (%s)" % [
+			measured.size(), boots_claims.size(), str(measured)])
+	_note("boots claims measured: %s" % str(measured))
 
 	# The stopping claim is a comparison, so the comparison is measured: from
 	# ONE speed, which is the part the 037 reading got wrong. A stop from a

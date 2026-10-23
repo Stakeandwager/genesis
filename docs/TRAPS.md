@@ -4497,3 +4497,94 @@ narrowed to two.
 > stopped being right.
 
 ---
+
+## 69. A bound lookup that answers "no bound" and "I could not read it" the same way
+
+**Signature:** a suite exists to check that every bound the prompt states is a
+bound the validator accepts. It loops over the fields, looks each one's bound
+up in the prompt text, and `continue`s when the pattern does not match. Reword
+one bound out of the pattern's shape and the suite does not fail, does not
+warn, and prints nothing: the assertions that would have checked it **cease to
+exist**.
+
+**Cause.** `claim_field_test.gd`:
+
+```gdscript
+var bound := _stated_bound(tool_mod.prompt_section(), field)
+if bound.is_empty():
+	continue
+```
+
+`_stated_bound` returns `[]` for a field with no bound **and** for a bound it
+could not parse. The loop cannot tell those apart, so the second is treated as
+the first — silently, because there is nothing to print about a field that
+legitimately has no bound. Six of the fifteen tool fields are text and
+genuinely have none, which is exactly what made the silence look normal.
+
+**Measured rather than argued.** With `brake: %.0f to %.0f newtons` reworded
+to `brake: between %.0f and %.0f newtons` and the pre-072 suite restored in
+its own throwaway copy, the suite reported **`failures=0`**, and the PASS list
+lost four lines (diffed, not eyeballed):
+
+```
+- PASS  EQUIP boots: the stated bound 150.0 for 'brake' is accepted
+- PASS  EQUIP boots: the stated bound 1200.0 for 'brake' is accepted
+- PASS  boots 'brake' at 1200.0 validates, so the claim can be measured
+- PASS  "stop on a sixpence" promises nothing else, and 'brake' at 1200.0
+        changes 1 of the 2 things boots measure
+```
+
+The fourth is **the measurement of the claim the suite was written for** —
+038's *"stop on a sixpence"*. A green suite with its headline assertion
+deleted.
+
+**And the enumeration was narrower than the class.** Sweeping the sections for
+*every* range instead of asking per field found **ten statements across the
+three tools, and only nine hang off a field.** The tenth is
+`BootsTool.TOP_SPEED` — *"It must come to 2 to 12 metres a second"* — a bound
+stated to the model and enforced in `validate()`, which **no loop over
+`defaults().keys()` can reach, because top speed is not a field.** A grep of
+`tests/` for `TOP_SPEED` returns one hit and it is a comment.
+
+**And the widening the handover asked for had no subject at all.** The entry
+said the pattern could not see a bound written with a dash or as *"between N
+and M"*. Measured first: **all nine numeric fields state their bound as
+`field: N to M`**, and the prompt contains no dash bound and no *"between"*.
+The third commit running on this axis where the widening was not the fix
+(TRAPS 67, TRAPS 68).
+
+**Do:**
+
+- **A reader that returns the same empty answer for "absent" and "unparsed"
+  must not be driven by a loop that skips on empty.** Decide which of the two
+  it is from something other than the reader — here, the *type* of the field's
+  default — and fail on the one that should not happen.
+- **Sweep the subject for every claim it makes; do not ask the code which
+  claims it expects to find.** A per-member lookup can only find claims
+  attached to a member it already knows about. The ten-versus-nine gap was
+  invisible from the field list and obvious from the text.
+- **Require every claim found to be accounted for.** The useful assertion is
+  not "this field's bound is right" but "every bound in this section is one I
+  have read". An unaccounted claim then fails instead of passing in silence,
+  and a hand-written exception table becomes safe: it cannot grow stale
+  quietly, because a new member fails until it is added.
+- **"At least one was measured" is the same trap one loop along.** It is
+  satisfied by any member, so the member that drops out is the one you never
+  hear about. Count the members you could measure and assert the count.
+- **A derived bound needs a check a field bound does not: that its ends are
+  REACHABLE.** Narrowing a field's range can put an end of a derived bound out
+  of reach while every constant sits exactly where it was, and the player is
+  then told about a bound they cannot have. Solve for the values that reach
+  it; never type them in.
+- **Before widening a pattern, check the widening has a subject.** Three
+  entries on this axis in a row asked for breadth, and all three times the
+  spelling they named was one the project does not produce while the real hole
+  was a layer behind the pattern.
+
+Found in 072, taking the last of the three candidates 069 handed on, which
+closes the axis.
+
+> The suite could not tell a field that had no bound from a bound it could
+> not read, so the day the bound changed shape it quietly stopped asking.
+
+---

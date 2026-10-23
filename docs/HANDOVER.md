@@ -24,7 +24,74 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **071**, which took the second of the
+- Last commit at the time of writing: **072**, which took the last of the
+  three regex-breadth candidates — `claim_field_test`'s `^%s: N to M`, said
+  to be unable to see a bound written with a dash or as *"between N and M"* —
+  and found that **this time the entry's quote of the pattern was right, and
+  the widening it asked for had no subject in the prompt at all.** Measured
+  before anything was touched: **every one of the nine numeric tool fields
+  states its bound as `field: N to M`.** Not one dash, not one *"between"*.
+  Third commit running that this axis asked for a widening that was not the
+  fix.
+  **THE HOLE WAS THE LOOKUP, NOT THE PATTERN.** The check was written per
+  field — find this field's bound, `continue` if the pattern misses — and **a
+  lookup that misses is indistinguishable from a field that has no bound.**
+  TRAPS 65's shape inside the suite that exists to hold bounds. Measured, not
+  argued: with `brake:` reworded to *"between N and M"* and the **pre-072
+  suite** restored in its own copy, the suite said **`failures=0`** and its
+  PASS list lost **four lines** — including **the measurement of 038's
+  *"stop on a sixpence"*, the headline claim the whole suite was written
+  for.**
+  **AND ONE BOUND WAS UNREACHABLE BY ANY LOOP OVER FIELDS.** Sweeping for
+  every range rather than asking per field found **ten across the three
+  tools: nine field bounds and one that is not a field's.**
+  `BootsTool.TOP_SPEED` — *"It must come to 2 to 12 metres a second"* — is
+  stated to the model and enforced in `validate()`, and **a grep of `tests/`
+  for `TOP_SPEED` finds one hit and it is a comment.** Nothing had ever read
+  it.
+  **THE GENERAL RULE:** a suite that checks "every bound the prompt states"
+  by looping over a code-derived list of **fields** can only see bounds that
+  hang off a field. A bound about a **derived quantity** is in the class and
+  invisible to the enumeration. Ask the text which claims it makes, not the
+  code which claims it expects. TRAPS 59 and 68, one layer further in.
+  **NOTHING IN `scripts/` WAS WRONG AND NO FILE IN `scripts/` OR `scenes/`
+  CHANGED.** All nine bounds are accepted at both ends, the top-speed numbers
+  are its constant's, and both its ends are reachable and accepted. The fault
+  was not present; it was **unpreventable**.
+  **WHAT CHANGED.** One file in `tests/`, **79 → 121 assertions**. Every range
+  the section states must be **accounted for** — a numeric field's bound or a
+  declared derived one — and an unaccounted range **fails**. A numeric field
+  stating no bound is a failure, not a skip. The derived bound gets the
+  field checks **plus one that is not a restatement: both ends must be
+  REACHABLE with legal field values**, the reaching spec solved for from the
+  constants rather than typed in. The claim loop's own *"at least one"* is
+  now a counted total.
+  **SIX DELIBERATE FAULTS, each in its own throwaway copy with its own
+  `config/name` (TRAPS 50), FAIL lines READ.** The original fault: **3
+  failures** where the pre-072 suite was green. Top-speed reworded: 2.
+  Top-speed typed by hand so it drifts from its constant: 2. `TOP_SPEED`
+  widened so an end is unreachable while both constants sit still: 1, and it
+  is the check that is not a restatement. A stray range added to the car
+  prompt: 2. `steering`'s bound deleted: 1.
+  **THREE MUST-PASS CONTROLS PASS, two of them checked for passing for the
+  RIGHT reason.** The pre-072 comparison above. Prose reworded around the
+  bounds with the numbers untouched: green at the same 121, so the suite
+  reads facts and not wording. And a **brand-new numeric field added to a
+  tool only** (`wobble`, `1 to 9`): green at 128, with the **seven new
+  assertions naming `wobble`** — read, not assumed — and the suite not edited.
+  **71 suites, `--all`, `user://` cleared first: 0 with something to look
+  at.** The baseline in this container before anything was touched was
+  **byte-identical to the md5 071 recorded**
+  (`f9b0d8cf50968a31a41d42023deab0ef`), and **two full runs on the final tree
+  are byte-identical to each other and to it** — expected and said plainly:
+  no suite was added and no verdict changed, so the run output cannot move.
+  What changed is what can now fail, and the six faults measure that.
+  **NOT VERIFIED: nothing was rendered, no window was opened, no model was
+  asked anything and no request left the container. There is no API key
+  here.** `PROMPT_VERSION` did not move and the prompt is byte-identical. No
+  secret was set and no workflow file was edited; 064's finding stands and
+  the live site is still `71b065f`. **No new "Human decision needed."**
+- Before 072: **071**, which took the second of the
   three regex-breadth candidates — `said_article_test`'s sweep, said by the
   entry below to be unable to see *"an article in front of a two-word
   numbered label"* — and found that **the widening it asked for was again the
@@ -10175,6 +10242,200 @@ be wrong and the corrections are the useful part.
    a test is a judgement about what a panel suite is for, so it is noted
    rather than taken.
 
+## 072 — the bound nothing read, and the lookup that skipped in silence
+
+**Objective.** The live entry under "Next action": the last of the three
+regex-breadth candidates — `claim_field_test`'s `^%s: N to M`, *"said to be
+unable to see a field bound written with a dash or as 'between N and M'"*.
+The entry's own instruction was to read the pattern off the file, because its
+text had been wrong twice running, and to **ask what the subject has never
+supplied before asking what the pattern cannot match**.
+
+**Starting state.** Branch `prototype-002a` at `8b17d70` (071). Baseline
+`--all` in this container with `user://` cleared first: **71 suites, 0 with
+something to look at**, md5 `f9b0d8cf50968a31a41d42023deab0ef` — **byte-identical
+to the md5 071 recorded**, so the record and the container agree before
+anything was touched.
+
+### The pattern had NOT drifted, and the widening had no subject at all
+
+Read off the file (TRAPS 66): it is
+`(?m)^%s: ([0-9]+(?:\.[0-9]+)?) to ([0-9]+(?:\.[0-9]+)?)\b`, which is what
+the entry said it was — the first time in three commits on this axis that the
+entry's quote was right.
+
+**And the widening it asked for has no live subject whatsoever.** Measured in
+Godot across all three tool sections before anything was touched: **every one
+of the nine numeric fields states its bound as `field: N to M`.** Not one
+dash, not one *"between N and M"*, anywhere in the prompt. Widening the
+pattern would have added breadth for a spelling Genesis does not produce —
+the third commit running that this axis asked for a widening that was not the
+fix (TRAPS 67, TRAPS 68).
+
+### What the subject had never supplied, which is the finding
+
+The hole is one layer behind the pattern, exactly where 070 and 071 found
+theirs. The check was written as a **lookup per field**:
+
+```gdscript
+var bound := _stated_bound(tool_mod.prompt_section(), field)
+if bound.is_empty():
+	continue
+```
+
+**A lookup that misses is indistinguishable from a field that has no bound.**
+So a bound reworded out of the pattern's shape does not fail and does not
+warn — the assertions that would have checked it simply cease to exist, in
+the suite that exists to hold bounds. TRAPS 65's shape, inside the file.
+
+**Measured, not argued.** With `brake: %.0f to %.0f newtons` reworded to
+`brake: between %.0f and %.0f newtons` and the **pre-072 suite** restored in
+its own throwaway copy, the suite reported **`failures=0`** and its PASS list
+lost exactly four lines, diffed rather than eyeballed:
+
+```
+- PASS  EQUIP boots: the stated bound 150.0 for 'brake' is accepted
+- PASS  EQUIP boots: the stated bound 1200.0 for 'brake' is accepted
+- PASS  boots 'brake' at 1200.0 validates, so the claim can be measured
+- PASS  "stop on a sixpence" promises nothing else, and 'brake' at 1200.0
+        changes 1 of the 2 things boots measure
+```
+
+The fourth is **the measurement of the headline claim the whole suite was
+written for** — 038's *"stop on a sixpence"*. It vanished and the suite stayed
+green.
+
+### And a bound no loop over fields could ever reach
+
+Sweeping the sections for **every** range rather than asking per field found
+**ten range statements across the three tools: nine field bounds and one
+that is not a field's at all.**
+
+`BootsTool.TOP_SPEED` — *"It must come to 2 to 12 metres a second"* — is a
+bound stated to the model and enforced in `validate()`, and **no loop over
+`defaults().keys()` can reach it, because top speed is not a field.** A grep
+of `tests/` for `TOP_SPEED` finds **one hit and it is a comment** in
+`formula_test.gd`. Nothing has ever read it.
+
+**The general rule, which is worth more than the fix:** a suite that checks
+"every bound the prompt states" by looping over a code-derived list of
+**fields** can only see the bounds that hang off a field. A bound stated about
+a **derived quantity** is in the class and invisible to the enumeration. Ask
+the subject — the text — which claims it makes, not the code which claims it
+expects. TRAPS 59 and TRAPS 68, one layer further in.
+
+### What changed — one file, in `tests/`
+
+**Nothing in `scripts/` was wrong and no file in `scripts/` or `scenes/`
+changed.** All nine field bounds are accepted at both ends, the top-speed
+bound's stated numbers are its constant's, and both its ends are reachable
+and accepted. The fault was not present; it was **unpreventable**. That is a
+claim about the guard, not about Genesis.
+
+`tests/claim_field_test.gd`, **79 → 121 assertions**, both counted off its own
+PASS lines (the pre-072 count by running the HEAD version in its own copy):
+
+- The per-field lookup is replaced by a sweep of every range the section
+  states. Each must be **accounted for**: a numeric field's bound, or a
+  **declared derived bound**. An unaccounted range **fails** — it is a number
+  the model was given that nothing reads.
+- **A numeric field that states no bound is now a failure, not a skip.** Which
+  fields are numeric is read off `defaults()`, so a field added later is
+  covered without editing the suite.
+- The two readers must **agree**: the per-field lookup and the sweep must
+  return the same bound, so neither can drift away from the other.
+- The derived bound gets the same two checks the fields get — its numbers are
+  read from the constant (TRAPS 28) — **plus one that is not a restatement:
+  both ends must be REACHABLE with legal field values.** A narrowed `push` or
+  `weight` range can leave an end of a derived bound unreachable while both
+  constants sit exactly where they were, and the player is then told about a
+  bound they cannot have. The reaching spec is **solved for** from the
+  constants (`push = target x weight x footing`, tried at the corners of the
+  other two ranges), never typed in.
+- The claim loop's own `continue` is closed the same way: it asserted only
+  that **at least one** claim was measured, so a boots claim whose bound
+  stopped being readable dropped out in silence while the other kept the
+  assertion green. The measurable claims are now **counted** and the count
+  asserted.
+
+### Evidence — what was actually run
+
+**SIX DELIBERATE FAULTS, each in its own throwaway copy with its own
+`config/name` (TRAPS 50), FAIL lines READ:**
+
+| fault | result |
+|---|---|
+| `brake:` bound reworded to *"between N and M"* — **the original fault** | **3 failures** where the pre-072 suite was green |
+| top-speed bound reworded out of the shape | 2 failures |
+| top-speed numbers typed by hand so they drift from the constant | 2 failures, the unaccounted range named in the message |
+| `TOP_SPEED` widened to `[2.0, 40.0]` so an end is **unreachable** with legal fields, both constants otherwise untouched | 1 failure, and it is the check that is not a restatement |
+| an extra range added to the car prompt (*"Grip works best from 5 to 15"*) | 2 failures, the range quoted back |
+| `steering`'s bound removed from the prompt entirely | 1 failure |
+
+**THREE MUST-PASS CONTROLS PASS, and two of them were checked for passing for
+the RIGHT reason rather than merely passing:**
+
+- **The pre-072 comparison**, above: the original fault, same copy, old suite
+  — `failures=0` and four assertions gone. That is the measurement the whole
+  commit rests on.
+- **Prose reworded around the bounds, numbers untouched** (three car
+  descriptions rewritten): green at **121**, the same count as clean. The
+  suite reads the facts and not the wording (TRAPS 6).
+- **A brand-new numeric field added to a tool only** (`wobble`, `1 to 9`, in
+  `car_tool.gd`): green at **128**, and the **seven new assertions name
+  `wobble`** — read, not assumed — with the suite not edited.
+
+**71 suites, `--all`, `user://` cleared first: 0 with something to look at.**
+Two full runs on the final tree, byte-identical to each other, and
+**byte-identical to the baseline** — expected and stated plainly rather than
+dressed up: **no suite was added and no verdict changed, so the run output
+cannot move.** What changed is what can now fail, and the run does not measure
+that. The six faults and the pre-072 comparison are the measurement.
+
+### What the tests did NOT prove
+
+- **NOTHING IS REACHABLE FROM A MODEL HERE.** Nothing was rendered, no window
+  was opened, no model was asked anything and no request left the container.
+  There is no API key here.
+- **That any model is helped by any of this.** What is measured is that the
+  numbers Genesis states to the model are the numbers it enforces, and that
+  they are reachable. Whether the model obeys them is the owner's screen.
+- **That the three tool sections are the whole class.** This sweep runs over
+  `ToolRegistry.tools()` only. The **worlds'** bounds are 035's and
+  `prompt_bounds_test`'s, and the wider question — the **92 numerals in the
+  assembled prompt**, 41 distinct, of which this file now accounts for ten
+  more — is still open and is still the big one.
+- **That the derived-bound table is safe.** It is **hand-written**, so a
+  derived bound added to a tool is not in it. That is held by the
+  unaccounted-range check, which fails on any range the table does not claim
+  — so a new one cannot pass unexamined, it has to be added. Written into the
+  suite at the table.
+- **The prompt is byte-identical.** `PROMPT_FINGERPRINT` did not move and
+  `PROMPT_VERSION` stays at `050-no-command-for-a-question-1`.
+- **No secret was set and no workflow file was edited.** 064's finding stands:
+  the web build has failed on every push since 14 October and the live site is
+  still `71b065f`.
+- **No new "Human decision needed."**
+
+### Next action
+
+**The regex-breadth axis that 068 opened is now CLOSED at all three of the
+candidates 069 handed on, and all three went the same way:** the widening the
+entry asked for was wrong every time, and the fault was a layer behind the
+pattern every time. Do not re-open it by widening a pattern.
+
+**The remaining twenty-three patterns in `tests/` are still unasked**, and the
+method that has now paid three times is: *what has the subject never
+supplied?* — not *what can the pattern not match?*
+
+**And one thing this commit found and deliberately did not do.** Making tools
+declare their derived bounds — a `derived_bounds()` on `ToolModule` — would
+remove the hand-written table in `claim_field_test.gd` and cover a derived
+bound added to any future tool without the suite being edited. It is a change
+to `scripts/` for one suite's benefit, and an interface addition to the tool
+API is the owner's call rather than an unattended session's. **It is not
+"Human decision needed" — it is a proposal, and it is small.**
+
 ## 071 — five names that were the same name five times
 
 **Objective.** The live entry under "Smallest useful assistant task next",
@@ -10351,12 +10612,17 @@ gets counted, including when it is about the document's own work.**
   the web build has failed on every push since 14 October and the live site is
   still `71b065f`.
 
-**Next action.** The last of the three regex-breadth candidates:
+**Next action.** ~~The last of the three regex-breadth candidates:
 `claim_field_test`'s `^%s: N to M`, which is said to be unable to see a field
-bound written with a dash or as *"between N and M"*. **Read the pattern off
-the file first** — the entry's text has now been wrong twice running — and
-**ask what the fixtures have never supplied before asking what the pattern
-cannot match**, because that is where the hole was in 071 and in 070.
+bound written with a dash or as *"between N and M"*.~~ **DONE IN 072**, and
+the entry was right about the pattern and wrong about the fix: the prompt
+states no bound with a dash or a *"between"*, and the hole was the per-field
+lookup skipping in silence. Struck here rather than deleted, per TRAPS 66's
+lesson that an entry is satisfied by the capability arriving. See the 072
+section above, whose "Next action" is the live one. The rest of the entry
+stands as written: **read the pattern off the file first**, and **ask what
+the subject has never supplied before asking what the pattern cannot
+match** — that is where the hole was in 070, 071 and 072 alike.
 
 ## 070 — two patterns named as one, and the verb a count never agreed with
 
