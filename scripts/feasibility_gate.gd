@@ -80,7 +80,9 @@ static func check(sections: Array) -> Dictionary:
 			# prompt_bounds_test's floor fixture builds. The prompt has always
 			# said "corners or hairpins"; this sentence, which is the one the
 			# PLAYER reads, said "corners".
-			"closing a circuit needs at least %d straights and %d corners or hairpins" % [MIN_STRAIGHTS, MIN_TURNS],
+			"closing a circuit needs at least %s and %s" % [
+				Readback.plural(MIN_STRAIGHTS, "straight"),
+				Readback.plural(MIN_TURNS, "corner or hairpin", "corners or hairpins")],
 		]
 		return result
 

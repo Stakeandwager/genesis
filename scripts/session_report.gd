@@ -239,13 +239,17 @@ static func describe(name: String, s: Dictionary) -> String:
 		lines.append("First world after %s, from \"%s\"." % [_duration(float(s["seconds_to_first_world"])), s["first_world_request"]])
 	else:
 		lines.append("No world was built.")
-	lines.append("Worlds built: %d (%d of them changes to the last world). Made another: %s." % [int(s["worlds_built"]), int(s["changes"]), "yes" if bool(s["made_another"]) else "no"])
+	lines.append("Worlds built: %d (%d of them %s to the last world). Made another: %s." % [
+		int(s["worlds_built"]), int(s["changes"]),
+		Readback.agrees(int(s["changes"]), "changes", "change"),
+		"yes" if bool(s["made_another"]) else "no"])
 	var places: Array = s["race_places"]
 	var placed := PackedStringArray()
 	for p in places:
 		placed.append("P%d" % int(p))
 	lines.append("Drove: %s. Races started: %d, finished: %d%s." % [
-		"no" if int(s["drove"]) == 0 else ("yes, once" if int(s["drove"]) == 1 else "yes, %d times" % int(s["drove"])),
+		"no" if int(s["drove"]) == 0 else Readback.agrees(int(s["drove"]),
+			"yes, once", "yes, %d times" % int(s["drove"])),
 		int(s["races_started"]), places.size(), " (" + ", ".join(placed) + ")" if not places.is_empty() else ""])
 	var failed: Array = s["failed"]
 	lines.append("Failed requests: %d%s" % [failed.size(), ":" if not failed.is_empty() else "."])
@@ -287,8 +291,9 @@ static func describe(name: String, s: Dictionary) -> String:
 				Readback.plural(int(u["bearing"]), "readback"),
 				Readback.agrees(int(u["bearing"]), "bears", "bear")])
 			lines.append("    (the %s could be a misreading or a change of mind; read %s below)" % [
-				"one bare \"no\"" if int(c["DISPUTED"]) == 1 else "%d bare \"no\"s" % int(c["DISPUTED"]),
-				"it" if int(c["DISPUTED"]) == 1 else "them"])
+				Readback.agrees(int(c["DISPUTED"]), "one bare \"no\"",
+					"%d bare \"no\"s" % int(c["DISPUTED"])),
+				Readback.agrees(int(c["DISPUTED"]), "it", "them")])
 		var corrections: Array = u["corrections"]
 		if not corrections.is_empty():
 			lines.append("  said Genesis misread them:")

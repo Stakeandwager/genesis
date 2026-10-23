@@ -534,7 +534,7 @@ func solve(content: Dictionary) -> Dictionary:
 			names.append("%s (room %d)" % [str(rooms[int(i)]["name"]), int(i) + 1])
 		out["reasons"] = [
 			"no space left for %s" % ", ".join(names),
-			"each room is placed near the room it has a door from, within %d rings of it" % MAX_RING,
+			"each room is placed near the room it has a door from, within %s of it" % Readback.plural(MAX_RING, "ring"),
 		]
 	return out
 

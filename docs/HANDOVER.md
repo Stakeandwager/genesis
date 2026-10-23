@@ -24,7 +24,85 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **069**, which took HANDOVER's own first
+- Last commit at the time of writing: **070**, which took the live entry — the
+  regex-breadth axis at the first of the three candidates 069 handed on — and
+  found that **the entry named one pattern where there were two, and that the
+  widening it asked for would have flagged a sentence that was right.**
+  **THE TWO SWEEPS WERE NOT THE SAME SWEEP.** The entry read
+  *"`container_door_test`'s and `counted_said_test`'s `\b1 [a-z_]+s\b`"* —
+  one pattern, quoted for both. Measured in Godot before anything was touched:
+  `container_door_test`'s is `\b1 [a-z]+s\b`, with **no underscore in its
+  noun class**, and it was **blind** to `1 dead_ends`, `1 banked_corners` and
+  `1 loop_segments`, all three of which `counted_said_test`'s pattern catches.
+  `dead_ends` is a key of the very metrics dictionary that sweep runs over.
+  **AND THE WIDENING WAS MEASURED RATHER THAN ADOPTED.** To see
+  `1 saved worlds` — the one spelling of this fault Genesis has actually
+  shipped, inline in `Main._list_worlds()`, per `world_store.gd`'s own
+  comment — the pattern must allow a space, and the widened form also matches
+  *"1 of them changes to the last world"* and *"1 readback that bears on it"*.
+  **Both of those are correct**, because the word agreeing with the count is a
+  **VERB** and the singular verb is right at one.
+  **THE FALSE-POSITIVE CONTROL IS WHAT FOUND THE LIVE FAULT.** The second
+  reads its verb from `Readback.agrees()`. The first decided it by hand and
+  got it wrong — `session_report.gd:242` — measured by producing the line at
+  four counts: *0 of them changes*, *1 of them changes*, *2 of them changes*,
+  *3 of them changes*. **Correct at one of four**, and the one it is correct
+  at is the one the comment fourteen lines above it was written about (*"042:
+  the count and the noun after it are one fact … never written out again"*).
+  **This file quoted the wrong form as real output**, at the 033 section.
+  **THE GENERAL RULE:** a sentence that states a count and a word that agrees
+  with it must read that agreement from `Readback.agrees()` — whether the
+  agreeing word is a **noun, a verb or a pronoun**, and whether the count is a
+  variable or a constant. 042 put the noun behind that reader and swept for
+  nouns; a verb and a pronoun are the same single fact decided elsewhere.
+  **NINE SITES, NOT ONE (TRAPS 11).** `session_report.gd` (4 — the verb, the
+  drove line, the bare-`"no"` count and the pronoun after it),
+  `race_director.gd:106` (a plural written at the other end of the noun),
+  `ai_interpreter.gd:542` and `548`, `dungeon_module.gd:537`,
+  `feasibility_gate.gd:83`, and **the AI prompt itself**,
+  `racing_module.gd:76` — which 068 moved to read its two floors from the
+  constants that enforce them and left the plural beside them written out.
+  That is **TRAPS 11 inside 068's own fix**.
+  **EIGHT OF THE NINE ARE BYTE-IDENTICAL AND THE NINTH IS THE FAULT**, proved
+  by printing all eight sentences before and after and diffing:
+  no difference. **The prompt is byte-identical and `PROMPT_FINGERPRINT` did
+  not move** — `prompt_bounds_test` asserts it, so `PROMPT_VERSION` stays at
+  `050-no-command-for-a-question-1` and no interpretation measured under it is
+  split.
+  **NEW SUITE `tests/agreement_test.gd`, 47 assertions.** Every agreement
+  assertion is a **round trip against `Readback.agrees()`**: the word Genesis
+  said is read out of the sentence by position and compared **whole** with
+  what `agrees()` answers for the count actually passed. No agreeing word is
+  typed in as the expected answer (TRAPS 6), and fault 11 below rewords the
+  sentence's tail and the suite still passes.
+  **FOURTEEN DELIBERATE FAULTS, each in its own throwaway copy with its own
+  `config/name` (TRAPS 50), FAIL lines read.** All nine reverts are caught and
+  named. **Two must-pass controls pass**: the sentence tail reworded, and a
+  new multi-word noun added in `scripts/` covered without the suite being
+  edited.
+  **AND THE GUARD BUILT FOR IT HAD THE SAME SHAPE OF HOLE, found by the
+  faults and not by reading it.** The scan that sweeps for a hardcoded
+  `%d <plural>` derives its needles from the nouns handed to
+  `Readback.plural()`, and **reverting `dungeon_module.gd`'s ring budget
+  PASSED** — that site was the only call passing `"ring"`, so the revert
+  deleted the fault and its needle in one edit. **A scan whose class is
+  derived from the code it checks is blind to the change that shrinks the
+  class.** Held instead by a per-site table naming the reader each site routes
+  through, with that table's own weakness written into it: it says a sentence
+  is *built* from the reader, not that its word was watched changing.
+  **71 suites, `--all`, `user://` cleared first: 0 with something to look
+  at.** The baseline in this container before anything was touched was
+  **byte-identical to the md5 069 recorded**
+  (`304df3c8d47eb0085b131d5d5ad70423`), and the after-run differs from it by
+  **exactly one line — the new suite's**. Three full runs on the final tree,
+  all byte-identical (`f9b0d8cf50968a31a41d42023deab0ef`).
+  **NOT VERIFIED: nothing was rendered, no window was opened, no model was
+  asked anything and no request left the container. There is no API key
+  here. No secret was set and no workflow file was edited.** 064's finding
+  stands: the web build has failed on every push since 14 October and the
+  live site is still `71b065f`. New TRAPS 67. **No new "Human decision
+  needed."**
+- Before 070: **069**, which took HANDOVER's own first
   live entry — **three player-facing sentences say "corner" where the code
   means a TURN**, named with line numbers and called *"three words and a full
   run"*. **IT WAS FIVE SENTENCES IN THREE FILES. The list of three was a
@@ -3628,6 +3706,13 @@ shown:
     Worlds built: 3 (0 of them changes to the last world). Made another: yes.
     First world after 1 min 00 s, from "give me boots that stop in 2 m".
 ```
+
+**070: that transcript is left exactly as 033 measured it, and the verb in it
+is wrong.** *"0 of them changes"* is what Genesis said at the time and until
+070; the line now reads *"0 of them change"*, because the verb was decided by
+hand in `session_report.gd:242` and was only right at a count of one. The
+transcript is a record of output and is not corrected here — see the 070
+entry in the starting state and TRAPS 67.
 
 Wrong since 002G, and it is the report the owner reads after a player testing
 session. It also meant the two halves of this commit could not be separated:
@@ -8419,9 +8504,24 @@ all **done**. Candidates, in the order the assistant would take them:
     nothing needs doing** — the sentences are already true for every
     composition a player can compose today.
 
-    **THE NEXT LIVE ENTRY, AND IT CONTINUES THE AXIS 068 OPENED: the three
-    regex candidates 068 read and did not take**, named below so they need not
-    be re-read, each a guess until it is fed its member. The method has now
+    **070 TOOK THE FIRST OF THE THREE AND IT PAID TWICE OVER.** The entry
+    below names *"`container_door_test`'s and `counted_said_test`'s
+    `\b1 [a-z_]+s\b`"* — **one pattern, and there are two.**
+    `container_door_test`'s is `\b1 [a-z]+s\b`, blind to every plural
+    Genesis spells with an underscore, `dead_ends` among them, which is a key
+    of the dictionary its own sweep runs over. **And the widening the entry
+    asks for was measured and rejected**: it flags *"1 of them changes to the
+    last world"* and *"1 readback that bears on it"*, both correct at a count
+    of one, because the agreeing word is a **verb**. **That control found a
+    live fault** — `session_report.gd:242` decided its verb by hand and was
+    right at one count of four — and the class was **nine sites**, the AI
+    prompt among them. See the 070 section and TRAPS 67.
+    **WHAT IS LEFT OF THIS ENTRY IS TWO OF THE THREE**, and the first thing to
+    do with either is **open the file and read the pattern there**: the entry's
+    text for `said_article_test` has already drifted from the code. Of the
+    **27 regex sites in `tests/`** that grep finds, 068 and 070 between them
+    have asked the question of three.
+    The entry as it stood, each a guess until it is fed its member. The method has now
     paid in 041, 042, 043, 052, 066, 067 and 068: name the member the pattern
     cannot match, feed it that member, watch the suite stay green. **Expect
     the blind spot to be in the check** — and 069 is one more reason to read
@@ -9954,6 +10054,207 @@ be wrong and the corrections are the useful part.
    suite reads it. It is four lines and a `match`. Whether a colour is worth
    a test is a judgement about what a panel suite is for, so it is noted
    rather than taken.
+
+## 070 — two patterns named as one, and the verb a count never agreed with
+
+**Objective.** The live entry under "Smallest useful assistant task next" —
+the regex-breadth axis 068 opened, continued at the first of the three
+candidates 069 handed on: *"`container_door_test`'s and `counted_said_test`'s
+`\b1 [a-z_]+s\b` cannot see a plural that does not end in `s`"*.
+
+**Starting state.** Branch `prototype-002a` at `c455456` (069). Baseline
+`--all` in this container with `user://` cleared first: 70 suites, **0 with
+something to look at**, md5 `304df3c8d47eb0085b131d5d5ad70423` — **byte-identical
+to the md5 069's own message recorded**, so the record and the container agree
+before anything was touched.
+
+### The entry named one pattern and there were two
+
+Read off the code rather than taken from the entry (TRAPS 66), then measured
+in Godot before anything was changed:
+
+| suite | pattern as written in the file | `1 dead_ends` |
+|---|---|---|
+| `container_door_test:320` | `\b1 [a-z]+s\b` | **BLIND** |
+| `counted_said_test:346` | `\b1 [a-z_]+s\b` | CAUGHT |
+
+The entry quoted the wider pattern for both. `1 banked_corners` and
+`1 loop_segments` are blind to the first as well. **`dead_ends` is a key of
+the very metrics dictionary `container_door_test`'s sweep runs over**, and a
+section type reaches a panel through `RacingModule._counted()` whenever the
+validator accepts one the prompt does not offer — which it can, because
+`SectionValidator.SECTION_TYPES` holds ten and `OFFERED_TYPES` holds four.
+`container_door_test`'s pattern is now the wider one, with the measurement
+written at the site.
+
+### The widening the entry asked for was measured, and rejected
+
+To see `1 saved worlds` the pattern must allow a space.
+`\b1 [a-z_]+(?: [a-z_]+)*s\b` does, and measured against sentences Genesis
+already produces it also matches:
+
+```
+1 of them changes to the last world        <- CORRECT at a count of one
+1 readback that bears on it                <- CORRECT at a count of one
+```
+
+**The agreeing word in both is a VERB.** Widening the pattern would have made
+the net report two true sentences as faults, which is how an assertion gets
+deleted. The multi-word hole is closed a different way instead — see below.
+
+### And the false-positive control found a live fault
+
+`session_report.gd:242` decided its verb by hand. **Measured by producing the
+line, not by reading it:**
+
+```
+edits=0  ->  Worlds built: 1 (0 of them changes to the last world).
+edits=1  ->  Worlds built: 2 (1 of them changes to the last world).
+edits=2  ->  Worlds built: 3 (2 of them changes to the last world).
+edits=3  ->  Worlds built: 4 (3 of them changes to the last world).
+```
+
+**Correct at one of four.** `s["changes"]` counts records whose source carries
+an `edit`, so a tester who builds a world and revises it twice reads *"2 of
+them changes"* — and revising is the owner's own workflow. The one count it is
+correct at is the one the comment fourteen lines above it was written about:
+*"042: the count and the noun after it are one fact, read from
+`Readback.plural()` and never written out again"* (TRAPS 22's shape). **This
+file quoted the wrong form as real output** at the 033 section, where the
+transcript is now annotated rather than rewritten.
+
+### The general rule, and the nine sites it holds at (TRAPS 11)
+
+**A sentence that states a count and a word that agrees with it must read that
+agreement from `Readback.agrees()` — whether the agreeing word is a NOUN, a
+VERB or a PRONOUN, and whether the count is a variable or a constant.** 042
+put the noun behind that reader and swept for nouns. A verb and a pronoun are
+the same single fact, `count == 1`, decided somewhere else.
+
+| site | what it decided by hand | was it wrong? |
+|---|---|---|
+| `session_report.gd:242` | the verb after the change count | **YES — at 3 of 4 counts** |
+| `session_report.gd:248` | *"yes, once"* / *"yes, N times"* | no |
+| `session_report.gd:290` | the bare-`"no"` count | no |
+| `session_report.gd:291` | the pronoun after it | no |
+| `race_director.gd:106` | `"" if count == 1 else "s"` | no |
+| `ai_interpreter.gd:542` | `%d times` (`MAX_ATTEMPTS`) | no, while it is 3 |
+| `ai_interpreter.gd:548` | `%d times` (`MAX_ATTEMPTS`) | no, while it is 3 |
+| `dungeon_module.gd:537` | `%d rings` (`MAX_RING`) | no, while it is 4 |
+| `feasibility_gate.gd:83` | the floor refusal's two plurals | no, while both are 2 |
+| `racing_module.gd:76` | **the AI PROMPT's two plurals** | no, while both are 2 |
+
+That last one is **TRAPS 11 inside 068's own fix**: 068 moved the two floors
+to read from the constants that enforce them and left the plural beside them
+written out by hand.
+
+**Eight sentences are byte-identical and the ninth is the fault**, proved by
+printing all eight before and after and diffing: no difference. **The
+assembled prompt is byte-identical too**, so `PROMPT_FINGERPRINT` did not move
+and `PROMPT_VERSION` stays at `050-no-command-for-a-question-1` —
+`prompt_bounds_test` asserts it, which is the suite's assertion and not an
+eyeballing.
+
+### The suite, and why it asserts a fact and not a wording
+
+`tests/agreement_test.gd`, **47 assertions**, counted off its own PASS lines.
+
+- Every agreement assertion is a **round trip against `Readback.agrees()`**.
+  The verb is read out of the sentence **by position** and compared **whole**,
+  not with `contains()` — the first form of that assertion passed the wrong
+  verb at a count of one, because *"changes"* contains *"change"*, and its own
+  negative control caught it.
+- **The multi-word hole is closed by deriving the nouns from the code**, not
+  by widening the regex: every string literal handed to `Readback.plural()` in
+  `scripts/` is collected **with its own plural** — the call's third argument
+  when it has one — so `"corner or hairpin" -> "corners or hairpins"` is read
+  from the call site and never assembled from a rule about adding an `s`. The
+  pattern is kept beside it for the nouns no literal can be collected for:
+  `RacingModule._counted()` passes `str(type)` and `FarmModule` passes
+  `str(key)`.
+- Two pins stop the needle half being vacuous (TRAPS 6): at least one noun is
+  more than one word, and at least one plural is not the singular plus an `s`.
+  Fault 13 removes every multi-word noun and both pins fail.
+- The class is held mechanically in two directions: no file but `readback.gd`
+  decides `is this count one` inline, and no file writes a count beside the
+  plural of its noun. **The reader itself is asserted to still be there**, so
+  the first scan cannot pass by `agrees()` having been deleted.
+
+### The guard had the same shape of hole, and the faults found it
+
+**Deliberate fault 5 — reverting `dungeon_module.gd`'s ring budget to
+`%d rings` — PASSED every check in the file.** The hardcoded-plural scan
+builds its needles from the nouns handed to `Readback.plural()`, and that site
+was the **only call in the project passing `"ring"`**: the revert deleted the
+fault and the needle that catches it in one edit. **A scan whose class is
+derived from the code it is checking is blind to exactly the change that
+shrinks the class.**
+
+Held instead by `READS_THE_READER`, a per-site table naming the reader each
+site routes through, **with its own weakness written into it**: those rows say
+a sentence is *built* from the reader, not that its word was watched changing
+with its count. That is the most this harness can say about the four sentences
+it cannot stand up — `RaceDirector`'s needs a race on stepped physics,
+`AIInterpreter`'s two need the node, and `DungeonModule`'s needs a placement
+that actually runs out of space — and it is said plainly rather than dressed
+up as a measurement. The five that **are** produced are produced.
+
+### Evidence — what was actually run
+
+- **Baseline, `--all`, `user://` cleared first: 70 suites, 0 with something to
+  look at**, md5 `304df3c8d47eb0085b131d5d5ad70423`, byte-identical to the
+  md5 069 recorded.
+- **After: 71 suites, `--all`, `user://` cleared first, 0 with something to
+  look at**, and the output **differs from the baseline by exactly one line —
+  the new suite's**. **Three full runs on the final tree, all byte-identical**,
+  md5 `f9b0d8cf50968a31a41d42023deab0ef`.
+- **Fourteen deliberate faults, each in its own throwaway copy with its own
+  `config/name` (TRAPS 50), FAIL lines read.** All nine reverts caught and
+  named. The one that matters most is **fault 1**: it fails at counts 0, 2 and
+  3 and **passes at 1**, which is the original fault's own signature.
+  **Fault 5 is the one that passed first time** and produced the per-site
+  table. **Two must-pass controls pass**: fault 11 rewords the sentence's tail
+  and fault 14 adds a new multi-word noun in `scripts/`, covered without the
+  suite being edited.
+- **Fault 7 reverts the prompt and `prompt_bounds_test` stays green**, which
+  is worth recording in both directions: the prompt is byte-identical either
+  way, so the fingerprint confirms `PROMPT_VERSION` need not move **and**
+  cannot see this fault.
+
+### What the tests did NOT prove
+
+- **Nothing was rendered, no window was opened, no model was asked anything
+  and no request left the container. There is no API key here.** Whether a
+  model's circuit ever makes any of these counts one is unmeasured; what is
+  measured is what Genesis says when one does.
+- **No secret was set and no workflow file was edited.** 064's finding stands:
+  the web build has failed on every push since 14 October and the live site is
+  still `71b065f`.
+- **Four of the nine sentences were not produced**, only pinned to their
+  reader. Named above, with the reason for each.
+- **A hardcoded agreeing word with no conditional and no derived noun behind
+  it is still invisible to both scans.** `session_report.gd:242` was exactly
+  that shape and was caught only by the produced sentence. The scans catch the
+  idiom and the known noun; they cannot catch a verb nobody has told them is a
+  verb.
+- **That any of these sentences reads well.** Eight are unchanged, so there is
+  nothing new to read; the ninth now says *"2 of them change"* where it said
+  *"2 of them changes"*, and that it is now correct English is not the same
+  claim as that the line is worth having.
+
+**Next action.** The regex-breadth axis has **two of 069's three candidates
+left**, and they are named here so they need not be re-read — each a guess
+until it is fed its member, and **each to be read off the file before it is
+trusted, because 070 is the second commit running to find this file's own
+enumeration short (TRAPS 66, TRAPS 67)**: `said_article_test:322`'s
+`\b([Tt]he|[Aa]n?) ([a-z_]+) ([0-9]+)\b` — which the entry wrote as
+`\b(The|A|An) …`, so it has **already drifted from the file**, and which
+cannot see an article in front of a two-word numbered label; and
+`claim_field_test:149`'s `^%s: N to M`, which cannot see a field bound written
+with a dash or as *"between N and M"*. There are **27 regex sites in
+`tests/`** by grep, of which 068 and 070 have asked the question of three.
+New TRAPS 67. **No new "Human decision needed."**
+
 
 ## 069 — the list of three that was a class of five, and the member a player actually meets
 

@@ -103,7 +103,8 @@ func start(centreline: PackedVector3Array, start_heading: float, player: Car, co
 	for r in racers:
 		_locate(r, true)
 	running = true
-	return "Race: %d laps against %d opponent%s. Get ready..." % [RACE_LAPS, count, "" if count == 1 else "s"]
+	return "Race: %s against %s. Get ready..." % [
+		Readback.plural(RACE_LAPS, "lap"), Readback.plural(count, "opponent")]
 
 
 func stop() -> void:

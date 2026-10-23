@@ -316,8 +316,17 @@ func _plurals() -> void:
 			"placed": 1, "room_count": 2, "furthest_ring": 1}}):
 		said.append(str((row as Array)[1]))
 
+	# 070: THIS PATTERN AND counted_said_test'S WERE NOT THE SAME PATTERN, and
+	# HANDOVER named them as one ("container_door_test's and
+	# counted_said_test's \\b1 [a-z_]+s\\b"). This one had no underscore in its
+	# noun class, so it was blind to every plural Genesis spells with one.
+	# Measured in Godot before it was changed: "1 dead_ends", "1 banked_corners"
+	# and "1 loop_segments" were all BLIND here and all CAUGHT by
+	# counted_said_test's. "dead_ends" is a key of the very metrics dictionary
+	# above, and a section type reaches a panel whenever the validator accepts
+	# one the prompt does not offer. Aligned to the wider class. See TRAPS 67.
 	var one := RegEx.new()
-	one.compile("\\b1 [a-z]+s\\b")
+	one.compile("\\b1 [a-z_]+s\\b")
 	var caught: Array = []
 	for sentence in said:
 		var hit := one.search(str(sentence))

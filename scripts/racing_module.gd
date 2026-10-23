@@ -73,7 +73,7 @@ RULES FOR A CLOSED CIRCUIT
 - Sections join end to end, in order, starting at the start line. After the last section the track must arrive back at the start line, facing the way it started.
 - Corner and hairpin angles must add up to exactly %+.0f (clockwise) or %+.0f (anticlockwise). Chicanes do not count.
 - Travel in opposite directions must balance. Every metre the track travels away from the start line must be matched by a metre travelled back towards it, and every metre to the right of the start line by a metre back to the left. Angles adding up to %.0f is necessary but not enough on its own: a hairpin reverses the direction of travel, but by itself carries the track back only by its own width, twice its radius.
-- Use %s: at least %d straights and at least %d corners or hairpins.
+- Use %s: at least %s and at least %s.
 - The game can adjust each angle and each straight length by up to %.0f%% to close the loop, so plan where every section takes the track so that it very nearly closes by itself.
 - The road must never cross itself, and separate parts of the road must stay at least %.0f metres apart.""" % [
 		SectionValidator.STRAIGHT_LENGTH.x, SectionValidator.STRAIGHT_LENGTH.y,
@@ -94,7 +94,14 @@ RULES FOR A CLOSED CIRCUIT
 		FeasibilityGate.FULL_TURN, -FeasibilityGate.FULL_TURN,
 		FeasibilityGate.FULL_TURN,
 		Readback.list_rule(SectionValidator.list_entry()),
-		FeasibilityGate.MIN_STRAIGHTS, FeasibilityGate.MIN_TURNS,
+		# 070: and the PLURAL beside those two numbers was still written out by
+		# hand, which is TRAPS 11 inside 068's own fix: it moved the number to
+		# the constant that enforces it and left the word agreeing with the
+		# number decided here. Both are 2 today, so the assembled prompt is
+		# BYTE-IDENTICAL and PROMPT_FINGERPRINT does not move - asserted by
+		# prompt_bounds_test, not claimed here.
+		Readback.plural(FeasibilityGate.MIN_STRAIGHTS, "straight"),
+		Readback.plural(FeasibilityGate.MIN_TURNS, "corner or hairpin", "corners or hairpins"),
 		# One number for two constants: the solver may move an angle and a
 		# straight's length by the same 20%. tests/prompt_bounds_test.gd fails
 		# if MAX_ANGLE_ADJUSTMENT and MAX_LENGTH_ADJUSTMENT ever differ, and

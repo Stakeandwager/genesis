@@ -4294,3 +4294,120 @@ over `YAW_TYPES`, so its noun is *turn*. The tightest radius is taken over
 > of a class. The next session owes the class a grep, not a patch.
 
 ---
+## 67. Two patterns named as one, and the widening that would have flagged a true sentence
+
+**Signature:** a handover entry names a sweep's regex and hands it to the next
+session as the thing to widen. There are two sweeps, the entry quotes the
+wider one's pattern for both, and the narrower one is blind to a whole
+spelling. Then the widening the entry asks for turns out to match sentences
+that are correct.
+
+**Cause.** 068 opened the regex-breadth axis and 069 handed on three
+candidates. The first was written like this: *"`container_door_test`'s and
+`counted_said_test`'s `\b1 [a-z_]+s\b` cannot see a plural that does not end
+in `s`"*. Two suites, one pattern quoted. Measured in Godot before anything
+was touched:
+
+| suite | pattern | `1 dead_ends` |
+|---|---|---|
+| `container_door_test` | `\b1 [a-z]+s\b` | **BLIND** |
+| `counted_said_test` | `\b1 [a-z_]+s\b` | CAUGHT |
+
+The entry quoted the wider pattern for both. `dead_ends` is a key of the very
+metrics dictionary `container_door_test`'s sweep runs over, and
+`banked_corner` and `loop_segment` reach a panel through
+`RacingModule._counted()` whenever the validator accepts a type the prompt
+does not offer — which it does, because `SectionValidator` accepts ten types
+and `OFFERED_TYPES` holds four.
+
+**And the widening the entry asked for was measured instead of adopted.** To
+see `1 saved worlds` — the one spelling of this fault the project has
+actually shipped, inline in `Main._list_worlds()`, per `world_store.gd`'s own
+comment — the pattern has to allow a space. `\b1 [a-z_]+(?: [a-z_]+)*s\b`
+does, and it also matches:
+
+```
+1 of them changes to the last world
+1 readback that bears on it
+```
+
+**Both of those are CORRECT.** The word agreeing with the count is a **verb**,
+and at a count of one the singular verb is right. Widening the pattern would
+have made the net report two true sentences as faults.
+
+**The false-positive control is what found the live fault.** The second of
+those two reads its verb from `Readback.agrees()`. The first decided it by
+hand and got it wrong — `session_report.gd:242`, measured by producing the
+line at four counts:
+
+```
+edits=0  ->  Worlds built: 1 (0 of them changes to the last world).
+edits=1  ->  Worlds built: 2 (1 of them changes to the last world).
+edits=2  ->  Worlds built: 3 (2 of them changes to the last world).
+edits=3  ->  Worlds built: 4 (3 of them changes to the last world).
+```
+
+Correct at **one of four**, and the count it is correct at is the one the
+comment fourteen lines above it was written about: *"042: the count and the
+noun after it are one fact, read from `Readback.plural()` and never written
+out again"*. The file states the rule and then breaks it (TRAPS 22's shape),
+and `docs/HANDOVER.md` quoted the wrong form as real output.
+
+**The class was nine sites and not one.** Every place that decides *is this
+count one* by hand: a plural written at the other end of the noun
+(`race_director.gd:106`, `"" if count == 1 else "s"`), a pronoun
+(`session_report.gd:291`, `"it"`/`"them"`), a bound's plural beside a constant
+(`feasibility_gate.gd:83`, `ai_interpreter.gd:542` and `548`,
+`dungeon_module.gd:537`), and **the AI prompt itself** — `racing_module.gd:76`
+read its two floors from the constants that enforce them in 068 and left the
+plural beside them written out, which is TRAPS 11 inside 068's own fix. All
+nine now read `Readback.agrees()` or `Readback.plural()`. Eight produce
+byte-identical text and the ninth is the fault.
+
+**And the guard built for it had the same shape of hole, found by the
+deliberate faults and not by reading it.** The scan that sweeps `scripts/` for
+a hardcoded `%d <plural>` derives its needles from the nouns handed to
+`Readback.plural()`. Reverting `dungeon_module.gd`'s ring budget **PASSED**:
+that site was the only call in the project passing `"ring"`, so the revert
+deleted the fault and the needle that catches it in one edit. **A scan whose
+class is derived from the code it is checking is blind to exactly the change
+that shrinks the class.** Held instead by a per-site table that names the
+reader each site routes through, with the table's weakness stated in it: it
+says a sentence is *built* from the reader, not that its word was watched
+changing with its count.
+
+**Do:**
+
+- **When a handover quotes a pattern, open every file it names and read the
+  pattern there.** Two suites sweeping "the same" thing are two patterns until
+  measured. TRAPS 66 said to re-derive a class with line numbers from the
+  code; this is the same rule for a class given as a regex.
+- **Before widening a pattern, feed the widened version the sentences the
+  project already says.** A net that flags a true sentence is worse than a net
+  with a hole, because the hole is quiet and the false positive gets the
+  assertion deleted.
+- **Run the false-positive controls even when the change is a widening you are
+  not going to make.** The widening here was rejected, and the controls it
+  needed are what found the fault.
+- **A count agrees with nouns, verbs and pronouns alike.** 042 put the noun
+  behind one reader and swept for nouns. The same single fact — `count == 1` —
+  was being decided by hand at a verb and a pronoun, and no sweep for nouns
+  can see either.
+- **A guard that derives its subject from the code cannot see the code
+  shrinking.** Ask of every derived enumeration what happens when the last
+  member is deleted, and feed it that deletion.
+- **Routing a prompt's plural through the reader does not move the
+  fingerprint.** `PROMPT_FINGERPRINT` is the sha256 of the *assembled* prompt,
+  so a change that leaves the text byte-identical leaves `PROMPT_VERSION`
+  where it is — asserted by `prompt_bounds_test`, which stayed green, not
+  claimed. The converse is the warning: it also cannot see this fault, and
+  reverting the prompt's plural passes it.
+
+Found in 070, continuing the regex-breadth axis 068 opened at the first of
+the three candidates 069 handed on.
+
+> The entry said the pattern could not see a plural without an `s`. It could
+> not see a plural with a space either, and the sentence it would have had to
+> flag to see one was true.
+
+---

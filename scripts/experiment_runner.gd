@@ -127,7 +127,8 @@ func _on_ai_failed(reason: String) -> void:
 	if _retries < MAX_RETRIES:
 		_retries += 1
 		var wait := delay_after_busy if reason.contains("busy") or reason.contains("too many") else delay_between
-		progress.emit("Experiment: the AI failed (%s). Retry %d of %d in %d seconds." % [reason, _retries, MAX_RETRIES, int(wait)])
+		progress.emit("Experiment: the AI failed (%s). Retry %d of %d in %s." % [
+			reason, _retries, MAX_RETRIES, Readback.plural(int(wait), "second")])
 		_wait_then(wait, _next)
 		return
 

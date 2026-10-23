@@ -539,13 +539,13 @@ func _on_request_completed(result: int, response_code: int, _headers: PackedStri
 func _friendly_http_error(code: int) -> String:
 	match code:
 		429:
-			return "The AI is getting too many requests. Genesis tried %d times already; wait a minute. (HTTP 429)" % MAX_ATTEMPTS
+			return "The AI is getting too many requests. Genesis tried %s already; wait a minute. (HTTP 429)" % Readback.plural(MAX_ATTEMPTS, "time")
 		500, 502, 503, 504:
 			# 026: by the time a player reads this, Genesis has already tried
 			# MAX_ATTEMPTS times over several seconds. Saying "try again in a
 			# moment" without saying that invites them to do by hand what has
 			# just been done for them, three times.
-			return "The AI service is busy. Genesis tried %d times over a few seconds and it was busy every time. Worth another go in a minute. (HTTP %d)" % [MAX_ATTEMPTS, code]
+			return "The AI service is busy. Genesis tried %s over a few seconds and it was busy every time. Worth another go in a minute. (HTTP %d)" % [Readback.plural(MAX_ATTEMPTS, "time"), code]
 		400:
 			return "The AI did not accept the request format. (HTTP 400)"
 		401, 403:
