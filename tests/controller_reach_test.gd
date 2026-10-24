@@ -141,6 +141,8 @@ var asserted := 0
 var bad := 0
 var main: Node3D
 var notes: Array = []
+# Filled by _answers() in sections 3 and 4: the rows a fixture actually fired.
+var answered: Array = []
 
 const DUNGEON := '{"command": "CREATE_DUNGEON", "parameters": {"rooms": [{"name": "entrance", "width": 12, "depth": 12}, {"name": "store", "width": 12, "depth": 12}, {"name": "vault", "width": 12, "depth": 12}], "doors": [[1, 2], [2, 3]], "things": [{"name": "lamp", "in": 2}]}}'
 const CLEAR := '{"command": "CLEAR_WORLD", "parameters": {}}'
@@ -186,6 +188,23 @@ const BRANCHES := [
 const PASSTHROUGH_SITES := 3
 # main.gd's other record_rejection. A refusal, and not a FAILED_ category.
 const UNSUPPORTED_SITES := 1
+
+# THE THIRD COLUMN, AND BEFORE 086 NO CODE IN THIS REPOSITORY READ IT.
+# The header above states the per-kind answer - "TWENTY-TWO REACHABLE, FIVE
+# GUARDS, ONE THAT NEEDS A KEY" - and until 086 that was a count in a comment
+# (TRAPS 24) over a table whose kind column was read by nothing: `BRANCHES`
+# was walked once, for row[0]. MEASURED BEFORE THIS WAS WRITTEN (TRAPS 50, own
+# config/name, this suite run alone): FAILED_NO_HANDLER's row reclassified
+# from GUARD to REACHABLE scored 140 assertions, failures=0 - SILENT - so the
+# header's "all five guards fire when handed a violation" could become a claim
+# about four with nothing saying so. That is TRAPS 82 with the table in code
+# rather than in a document.
+#
+# The totals below were COUNTED OFF THE ROWS and are not a second reading of
+# them: 22, 5 and 1, which is what the header already said. Nothing was wrong
+# here; what was missing is anything that would notice if it became wrong.
+const KINDS := ["REACHABLE", "GUARD", "NEEDS_KEY"]
+const KIND_TOTALS := {"REACHABLE": 22, "GUARD": 5, "NEEDS_KEY": 1}
 
 const CONTROLLER_FILES := ["game_controller.gd", "main.gd", "experiment_runner.gd"]
 # The two category constants game_controller.gd refuses through by name.
@@ -284,6 +303,27 @@ func _reaches(label: String, json_text: String, category: String, command: Strin
 		label, category, command, str(_categories(records))])
 
 
+# One row the table calls OUT OF REACH, claimed by the fixture that just fired
+# it. Called at the END of a fixture, after the measurement, so a fixture that
+# returned early claims nothing and the coverage check below says which row
+# went unanswered (TRAPS 81: a guard asked one call too early answers for a
+# run that did not happen).
+#
+# It also asserts the claim against the table in the other direction: a
+# fixture naming a row that is not there, or a row the table calls REACHABLE,
+# fails here rather than quietly widening the covered set.
+func _answers(category: String, branch: String) -> void:
+	var key := "%s / %s" % [category, branch]
+	for row in BRANCHES:
+		var r: Array = row
+		if str(r[0]) == category and str(r[1]) == branch:
+			_check(str(r[2]) != "REACHABLE",
+				"%s is a row this table calls out of reach, which is what this fixture measures" % key)
+			answered.append(key)
+			return
+	_check(false, "%s names a row in the table (a fixture answering a row nobody declared)" % key)
+
+
 # --- 1. the enumeration, read off the source rather than typed ---
 
 func _refusal_sites() -> Dictionary:
@@ -328,6 +368,27 @@ func _enumeration() -> void:
 		declared[cat] = int(declared.get(cat, 0)) + 1
 
 	_check(BRANCHES.size() == 28, "28 controller refusal branches declared (got %d)" % BRANCHES.size())
+
+	# THE KIND COLUMN, TALLIED OFF THE ROWS RATHER THAN STATED BESIDE THEM.
+	# A kind this file does not know FAILS and names itself rather than being
+	# skipped by whichever loop reads it - 083's lesson about a filter that
+	# discards what it cannot classify, and the reason this is a membership
+	# check and not a `continue`.
+	var kind_tally := {}
+	for row in BRANCHES:
+		var kind := str((row as Array)[2])
+		_check(KINDS.has(kind), "the kind '%s' on the row '%s' is one this file knows" % [
+			kind, str((row as Array)[1])])
+		kind_tally[kind] = int(kind_tally.get(kind, 0)) + 1
+	var kinds_sum := 0
+	for kind in KINDS:
+		_check(int(kind_tally.get(kind, 0)) == int(KIND_TOTALS[kind]),
+			"the table files %d row(s) as %s and %d are declared" % [
+				int(kind_tally.get(kind, 0)), str(kind), int(KIND_TOTALS[kind])])
+		kinds_sum += int(KIND_TOTALS[kind])
+	_check(kinds_sum == BRANCHES.size(),
+		"and the three kind totals sum to the declared branches (%d of %d)" % [
+			kinds_sum, BRANCHES.size()])
 
 	# A site the source has and this table does not.
 	for cat in sites:
@@ -631,6 +692,7 @@ func _guard_no_handler() -> void:
 			_check(str(d.get("command", "")) == "A_COMMAND_WITH_NO_HANDLER",
 				"and the record names the command that had no handler")
 	_check(fired, "handed a command with no case, execute() refuses FAILED_NO_HANDLER")
+	_answers("FAILED_NO_HANDLER", "execute(): a whitelisted command with no case")
 
 
 # FAILED_SCHEMA and FAILED_NOTHING_BUILT at SPAWN_OPPONENTS. Both stand after
@@ -758,6 +820,8 @@ func _guard_spawn_opponents() -> void:
 	main.controller.track_builder.corner_nodes.clear()
 	a.queue_free()
 	b.queue_free()
+	_answers("FAILED_SCHEMA", "SPAWN_OPPONENTS: count is not a number")
+	_answers("FAILED_NOTHING_BUILT", "SPAWN_OPPONENTS: no opponent is placed")
 
 
 # FAILED_SCENE, ORDER's "nobody to order about here". It needs
@@ -778,6 +842,7 @@ func _guard_order_no_module() -> void:
 		'{"command": "ORDER", "parameters": {"goal": "go_to", "room": "vault"}}',
 		"FAILED_SCENE", "ORDER")
 	main.controller.standable["command"] = "CREATE_DUNGEON"
+	_answers("FAILED_SCENE", "ORDER: no module owns the standable world")
 
 
 # FAILED_SCENE, ORDER's "the thing is not in the world any more". Asserted as
@@ -810,6 +875,7 @@ func _guard_thing_gone() -> void:
 	await _reaches("ORDER carrying a thing whose node is gone",
 		'{"command": "ORDER", "parameters": {"goal": "carry", "thing": "lamp", "room": "vault"}}',
 		"FAILED_SCENE", "ORDER")
+	_answers("FAILED_SCENE", "ORDER: the thing is not in the world any more")
 
 
 func _things_all_valid() -> bool:
@@ -846,6 +912,38 @@ func _guard_ai() -> void:
 	runner.queue_free()
 	notes.append("FAILED_AI: question 1 not answered - this harness has no API key")
 
+	_answers("FAILED_AI", "ExperimentRunner: the model failed every retry")
+
+
+# --- 5. every row the table calls out of reach is answered by a fixture ---
+#
+# BOTH DIRECTIONS, which is the half a floor would lose. The header claims
+# "all five guards fire when handed a violation"; before 086 that was a
+# sentence, and a sixth GUARD row added to the table with no fixture - or a
+# fixture deleted from section 3 - left it false with the suite still green.
+# Now a row with nothing answering it fails by name, and a fixture answering a
+# row the table no longer calls out of reach fails in _answers().
+#
+# IT CANNOT GO QUIET BY MEASURING NOTHING (TRAPS 75): the wanted set is
+# derived from the rows, so an empty `answered` fails once per row rather than
+# passing, and the count below is asserted positive.
+func _out_of_reach_coverage() -> void:
+	var wanted: Array = []
+	for row in BRANCHES:
+		var r: Array = row
+		if str(r[2]) == "REACHABLE":
+			continue
+		wanted.append("%s / %s" % [str(r[0]), str(r[1])])
+	for key in wanted:
+		_check(answered.has(key),
+			"%s is answered by a fixture in this suite" % str(key))
+	for key in answered:
+		_check(wanted.has(key),
+			"%s is still a row this table calls out of reach" % str(key))
+	_check(wanted.size() > 0 and answered.size() == wanted.size(),
+		"and every row out of reach is answered exactly once: %d claims for %d rows" % [
+			answered.size(), wanted.size()])
+
 
 func _run() -> void:
 	_make_main()
@@ -865,6 +963,7 @@ func _run() -> void:
 	await _guard_order_no_module()
 	await _guard_thing_gone()
 	await _guard_ai()
+	_out_of_reach_coverage()
 
 	for line in notes:
 		print("  NOTE  ", line)

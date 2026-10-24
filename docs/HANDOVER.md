@@ -24,6 +24,125 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
+- Last commit at the time of writing: **086**, which did the **reading** 085
+  left as the live "Next action" - where else does this file generalise a
+  measured per-member table into kinds and then reason about the kinds - and
+  found **the three named candidates clean and the real fault one layer down,
+  in the tables whose kind column lives in CODE**. New TRAPS **83**; TRAPS
+  **82**'s own rule sentence corrected because it was **false**.
+
+  **THE BASELINE AGREED WITH THE RECORD BEFORE ANYTHING WAS TOUCHED.** The
+  `--all` run in this container, on a clean tree at `121cb7c` with
+  `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 085
+  recorded**: `a1d5124b146ad15ece9c18977184967e`, 74 suites, 0 with something
+  to look at. `ls tests/*.gd` returned **76** and the run reported **74**,
+  re-counted. The container was fresh, so `user://` was empty rather than
+  cleared - Godot's `app_userdata` did not exist. **Nothing was owed from
+  085.**
+
+  **THE READING 085 ASKED FOR CAME BACK CLEAN, WHICH IS WORTH RECORDING
+  BECAUSE AGREEING IS THE ONLY INTERESTING OUTCOME OF A RE-COUNT (TRAPS 4).**
+  All three candidates re-derived mechanically off the code with comment lines
+  blanked (TRAPS 64), not read off this file:
+
+  | candidate | re-derived off the code | verdict |
+  |---|---|---|
+  | 083's seven directory reads, `DirAccess.open(` vs `get_files_at(` | **7** `get_files_at`, **13** `open`, 20 reads in 17 functions; **15** one-read functions = **13 open + 2 get_files_at**; **2** multi-read functions, one of them holding two reads of the **same** directory | agrees with 083 row for row and bucket for bucket. **Nothing to do** |
+  | 073's ORDINAL/PROSE split (TRAPS 71) | corrected in 074 **and asserted** - `KIND_TOTALS` tallied off `DECLARED`'s rows | held, and **falsified** rather than read: see below |
+  | 069's list-of-three-that-was-a-class-of-five (TRAPS 66) | the corner/turn class, fixed in 069 | already corrected; no bucket summary left live |
+
+  **AND THE READING FALSIFIED TRAPS 82's OWN RULE SENTENCE.** It read *"A
+  per-kind summary and the per-row table under it are two counts of the same
+  thing, and **nothing in this repository asserts that they agree**"*. That
+  second clause is an absence claim about the code written without grepping
+  for the thing it denies - **TRAPS 14's rule, in the entry that is itself
+  about an underived generalisation**. Two suites assert exactly that
+  agreement, and both were **falsified, not read** (TRAPS 50, own
+  `config/name`, each suite run alone):
+
+  | what asserts it | fault injected | result |
+  |---|---|---|
+  | `prompt_numeral_test.gd:465,468,474` | `KIND_TOTALS` transposed to 8 ORDINAL / 7 PROSE - **073's exact fault** | 117, failures=**2**, naming both kinds and both numbers. Control 117/0 |
+  | `scan_floor_test.gd:566,568,594` | one line in `agreement_test.gd` made to carry **two** `DirAccess` calls | 120, failures=**1**: *"the four buckets account for every DirAccess call in tests/: 24 = 20 read + 3 write + 0 unknown + 0 elsewhere"*. Control 120/0 |
+
+  The first was built in **074 as TRAPS 71's own fix** - the trap 085 cited as
+  its precedent - and the second in **083, two commits before 085 wrote the
+  sentence**. The sentence denied a mechanism this repository had built twice,
+  once for the trap it was citing. TRAPS 82 now states the true rule and
+  carries the measurement.
+
+  **THE LIVE FAULT IS ONE LAYER DOWN: A CLASSIFICATION COLUMN NOTHING READS,
+  UNDER A HEADER THAT COUNTS IT.** Five tables in `tests/` carry a
+  classification column, enumerated off the code:
+
+  | table | kind is one the file knows | per-kind total asserted | per-row kind acted on |
+  |---|---|---|---|
+  | `prompt_numeral_test.DECLARED` | yes (`:461`) | yes (`:465`, `:474`) | yes, sections 4-8 |
+  | `scan_floor_test` sites | yes (`:568`) | yes (`:566`, `:594`) | yes, section 3 asks only `open` |
+  | `check_wiring_test.DECLARED` | yes (`:441`) | **no** | yes, by fixture |
+  | `refusal_reach_test.DECLARED` | **no** | **no** | yes, but through a `continue` |
+  | `controller_reach_test.BRANCHES` | **no** | **no** | **no - never read at all** |
+
+  `BRANCHES` is walked **once**, for `row[0]`. Its third column -
+  `REACHABLE`/`GUARD`/`NEEDS_KEY`, the whole answer 054 was built to produce -
+  was read by **nothing** in `tests/` or `scripts/`, grepped rather than
+  assumed, while the file's header states *"TWENTY-TWO REACHABLE, FIVE GUARDS,
+  ONE THAT NEEDS A KEY, and all five guards fire when handed a violation"*.
+  **Counted mechanically off the rows: 22, 5 and 1. Nothing was wrong** - and
+  nothing would have noticed if it became wrong, which is the finding and is
+  why this is not reported as a wrong number.
+
+  **MEASURED BEFORE AND AFTER, EACH FAULT ALONE (TRAPS 80), in a throwaway
+  copy with its own `config/name` (TRAPS 50), the suite run alone:**
+
+  | fault injected | before 086 | after 086 |
+  |---|---|---|
+  | `controller_reach_test`: `FAILED_NO_HANDLER` `GUARD` -> `REACHABLE` | 140, failures=**0** - **SILENT** | 190, failures=**5** |
+  | `controller_reach_test`: a sixth `GUARD` row with no fixture | - | 193, failures=**3**, naming the row |
+  | `controller_reach_test`: a kind mistyped `GUARD` -> `GAURD` | - | 191, failures=**2** |
+  | `controller_reach_test`: a fixture stops claiming its row | - | 189, failures=**2**, naming the row |
+  | `refusal_reach_test`: `FAILED_TOO_BIG` `GUARD` -> `GAURD` | **124, failures=0 - SILENT**, and the assertion count went **DOWN by one** | 161, failures=**2** |
+  | `refusal_reach_test`: `FAILED_CORRIDOR` `GUARD` -> `REACHABLE` | - | 161, failures=**2** |
+  | `refusal_reach_test`: an owner mistyped `CONTROLLER` -> `CONTROLER` | - | 162, failures=**2** |
+
+  **THE QUIETEST ONE IS THE MISTYPED VERDICT AND IT IS TRAPS 73 ARRIVING
+  THROUGH A CLASSIFIER.** `refusal_reach_test`'s sweep reads the column as
+  `if str(row[0]) != "MODULE" or str(row[1]) != "GUARD": continue`, so a typo
+  makes the row invisible to that loop and **its assertion stops existing**:
+  125 became **124 with failures=0**. The alarm was the count and the runner
+  reads only the failures (TRAPS 75). One character turns a swept guard into
+  an unswept one with nothing red.
+
+  **WHAT CHANGED, AND IT IS THE CLASS AND NOT ONE MEMBER (TRAPS 11).** Both
+  files: the classification column is a **membership** - an unknown value
+  fails and names itself, never `continue` - and the per-kind totals are
+  **tallied off the rows** and asserted against a declared total whose own sum
+  is asserted against the row count, which is 074's pattern copied rather
+  than reinvented. And in `controller_reach_test`, the half a tally cannot
+  reach: each fixture in sections 3 and 4 now **claims the row it fired**, at
+  the END of the fixture after the measurement (TRAPS 81 - a claim made early
+  answers for a run that did not happen), and the claimed set is asserted
+  against the set of rows the table calls out of reach **in both directions**,
+  so a row with no fixture and a fixture with no row each fail by name.
+  `controller_reach_test` 140 -> **191**, `refusal_reach_test` 125 -> **162**.
+
+  **THREE byte-identical full `--all` runs**, md5
+  `f4a589dada011f0ca754d839f55898ea`, 74 suites, 0 with something to look at,
+  `user://` cleared before each, the last two on the complete tree with
+  `docs/` in place - which is why there is no 086a. The md5 was written into
+  this file before the runs that verify it. **THE DIFF AGAINST THE BASELINE IS
+  THE TWO LINES PREDICTED IN WRITING BEFORE THE RUN** and nothing else moved.
+
+  **WHAT THIS DID NOT DO.** `check_wiring_test`'s per-verdict tally is still
+  missing and is left under "Next action" with the reason, deliberately rather
+  than half-fixed: it already has the membership check, its header's
+  *"FOURTEEN CALL SITES, TEN HELD, FOUR NOT"* is a summary over a **different**
+  class from `DECLARED`'s thirty-odd rows, and reconciling that was not
+  attempted on a guess. Nothing in `scripts/` or `scenes/` was wrong and
+  neither changed, so **no fault the owner could see on real hardware is fixed
+  by this commit**, and the suite that found it is the same suite that has
+  missed eight of his faults.
+
 - Last commit at the time of writing: **085**, which re-derived 084's class off
   the code instead of carrying its summary forward, and found that **084's
   summary paragraph about that class was false** while its table was right.
@@ -3097,6 +3216,13 @@ than suites, leaving **74 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 74
 and are skipped without it.
+**086 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
+what the two numbers above say. Its baseline on the clean tree at `121cb7c`,
+`git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 085 recorded**:
+`a1d5124b146ad15ece9c18977184967e`. After the change, **THREE byte-identical
+full `--all` runs**, md5 `f4a589dada011f0ca754d839f55898ea`, 0 with something
+to look at, the last two on the complete tree with `docs/` in place, `user://`
+cleared before each.
 **085 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
 what the two numbers above say.
 **084 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
@@ -9155,6 +9281,70 @@ three byte-identical `--all` runs - the last two on the complete tree with
 `docs/` in place - which is why there is no 085a. **Do not start by re-running
 on 085's behalf**; take your own baseline so you learn the record and the
 container still agree, and spend the time on the work below.
+
+**NOTHING IS OWED FROM 086 EITHER.** Its baseline was byte-identical to the
+md5 085 recorded, it wrote its two-line diff down before running, and it took
+three byte-identical `--all` runs - the last two on the complete tree with
+`docs/` in place - which is why there is no 086a. **Do not start by re-running
+on 086's behalf**; take your own baseline so you learn the record and the
+container still agree, and spend the time on the work below.
+
+**THE FIRST LIVE ENTRY AS OF 086: `check_wiring_test` IS THE ONE MEMBER OF
+086'S CLASS LEFT WITHOUT A PER-KIND TALLY, AND THE JOB IS A RECONCILIATION
+BEFORE IT IS AN ASSERTION.** 086 gave the two unheld classification columns a
+membership and a tally (TRAPS 83) and left this one, which is TRAPS 11's shape
+unless the reason is written down, so here it is. `check_wiring_test` already
+asserts that **every row's verdict is one of the eight** in `VERDICTS`
+(`:441`), so the silent-typo fault 086 measured in the other two **cannot
+happen here**; what it does not have is a tally of the rows per verdict. **DO
+NOT JUST ADD ONE**, because the numbers that would go in it are not obviously
+the ones the file already states. Its header says *"THE ANSWER: FOURTEEN CALL
+SITES, TEN HELD, FOUR NOT"* and it declares `CALL_SITES_MEASURED := 14` and
+`NOT_HELD_BEFORE_055 := 5`. **14 - 5 is 9, not 10** - and the reading that
+reconciles it is in the header's own prose: one site is *"HELD, BUT ONLY BY A
+SUITE MOST RUNS SKIP"*, so ten are held (nine of them in a fast suite) and
+five were not held **before 055**, being the four plus the slow one. **That
+reading was not verified against the rows in 086 and is written here as a
+reading, not a measurement.** And the 14 is over the **call sites** 055
+measured in a throwaway copy, which is a different class from `DECLARED`'s
+thirty-odd verdict-returning functions - so a tally over `DECLARED` would not
+hold the header's three numbers at all, and asserting one as though it did
+would be TRAPS 6's shape. **The honest job, in order:** (1) read whether the
+header's 14/10/4 is over `DECLARED`, over `BY_HAND`, or over neither, off the
+file; (2) if a tally over `DECLARED` holds something a reader relies on, write
+it with the totals read off the rows; (3) if it does not, say so in the file
+and leave the three numbers alone. **It may come back "nothing to do", and
+that is a reason to do the reading rather than to build.**
+
+**AND THE PART A TALLY CANNOT REACH IS STILL OPEN FOR 22 OF
+`controller_reach_test`'s 28 ROWS.** 086 tied the **6** rows the table calls
+out of reach - 5 `GUARD` and 1 `NEEDS_KEY` - to the fixtures that fire them,
+both directions. The **22 REACHABLE** rows are **not** tied to anything: the
+fixtures that drive them call `_reaches(label, ...)` with a free-text `label`,
+and there are **25** such calls in the file, of which **4 sit inside the guard
+fixtures** (they are the GUARD rows' question-2 measurements, not reachable
+rows), leaving **21 in section 2 against 22 REACHABLE rows** - counted off the
+code per function, not estimated, and **the first count of it written here was
+20 and was wrong before it was checked**, which is why it is broken out this
+way. **That one-row gap is a measurement and not yet a finding** - a row may
+be covered by a request in another fixture, by one of the four in section 3,
+or by nothing at all, and 086 did not read which, so nothing here claims there
+is a hole. **The job is to read the 21 against the 22 first**, one at a time,
+and only then decide whether `_reaches` should take the row's own text the way
+`_answers` does. Do not relabel twenty-one fixtures on the assumption that the
+two numbers should match.
+
+**~~THE FIRST LIVE ENTRY AS OF 085, AND IT IS A READING AND NOT A SUITE: THE
+OTHER CLASSES IN THIS FILE THAT WERE SORTED INTO BUCKETS BY IDIOM.~~ DONE IN
+086: all three candidates re-derived mechanically off the code, all three
+clean - and the reading found TRAPS 82's own rule sentence FALSE, and the live
+fault one layer down in the tables whose kind column lives in code. See TRAPS
+83.** Struck rather than deleted, with the original text below it, because the
+sketch is the record of what was asked for and the 086 entry under "Starting
+state" records what was measured. **The entry was right to predict it might
+come back "nothing to do" and right not to build anything on top of it** - the
+three candidates it named were clean, and what it caught was the question one
+layer along. The original text:**
 
 **THE FIRST LIVE ENTRY AS OF 085, AND IT IS A READING AND NOT A SUITE: THE
 OTHER CLASSES IN THIS FILE THAT WERE SORTED INTO BUCKETS BY IDIOM.** 085 found

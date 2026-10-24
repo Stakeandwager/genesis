@@ -205,6 +205,27 @@ const DECLARED := {
 # game_controller.gd - a name becoming shared, exactly as FAILED_UNWALKABLE
 # is - left this suite at 105 assertions, failures=0, because nothing read
 # the files _categories_in_source() had already collected.
+# THE TWO CLASSIFICATION COLUMNS, AND BEFORE 086 NEITHER WAS A MEMBERSHIP.
+# Column 1 was read only through `if str(row[0]) != "MODULE" or
+# str(row[1]) != "GUARD": continue` in the sweep, so a verdict this file does
+# not know was DROPPED IN SILENCE rather than failing - 083's own lesson about
+# a filter that discards what it cannot classify, in a second file.
+# MEASURED BEFORE THIS WAS WRITTEN (TRAPS 50, own config/name, this suite run
+# alone): FAILED_TOO_BIG's verdict mistyped GUARD -> GAURD scored
+# 124 assertions, failures=0 - SILENT - and the assertion count went DOWN by
+# one, because the `continue` took the row's own sweep assertion with it. A
+# guard stopped being swept and the suite still said failures=0, which is
+# TRAPS 73's shape arriving through a classifier.
+#
+# NOT_ASKED IS IN THE LEGEND AND HAS NO ROW TODAY. That is STATED and not
+# asserted non-empty - the mistake 083's first draft made with its
+# "elsewhere" bucket. What is asserted is that the four verdicts account for
+# every row and that the three live ones carry the counts below, read off the
+# rows.
+const OWNERS := ["MODULE", "CONTROLLER"]
+const VERDICTS := ["REACHABLE", "GUARD", "NOT_ASKED", "ASKED_IN_054"]
+const VERDICT_TOTALS := {"REACHABLE": 5, "GUARD": 5, "NOT_ASKED": 0, "ASKED_IN_054": 6}
+
 const SHARED_WITH_CONTROLLER := ["FAILED_UNWALKABLE"]
 
 # The three branches that share FAILED_LAYOUT. Each is fired separately
@@ -362,6 +383,30 @@ func _enumeration() -> void:
 		if str((DECLARED[cat] as Array)[0]) == "MODULE":
 			module_cats += 1
 	_check(module_cats == 10, "10 of them belong to the module pipeline (got %d)" % module_cats)
+
+	# AND BOTH CLASSIFICATION COLUMNS ARE A MEMBERSHIP, so a value this file
+	# does not know fails and names itself instead of being skipped by the
+	# loops that filter on it. The totals are tallied OFF THE ROWS and
+	# asserted against the declaration, which is what makes a row
+	# reclassified - or added with a verdict nobody sweeps - a failure rather
+	# than a silence.
+	var verdict_tally := {}
+	for cat in DECLARED:
+		var row: Array = DECLARED[cat]
+		_check(OWNERS.has(str(row[0])),
+			"%s's owner '%s' is one this file knows" % [str(cat), str(row[0])])
+		_check(VERDICTS.has(str(row[1])),
+			"%s's verdict '%s' is one this file knows" % [str(cat), str(row[1])])
+		verdict_tally[str(row[1])] = int(verdict_tally.get(str(row[1]), 0)) + 1
+	var verdicts_sum := 0
+	for verdict in VERDICTS:
+		_check(int(verdict_tally.get(verdict, 0)) == int(VERDICT_TOTALS[verdict]),
+			"the table files %d row(s) as %s and %d are declared" % [
+				int(verdict_tally.get(verdict, 0)), str(verdict), int(VERDICT_TOTALS[verdict])])
+		verdicts_sum += int(VERDICT_TOTALS[verdict])
+	_check(verdicts_sum == DECLARED.size(),
+		"and the four verdict totals sum to the rows in the table (%d of %d)" % [
+			verdicts_sum, DECLARED.size()])
 
 	# --- 081: the row is keyed by a NAME and answers for every PLACE ---
 	#

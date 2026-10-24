@@ -5859,13 +5859,39 @@ table"* - 085 wrote that sentence first and TRAPS 71 falsifies it. The rule
 is:
 
 > **A per-kind summary and the per-row table under it are two counts of the
-> same thing, and nothing in this repository asserts that they agree.**
+> same thing, and nothing asserts that they agree unless somebody wrote the
+> assertion.**
+
+**THE SECOND HALF OF THAT SENTENCE WAS WRONG WHEN 085 WROTE IT, AND 086
+CORRECTED IT BY MEASUREMENT.** It read *"and nothing in this repository
+asserts that they agree"*. That is an absence claim about the code, written
+without grepping for the thing it denies — TRAPS **14**'s rule, arriving in
+the entry that is itself about a prose generalisation nobody derived. **Two
+suites assert exactly that agreement**, and both assertions were falsified in
+086 rather than read (TRAPS 50, own `config/name`, each suite run alone):
+
+| what asserts it | the fault injected | result |
+|---|---|---|
+| `prompt_numeral_test.gd:465,468,474` — `KIND_TOTALS` tallied off `DECLARED`'s rows | `KIND_TOTALS` transposed to 8 ORDINAL / 7 PROSE, which is **073's exact fault** | 117 assertions, failures=**2**, naming both kinds and both numbers. Control 117/0 |
+| `scan_floor_test.gd:566,568,594` — the four buckets asserted to account for every `DirAccess` call | one line in `agreement_test.gd` made to carry **two** `DirAccess` calls, which `_member_on()` reads as one | 120 assertions, failures=**1**: *"the four buckets account for every DirAccess call in tests/: 24 = 20 read + 3 write + 0 unknown + 0 elsewhere"*. Control 120/0 |
+
+And the first of those was built in **074 as TRAPS 71's own fix** — the trap
+085 cited as its precedent — while the second was built in **083, two commits
+before 085 wrote the sentence**. So the entry denied a mechanism this
+repository had already built twice, once for the very trap it was citing.
 
 Both are claims about the code (TRAPS 24). A suite can hold a table row by
 row and still let the sentence above it say something else, because the
 sentence is prose and prose is not run. When a commit writes both, it owes
 the reader the derivation of the summary **from the table**, mechanically -
 not a second reading of the code, and not a tally made while writing.
+
+**WHERE THE TABLE IS IN CODE, THE ASSERTION IS CHEAP AND IS THE ANSWER.** The
+pattern is in `prompt_numeral_test` and `scan_floor_test` and does not need
+inventing: tally the kind column off the rows, assert the tally against a
+declared per-kind total, and assert the totals sum to the row count. What
+**cannot** be asserted is a summary written in prose in `HANDOVER.md` or in
+this file, and that is the live limitation — not the absence of the mechanism.
 
 **Do:**
 
@@ -5888,5 +5914,107 @@ summary forward (TRAPS 4, TRAPS 66).
 
 > The row was right. The sentence that counted the rows was wrong, and the
 > sentence is what the next session reads.
+
+---
+## 83. A classification column nothing reads, under a header that counts it
+
+**Signature:** a suite declares a table with a column that classifies each
+row, the file's header states the per-kind answer in prose, and no code in the
+repository ever reads the column. Reclassify a row and the suite is green and
+the header is false. Or the column *is* read, but only through a
+`if kind != "THE_ONE_I_WANT": continue`, so a value nobody anticipated is
+dropped in silence and takes that row's assertion with it.
+
+**Cause.** 086 was sent to do a reading: TRAPS 82 had found that 084's
+per-kind summary of a measured table was wrong in a way the table was not, and
+asked where else this repository generalises a per-member table into kinds and
+then reasons about the kinds. The reading came back **clean on all three
+candidates named** — 083's seven directory reads re-derived mechanically off
+the code agree row for row and bucket for bucket; 073's ORDINAL/PROSE split
+was corrected in 074 *and asserted*. What it found instead was one layer down:
+**the tables whose kind column lives in code, and what holds them.**
+
+Five tables in `tests/` carry a classification column. Measured off the code,
+not read off this file:
+
+| table | kind is one the file knows | per-kind total asserted | per-row kind acted on |
+|---|---|---|---|
+| `prompt_numeral_test.DECLARED` | yes (`:461`) | yes (`:465`, `:474`) | yes, sections 4–8 |
+| `scan_floor_test` sites | yes (`:568`) | yes (`:566`, `:594`) | yes, §3 asks only `open` |
+| `check_wiring_test.DECLARED` | yes (`:441`) | no | yes, by fixture |
+| `refusal_reach_test.DECLARED` | **no** | **no** | yes, but through a `continue` |
+| `controller_reach_test.BRANCHES` | **no** | **no** | **no — never read at all** |
+
+`BRANCHES` is walked **once**, at `_enumeration()`, for `row[0]`. Its third
+column — `REACHABLE` / `GUARD` / `NEEDS_KEY`, the whole answer 054 was built
+to produce — was read by nothing in `tests/` or `scripts/`, grepped rather
+than assumed. The file's header states *"THE ANSWER IS TWENTY-TWO REACHABLE,
+FIVE GUARDS, ONE THAT NEEDS A KEY, and all five guards fire when handed a
+violation"*. Counted mechanically off the rows: 22, 5 and 1. **Nothing was
+wrong. Nothing would have noticed if it became wrong**, which is the finding.
+
+**Measured, both files, each fault alone** (TRAPS 80), in a throwaway copy
+with its own `config/name` (TRAPS 50), the suite run alone:
+
+| fault injected | before 086 | after 086 |
+|---|---|---|
+| `controller_reach_test`: `FAILED_NO_HANDLER`'s row `GUARD` → `REACHABLE` | 140 assertions, failures=**0** — SILENT | 190, failures=**5**, naming both totals and the orphaned fixture |
+| `controller_reach_test`: a sixth `GUARD` row with no fixture | — | 193, failures=**3**, naming the row |
+| `controller_reach_test`: a kind mistyped `GUARD` → `GAURD` | — | 191, failures=**2**, naming the row and the total |
+| `controller_reach_test`: a fixture stops claiming its row | — | 189, failures=**2**, naming the row |
+| `refusal_reach_test`: `FAILED_TOO_BIG`'s verdict mistyped `GUARD` → `GAURD` | **124, failures=0** — SILENT, and the assertion count went **down by one** | 161, failures=**2** |
+| `refusal_reach_test`: `FAILED_CORRIDOR` `GUARD` → `REACHABLE` | — | 161, failures=**2** |
+| `refusal_reach_test`: an owner mistyped `CONTROLLER` → `CONTROLER` | — | 162, failures=**2** |
+
+**THE QUIETEST ONE IS THE MISTYPED VERDICT, AND IT IS TRAPS 73 ARRIVING
+THROUGH A CLASSIFIER.** `refusal_reach_test`'s sweep reads the column as
+`if str(row[0]) != "MODULE" or str(row[1]) != "GUARD": continue`. A typo makes
+the row invisible to that loop, so the guard stops being swept **and its
+assertion stops existing** — 125 assertions became 124 with `failures=0`. The
+alarm was the count, and the runner reads only the failures (TRAPS 75). One
+character turns a swept guard into an unswept one with nothing red.
+
+**Fixed in 086.** Both files: the classification column is a **membership**
+(an unknown value fails and names itself, never `continue`), and the per-kind
+totals are **tallied off the rows** and asserted against a declared total
+whose own sum is asserted against the row count. And in
+`controller_reach_test`, the part a tally cannot reach: each fixture in
+sections 3 and 4 now **claims the row it fired**, at the end of the fixture
+after the measurement, and the claimed set is asserted against the set of rows
+the table calls out of reach **in both directions**. 140 → 191 assertions,
+125 → 162.
+
+**Do:**
+
+- **A column that classifies is a claim, so something must read it.** If no
+  code reads a column, the column is a comment with a comma in it (TRAPS 24).
+  Either tally it or delete it; a classification nobody reads is worse than
+  none, because the header counts it.
+- **Tally it off the rows, never beside them.** `KIND_TOTALS` read off
+  `DECLARED` is the pattern; `prompt_numeral_test` has had it since 074 and
+  `scan_floor_test` since 083. Copy it rather than inventing it.
+- **Classify, do not filter.** `if kind != X: continue` makes every value the
+  author did not imagine invisible, and takes that row's assertions with it.
+  Assert membership **first**, then filter. 083 learned this about a path
+  filter; it is the same fault about a kind.
+- **A per-kind tally is not coverage.** It catches a row that moved; it cannot
+  catch a row no fixture ever fires. Where a kind means *"a fixture below
+  proves this"*, have the fixture name the row and assert the two sets both
+  ways — and claim at the END of the fixture, so one that returned early
+  claims nothing (TRAPS 81).
+- **An absence claim in THIS FILE is a claim about the code.** TRAPS 82's own
+  rule sentence said *"nothing in this repository asserts that they agree"*
+  while two suites did, one of them built as the fix for the trap that
+  sentence was citing. The rule TRAPS 14 states for the AI's prompt — grep for
+  the thing a limitation denies before writing it — has no exemption for
+  `TRAPS.md`.
+
+Found in 086, by doing the reading 085 asked for, finding the three named
+candidates clean, and asking the same question of the tables that live in code
+instead of in a document. **No file in `scripts/` or `scenes/` was wrong and
+neither changed.** The prompt is byte-identical and `PROMPT_VERSION` did not
+move.
+
+> The header counted the column. Nothing else ever looked at it.
 
 ---
