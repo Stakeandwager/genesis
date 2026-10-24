@@ -13,9 +13,11 @@ extends SceneTree
 #
 # IT NARROWED ONE FUNCTION. The question nobody asked is the one TRAPS 11 asks
 # every time: how many OTHER scans in tests/ read this project's source, and
-# how many of them are answerable by prose? Nine files do. THREE MORE WERE
-# SATISFIED BY A COMMENT, measured one at a time in throwaway copies before
-# anything was changed, each flipped from FAIL to PASS by ONE comment line:
+# how many of them are answerable by prose? Nine files did, as of 067 - the
+# class is DERIVED and has grown since, so read it off _class() and not off
+# this paragraph. THREE MORE WERE SATISFIED BY A COMMENT, measured one at a
+# time in throwaway copies before anything was changed, each flipped from FAIL
+# to PASS by ONE comment line:
 #
 #   handler_wiring_test's guard that its PLACEHOLDER constant is the string
 #   main.gd writes - 47 assertions, failures=0, on a false claim.
@@ -43,8 +45,7 @@ extends SceneTree
 # calls. What is held instead: every file in tests/ that reads a .gd source
 # under res://scripts or res://tests goes through a function named _code_of(),
 # every one of them DEFINES it, and all of those definitions are
-# byte-identical. A tenth suite that scans source without it fails here, by
-# name.
+# byte-identical. A suite that scans source without it fails here, by name.
 #
 # WHAT THIS DOES NOT PROVE, said plainly because the gap is the interesting
 # part: it does not prove that every NEEDLE inside a member goes through
@@ -73,7 +74,21 @@ var bad := 0
 # 077 added an eleventh and struck the number rather than correcting it, since
 # a count in a comment beside the array it counts is TRAPS 24's shape and the
 # array is right there to be read. Section 1 asserts against KNOWN.size().
+#
+# 079 ADDED THE THREE ROWS 078 MEASURED AS MISSING, so this list now names
+# every member of the derived class rather than twelve of fifteen, and the
+# sentence in section 1 - "so one LEAVING is noticed" - is true of all of
+# them. Section 1's assertion is UNCHANGED and is still a floor: the owner's
+# design choice is not being changed here, and what that leaves open is
+# written at section 1 rather than left to be rediscovered.
 const KNOWN := [
+	# 079: in the class since 070, named here for the first time. Its
+	# hardcoded-plural sweep reads every scripts/*.gd through _source() and
+	# its own comment says why that read has to be of the CODE: "a scan a
+	# comment can satisfy is not a check". 078 measured that this row was
+	# absent and that the file could therefore stop scanning source in
+	# silence; the deliberate departure is measured in 079.
+	"agreement_test.gd",
 	"check_wiring_test.gd",
 	"controller_reach_test.gd",
 	# 075: formula_test joined the class when its new rule-claim rows stopped
@@ -83,6 +98,13 @@ const KNOWN := [
 	"formula_test.gd",
 	"handler_wiring_test.gd",
 	"player_door_test.gd",
+	# 079: in the class since 073, which is the commit that WROTE this file -
+	# read off git and not guessed: its first version already did
+	# DirAccess.open("res:/" "/scripts") to look for a stray prompt template,
+	# which is a question about what the code CONTAINS answered from the
+	# code. So it was a member for five commits with no row here, and it was
+	# the second of the three 078 measured as missing.
+	"prompt_numeral_test.gd",
 	"proxy_test.gd",
 	"record_id_test.gd",
 	"refusal_reach_test.gd",
@@ -94,14 +116,20 @@ const KNOWN := [
 	# sites, so it is in this class by the same door result_line_test came in
 	# by. Added here for the reason this list exists - so a file that STOPS
 	# scanning source is noticed - and not because section 1 required it:
-	# KNOWN is a floor by design. 078 measured that floor: the derived class
-	# has FIFTEEN members and this list names TWELVE of them, so
-	# agreement_test.gd, prompt_numeral_test.gd and source_scan_test.gd could
-	# each leave the class in silence. That is the floor working as its
-	# comment describes rather than a fault, and it is recorded in
-	# docs/HANDOVER.md as three rows available to the next session.
+	# KNOWN is a floor by design. 078 then measured that floor and recorded
+	# the gap rather than acting on it: the derived class had FIFTEEN members
+	# and this list named TWELVE. The three it did not name are the three
+	# rows 079 added, each carrying its own note; that measurement is spent,
+	# and the sentence stating it has been struck rather than left to read as
+	# current (TRAPS 14).
 	"scan_floor_test.gd",
 	"scene_light_test.gd",
+	# 079: THIS FILE IS A MEMBER OF ITS OWN CLASS and was the third row 078
+	# measured as missing - it reads tests/ to derive the class and reads
+	# each member to compare the readers, so _class() returns it. Asserted
+	# rather than left to be noticed, which is the same thing
+	# scan_floor_test did for its own row.
+	"source_scan_test.gd",
 	"view_frame_test.gd",
 ]
 
@@ -198,9 +226,25 @@ func _run() -> void:
 
 	# --- 1. the class is enumerated and is not empty (TRAPS 6) ---
 	#
-	# A floor and not an equality, so a tenth scanner does not have to edit
-	# this line - but the nine KNOWN are each asserted below, so one LEAVING
-	# is noticed.
+	# A floor and not an equality, so a scanner added tomorrow does not have
+	# to edit this line - but EVERY row in KNOWN is asserted below, so one
+	# LEAVING is noticed. No count is written in this sentence either: it said
+	# "the nine KNOWN" while the list held twelve.
+	#
+	# 079 MADE THAT TRUE OF EVERY MEMBER. Until then KNOWN named twelve of
+	# the fifteen members _class() returns, so agreement_test.gd,
+	# prompt_numeral_test.gd and source_scan_test.gd could each stop scanning
+	# source and no suite would say so. The three rows are added and each
+	# departure was measured.
+	#
+	# WHAT THIS STILL LEAVES OPEN, said here rather than left to be
+	# rediscovered: the gap re-opens the day a sixteenth scanner arrives
+	# WITHOUT adding its row, because this assertion is a floor and cannot
+	# fail on an arrival. Requiring KNOWN to name the whole class would close
+	# it and would make a new scanner's author see a FAIL until the row is
+	# written - a change to the owner's stated design choice, so it is
+	# recorded in docs/HANDOVER.md under "Human decision needed" and not made
+	# here.
 	_check(members.size() >= KNOWN.size(),
 		"%d files in tests/ read a .gd source out of this repository (at least %d expected)" % [
 			members.size(), KNOWN.size()])
@@ -223,11 +267,13 @@ func _run() -> void:
 		"every file that scans source reads it through _code_of(): %s" % str(members.keys()) if raw_readers.is_empty() else
 		"a file in tests/ scans this project's source as raw text, so a comment can answer its questions: " + ", ".join(PackedStringArray(raw_readers)))
 
-	# --- 3. and the nine copies of that reader are the same reader ---
+	# --- 3. and every copy of that reader is the same reader ---
 	#
-	# Nine suites with nine private copies of one function is TRAPS 28's shape
-	# - a thing written out by hand in many places - and the cost of a drifted
-	# copy is a scan that is blind in a way nothing says. The convention that
+	# One function written out privately in every member of this class is
+	# TRAPS 28's shape - a thing written out by hand in many places, counted
+	# here by members.size() rather than by a number in this comment - and
+	# the cost of a drifted copy is a scan that is blind in a way nothing
+	# says. The convention that
 	# every suite stands alone is the owner's and is not being changed here;
 	# what is held is that the copies agree.
 	var reference := ""

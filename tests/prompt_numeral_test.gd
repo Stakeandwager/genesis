@@ -604,10 +604,16 @@ func _offset_refused(radius: float, offset: float) -> bool:
 
 
 # The code of a .gd source, with comments taken out. Byte-identical to the
-# copy in the nine other suites that read this project's source, which
-# source_scan_test holds (TRAPS 64): a scan a comment can answer is not a
-# scan, and this file's own paragraphs above talk about every needle it looks
-# for.
+# definition the other members of this class carry, which source_scan_test
+# holds (TRAPS 64): a scan a comment can answer is not a scan, and this
+# file's own paragraphs above talk about every needle it looks for.
+#
+# NO COUNT IS WRITTEN IN THAT SENTENCE ANY MORE. It said "the copy in the
+# nine other suites" while the class held fifteen, and the class is DERIVED -
+# source_scan_test reads it off tests/ - so a number typed here is stale the
+# day a scanner is added. 079 struck it rather than correcting it, which is
+# the same move 077 made on source_scan_test's own KNOWN comment and the form
+# formula_test has carried since 075.
 static func _code_of(source: String) -> String:
 	var out := ""
 	for raw in source.split("\n"):

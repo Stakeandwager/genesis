@@ -49,12 +49,17 @@ extends SceneTree
 # anything. Section 4 holds it and all five are fixed.
 #
 # WHAT THIS FILE ASSERTS, AND IT IS A SCAN OF SOURCE, SAID PLAINLY. It cannot
-# run 72 suites to read their output - the slow two take minutes apiece - so
+# run every suite to read its output - the slow two take minutes apiece - so
 # it reads what each suite's result line WILL print. That is a question about
 # what the code does, so it is answered from the code and not from the raw
-# file (TRAPS 64): comments are blanked by the same _code_of() the other ten
-# scanners use, and section 5 proves a count mentioned only in a comment does
-# not satisfy it.
+# file (TRAPS 64): comments are blanked by the same _code_of() the other
+# members of that class carry, and section 5 proves a count mentioned only in
+# a comment does not satisfy it.
+#
+# NO COUNT IS WRITTEN IN THAT PARAGRAPH ANY MORE. It said "the other ten
+# scanners" while the source-scanner class held fifteen, and "run 72 suites"
+# while tests/ held 74. Both classes are DERIVED and both numbers were stale
+# within two commits; 079 struck them rather than correcting them.
 #
 # WHAT IT DOES NOT PROVE, because the gap is the part worth writing down:
 #

@@ -5121,3 +5121,88 @@ finding a zero nobody read.
 > the count was none.
 
 ---
+
+## 76. The comment that said no count was written in it, and the four counts in the same file
+
+**Signature:** a comment states the size of a class the code **derives**, and
+the number is wrong. The commit that notices corrects or strikes the one it is
+looking at, writes the rule down in that very comment, and leaves the
+siblings — including, in this case, a sentence claiming coverage of a list that
+named twelve of fifteen members.
+
+**Cause.** 077 struck a stale count out of `tests/source_scan_test.gd`'s
+`KNOWN` comment and wrote the reason into the comment it was editing:
+
+> NO COUNT IS WRITTEN IN THIS SENTENCE. It said "the nine members as of 067"
+> while the list held ten, because 075 added formula_test and left the number
+> ... a count in a comment beside the array it counts is TRAPS 24's shape and
+> the array is right there to be read.
+
+**The same file had four more, and two sibling members of the same class had
+one each.** Measured in Godot 4.7.1 at `d42f7ae` before anything was changed —
+the class `source_scan_test._class()` derives had **fifteen** members and
+`KNOWN` named **twelve** (`PASS  15 files in tests/ read a .gd source out of
+this repository (at least 12 expected)`), and `ls tests/*.gd` returned 76 files
+and the runner reported 74 suites:
+
+```
+source_scan_test.gd  header      "Nine files do."                         15 members
+source_scan_test.gd  _code_of    "A tenth suite that scans source ..."    15 members
+source_scan_test.gd  section 1   "the nine KNOWN are each asserted"       12 rows
+source_scan_test.gd  section 3   "the nine copies of that reader"         15 copies
+source_scan_test.gd  section 3   "Nine suites with nine private copies"   15 copies
+prompt_numeral_test  _code_of    "the copy in the nine other suites"      14 others
+result_line_test     header      "the other ten scanners use"             14 others
+result_line_test     header      "It cannot run 72 suites"                74 suites
+HANDOVER.md  HDN 30             "now that ten suites carry ... copies"    15 copies
+```
+
+Section 3's was the sharpest: the assertion **two lines below it** already
+printed `members.size()`, so the run said *"all 15 copies are byte-identical"*
+directly underneath a comment that said nine.
+
+**AND THE WORSE HALF IS NOT THE NUMBERS.** The sentence under section 1 read
+*"a floor and not an equality, so a tenth scanner does not have to edit this
+line — but the nine KNOWN are each asserted below, **so one LEAVING is
+noticed**"*. That last clause is a claim about **every** member of the class
+and it was true of twelve of fifteen: `agreement_test.gd`,
+`prompt_numeral_test.gd` and `source_scan_test.gd` had no row, so each could
+stop scanning source and no suite would say so. **Measured in both
+directions** (079, each departure in a throwaway project with its own
+`config/name`, TRAPS 50): on the tree before the rows, all three departures
+scored `SOURCE SCAN 27 assertions, failures=0` — **silent**; with the rows
+added, each scores `30 assertions, failures=2` and names itself. A stale count
+in prose is an annoyance. A coverage claim that is two thirds true is the
+thing the list exists to prevent.
+
+**The right form already existed in this repository**, in
+`tests/formula_test.gd` since 075: *"Byte-identical to the definition the
+other members of this class carry"*. No number, nothing to go stale. Two of
+its siblings were still naming a size.
+
+**Do:**
+
+- **A number in prose about a class the code DERIVES has a shelf life of one
+  commit.** Write the phrase that reads the class — "every member of this
+  class", "the other members" — not the count. Strike it rather than correct
+  it; a corrected count is the next session's stale count.
+- **When you strike one, grep the class for its siblings before writing down
+  that you struck it.** Striking the instance and stating the general rule in
+  the same comment is TRAPS 11 with the lesson already typed out above the
+  fault.
+- **A comment that claims a list covers a class is a claim to check against
+  the class, not to read.** "So one LEAVING is noticed" cost nothing to
+  verify: run the suite and compare the two numbers it already prints.
+- **Nothing holds this one, and that is said rather than papered over.** A
+  suite that forbade a number in a comment would be a test of wording
+  (TRAPS 6), and a suite that asserted a particular count would be the trap
+  itself in GDScript. What IS held is the fact underneath: `source_scan_test`
+  derives its class and prints both sizes on every run, so the numbers are one
+  `--script` away whenever a comment is in doubt.
+
+Found in 079, doing the three rows 078 measured and left under "Next action".
+
+> The comment explaining that no count was written in it had four counts in
+> the same file, and the list it sat on top of named twelve of fifteen.
+
+---

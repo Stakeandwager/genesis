@@ -24,7 +24,91 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **078**, which went looking for the
+- Last commit at the time of writing: **079**, which did the three rows 078
+  measured and left under "Next action" - and found that the comment the rows
+  sat under was the smaller half of the fault: **the comment that said no
+  count was written in it had four counts in the same file.**
+  **WHAT 078 MEASURED, RE-MEASURED HERE RATHER THAN CARRIED FORWARD (TRAPS
+  4).** `source_scan_test._class()` derives its class off `tests/` and
+  returned **fifteen** members; `KNOWN` named **twelve**. Read off the suite's
+  own run at `d42f7ae`, not off this file: *"PASS  15 files in tests/ read a
+  .gd source out of this repository (at least 12 expected)"*. The three
+  unnamed were **`agreement_test.gd`** (in the class since 070),
+  **`prompt_numeral_test.gd`** and **`source_scan_test.gd`** - the file's own
+  name, missing from its own list.
+  **THE ROWS ARE LOAD-BEARING AND THAT IS MEASURED IN BOTH DIRECTIONS**, each
+  departure in its own throwaway project with its own `config/name` (TRAPS
+  50). A departure was made the way a real one would hide - the `res://`
+  literal assembled from pieces rather than typed, which is the trick this
+  very file uses for its needles, so the suite still runs and reads the same
+  files. **On the tree BEFORE the rows, all three were SILENT**: `SOURCE SCAN
+  27 assertions, failures=0`, three times. **With the rows, each scores 30
+  assertions, failures=2** and names itself twice over - the floor line
+  (*"14 files ... (at least 15 expected)"*) and its own row
+  (*"agreement_test.gd still reads source, so its row here is current"*).
+  **TWO CONTROLS, and the second is the gap rather than a control.** A file
+  outside the class gaining a res:// path **in a comment** passes at the same
+  **30** - a mention is not a read (TRAPS 63/64). And a **sixteenth scanner
+  arriving** with a byte-identical `_code_of()` and **no row** also passes at
+  **30**, printing *"16 files in tests/ read a .gd source out of this
+  repository (at least 15 expected)"*. **So the gap re-opens on the next arrival that forgets its
+  row**, which is now measured rather than reasoned about, written into
+  section 1's comment, and is **"Human decision needed" 32** - the floor is
+  the owner's design choice and requiring `KNOWN` to name the whole class
+  would change it.
+  **AND THE COMMENT ABOVE THE LIST WAS THE OTHER HALF.** 077 struck one stale
+  count out of that comment and wrote the rule into the comment it was
+  editing. **The same file had four more and two sibling members of the class
+  had one each**, every one of them a present-tense claim about a class the
+  code derives: *"Nine files do"*, *"A tenth suite that scans source"*,
+  *"the nine KNOWN are each asserted below"* (the list held twelve), *"the
+  nine copies of that reader"* and *"Nine suites with nine private copies"* -
+  the last two sitting two lines above an assertion that **already printed**
+  *"all 15 copies are byte-identical"*. In `prompt_numeral_test`: *"the copy
+  in the nine other suites"*. In `result_line_test`: *"the other ten
+  scanners"*, and *"It cannot run 72 suites"* while `tests/` held **74**.
+  **The right form already existed in this repository** - `formula_test`,
+  since 075: *"Byte-identical to the definition the other members of this
+  class carry"*. All of them are **struck rather than corrected**, because a
+  corrected count is the next session's stale count.
+  **THE WORSE HALF IS NOT THE NUMBERS.** The sentence under section 1 read
+  *"the nine KNOWN are each asserted below, so one LEAVING is noticed"*. That
+  clause is a claim about **every** member and was true of twelve of fifteen.
+  A stale count in prose is an annoyance; a coverage claim that is two thirds
+  true is the thing the list exists to prevent. TRAPS 11 and TRAPS 14 in one
+  comment.
+  **WHAT CHANGED.** Three files in `tests/` edited and **no file added**:
+  `source_scan_test.gd` (three rows, plus its stale comments), and
+  `prompt_numeral_test.gd` and `result_line_test.gd` **comments only**.
+  **Nothing in `scripts/`, `scenes/`, `docs/harness/` or either runner.**
+  Neither runner needs an entry: no file was added and no result line's format
+  moved.
+  **NOT VERIFIED, AND THE GAPS ARE THE PART TO READ.** The three rows prove a
+  member **leaving** is noticed; they prove nothing about a member **arriving**
+  unrowed, and the sixteenth-scanner measurement under "Run the tests
+  first" shows that arrival is silent. **Nothing
+  holds the prose**: a suite forbidding a number in a comment would be a test
+  of wording (TRAPS 6) and a suite asserting a particular count would be the
+  trap itself in GDScript, so the comment sweep is a habit and not an
+  assertion - said here rather than papered over. The sweep was bounded to
+  **comments that state the size of the SOURCE-SCANNER class** (enumerated by
+  grep, nine places including HDN 30); count-words elsewhere in `tests/` were
+  read and **left alone** where they record a past measurement
+  (`formula_test`'s *"70 suites"*, `said_article_test`'s *"71 suites"*,
+  `check_wiring_test`'s *"FOURTEEN CALL SITES"*). One was read and deliberately
+  not touched: `agreement_test`'s *"the nine sites"* beside a six-row
+  `READS_THE_READER`, which is keyed by **file** while the nine are
+  **sentences** - that may be correct and was not measured, so it is under
+  "Next action" rather than edited on a guess. The original *"increment at
+  every site that decides pass or fail"* question is **still held by
+  nothing**, untouched here. No model was asked anything, no request left the
+  container, there is no API key here; the prompt is byte-identical and
+  `PROMPT_FINGERPRINT` and `PROMPT_VERSION` did not move. No secret was set
+  and no workflow file was edited - `git status` named only `tests/` and
+  `docs/`, read rather than assumed. **064's finding is carried forward and
+  NOT re-verified**, and the live site's commit cannot be read from this
+  container. New TRAPS 76; new "Human decision needed" 32.
+- Before 079: **078**, which went looking for the
   drifted counter 077's "Next action" named and found something one step
   earlier: **the count was the alarm, and zero was being read as a pass.**
   077 gave every result line an assertion count so that a line could report an
@@ -2576,6 +2660,8 @@ than suites, leaving **74 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 74
 and are skipped without it.
+**079 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
+what the two numbers above say.
 **078 ADDED ONE** (`scan_floor_test`) and re-ran the `ls`: **76 and 74**.
 **077 ADDED ONE** (`result_line_test`) and re-ran the `ls`: **75 and 73**.
 **THESE TWO NUMBERS WERE STALE BY ONE WHEN 073 READ THEM**, and 073
@@ -2597,7 +2683,93 @@ worlds, and suites fail for reasons that have nothing to do with the code.
 055 took four answers off such a run before noticing. If a run is being used
 as a measurement, clear `user://` before it, baseline included (TRAPS 50).
 
-Last full run (078, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+Last full run (079, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+headless, in a cloud container, every run sequential with `user://` cleared
+first): **suites with something to look at: 0** on all **74**, with `--all`.
+`ls tests/*.gd` returned **76** and the run reported **74**, re-counted rather
+than carried forward.
+The baseline in this container before anything was touched was the same on
+**74** and was **byte-identical to the md5 078 recorded on the clean pushed
+tree** (`a3bc1d31b13b27db03e8d3949d84b63d`), so the record and the container
+agreed before a line was changed - and 078's "Next action" was right that
+nothing was owed from it, so no re-run was taken on 078's behalf.
+**THE DIFF IS ONE LINE AND IT IS THE LINE 079 PREDICTED BEFORE RUNNING.**
+Written down before the run finished: *exactly one of the 74 moves,
+`source_scan_test` 27 -> 30, because section 1 asserts one row per `KNOWN`
+entry and `KNOWN` gains three; nothing else, because the only non-comment
+change in the tree is those three rows, the other two files changed are
+comments only, and every suite that reads `tests/` reads it through
+`_code_of()`, which blanks comment lines.* **That is what the diff says**, and
+no suite's verdict moved, so neither runner needed an edit - no file was added
+and no result line's format changed.
+**TWO full runs, `user://` cleared before each, BYTE-IDENTICAL** (md5
+`b300734ddb762252d1709d6a7aa1ede5`), both on the final code tree.
+**A THIRD RUN WAS TAKEN ON THE COMPLETE TREE - CODE AND DOCS TOGETHER - AND
+THAT IS WHY THERE IS NO 079a.** 074a, 075a, 076a and 077a were each a
+follow-up commit whose only job was to re-run after the doc edits landed, and
+078 traded that for a fourth run plus a 078a carrying the paragraph about it.
+079 ran the suites on the whole working tree with every file of this commit in
+place except the md5 on this line, which cannot be written before the run
+that produces it: the third run came back **BYTE-IDENTICAL to the two
+before it**, md5 `b300734ddb762252d1709d6a7aa1ede5`, 0 with something to
+look at on all 74 with `--all`.
+**THE ONE HONEST QUALIFICATION, and it is the same one 078 stopped on.** The
+md5 on that line was written after the run, so the tree that was run differs
+from the tree that is pushed **in this file and nowhere else** - which is
+measurable rather than arguable, and the measurement is in this commit's
+message (`git diff` against the run's tree, restricted to everything but
+`docs/`, is empty). What makes that difference irrelevant is not an argument
+either, and it was taken rather than assumed: a checksum of every file this
+commit touches was recorded **before** the third run and verified **after** it,
+and the only one that moved is `docs/HANDOVER.md` itself - the file carrying
+this paragraph. Nothing in `tests/`, `scripts/`, `scenes/` or either runner
+changed after the run that measured them. And what makes a `docs/` edit
+irrelevant to a suite is a grep rather than an argument: **no file in `tests/`
+contains `res://docs` or `"docs/` at all**, and
+**every `DirAccess.open` in `tests/` targets `res://scripts` or
+`res://tests`** - both re-run in this container rather than carried forward.
+So no suite can read anything under `docs/`, and the recursion stops on a
+measurement.
+**THE GREPS THAT MAKE THE DOC EDITS IRRELEVANT WERE RE-RUN AND NOT CARRIED
+FORWARD (TRAPS 4)**: no file in `tests/` contains `res://docs` or `"docs/` at
+all, and every `DirAccess.open` in `tests/` targets `res://scripts` or
+`res://tests` - read off the code, both of them, in this container.
+**AND THE DELIBERATE-FAULT RUNS, which are the evidence the full run cannot
+produce.** Each in a throwaway copy of the repository with its own
+`config/name` (TRAPS 50), `source_scan_test` run alone:
+
+```
+BEFORE the rows (pristine d42f7ae tree):
+  agreement_test leaves the class        SOURCE SCAN 27 assertions, failures=0   SILENT
+  prompt_numeral_test leaves the class   SOURCE SCAN 27 assertions, failures=0   SILENT
+  source_scan_test leaves its own class  SOURCE SCAN 27 assertions, failures=0   SILENT
+
+AFTER the rows:
+  agreement_test leaves the class        30 assertions, failures=2   named, twice
+  prompt_numeral_test leaves the class   30 assertions, failures=2   named, twice
+  source_scan_test leaves its own class  30 assertions, failures=2   named, twice
+
+CONTROLS (must pass at the same 30):
+  a res:// path added in a COMMENT to a
+  non-member that reaches the FileAccess
+  screen (look_test)                     30 assertions, failures=0   PASS
+
+THE GAP, measured rather than reasoned about:
+  a SIXTEENTH scanner arrives with a
+  byte-identical _code_of() and NO row    30 assertions, failures=0   SILENT
+                                          ("16 files ... at least 15 expected")
+  the same arrival WITHOUT _code_of()     30 assertions, failures=2
+                                          (sections 2 and 3, not section 1)
+```
+
+The departure was made the way a real one would hide - the `res://` literal
+assembled from pieces rather than typed, the trick `source_scan_test` already
+uses for its own needles - so each suite still ran and still read the same
+files. The class size was read off the suite's own output at each step
+(*"15 files in tests/ read a .gd source out of this repository (at least 12
+expected)"* on the pristine tree) rather than off this file.
+
+The run before it (078, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
 headless, in a cloud container, every run sequential with `user://` cleared
 first): **suites with something to look at: 0** on all **74**, with `--all`.
 `ls tests/*.gd` returned **76** and the run reported **74**, re-counted rather
@@ -8198,7 +8370,43 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
-**NOTHING IS OWED FROM 078 ITSELF, WHICH IS NEW.** 074a, 075a, 076a and 077a
+**NOTHING IS OWED FROM 079 EITHER.** It took its own baseline (byte-identical
+to 078's recorded md5), two byte-identical runs on the final code tree and a
+**third on the clean pushed tree**, so there is no 079a. **Do not start by
+re-running on 079's behalf** - read the record under "Run the tests first",
+take your own baseline so you learn that the record and the container still
+agree, and spend the time on the work below.
+
+**THE FIRST LIVE ENTRY AS OF 079 IS A MEASUREMENT, NOT A FIX, AND IT MAY COME
+BACK "NOTHING TO DO".** `tests/agreement_test.gd` says *"the nine sites, each
+pinned to the reader it routes its count through"* in two places, over a
+`READS_THE_READER` dictionary with **six** rows. 079 read it and **did not
+touch it**, because the dictionary is keyed by **file** while the nine are
+**sentences** - `ai_interpreter.gd` alone is described in that file's header as
+carrying two - so six rows can be right for nine sites. **What is not held is
+whether each of the nine is pinned**, rather than one needle per file standing
+in for however many sentences that file has: the loop asserts one needle per
+FILE. The job is to count the agreement sites in `scripts/` off the code, name
+which file each belongs to, and then say whether six rows cover nine sites or
+three sentences are unpinned. **If they are covered, write that down and
+change nothing** - this entry exists because 079 could not tell from reading,
+and a row added on a guess would be worse than the question. TRAPS 24's shape
+if the "nine" is simply stale; TRAPS 11's if a file with two sentences is
+pinned by one needle.
+
+**AND THE THREE ROWS 078 LEFT ARE DONE.** ~~`source_scan_test`'s `KNOWN` names
+twelve of the fifteen members its class derives, so `agreement_test.gd`,
+`prompt_numeral_test.gd` and `source_scan_test.gd` could each leave the class
+in silence.~~ **DONE IN 079**, all three, with each departure measured in both
+directions (silent at 27 before, `failures=2` and self-naming at 30 after).
+Struck rather than deleted, because what replaced it is the entry below it and
+the sketch is the record of what was asked for. **What 079 did NOT close is
+the arrival half** - see "Human decision needed" 32, which carries the
+measurement: a sixteenth scanner with a reader and no row passes at the same
+30, so the gap re-opens on the next arrival that forgets. That is the owner's
+call and not an assistant's.
+
+**NOTHING WAS OWED FROM 078 EITHER, WHICH WAS NEW AT THE TIME.** 074a, 075a, 076a and 077a
 were each a follow-up commit whose only job was to re-run the suites on the
 clean pushed tree, because the doc edits had landed after the last run. **078
 took that run in the same session**, at `ce8f49c` with the working tree clean
@@ -8209,7 +8417,11 @@ first", take your own baseline, and spend the time on the work below. (Take a
 baseline regardless: that is how you learn the record and the container still
 agree.)
 
-**THE FIRST LIVE ENTRY AS OF 078, AND IT IS THREE ROWS AT ONE LINE EACH.** 078 measured
+**~~THE FIRST LIVE ENTRY AS OF 078, AND IT IS THREE ROWS AT ONE LINE EACH.~~
+DONE IN 079 - the three rows are in `KNOWN` and each departure was measured.
+Left here with the original text below it because it is the record of what was
+asked for, and 079's section records what was actually built. Read the list
+before trusting either.** 078 measured
 `source_scan_test`'s own floor: its derived class has **fifteen** members and
 `KNOWN` names **twelve**, so **`agreement_test.gd`, `prompt_numeral_test.gd`
 and `source_scan_test.gd` could each stop scanning source and nobody would be
@@ -16489,7 +16701,17 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     comment-stripping rule to the class, and **not** acted on, because the
     convention it would change is the owner's.
 
-    The fact, measured rather than argued: **ten files in `tests/` now define
+    **THE NUMBER IN THIS ENTRY'S HEADING IS 067'S AND IS NO LONGER TRUE.**
+    Measured in 079: the class has **fifteen** members, so there are fifteen
+    copies, not ten - *"and all 15 copies are byte-identical"*, off the
+    suite's own run. The heading is left as 067 wrote it and corrected here
+    rather than rewritten, because the entry is a question the owner has not
+    answered and the question is unchanged; what changed is the cost of
+    leaving it, which is now half again what the entry quotes. TRAPS 76 is
+    about this exact shape and names this heading as one of the nine places
+    it was found.
+
+    The fact as 067 measured it: **ten files in `tests/` now define
     `_code_of()` and all ten definitions are byte-identical**, asserted as
     such by `tests/source_scan_test.gd`. That is TRAPS 28's shape — a thing
     written out by hand in many places — and the cost of a copy drifting is a
@@ -16557,3 +16779,57 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     whether the thing that decides feasibility is allowed to know about the
     thing that solves is the sort of ordering decision this project has kept
     deliberate.
+
+32. **Whether `KNOWN` must name the WHOLE class, or stay a floor.** Found in
+    078, measured in 079, and **not** acted on, because the floor is the
+    owner's stated design choice and the change would alter what a new
+    scanner's author sees.
+
+    The fact, measured rather than argued. `tests/source_scan_test.gd`
+    derives its class - every `.gd` in `tests/` whose CODE reads a source out
+    of this repository - and holds a hand-written `KNOWN` list beside it.
+    Section 1 asserts `members.size() >= KNOWN.size()`, **a floor and not an
+    equality**, with the reason written in the code: *"so a tenth scanner
+    does not have to edit this line"*. 079 added the three rows 078 found
+    missing, so `KNOWN` now names all fifteen members and **a member leaving
+    is noticed** - measured in both directions, silent at 27 before and
+    `failures=2` at 30 after, for each of the three.
+
+    **A member ARRIVING is still silent, and that is measured too.** A
+    sixteenth scanner was added in a throwaway copy with a byte-identical
+    `_code_of()` and no row in `KNOWN`: `SOURCE SCAN 30 assertions,
+    failures=0`, with the floor line reading *"16 files in tests/ read a .gd
+    source out of this repository (at least 15 expected)"*. **So the gap 078
+    found re-opens on the next arrival that forgets its row**, and the list
+    goes back to covering most of the class rather than all of it. That is
+    how the three missing rows got there in the first place, read off git
+    rather than guessed: `agreement_test` joined in **070**, the commit that
+    wrote it; `prompt_numeral_test` has been a member since **073**, its own
+    first commit, whose first version already opened `res://scripts` - five
+    commits as a member with no row; and `source_scan_test.gd` had **never**
+    appeared in its own `KNOWN` in any commit that touched the file.
+
+    The options:
+
+    - **Leave it a floor.** Costs nothing today and the convention mostly
+      works - 075, 077 and 078 each added their own row on arrival without
+      being told to. The cost is that the convention is the only thing
+      holding it, and three members show what happens when somebody does not
+      know it exists.
+    - **Require `KNOWN` to name the whole class.** One line
+      (`members.size() == KNOWN.size()`, or a per-member row assertion in the
+      other direction). A new scanner's author then sees a FAIL naming their
+      file until they write the row - which is the point, and is also a new
+      way for an unrelated commit to go red. It makes the suite the thing
+      that teaches the convention instead of the comment.
+    - **Floor plus a reported gap.** Keep the floor, and have the suite name
+      the members with no row in its output without failing. Cheap, and
+      **probably worthless**: a printed line nobody reads is what let this
+      sit for three commits, and it would be an assertion of nothing
+      (TRAPS 6).
+
+    **It is the owner's because the floor's reason is written in his
+    convention** - a suite added tomorrow should not have to edit an
+    unrelated file's assertion - and because the second option deliberately
+    makes a green tree go red to teach something. 079 wrote the measurement
+    into section 1's comment so the next session does not have to re-take it.
