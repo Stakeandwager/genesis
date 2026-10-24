@@ -383,7 +383,17 @@ func _the_scene() -> void:
 	# too, because an enumeration that matched nothing would assert nothing
 	# and pass (TRAPS 6).
 	var onready := RegEx.create_from_string('@onready var \\w+: (\\w+) = \\$(\\S+)')
-	var source := _code_of(FileAccess.get_file_as_string("res://scripts/main.gd"))
+	# ASKED AT THE READ AND NOT AFTER THE STRIPPER (085, TRAPS 81). A path that
+	# is not there reads as the empty string, and `_code_of("")` is NOT empty -
+	# so a guard on `source` could not fail. Until 085 this read was held only
+	# by `found == 4` below, which is an enumeration count written for another
+	# purpose: it catches an empty read today and stops doing so the day
+	# somebody loosens it to `found >= 1`. The property this relies on is
+	# asserted centrally in source_scan_test's section 4, over a copy of
+	# `_code_of()` that section 3 there has proved byte-identical to this one.
+	var main_raw := FileAccess.get_file_as_string("res://scripts/main.gd")
+	_check(main_raw != "", "main.gd was read (%d bytes)" % main_raw.length())
+	var source := _code_of(main_raw)
 	var found := 0
 	for m in onready.search_all(source):
 		found += 1
@@ -400,7 +410,11 @@ func _the_scene() -> void:
 	# The controller's two, read out of its own source the same way. These
 	# resolve against world_root, which is main.
 	var getter := RegEx.create_from_string('world_root\\.get_node_or_null\\("([^"]+)"\\) as (\\w+)')
-	var controller_source := _code_of(FileAccess.get_file_as_string("res://scripts/game_controller.gd"))
+	# The same guard for the same reason (085, TRAPS 81). This read was held
+	# only by `paths.size() == 2` below.
+	var controller_raw := FileAccess.get_file_as_string("res://scripts/game_controller.gd")
+	_check(controller_raw != "", "game_controller.gd was read (%d bytes)" % controller_raw.length())
+	var controller_source := _code_of(controller_raw)
 	var paths: Array = []
 	for m in getter.search_all(controller_source):
 		paths.append(m.get_string(1))

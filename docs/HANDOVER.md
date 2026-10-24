@@ -24,6 +24,86 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
+- Last commit at the time of writing: **085**, which re-derived 084's class off
+  the code instead of carrying its summary forward, and found that **084's
+  summary paragraph about that class was false** while its table was right.
+  New TRAPS **82**.
+
+  **THE BASELINE AGREED WITH THE RECORD BEFORE ANYTHING WAS TOUCHED.** The
+  `--all` run in this container, on a clean tree at `fd290a2` with
+  `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 084
+  recorded**: `4dda614c03f61ea8db55798fbac9d439`, 74 suites, 0 with something
+  to look at. The container was fresh, so `user://` was empty rather than
+  cleared - Godot's `app_userdata` directory did not exist. `ls tests/*.gd`
+  returned **76** and the run reported **74**, re-counted. **Nothing was owed
+  from 084.**
+
+  **THE SPLIT IS FIVE AND THREE, NOT FOUR AND FOUR.** 084 wrote that of the
+  eight named-file reads, four use `FileAccess.open(..., READ)` and *"are each
+  held by a `!= null` guard written for exactly that"*, and four use
+  `get_file_as_string()`. Counted mechanically off the code at `fd290a2` with
+  comment lines blanked (TRAPS 64) - the same rule 084 had to apply to its own
+  miscount - it is **5 `open()` and 3 `get_file_as_string()`**. The row in the
+  wrong bucket is `record_id_test.gd:455`.
+
+  **AND THE CLAUSE THE MISCOUNT CARRIED WAS THE EXPENSIVE HALF.**
+  `record_id_test.gd:455` uses `open()`, so by 084's sentence it was *"held by
+  a `!= null` guard written for exactly that"*. **It had no such guard.** The
+  null was used as a **branch condition** - `if track_log != null:` - and
+  never asserted. What held the read was `record_body != ""` three lines down,
+  whose message is *"the record id's mint asks the OS who this process is"*,
+  so a moved or renamed `track_log.gd` reported as a **missing capability**
+  rather than as a missing file. **084's table was right** - it names
+  `record_body != ""` for that site - and the paragraph that sorted the rows
+  into buckets is what carried the error. That is new TRAPS **82**, and its
+  lesson is narrower than "count carefully": **the bucket you label safe is
+  the one nobody re-checks**, so the only unguarded `open()` read in `tests/`
+  hid behind the true generalisation that `open()` returns a null you can
+  test.
+
+  **AND 084 FIXED ONE OF THE FOUR UNGUARDED READS AND LEFT THREE (TRAPS 11).**
+  Its own entry said so without drawing the conclusion: *"what the runs did NOT
+  prove is that the four incidental holders will stay"*. The four reads held by
+  something written for another purpose were `view_frame_test` (fixed in 084),
+  `player_door_test` x2 and `record_id_test`. **085 gave the remaining three a
+  guard written for the purpose**, each in the idiom that fails for that read -
+  a raw `!= ""` for the two string reads (TRAPS 81: ask at the read, not after
+  the stripper) and `!= null` for the `open()` one:
+
+  | site | idiom | guard added | redirected ALONE |
+  |---|---|---|---|
+  | `player_door_test.gd` `main.gd` | string | `main_raw != ""` | 67, failures=**2** |
+  | `player_door_test.gd` `game_controller.gd` | string | `controller_raw != ""` | 73, failures=**2** |
+  | `record_id_test.gd` `track_log.gd` | `open()` | `track_log != null` | 23, failures=**3** |
+
+  Each redirected at a path that does not exist **one at a time** (TRAPS 80),
+  in a throwaway copy with its own `config/name` (TRAPS 50), the suite run
+  alone - and in every one of the three the **new guard named itself first**:
+  *"main.gd was read (0 bytes)"*, *"game_controller.gd was read (0 bytes)"*,
+  *"track_log.gd can be read"*. Before the change these same redirects gave
+  65/1, 71/1 and 22/2 with the read never named (084's table).
+
+  **THE CLASS WAS RE-DERIVED MECHANICALLY AFTER THE CHANGE, NOT RE-READ.** All
+  **8** named-file reads in `tests/` are now asked **at the read**: 5 by
+  `!= null` and 3 by a raw `!= ""`. The ninth literal `.gd` path in `tests/` is
+  084's own deliberate control reading a file that does not exist, and is
+  excluded by name.
+
+  **NO NEW CONTROLS WERE WRITTEN BESIDE THE TWO STRING GUARDS, DELIBERATELY.**
+  084 asserted the property that makes a post-stripper guard vacuous centrally,
+  in `source_scan_test`'s section 4, over a copy of `_code_of()` that section 3
+  there has proved byte-identical to every other - so the reason the two new
+  guards sit on the raw read is already held once for all fifteen copies.
+  Writing it out again in `player_door_test` is the duplication 084 explicitly
+  refused, and the comments there point at the central assertion instead.
+
+  **WHAT THIS DID NOT DO.** It did not build the vacuous-guard scan 084 left as
+  an open judgement - see "Next action", where the argument against it is
+  unchanged and is now one member lighter, because the class it would guard
+  still has **zero** live members. It touched no file in `scripts/`, so nothing
+  a player meets changed. The **46** reads whose filename came out of a
+  directory loop are untouched and still covered in substance only.
+
 - Last commit at the time of writing: **084**, which did the measurement 083
   left as the live "Next action" - the **eight** reads in `tests/` of a single
   **named** `.gd` file by a literal path, each pointed at a path that does not
@@ -62,13 +142,28 @@ that the owner has not ruled on.** Do not promote one to the other.
   | `view_frame_test.gd:372` `game_controller.gd` | the three exact counts | **CAUGHT** 82, failures=**3** |
 
   **THE TWO IDIOMS DO NOT FAIL THE SAME WAY, WHICH IS THE WHOLE ANSWER.**
-  `FileAccess.open(path, READ)` returns **null** for a missing path, so the
-  four sites that use it are each held by a `!= null` guard written for exactly
-  that. `FileAccess.get_file_as_string()` returns the **empty string**: there
-  is no handle and no null, and the four sites that use it are held - all four
-  - by an **exact count** or a **positive membership claim** further down,
-  which goes false when the text is empty. Not one of the four is held by
-  anything written to notice the read.
+  `FileAccess.open(path, READ)` returns **null** for a missing path, so a
+  `!= null` guard on it is load-bearing. `FileAccess.get_file_as_string()`
+  returns the **empty string**: there is no handle and no null, so a site using
+  it is held only by an **exact count** or a **positive membership claim**
+  further down, which goes false when the text is empty.
+
+  > **CORRECTED IN 085, AND THE PARAGRAPH THAT STOOD HERE WAS FALSE (TRAPS
+  > 82).** It read *"the four sites that use [`open()`] are each held by a
+  > `!= null` guard written for exactly that"* and *"the four sites that use
+  > [the string idiom] are held - all four - by an exact count"*. **It is five
+  > and three, not four and four**, and the row in the wrong bucket is
+  > `record_id_test.gd:455`, which uses **`open()`** and whose null was used as
+  > a **branch condition and never asserted**. So the clause *"each held by a
+  > `!= null` guard written for exactly that"* was untrue of one of the five.
+  > The TABLE ABOVE was right row by row - it names `record_body != ""` for
+  > that site - and the paragraph that sorted the rows into buckets was what
+  > carried the error forward. Counted mechanically off the code at `fd290a2`
+  > with comment lines blanked (TRAPS 64): **5** `open()` and **3**
+  > `get_file_as_string()`. 085 gave all three unguarded reads a guard written
+  > for the purpose and falsified each one alone; the class is now 8 of 8 asked
+  > at the read. The original wording is quoted here rather than deleted,
+  > because what it got wrong is the trap.
 
   **AND THE ONE GUARD THAT WAS WRITTEN TO NOTICE IT COULD NOT FAIL.** This is
   the fault, and the eight runs are what found it.
@@ -3002,6 +3097,8 @@ than suites, leaving **74 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 74
 and are skipped without it.
+**085 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
+what the two numbers above say.
 **084 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
 what the two numbers above say.
 **083 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
@@ -3043,7 +3140,42 @@ worlds, and suites fail for reasons that have nothing to do with the code.
 055 took four answers off such a run before noticing. If a run is being used
 as a measurement, clear `user://` before it, baseline included (TRAPS 50).
 
-Last full run (084, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+Last full run (**085**, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+headless, in a cloud container, sequential): **suites with something to look
+at: 0** on all **74**, with `--all`. `ls tests/*.gd` returned **76** and the
+run reported **74**, re-counted rather than carried forward.
+**085'S BASELINE AGREED WITH THE RECORD BEFORE ANYTHING WAS TOUCHED**: the
+`--all` run on the clean tree at `fd290a2`, `git status --porcelain` empty,
+was **BYTE-IDENTICAL to the md5 084 recorded**,
+`4dda614c03f61ea8db55798fbac9d439`. The container was fresh, so `user://` was
+empty rather than cleared: Godot's `app_userdata` directory did not exist.
+Nothing was owed from 084 and none of its runs was repeated on its behalf.
+**THE DIFF IS TWO LINES AND THEY ARE THE TWO PREDICTED IN WRITING BEFORE THE
+RUN**: `player_door_test` 73 -> **75** (two raw-read guards) and
+`record_id_test` 22 -> **23** (one `!= null` guard). Nothing else moved, no
+suite's verdict changed and no file was added, so neither runner needed an
+edit.
+**THE md5 WAS WRITTEN INTO THIS FILE BEFORE THE RUNS THAT VERIFY IT**, which
+is 080's standard: `a1d5124b146ad15ece9c18977184967e`. **THREE byte-identical
+full runs with `--all`**, `user://` cleared before each, 0 with something to
+look at - the first on the code tree and **the last two on the complete tree,
+code and docs together**, which is why there is no 085a.
+**AND ONE RUN WAS KILLED AND THROWN AWAY RATHER THAN REPORTED.** The first
+attempt at run 1 was started after clearing
+`app_userdata/genesis`, which is **not this project's `user://`** -
+`config/name` is `AI_Game_Builder`, read rather than remembered, and the
+directory cleared did not exist. The run was killed mid-flight and restarted
+with `app_userdata/AI_Game_Builder` cleared, because a measurement taken over
+another run's ledger is TRAPS 50 and a run whose preparation was wrong is not
+a measurement whatever it prints. The baseline above was unaffected: the
+container was fresh and no `app_userdata` existed at all when it was taken.
+**AND THE DELIBERATE-FAULT RUNS, which are the evidence the full run cannot
+produce.** Each in a throwaway copy with its own `config/name` (TRAPS 50), the
+suite run alone, each read redirected ONE AT A TIME (TRAPS 80). The three-row
+table is in the 085 entry under "Starting state"; in all three the new guard
+NAMED ITSELF FIRST, and two controls on unmodified copies gave 75/0 and 23/0.
+
+Run before it (084, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
 headless, in a cloud container, sequential): **suites with something to look
 at: 0** on all **74**, with `--all`. `ls tests/*.gd` returned **76** and the
 run reported **74**, re-counted rather than carried forward.
@@ -9017,7 +9149,46 @@ which is why there is no 084a. **Do not start by re-running on 084's behalf**;
 take your own baseline so you learn the record and the container still agree,
 and spend the time on the work below.
 
-**THE FIRST LIVE ENTRY AS OF 084: NOTHING STOPS THE NEXT VACUOUS GUARD, AND
+**NOTHING IS OWED FROM 085 EITHER.** Its baseline was byte-identical to the
+md5 084 recorded, it wrote its two-line diff down before running, and it took
+three byte-identical `--all` runs - the last two on the complete tree with
+`docs/` in place - which is why there is no 085a. **Do not start by re-running
+on 085's behalf**; take your own baseline so you learn the record and the
+container still agree, and spend the time on the work below.
+
+**THE FIRST LIVE ENTRY AS OF 085, AND IT IS A READING AND NOT A SUITE: THE
+OTHER CLASSES IN THIS FILE THAT WERE SORTED INTO BUCKETS BY IDIOM.** 085 found
+that 084's class of eight was correct row by row and wrong when summarised into
+*"four `open()`, four string reads"*, and that the one unguarded read sat in
+the bucket the summary called safe (TRAPS 82). **That is a fault in how this
+file writes up a measurement, so the honest next question is where else it
+writes one up that way** - not another scan over `tests/`. The shape to look
+for is a paragraph that generalises a measured per-member table into two or
+more kinds and then reasons about the kinds: 083's seven directory reads
+("`DirAccess.open(` vs `get_files_at(`"), 073's ORDINAL/PROSE split and 069's
+list-of-three-that-was-a-class-of-five are the candidates named here so the
+next session starts from a list rather than a feeling. **One of those two is
+already the same fault and is why TRAPS 82 states the rule the way it does**:
+TRAPS **71** records that `prompt_numeral_test`'s header summed *"seven
+ORDINAL and eight PROSE"* while the table under it said **eight and seven** -
+the same disagreement as 085's, with the prose right and the table wrong
+instead of the other way round. **The check is cheap
+and mechanical**: re-derive the bucket counts off the code with comment lines
+blanked and compare them against the paragraph, as 085 did. **The argument
+against doing it is that two of the three are already recorded as corrected**,
+so this may come back "nothing to do" - which is a reason to spend one session
+on the reading and not to build anything on top of it.
+
+**~~THE FIRST LIVE ENTRY AS OF 084: NOTHING STOPS THE NEXT VACUOUS GUARD.~~
+STILL OPEN AND NOW ONE MEMBER LIGHTER, which is an argument against building
+it rather than for.** 085 did not build the scan either. What changed is the
+class it would guard: all **8** named-file reads in `tests/` are now asked at
+the read, so a scan over *"no `_check(` tests the emptiness of a variable
+assigned from `_code_of(`"* would today have **zero** live members and **zero**
+historical ones left unfixed. The argument below is unchanged and the
+measurement still does not settle it. The original text:**
+
+**NOTHING STOPS THE NEXT VACUOUS GUARD, AND
 WHETHER THAT IS WORTH A SCAN IS AN OPEN QUESTION WITH THE MEASUREMENT ALREADY
 TAKEN.** 084 found one guard that could not fail (TRAPS 81), fixed it, and
 asserted the property that made it vacuous in the section that owns the reader.

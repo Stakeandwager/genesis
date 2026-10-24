@@ -5724,9 +5724,17 @@ gone silent with the guard still green beside it.
 **And the same question one idiom over has the opposite answer, which is why
 this is easy to miss.** `FileAccess.open(path, FileAccess.READ)` returns
 **null** for a missing path, so `_check(file != null, "X can be read")` is
-load-bearing, and the four sites in `tests/` that use it were each measured
-firing by name. The two idioms read the same in a diff and do not fail the
-same way.
+load-bearing. The two idioms read the same in a diff and do not fail the same
+way.
+
+> **CORRECTED IN 085 (TRAPS 82).** The sentence above continued *"and the four
+> sites in `tests/` that use it were each measured firing by name"*. There are
+> **five** `open()` sites in that class, not four, and the fifth —
+> `record_id_test.gd:455` — was **not** measured firing by name: its null was a
+> branch condition, never asserted, and what fired was `record_body != ""`, a
+> check whose message is about something else. Generalising the class by idiom
+> is what hid it: the idiom called safe is the one nobody re-checks. Fixed and
+> falsified in 085.
 
 **Fixed in 084.** The guard moved to the **raw** read, with the reason asserted
 on a built source beside it rather than left in a comment: a path that does not
@@ -5764,5 +5772,121 @@ being measured but in the line that said the measurement was unnecessary.
 
 > `_code_of("")` is not `""`. A guard asked after the stripper is a guard
 > asked of the stripper.
+
+---
+
+## 82. The table was right, and the sentence under it bucketed a row by the wrong idiom
+
+**Signature:** a commit measures a class one member at a time, writes the
+results into a table that is correct row by row, and then writes a paragraph
+under the table that sorts the rows into two buckets. One row goes into the
+wrong bucket. The table is never read again; the paragraph is, and the
+paragraph says a guard exists where none does.
+
+**Cause.** 084 measured the **eight** reads in `tests/` of a single named
+`.gd` file by a literal path, each redirected alone at a path that does not
+exist. Its table is accurate — `record_id_test.gd:455` is listed with
+`record_body != ""`, `mints == 3` as what fires. Its summary paragraph then
+split the eight by idiom and got the split wrong in both directions:
+
+> `FileAccess.open(path, READ)` returns **null** for a missing path, so the
+> **four** sites that use it are each held by a `!= null` guard written for
+> exactly that. `FileAccess.get_file_as_string()` returns the **empty
+> string** [...] and the **four** sites that use it are held — all four — by
+> an exact count or a positive membership claim further down.
+
+**It is five and three, not four and four**, and the row in the wrong bucket
+is `record_id_test.gd:455`, which uses `open()`. Counted mechanically off the
+code at `fd290a2`, comment lines blanked first (TRAPS 64):
+
+| idiom | sites | guarded at the read, before 085 |
+|---|---|---|
+| `FileAccess.open(..., READ)` | **5** | 4 |
+| `FileAccess.get_file_as_string()` | **3** | 1 (084's own fix) |
+
+**The consequence is not the arithmetic, it is the clause the arithmetic
+carries.** *"The four sites that use it are each held by a `!= null` guard
+written for exactly that"* is **false of `record_id_test.gd:455`**: its
+`open()` returns a null that is used as a **branch condition** and never
+asserted. The read was held only by `record_body != ""`, whose message is
+*"the record id's mint asks the OS who this process is"* — so a moved or
+renamed `track_log.gd` reported as a **missing capability** rather than as a
+missing file. TRAPS 81's own text repeated the error one step further
+(*"the four sites in `tests/` that use it were each measured firing by
+name"*), which is not true of the fifth.
+
+**Why the wrong bucket was the expensive half.** 084's conclusion —
+*"`open()` gives you a null to test, so those are fine; the string idiom is
+the dangerous one"* — is a true sentence about the two idioms and a false
+sentence about this repository. The idiom that **can** be asked directly is
+exactly the idiom nobody checks again, so an unguarded `open()` hides behind
+the generalisation that `open()` is the safe one. The one unguarded `open()`
+read in `tests/` was invisible for as long as the class was discussed by
+idiom instead of site by site.
+
+**Fixed in 085.** All three unguarded reads given a guard written for the
+purpose and each falsified alone, in a throwaway copy with its own
+`config/name` (TRAPS 50), the suite run alone:
+
+| site | idiom | guard added | redirected alone |
+|---|---|---|---|
+| `player_door_test.gd` main.gd | string | `main_raw != ""` | 67, failures=**2**, guard named first |
+| `player_door_test.gd` game_controller.gd | string | `controller_raw != ""` | 73, failures=**2**, guard named first |
+| `record_id_test.gd` track_log.gd | `open()` | `track_log != null` | 23, failures=**3**, guard named first |
+
+The class was then re-derived mechanically rather than re-read: all **8**
+named-file reads in `tests/` are now asked at the read, 5 by `!= null` and 3
+by a raw `!= ""`.
+
+**Do:**
+
+- **Fix from the table, not from the paragraph.** A per-member measurement is
+  worth taking because each row stands alone; a summary that re-sorts the rows
+  into buckets throws that away and can only be as good as the sorting. If a
+  paragraph and a table disagree, the table is the measurement.
+- **A bucket count is a claim about the code, so derive it the way you derived
+  the rows** — mechanically, off the code, with comments blanked (TRAPS 24,
+  TRAPS 64). 084 counted the rows by running them and counted the buckets by
+  reading them.
+
+**AND THIS IS THE SECOND TIME, IN THE OPPOSITE DIRECTION, WHICH IS THE
+GENERAL RULE.** TRAPS **71** is the same disagreement with the roles
+reversed: `prompt_numeral_test`'s header summed eighteen numerals as *"seven
+ORDINAL and eight PROSE"* and **the table it sat on said eight ORDINAL and
+seven PROSE**. There the prose was right and the table was wrong; here the
+table was right and the prose was wrong. So the rule is not *"trust the
+table"* - 085 wrote that sentence first and TRAPS 71 falsifies it. The rule
+is:
+
+> **A per-kind summary and the per-row table under it are two counts of the
+> same thing, and nothing in this repository asserts that they agree.**
+
+Both are claims about the code (TRAPS 24). A suite can hold a table row by
+row and still let the sentence above it say something else, because the
+sentence is prose and prose is not run. When a commit writes both, it owes
+the reader the derivation of the summary **from the table**, mechanically -
+not a second reading of the code, and not a tally made while writing.
+
+**Do:**
+
+- **Derive the summary from the table, in one step you could show.** If the
+  buckets cannot be produced by counting the rows, one of the two is wrong and
+  the diff between them is the finding.
+- **When they disagree, do not pick the one that reads better.** TRAPS 71 and
+  TRAPS 82 disagree about which was right, so the only safe move is to
+  re-derive both off the code with comment lines blanked (TRAPS 64).
+- **Beware the bucket you called safe.** Sorting a class into "the dangerous
+  idiom" and "the safe idiom" stops the next session from checking the safe
+  one. The exception lives there precisely because nobody looks.
+- **"Held by" is not "guarded by".** A null used as an `if` is not an
+  assertion, and a downstream check whose message describes something else is
+  a coincidence that a later edit can remove without anybody noticing it was
+  load-bearing.
+
+Found in 085, by re-deriving 084's class off the code instead of carrying its
+summary forward (TRAPS 4, TRAPS 66).
+
+> The row was right. The sentence that counted the rows was wrong, and the
+> sentence is what the next session reads.
 
 ---

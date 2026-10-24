@@ -452,7 +452,17 @@ func _run() -> void:
 	var mint_record := _script_line("track_log.gd", "static func next_id")
 	_check(mint_record != "",
 		"the record id is minted in track_log.gd's next_id(), which is where this file's sections 1-7 found it")
+	# THE ONE open() READ OF A NAMED FILE IN tests/ THAT HAD NO GUARD (085).
+	# `open()` returns null for a path that is not there, so this is the idiom
+	# that CAN be asked directly - and the null was being used as a branch
+	# condition and never asserted. The read was held only by
+	# `record_body != ""` below, whose message is about whether the mint asks
+	# the OS who it is, so a moved or renamed track_log.gd reported as a
+	# missing capability rather than as a missing file. See TRAPS 82: the 084
+	# record bucketed this site under the string-returning idiom and concluded
+	# that every open() read among the eight was guarded.
 	var track_log := FileAccess.open("res://scripts/track_log.gd", FileAccess.READ)
+	_check(track_log != null, "track_log.gd can be read")
 	var record_body := ""
 	if track_log != null:
 		var track_log_source := track_log.get_as_text()
