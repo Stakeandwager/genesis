@@ -5683,3 +5683,86 @@ was right.
 > It does not tell you which, and it does not tell you about the other four.
 
 ---
+
+## 81. The guard that said the file was read, asked one call too late
+
+**Signature:** a suite reads a named source file, the line underneath says
+*"the file was read"* and passes, and the file is not there. The read's
+failure is caught — if it is caught at all — by something else further down,
+which nobody wrote for that purpose.
+
+**Cause.** `FileAccess.get_file_as_string()` returns the **empty string** for a
+path that is not there; there is no handle and no null to test. The repository's
+shared reader `_code_of()` blanks comment lines and cuts trailing ones, and it
+is written as
+
+```gdscript
+for raw in source.split("\n"):
+	...
+	out += (line if hash_at < 0 else line.substr(0, hash_at)) + "\n"
+```
+
+`"".split("\n")` is **one empty element**, so an empty source in produces one
+`"\n"` out. Measured in Godot 4.7.1 on a built source: raw length **0**,
+stripped length **1**, the byte **10**.
+
+So `_check(_code_of(FileAccess.get_file_as_string(path)) != "", "X was read")`
+**cannot fail**. The guard is not weak, it is vacuous — the one shape TRAPS 6
+is about, in the one line whose whole job was to stop the failure it cannot
+see.
+
+`view_frame_test.gd:373` was that line, from 062 until 084. **Measured** (its
+one read redirected at a path that does not exist, in a throwaway copy with
+its own `config/name`, the suite run alone): **82 assertions, failures=3** —
+`clears.size() == 6`, `restores.size() == 3` and `frames.size() == 3` all
+reported, and *"game_controller.gd was read"* **PASSED**. Three of the four
+assertions that could fail did; the only one that was written to say the read
+worked did not. Had those three counts ever been loosened to floors — which is
+what a later session does when a count gets in the way — the read would have
+gone silent with the guard still green beside it.
+
+**And the same question one idiom over has the opposite answer, which is why
+this is easy to miss.** `FileAccess.open(path, FileAccess.READ)` returns
+**null** for a missing path, so `_check(file != null, "X can be read")` is
+load-bearing, and the four sites in `tests/` that use it were each measured
+firing by name. The two idioms read the same in a diff and do not fail the
+same way.
+
+**Fixed in 084.** The guard moved to the **raw** read, with the reason asserted
+on a built source beside it rather than left in a comment: a path that does not
+exist reads as `""`, and `_code_of("")` does not. Re-measured, the same
+redirect now gives **84 assertions, failures=4**, the guard naming itself
+first. The property is also asserted centrally in `source_scan_test`'s section
+4, which is the section that owns the reader — and section 3 there has already
+asserted that every copy of `_code_of()` in `tests/` is byte-identical, so a
+property proven of one copy is a property of all of them. **Both new controls
+were falsified, each in its own copy**: make `view_frame_test`'s `_code_of()`
+return `""` for an empty source and that suite fails **84/1** naming the new
+assertion; make `source_scan_test`'s do the same and that suite fails **32/2**
+- the new assertion, and section 3's byte-identity check naming
+`source_scan_test.gd` as the drifted one of the **15** copies.
+
+**Do:**
+
+- **Ask whether the read worked at the read, not after the transform.** Every
+  step between the two can turn an empty answer into a non-empty one, and the
+  cheapest of them does.
+- **Know which idiom you used.** `open()` gives you a null to test;
+  `get_file_as_string()` gives you `""`, which is a value that survives being
+  processed. A guard copied from one to the other stops working silently.
+- **A guard that claims a fact is a claim, so falsify it once.** Point the read
+  at a path that does not exist and watch *that line* fail. If something else
+  fails instead, the guard is decoration and the suite's real floor is
+  wherever the failure actually came from.
+- **Count the failures against the assertions that could fail.** Three of four
+  firing is the arithmetic saying one of them is not held (TRAPS 80), and the
+  one not held was the one with the reassuring message.
+
+Found in 084, while measuring the eight named-file reads 083 left as the live
+"Next action" — all eight of which are held. The fault was not in the class
+being measured but in the line that said the measurement was unnecessary.
+
+> `_code_of("")` is not `""`. A guard asked after the stripper is a guard
+> asked of the stripper.
+
+---

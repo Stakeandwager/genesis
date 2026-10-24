@@ -369,8 +369,26 @@ func _the_class_is_closed() -> void:
 	# Read off the CODE (067). The per-line skips below already dropped a
 	# whole-line comment; _code_of() also cuts a comment that follows code on
 	# the same line, which nothing was doing. See TRAPS 64.
-	var source := _code_of(FileAccess.get_file_as_string("res://scripts/game_controller.gd"))
-	_check(source != "", "game_controller.gd was read")
+	#
+	# THE GUARD IS ON THE RAW READ, AND THAT IS THE WHOLE POINT (084, TRAPS 81).
+	# Until 084 it read `_check(_code_of(...) != "", "game_controller.gd was
+	# read")`, which COULD NOT FAIL: a file that is not there reads as the
+	# empty string, and `_code_of("")` is "\n" and not "" - `"".split("\n")`
+	# is one empty element, so the stripper emits one newline for it. Measured
+	# in Godot 4.7.1 (raw len 0, stripped len 1, byte 10) and measured in this
+	# suite: with the path redirected at a file that does not exist, the guard
+	# PASSED and the three counts below did the catching - 82 assertions,
+	# failures=3 and not 4.
+	var raw := FileAccess.get_file_as_string("res://scripts/game_controller.gd")
+	_check(raw != "", "game_controller.gd was read (%d bytes)" % raw.length())
+	# And the reason the line above is on `raw`, asserted on a built source
+	# rather than left as a sentence in this comment, so the day it stops being
+	# true this suite says so and the guard can move back.
+	_check(FileAccess.get_file_as_string("res://scripts/A_FILE_GENESIS_DOES_NOT_HAVE.gd") == "",
+		"a file that is not there reads as the empty string, which is what makes the guard above load-bearing")
+	_check(_code_of("") != "",
+		"and _code_of() of that empty read is NOT empty, which is why asking the stripped text whether the read worked cannot fail")
+	var source := _code_of(raw)
 
 	var clears: Array = []
 	var restores: Array = []

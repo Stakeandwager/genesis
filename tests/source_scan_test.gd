@@ -348,6 +348,29 @@ func _run() -> void:
 	_check(_code_of("\tvar %s := 1\n" % needle).contains(needle),
 		"while a needle in a line of code is, so the three above are not passing by seeing nothing")
 
+	# AND THE ONE PROPERTY THAT MAKES A GUARD VACUOUS (084, TRAPS 81). An
+	# EMPTY source in - which is what `FileAccess.get_file_as_string()` returns
+	# for a path that is not there, and what `open()` cannot give because it
+	# returns null instead - and the output is NOT empty: `"".split("\n")` is
+	# one empty element, so the stripper emits one newline for it. Measured in
+	# Godot 4.7.1: raw length 0, stripped length 1, the byte 10.
+	#
+	# The consequence is that `_check(_code_of(read) != "", "the file was
+	# read")` CANNOT FAIL, which is what the guard in view_frame_test's
+	# _the_class_is_closed() was until 084 - measured there, with the path
+	# redirected at a file that is not there, as a guard that PASSED while the
+	# three counts beside it did the catching (82 assertions, failures=3).
+	# A suite that wants to know a read worked must ask the RAW text.
+	#
+	# This is asserted of THIS file's copy, and section 3 above has already
+	# asserted that every copy is byte-identical - so it is a property of
+	# every copy in tests/ and not of this one. That is the only reason one
+	# assertion is enough.
+	_check(_code_of("") != "",
+		"the code of an EMPTY source is not empty, so emptiness of a stripped read is no evidence the read worked (length %d)" % _code_of("").length())
+	_check(_code_of("").strip_edges() == "",
+		"while stripped of whitespace it is, which is the form the two prose controls above use and the form a scan may safely test")
+
 	# The line count is preserved, which is not tidiness: record_id_test's
 	# session scan reports "file:line" off this text, and 066's own fault 2
 	# was a report that named a line that started nothing.

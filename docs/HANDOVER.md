@@ -24,6 +24,93 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
+- Last commit at the time of writing: **084**, which did the measurement 083
+  left as the live "Next action" - the **eight** reads in `tests/` of a single
+  **named** `.gd` file by a literal path, each pointed at a path that does not
+  exist, **one at a time** (TRAPS 80), in a throwaway copy with its own
+  `config/name` (TRAPS 50), the suite run alone.
+
+  **THE CLASS WAS RE-DERIVED AND NOT CARRIED FORWARD (TRAPS 4, TRAPS 66).**
+  Counted off the code at `f48c619` rather than off this session's working
+  tree: **54** `FileAccess` READ sites in **22** files - **11**
+  `get_file_as_string` and **43** `open(..., FileAccess.READ)` - of which
+  **8** read a specific named `.gd` file by a literal path. That is 083's
+  number and 083's eight, name for name, which is recorded because agreeing is
+  the only interesting outcome of a re-count. **After this commit it is 55
+  sites in the same 22 files** (one `get_file_as_string` site replaced by two:
+  the raw read and its control).
+  **AND THE FIRST COUNT OF IT HERE WAS WRONG, BY THE FAULT THIS REPOSITORY HAS
+  A READER FOR.** A plain `grep -c` of the working tree returned **56**,
+  because the comment this commit added to `source_scan_test` *mentions*
+  `FileAccess.get_file_as_string()` in prose. Counted again with comment lines
+  blanked - `_code_of()`'s own rule, applied to the count instead of to a scan
+  - it is 55. A number in a document is a claim about the code (TRAPS 24), and
+  this one walked into TRAPS 64 on the way to being written down.
+
+  **ALL EIGHT ARE HELD, AND NONE OF THEM WAS THE FAULT.** Each redirected
+  **alone**, on a baseline byte-identical to the md5 083 recorded:
+
+  | read | what fires | alone |
+  |---|---|---|
+  | `controller_reach_test.gd:580` `game_controller.gd` | `file != null` | **CAUGHT** 123, failures=1 |
+  | `handler_wiring_test.gd:387` `main.gd` | `main_src != null` | **CAUGHT** 46, failures=1 |
+  | `handler_wiring_test.gd:536` `ai_interpreter.gd` | `file != null` | **CAUGHT** 43, failures=1 |
+  | `player_door_test.gd:386` `main.gd` | `found == 4` | **CAUGHT** 65, failures=1 |
+  | `player_door_test.gd:403` `game_controller.gd` | `paths.size() == 2` | **CAUGHT** 71, failures=1 |
+  | `record_id_test.gd:455` `track_log.gd` | `record_body != ""`, `mints == 3` | **CAUGHT** 22, failures=**2** |
+  | `source_scan_test.gd:370` `session_test.gd` | `session != null` | **CAUGHT** 28, failures=1 |
+  | `view_frame_test.gd:372` `game_controller.gd` | the three exact counts | **CAUGHT** 82, failures=**3** |
+
+  **THE TWO IDIOMS DO NOT FAIL THE SAME WAY, WHICH IS THE WHOLE ANSWER.**
+  `FileAccess.open(path, READ)` returns **null** for a missing path, so the
+  four sites that use it are each held by a `!= null` guard written for exactly
+  that. `FileAccess.get_file_as_string()` returns the **empty string**: there
+  is no handle and no null, and the four sites that use it are held - all four
+  - by an **exact count** or a **positive membership claim** further down,
+  which goes false when the text is empty. Not one of the four is held by
+  anything written to notice the read.
+
+  **AND THE ONE GUARD THAT WAS WRITTEN TO NOTICE IT COULD NOT FAIL.** This is
+  the fault, and the eight runs are what found it.
+  `view_frame_test.gd:373` read
+  `_check(source != "", "game_controller.gd was read")` over
+  `source := _code_of(FileAccess.get_file_as_string(...))`. **`_code_of("")` is
+  not `""`**: `"".split("\n")` is one empty element, so the stripper emits one
+  `"\n"` for an empty source. **Measured in Godot 4.7.1 on a built source**:
+  raw length **0**, stripped length **1**, the byte **10**. So with the file
+  absent the suite came back **82 assertions, failures=3** - `clears == 6`,
+  `restores == 3` and `frames == 3` all reporting, and the line whose message
+  says the read happened **PASSING**. Three of the four assertions that could
+  fire did; the one that was written for this did not. New TRAPS **81**.
+  **It is latent today and it is not nothing**: those three counts are exact on
+  purpose, and the day one of them is loosened to a floor - which is what a
+  later session does when a count gets in the way - the read goes silent with a
+  green guard beside it.
+
+  **WHAT CHANGED, AND IT IS THE RULE AND NOT THE INSTANCE (TRAPS 11).** The
+  guard moved to the **raw** read, and the reason it is there is asserted on a
+  built source beside it rather than left in a comment: a path that does not
+  exist reads as `""`, and `_code_of("")` does not. The same redirect now gives
+  **84 assertions, failures=4** with the guard naming itself first.
+  **THE CLASS WAS DERIVED MECHANICALLY AND HAS EXACTLY ONE MEMBER**, which is
+  why one instance is the class: of the **15** sites in `tests/` that assign
+  the output of `_code_of()` to a variable, `view_frame_test`'s was the only
+  one whose file then tested that variable for emptiness - checked by taking
+  the assigned name off each site and grepping that file's `_check(` lines for
+  it, not by reading the files for a feeling.
+  **AND THE PROPERTY IS NOW ASSERTED CENTRALLY, IN THE SECTION THAT OWNS THE
+  READER.** `source_scan_test`'s section 4 holds `_code_of()`'s behaviour on
+  built sources; it now also holds that an **empty** source in gives a
+  **non-empty** output, and that the output is empty only once stripped of
+  whitespace - which is the form a scan may safely test and the form that
+  section's two prose controls already use. **Section 3 there has already
+  asserted that every copy of `_code_of()` in `tests/` is byte-identical**, so
+  a property proven of one copy is a property of all of them; that is the only
+  reason one assertion is enough, and it is why this was not written out
+  fifteen times.
+  `view_frame_test` 82 -> **84**, `source_scan_test` 30 -> **32**. New TRAPS
+  **81**. No new "Human decision needed".
+
 - Last commit at the time of writing: **083**, which did the per-read
   measurement 082 left as the live "Next action" and found that **082's own
   conclusion about it was wrong**. 082 had widened nothing and written that
@@ -2915,6 +3002,8 @@ than suites, leaving **74 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 74
 and are skipped without it.
+**084 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
+what the two numbers above say.
 **083 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
 what the two numbers above say.
 **082 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**. Its baseline on the clean tree at `f92697c`,
@@ -2954,7 +3043,61 @@ worlds, and suites fail for reasons that have nothing to do with the code.
 055 took four answers off such a run before noticing. If a run is being used
 as a measurement, clear `user://` before it, baseline included (TRAPS 50).
 
-Last full run (083, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+Last full run (084, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+headless, in a cloud container, sequential): **suites with something to look
+at: 0** on all **74**, with `--all`. `ls tests/*.gd` returned **76** and the
+run reported **74**, re-counted rather than carried forward.
+**THE BASELINE AGREED WITH THE RECORD BEFORE ANYTHING WAS TOUCHED.** The
+`--all` run in this container, on a clean tree at `f48c619` with
+`git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 083 recorded**:
+`daeda78a164c55d8f1c390a152339e15`, 74 suites, 0 with something to look at - so
+nothing was owed from 083 and none was re-run on its behalf. The container was
+fresh, so `user://` was empty rather than cleared: Godot's `app_userdata`
+directory did not exist.
+**THE DIFF IS TWO LINES AND THEY ARE THE TWO PREDICTED IN WRITING BEFORE THE
+RUN**: `source_scan_test` 30 -> **32** (the reader's empty-source property and
+its stripped-of-whitespace companion) and `view_frame_test` 82 -> **84** (one
+vacuous guard removed, three written: the guard on the raw read and the two
+built-source controls that say why it is there). Nothing else moved. No
+suite's verdict changed and no file was added, so neither runner needed an
+edit.
+**THE md5 WAS WRITTEN INTO THIS FILE BEFORE THE RUNS THAT VERIFY IT**, which
+is 080's standard: `4dda614c03f61ea8db55798fbac9d439`. **THREE byte-identical
+full runs with `--all`**, `user://` cleared before each, 0 with something to
+look at - the first on the code tree and **the last two on the complete tree,
+code and docs together**, which is why there is no 084a. The only edits after
+those last two are in `docs/` and no suite can read `docs/` (re-measured
+below).
+**A FOURTH RUN WAS TAKEN AND THROWN AWAY RATHER THAN REPORTED**, because a
+comment in `tests/` was edited while it was in flight: a run that is partly on
+one tree and partly on another is not a measurement, whatever number it
+prints. It is mentioned because the alternative is a silence that looks like
+three runs having always been the plan.
+**AND THE DELIBERATE-FAULT RUNS, which are the evidence the full run cannot
+produce.** Each in a throwaway copy with its own `config/name` (TRAPS 50), the
+suite run alone. The eight-read measurement table is in the 084 entry under
+"Starting state". After the fix, `view_frame_test`'s read redirected at a path
+that does not exist fails **84/4** with *"game_controller.gd was read (0
+bytes)"* naming itself first, where before the fix the same redirect gave
+**82/3** with that guard passing. **BOTH NEW CONTROLS WERE FALSIFIED, each
+in its own copy.** Make `view_frame_test`'s copy of `_code_of()` return `""`
+for an empty source and that suite fails **84/1**, naming *"and `_code_of()`
+of that empty read is NOT empty"*. Make `source_scan_test`'s copy do the same
+and that suite fails **32/2** - the new assertion, and section 3's byte-identity
+check naming `source_scan_test.gd` as the drifted one of the **15** copies. So
+neither is passing by seeing nothing, and the generalisation the central
+assertion rests on - one copy proven, every copy identical - fails in both
+directions. **And the engine
+behaviour both rest on was measured rather than assumed**, on a built source in
+this container: `get_file_as_string()` of a missing path has length **0**,
+`_code_of()` of that has length **1** and is the byte **10**, and
+`open()` of the same path is **null**.
+**NO SUITE CAN READ `docs/`, re-measured here rather than carried forward
+(TRAPS 4)**: no file in `tests/` contains `res://docs` or `"docs/`, and every
+directory read in `tests/` targets `res://scripts` (12) or `res://tests` (7),
+counted off the code.
+
+Previous full run (083, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
 headless, in a cloud container, sequential): **suites with something to look
 at: 0** on all **74**, with `--all`. `ls tests/*.gd` returned **76** and the
 run reported **74**, re-counted rather than carried forward.
@@ -3875,6 +4018,15 @@ verified, and what remains uncertain.
   two checks that are wide on purpose. One reader, `_code_of()`, in every file
   that scans source; `tests/source_scan_test.gd` holds the class, at file
   granularity and saying so. See TRAPS 63 and 64.
+- **And whether the read WORKED is asked of the read, before any transform.**
+  084. `FileAccess.get_file_as_string()` returns `""` for a path that is not
+  there, and `_code_of("")` is `"\n"` — so a guard asked one call later
+  (`_check(_code_of(read) != "", "the file was read")`) cannot fail.
+  `view_frame_test:373` was that guard from 062 until 084, measured passing
+  with the file absent while the three counts beside it did the catching. The
+  sibling idiom has the opposite answer: `FileAccess.open()` returns **null**,
+  so `_check(file != null, ...)` is load-bearing, and the four sites in
+  `tests/` that use it were each measured firing by name. See TRAPS 81.
 - **Silence is not agreement.** `ACCEPTED_BY_SILENCE` is recorded and excluded
   from the understanding score.
 - **A carrier's claim is evidence of an attempt, not of delivery.** Delivery is
@@ -8858,8 +9010,66 @@ which is why there is no 083a. **Do not start by re-running on 083's behalf**;
 take your own baseline so you learn the record and the container still agree,
 and spend the time on the work below.
 
-**THE FIRST LIVE ENTRY AS OF 083: THE SAME RULE ONE CLASS OUT - A READ OF A
-NAMED FILE THAT COMES BACK EMPTY.** Found while doing 083's work, and it
+**NOTHING IS OWED FROM 084 EITHER.** Its baseline was byte-identical to the
+md5 083 recorded, it wrote its predicted diff down before running, and it took
+its runs on the code tree and then on the complete tree with `docs/` in place,
+which is why there is no 084a. **Do not start by re-running on 084's behalf**;
+take your own baseline so you learn the record and the container still agree,
+and spend the time on the work below.
+
+**THE FIRST LIVE ENTRY AS OF 084: NOTHING STOPS THE NEXT VACUOUS GUARD, AND
+WHETHER THAT IS WORTH A SCAN IS AN OPEN QUESTION WITH THE MEASUREMENT ALREADY
+TAKEN.** 084 found one guard that could not fail (TRAPS 81), fixed it, and
+asserted the property that made it vacuous in the section that owns the reader.
+**What is NOT held is the idiom**: a session that writes
+`var src := _code_of(FileAccess.get_file_as_string(path))` and
+`_check(src != "", "X was read")` tomorrow gets a green guard and nothing says
+so. The enumeration a scan would need is **already done and is in this entry**,
+so do not re-derive it from a feeling: **15** sites in `tests/` assign
+`_code_of()`'s output to a variable, **11** pass a `FileAccess` read into
+`_code_of()` on the same line, and **1** of the fifteen tested that variable
+for emptiness. The mechanical rule that decides it is *"no `_check(` in a file
+tests the emptiness of a variable assigned from `_code_of(`"* - take the name
+off the assignment, grep that file's `_check(` lines for it, and **anything the
+pattern cannot place must fail and name itself** rather than be dropped
+(TRAPS 80's second lesson).
+**BUT WEIGH IT BEFORE BUILDING IT, AND THE ARGUMENT AGAINST IS REAL.** It would
+be an **absence** assertion, at its greenest when it reads nothing (TRAPS 75),
+so it needs a floor over the site count and over both shapes appearing - which
+is `scan_floor_test`'s machinery a second time for a class with **zero** live
+members. It is also a grep standing in for dataflow, which is what 081 warned
+about in the paragraph that begins *"DO NOT START BY BUILDING A READER FOR
+THIS"*. The honest alternatives, in rising order of cost: leave it (the
+property is asserted centrally and TRAPS 81 is written, so the next session
+that greps `_code_of` finds it), or hold it. **This is a judgement about
+proportion and the measurement does not settle it**; 084 did not build it, and
+says so here rather than leaving a silence that reads like a decision.
+
+**AND THE EIGHT NAMED-FILE READS DO NOT NEED ROWS, WHICH ANSWERS 083'S
+QUESTION.** 083 asked whether the named-file class belongs in
+`scan_floor_test` beside the directory reads and said the eight runs would
+answer. **They answered: all eight are held**, four by a `!= null` guard
+written for the purpose and four by an exact count or a positive membership
+claim. There is no fault to fix and no floor to add, so widening
+`scan_floor_test` today would be a row per site recording a condition that
+already fires - the maintenance of a table against no live fault. **What the
+runs did NOT prove** is that those four incidental holders will stay: three of
+`view_frame_test`'s are exact counts that a later session could loosen, and
+`player_door_test`'s `found == 4` is one edit from `found >= 1`. That is a
+reason to re-measure the eight after any change to those assertions, and it is
+written here rather than built.
+
+**~~THE FIRST LIVE ENTRY AS OF 083: THE SAME RULE ONE CLASS OUT - A READ OF A
+NAMED FILE THAT COMES BACK EMPTY.~~ DONE IN 084: all eight measured one at a
+time, all eight held, and the fault was the one guard written to notice -
+`view_frame_test:373`, which could not fail. See TRAPS 81.** Struck rather than
+deleted, with the original text below it, because the sketch is the record of
+what was asked for and the 084 entry under "Starting state" records what was
+measured. **The entry asked exactly the right question and was right to refuse
+to guess the answer** - it carried no count of faults, told the next session to
+measure the eight one at a time before building anything, and the measurement
+found a fault it had not predicted in a line it was not looking at. The
+original text:** Found while doing 083's work, and it
 starts from a count rather than a suspicion. `scan_floor_test` holds
 **directory** reads: a read that produced no files, with an absence asserted
 over the nothing. The identical shape one step along is a read of a **single
