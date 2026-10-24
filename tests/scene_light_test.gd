@@ -368,28 +368,66 @@ func _everything_that_points_has_been_pointed(all: Array, root: Node3D) -> void:
 	# number - a module that built its own light would be unmeasured and
 	# nothing would say so. The count is EXACT and not a floor, because the
 	# claim is that the class is closed (TRAPS 6).
+	# 082: THIS WAS A BLACKLIST OF THREE CONSTRUCTORS AND IT WAS MEASURED
+	# BLIND. The old form looked for "Light3D.new()", "WorldEnvironment.new()"
+	# and "Environment.new()", which are three of the ways a light can come
+	# into being and not the class of them. MEASURED (TRAPS 50, own
+	# config/name, suite run alone): a real light added to track_builder.gd as
+	#   var lamp: Node3D = ClassDB.instantiate("OmniLight3D")
+	#   add_child(lamp)
+	# left this suite at 26 assertions, failures=0 - SILENT - with the
+	# assertion still reading "the scene's are all the game has". Same shape
+	# as controller_reach_test's corner_nodes guard, measured in the same
+	# session, which is why the rule is in TRAPS 79 rather than in this file.
+	#
+	# WHAT IS ASSERTED NOW: the ROUTES, not three spellings. Every needle
+	# below is at ZERO in scripts/ today - counted, not assumed - so the
+	# assertion needs no allow-list and no hand table. A name ending Light3D
+	# covers DirectionalLight3D, OmniLight3D and SpotLight3D without naming
+	# them; ClassDB.instantiate reaches any class by string; .instantiate()
+	# and .tscn reach any packed scene.
+	#
+	# AND THE RESIDUAL IS WRITTEN DOWN RATHER THAN CLAIMED CLOSED (TRAPS 14).
+	# Two routes are still invisible here and are NOT held by this assertion:
+	# a light obtained from the tree and re-parented or duplicated, and a
+	# class name assembled from pieces at runtime. They are not nets with
+	# holes in them, they are outside this net: .duplicate() is in legitimate
+	# use at SEVEN places in scripts/ - on a material, a vector, two
+	# dictionaries and an array, read rather than remembered - and load( at
+	# TWO, both Image.load, so a zero on either would be a false alarm rather
+	# than a check. What covers them instead is section 3, which reads
+	# the light a running game actually has.
+	var routes := ["Light3D", "WorldEnvironment", "Environment.new(",
+		"ClassDB.instantiate(", ".instantiate()", ".tscn"]
 	var makers: Array = []
+	var scanned := 0
+	var lines_read := 0
 	for name in DirAccess.get_files_at("res://scripts"):
 		if not name.ends_with(".gd"):
 			continue
-		# Read off the CODE (067). The per-line skip below already dropped a
-		# whole-line comment; _code_of() also cuts a comment that follows
-		# code on the same line, which nothing was doing. See TRAPS 64.
+		# Read off the CODE (067): a comment naming a light class is prose.
+		# This file's own header paragraphs name Light3D repeatedly, and
+		# game_controller.gd carries comments about the scene's light, so the
+		# raw text would answer this question by itself. See TRAPS 64.
 		var body := _code_of(FileAccess.get_file_as_string("res://scripts/%s" % name))
+		scanned += 1
 		var number := 0
 		for line in body.split("\n"):
 			number += 1
+			lines_read += 1
 			var text: String = (line as String).strip_edges()
-			if text.begins_with("#"):
-				continue
-			# Any constructor of a light or an environment. Matched on the
-			# class-name stems rather than on a list of the Light3D
-			# subclasses, so a SpotLight3D counts.
-			if text.contains("Light3D.new()") or text.contains("WorldEnvironment.new()") \
-					or text.contains("Environment.new()"):
-				makers.append("%s:%d %s" % [name, number, text])
+			for route in routes:
+				if text.contains(str(route)):
+					makers.append("%s:%d %s" % [name, number, text])
+					break
+	# THE FLOOR, for the reason 078 wrote it into the sibling scans: every
+	# assertion below comes out of the loop above, so a read that returned
+	# nothing would have made zero of them and the suite would still have
+	# printed failures=0 (TRAPS 75).
+	_check(scanned > 0 and lines_read > 0,
+		"scripts/ was read: %d file(s), %d line(s) of code" % [scanned, lines_read])
 	_check(makers.is_empty(),
-		"nothing in scripts/ makes a light or an environment of its own, so the scene's are all the game has%s" % (
+		"no code in scripts/ names a light or environment class or instantiates a scene, so the scene's light and environment are all the game has%s" % (
 			"" if makers.is_empty() else " (found: " + str(makers) + ")"))
 
 

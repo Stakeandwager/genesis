@@ -537,18 +537,42 @@ func _why_two_are_unreachable() -> void:
 	_check(file != null, "the interpreter's source can be read")
 	if file == null:
 		return
-	var source := file.get_as_text()
+	# READ OFF THE CODE, AND 082 MEASURED WHY. This function used to read the
+	# raw text and drop WHOLE-LINE comments by hand, which is half of what
+	# _code_of() does: a comment AFTER code on the same line was still read as
+	# code. That is not a cosmetic gap, because the third assertion below is a
+	# POSITIVE membership claim - "interpretation_failed is emitted from
+	# _send()" - and a trailing comment can SATISFY it.
+	#
+	# MEASURED (TRAPS 50, own config/name, suite run alone): the two real
+	# interpretation_failed.emit() calls were moved out of _send() into a
+	# helper, so the asserted fact became FALSE.
+	#   with "# was interpretation_failed.emit(...) before the move" left
+	#   behind on the line that replaced it -> 49 assertions, failures=0, the
+	#   assertion PASSING on a false fact. SILENT.
+	#   the same move with NO comment             -> 49 assertions, failures=1.
+	# One comment line flipped it from FAIL to PASS, which is TRAPS 64's
+	# signature in a function TRAPS 64's own sweep never reached: that sweep
+	# looked for files with no _code_of() at all, and this file has one and
+	# did not use it here.
+	var source := _code_of(file.get_as_text())
 	file.close()
 
 	# Which function is each emit of each signal in?
+	#
+	# The whole-line skip that used to be on the inner `if` is gone: _code_of()
+	# has already blanked those lines, and it preserves the line count, so
+	# nothing that reports a position moves.
 	var holders := {"interpretation_ready": [], "interpretation_failed": [], "retrying": []}
 	var fn := ""
 	for raw in source.split("\n"):
 		var line := str(raw)
-		if line.begins_with("func "):
-			fn = line.substr(5, line.find("(") - 5)
+		if line.begins_with("func ") or line.begins_with("static func "):
+			var at := line.find("(")
+			var from := 12 if line.begins_with("static func ") else 5
+			fn = line.substr(from, at - from) if at > from else ""
 		for name in holders:
-			if line.contains(str(name) + ".emit(") and not line.strip_edges().begins_with("#"):
+			if line.contains(str(name) + ".emit("):
 				(holders[name] as Array).append(fn)
 
 	var ready: Array = holders["interpretation_ready"]

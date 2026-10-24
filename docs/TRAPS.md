@@ -4125,6 +4125,45 @@ and left in a comment is exactly the stale row it exists to catch.
 Found in 067, by asking TRAPS 11's question of the commit that had just
 restated TRAPS 11.
 
+**RECURRED IN 082, AND THE SWEEP ABOVE IS WHY IT SURVIVED.** The "Do" on this
+page says to count the other callers with a grep of `tests/` for reads of
+`res://scripts` and `res://tests`. That sweep, and `source_scan_test` which
+mechanises it, both work at **FILE** granularity: they ask whether a file
+*has* a `_code_of()`. `handler_wiring_test` has one — it uses it in section 2
+— and `_why_two_are_unreachable` in section 5 read the raw text anyway,
+dropping WHOLE-LINE comments by hand and letting a comment AFTER code on the
+same line through as code. 081 measured the file-vs-function gap and listed
+the nine functions; 082 read them. Measured (TRAPS 50, own `config/name`): the
+two real `interpretation_failed.emit()` calls were moved out of `_send()` into
+a helper, so the asserted fact became **false**.
+
+| treatment | result |
+|---|---|
+| the move, with `# was interpretation_failed.emit(...) before the move` left behind | **49 assertions, failures=0 — the assertion PASSING on a false fact** |
+| the same move with no comment | 49 assertions, failures=1 |
+
+One comment line flipped it from FAIL to PASS, sixteen commits after this page
+said not to let that happen. **The direction rule is what makes it serious**:
+the assertion is a POSITIVE membership claim — *"`interpretation_failed` is
+the only one of the three `_send()` emits"* — so a comment does not merely
+widen the net, it **satisfies** the claim. Fixed by routing the read through
+`_code_of()` and deleting the hand-rolled skip. The class was then enumerated
+mechanically rather than by eye: of the **twenty-one** hand-rolled comment
+skips in `tests/` **as this commit found them**, nineteen are inside a
+`_code_of()` definition or on a line that has already called one, and
+**exactly two** were raw reads —
+`handler_wiring_test._why_two_are_unreachable` and
+`controller_reach_test._guard_spawn_opponents`. Both fixed in 082; the second
+turned out to be hiding a worse fault, which is TRAPS 79. **That twenty-one is
+a count taken BEFORE the fix and it will not reproduce**: the fix deletes
+three of those lines, so the same grep of `tests/` returns **eighteen** today.
+Both numbers were read off `git grep` rather than remembered. Said here
+because a bare count in a document is the next session's stale count (TRAPS
+24, TRAPS 76), and this one is load-bearing for the arithmetic above.
+
+> A file-granular sweep closes a file-granular question. This one was asked
+> of files for fifteen commits and was always about functions.
+
 > The lesson written down in the same commit as the fix is the lesson most
 > likely to be applied once.
 
@@ -5452,5 +5491,85 @@ checked rather than retyped; check it, do not trust it"*, and was right to.
 
 > Four tables, four true sentences about their keys, and two of them had been
 > reporting a pass over a fault since the sentence was written.
+
+---
+
+## 79. An absence underwritten by a blacklist of the ways it could be broken
+
+**Signature:** a suite asserts that the code does **not** do something — and
+proves it by searching for the two or three spellings of that something its
+author happened to think of. The assertion reads as a closure (*"nothing in
+`scripts/` does X, so Y is out of reach"*). It is a sieve, and what it catches
+is the past.
+
+**Cause.** 082 read the seven unread functions 081 had measured as taking a
+`.gd` source without the shared reader, and two of them turned out to be
+holding an **absence** this way.
+
+`controller_reach_test._guard_spawn_opponents` asserted *"nothing in
+`scripts/` puts a node in `TrackBuilder.corner_nodes`, so `has_track()` is
+always false"*, which is the **premise** for the claim that
+`SPAWN_OPPONENTS`'s two refusal branches cannot be reached by a player. It
+proved it by looking for `corner_nodes.append` and `corner_nodes +=`.
+Measured, each in a throwaway copy with its own `config/name` (TRAPS 50):
+
+| injected into `scripts/track_builder.gd` | before | after |
+|---|---|---|
+| `corner_nodes.push_back(node)` | **SILENT** 139, failures=0 | 140, failures=1 |
+| `corner_nodes.insert(0, node)` | silent | 140, failures=1 |
+| `corner_nodes.append_array([node])` | silent | 140, failures=1 |
+| `corner_nodes.assign([node])` | silent | 140, failures=1 |
+| `corner_nodes = [node]` | silent | 140, failures=1 |
+| `corner_nodes[0] = node` | silent | 140, failures=1 |
+| a **trailing** comment naming the needle | 139, **failures=1** — a FALSE ALARM | 140, failures=0 |
+
+`scene_light_test` asserted *"nothing in `scripts/` makes a light or an
+environment of its own, so the scene's are all the game has"* and looked for
+`Light3D.new()`, `WorldEnvironment.new()` and `Environment.new()`. A light
+added as `ClassDB.instantiate("OmniLight3D")` left it at **26 assertions,
+failures=0** — silent, with the closure sentence still printing.
+
+**The two halves are the same mistake.** A blacklist is blind to the fourth
+idiom and loud about prose, because both follow from asking *"does this text
+contain one of my needles"* instead of *"is every site here one I have
+accounted for"*.
+
+**Do:**
+
+- **Hold an absence with a WHITELIST of the safe sites, not a blacklist of
+  the unsafe ones.** The safe forms are enumerable, they are usually in one
+  file, and each can carry its reason. Anything unrecognised fails and names
+  itself, so a new idiom arrives as a failure instead of as silence. The
+  whitelist goes stale in the safe direction; the blacklist goes stale in the
+  dangerous one.
+- **Check that the whitelist is classifying something.** A whitelist that
+  matches nothing because the read came back empty is TRAPS 75 one layer out:
+  `_check(sites > 0, ...)` beside `_check(scanned > 0, ...)`, because the
+  file count and the site count fail for different reasons.
+- **Recognise the shapes that cannot be spelled out, with a pattern.** An
+  index write and an assignment to the whole array are *shapes*, not
+  literals; enumerating their spellings is the mistake again one level down.
+  And the declaration needs its own recognition: `var corner_nodes:
+  Array[Node3D] = []` carries a `] =` from its TYPE, which an index-write
+  pattern reads as a write. That was caught by running it, not by reading it.
+- **Where the universe of routes is genuinely open, say so and name what
+  covers the rest.** 082 asserted the light/environment ROUTES that are at
+  zero today — a name ending `Light3D`, `WorldEnvironment`, `Environment.new(`,
+  `ClassDB.instantiate(`, `.instantiate()`, `.tscn` — and wrote down the two
+  it does **not** hold: a light duplicated from one already in the tree, and a
+  class name assembled at runtime. `.duplicate()` is in legitimate use at
+  **seven** places in `scripts/` — on a material, a vector, two dictionaries
+  and an array, read rather than characterised from memory — and `load(` at
+  **two**, both `Image.load`, so a zero on either would be a false alarm
+  rather than a check. Those two are covered by section 3, which
+  reads the light a *running* game has. A residual written down is a
+  limitation; a residual left out is TRAPS 14.
+
+Found in 082, reading the seven functions 081 left as the live "Next action" —
+which had asked only whether a comment could satisfy each one. Two of them
+could be satisfied by something much cheaper than a comment: a synonym.
+
+> A blacklist of the ways a thing could be broken is a record of the ways it
+> has been broken so far. An absence needs the other list.
 
 ---

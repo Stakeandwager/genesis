@@ -635,9 +635,47 @@ func _guard_no_handler() -> void:
 
 # FAILED_SCHEMA and FAILED_NOTHING_BUILT at SPAWN_OPPONENTS. Both stand after
 # the has_track() guard, and has_track() reads corner_nodes, which nothing in
-# scripts/ appends to. Grepped, not remembered.
+# scripts/ puts a node into. Read off the code, not remembered.
+#
+# 082: THIS WAS A BLACKLIST, AND AN ABSENCE CANNOT BE UNDERWRITTEN BY ONE.
+# It searched for the two idioms its author imagined - "corner_nodes.append"
+# and "corner_nodes +=" - and the assertion it fed is the PREMISE for a claim
+# about what a player cannot reach. MEASURED (TRAPS 50, own config/name):
+#   a real append site written corner_nodes.push_back(node), added to
+#   track_builder.gd                     -> 139 assertions, failures=0. SILENT.
+#   a TRAILING comment naming the needle -> 139 assertions, failures=1, a
+#   FALSE ALARM on code that does nothing.
+# So the old form was blind to a fourth idiom and loud about prose, which are
+# the two halves of the same mistake. push_back is only the cheapest example:
+# insert(), append_array(), assign(), resize() with an index write, and a bare
+# corner_nodes = [...] were all invisible too.
+#
+# THE RULE, AND IT IS THE GENERAL ONE (TRAPS 79): an absence is held by a
+# WHITELIST of the sites that are safe, not by a blacklist of the ways it
+# could be broken. The safe forms are enumerable, they are all in one file,
+# and anything unrecognised FAILS and gets read by a person. A new idiom then
+# arrives as a failure instead of as silence.
 func _guard_spawn_opponents() -> void:
-	var appends := 0
+	# Every form of `corner_nodes` in scripts/ CODE that cannot put a node in
+	# the array. A read, an emptying, or the declaration itself. This list is
+	# the whitelist; the assertion below is that nothing else occurs.
+	var safe_forms := [
+		"var corner_nodes",        # the declaration
+		"corner_nodes.is_empty()", # a read
+		"corner_nodes.size()",     # a read
+		"corner_nodes.clear()",    # empties it, so it can only make has_track() false
+		"corner_nodes[0]",         # an index READ; the writes are caught below
+		"corner_nodes[1]",
+	]
+	# The declaration, an index write, and an assignment to the whole array.
+	# Written as patterns rather than as literals because a write is a SHAPE
+	# and the whole point of this rewrite is not to enumerate the ways one can
+	# be spelled.
+	var declaration := RegEx.create_from_string("^[ \t]*var[ \t]+corner_nodes\\b")
+	var index_write := RegEx.create_from_string("corner_nodes[ \t]*\\[[^\\]]*\\][ \t]*=[^=]")
+	var whole_write := RegEx.create_from_string("corner_nodes[ \t]*=[^=]")
+	var unknown: Array = []
+	var sites := 0
 	var scanned := 0
 	var dir := DirAccess.open("res://scripts")
 	if dir != null:
@@ -648,25 +686,54 @@ func _guard_spawn_opponents() -> void:
 			if f == null:
 				continue
 			scanned += 1
-			var text := f.get_as_text()
+			# Read off the CODE. A comment that mentions corner_nodes is prose
+			# and is not a site - game_controller.gd and opponent_builder.gd
+			# each carry one explaining this very guard, and the old hand-rolled
+			# whole-line skip let a TRAILING one through as code.
+			var text := _code_of(f.get_as_text())
 			f.close()
+			var number := 0
 			for raw_line in text.split("\n"):
 				var line := str(raw_line)
-				if line.strip_edges().begins_with("#"):
+				number += 1
+				if not line.contains("corner_nodes"):
 					continue
-				if line.contains("corner_nodes.append") or line.contains("corner_nodes +="):
-					appends += 1
+				sites += 1
+				# The declaration is safe and is recognised by its own shape,
+				# not by the whitelist: "var corner_nodes: Array[Node3D] = []"
+				# carries a "] =" from its TYPE, which the index-write test
+				# below would otherwise read as a write. Caught by running it.
+				if declaration.search(line) != null:
+					continue
+				# An index WRITE is not a read, so it must not be let through
+				# by the "corner_nodes[0]" entries in the whitelist, and nor
+				# must an assignment to the whole array.
+				if index_write.search(line) != null or whole_write.search(line) != null:
+					unknown.append("%s:%d %s" % [name, number, line.strip_edges()])
+					continue
+				var rest := line
+				for form in safe_forms:
+					rest = rest.replace(str(form), "")
+				if rest.contains("corner_nodes"):
+					unknown.append("%s:%d %s" % [name, number, line.strip_edges()])
 	# 078: THE FLOOR, and this one carries more than a count. The assertion
-	# below is an ABSENCE - "nothing in scripts/ appends to corner_nodes" -
+	# below is an ABSENCE - "nothing in scripts/ puts a node in corner_nodes" -
 	# and it is the PREMISE for the claim that SPAWN_OPPONENTS' two branches
 	# are out of a player's reach. An absence found by reading nothing is not
 	# an absence, so without this line a failed or empty read would have
 	# underwritten a claim about what Genesis cannot do (TRAPS 6, TRAPS 14).
-	# The comment above says "Grepped, not remembered"; this is the line that
-	# keeps that true.
-	_check(scanned > 0, "scripts/ was read and holds %d .gd files to scan for corner_nodes appends" % scanned)
-	_check(appends == 0,
-		"nothing in scripts/ puts a node in TrackBuilder.corner_nodes (found %d), so has_track() is always false" % appends)
+	# The comment above says "read off the code"; this is the line that keeps
+	# that true.
+	_check(scanned > 0, "scripts/ was read and holds %d .gd files to scan for corner_nodes sites" % scanned)
+	# AND THE SITES ARE THERE TO BE CLASSIFIED. A whitelist that matches
+	# nothing because the read found nothing is the same silence 078 closed one
+	# layer out: without this, deleting corner_nodes entirely would read as a
+	# pass. The unit is a LINE of code naming corner_nodes, not a file.
+	_check(sites > 0,
+		"and %d line(s) of code in scripts/ name corner_nodes, so the whitelist below is classifying something" % sites)
+	_check(unknown.is_empty(),
+		"every corner_nodes site in scripts/ is a read, an emptying or the declaration, so nothing puts a node in it and has_track() is always false%s" % (
+			"" if unknown.is_empty() else " - UNRECOGNISED: " + ", ".join(PackedStringArray(unknown))))
 	await _send(CLEAR)
 	_check(not main.controller.track_builder.has_track(),
 		"and has_track() is false after a clear, so SPAWN_OPPONENTS' own two branches are out of reach")

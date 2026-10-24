@@ -24,6 +24,74 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
+- Last commit at the time of writing: **082**, which did the reading 081 left
+  as the live "Next action" - the seven of nine functions in `tests/` that take
+  a `.gd` source out of this repository without naming `_code_of()` in the same
+  function - and found that **the question the entry asked was the smaller
+  half**. The entry asked of each whether a comment in `scripts/` could satisfy
+  it (TRAPS 64's question). Two of the seven could be satisfied by something
+  cheaper than a comment: **a synonym**.
+
+  **THE LIST OF NINE WAS RE-MEASURED AND NOT CARRIED FORWARD (TRAPS 4).** A
+  read of `tests/` found **26** functions calling `get_as_text()` and **11**
+  not naming `_code_of()` in the same function - 081 said eleven of
+  twenty-five, so the eleven agrees and the denominator is one out. The two
+  that are in the eleven and not in 081's nine read something that is not a
+  `.gd` source out of this repository (`check_wiring_test._tamper` reads a JSON
+  save file at a path handed to it; `prompt_numeral_test._read` reads a
+  caller-supplied path). **081's nine is correct.** All seven were read:
+
+  | function | can a comment satisfy it? | why |
+  |---|---|---|
+  | `check_wiring_test._no_door_rows` | **no** | strips trailing comments inline with `line.substr(0, hash_at)`, which is what `_code_of()` does for a presence question. Reports no line numbers, so the line-count preservation it skips costs nothing |
+  | `controller_reach_test._enumeration` | **yes, ON PURPOSE** | its direction is *"every `FAILED_` name mentioned anywhere must be answered for"*, so a name in a comment is still in scope. Documented in the function already; this is TRAPS 64's direction rule working |
+  | `controller_reach_test._guard_no_handler` | **no** | the case list is matched with `^\t\t"([A-Z_]+)"`, anchored at the line start, and a comment line has `#` in that position. **Its direction is the dangerous one** - a phantom case would claim a command has a handler - and what protects it is the anchor, not a stripped read. Left alone, with the reason now written down |
+  | `controller_reach_test._guard_spawn_opponents` | **not a false pass - a FALSE ALARM**, and a worse fault underneath | see below |
+  | `handler_wiring_test._why_two_are_unreachable` | **YES, AND IT IS A FAULT** | see below |
+  | `record_id_test._run` | **no** | both raw reads go straight into `_asks_who_it_is()`, which is `_code_of(source).contains(...)`. The stripping happens one call along, which is why the per-function grep could not see it - and is the cleanest evidence that the honest unit is dataflow, not a grep |
+  | `refusal_reach_test._why_out_of_reach` | **no** | the needle is `"\nfunc solve("`, anchored to column 0 by its own newline. Also a positive membership claim, also protected by the anchor rather than by a strip |
+
+  **FAULT 1, AND IT IS TRAPS 64 SIXTEEN COMMITS AFTER TRAPS 64 WAS WRITTEN.**
+  `handler_wiring_test._why_two_are_unreachable` read the raw source and
+  dropped WHOLE-LINE comments by hand - half of what `_code_of()` does - so a
+  comment after code on the same line was read as code. Its third assertion is
+  a **positive** membership claim, *"`interpretation_failed` is the only one of
+  the three `_send()` emits"*, so a comment does not widen the net, it
+  **satisfies** the claim. Measured by moving the two real
+  `interpretation_failed.emit()` calls out of `_send()` into a helper, so the
+  asserted fact became false: **with a trailing comment left behind, 49
+  assertions, failures=0, the assertion passing on a false fact**; with the
+  same move and no comment, 49 and failures=1. **One comment line flipped it
+  from FAIL to PASS.** `source_scan_test`'s sweep could not see it because
+  that sweep asks whether a file HAS a `_code_of()`, and this file has one and
+  used it in a different section. TRAPS 64 now carries the recurrence.
+
+  **FAULT 2 AND 3, WHICH ARE THE SAME FAULT AND ARE WORSE THAN THE QUESTION
+  THE ENTRY ASKED.** `_guard_spawn_opponents` asserted *"nothing in `scripts/`
+  puts a node in `TrackBuilder.corner_nodes`, so `has_track()` is always
+  false"* - the **premise** for the claim that `SPAWN_OPPONENTS`'s two refusal
+  branches are out of a player's reach - and proved it by searching for the two
+  idioms its author imagined, `corner_nodes.append` and `corner_nodes +=`.
+  Measured, each in a throwaway copy with its own `config/name` (TRAPS 50):
+  **`push_back`, `insert`, `append_array`, `assign`, `corner_nodes = [node]`
+  and `corner_nodes[0] = node` were ALL silent at 139 assertions,
+  failures=0**, while a *trailing comment* naming the needle produced a
+  **false alarm** at failures=1. Blind to the fourth idiom and loud about
+  prose, which are two halves of one mistake.
+  **AND THE CLASS HAS A SECOND MEMBER, MEASURED RATHER THAN SUSPECTED (TRAPS
+  11).** `scene_light_test` asserted *"nothing in `scripts/` makes a light or
+  an environment of its own, so the scene's are all the game has"* against
+  three `.new()` needles; a light added as
+  `ClassDB.instantiate("OmniLight3D")` left it at **26 assertions,
+  failures=0**. Both are now whitelists - *every site is one of these safe
+  forms, and anything unrecognised fails and names itself* - which is new
+  TRAPS **79**. Every fault above now fails; six must-pass controls still
+  pass, including an added legitimate `corner_nodes.size()` read, light class
+  names in a **comment**, and an index READ distinguished from an index WRITE.
+  `controller_reach_test` 139 -> **140**, `scene_light_test` 26 -> **27**,
+  `handler_wiring_test` **49, unmoved**. New TRAPS **79**; TRAPS **64**
+  carries an addendum. No new "Human decision needed".
+
 - Last commit at the time of writing: **081**, which took 080's live "Next
   action" - *"check it, do not trust it"* - and found that **080's one-grep
   screen was right about two of the four sibling tables and wrong about
@@ -2755,6 +2823,19 @@ than suites, leaving **74 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 74
 and are skipped without it.
+**082 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
+what the two numbers above say. Its baseline on the clean tree at `f92697c`,
+`git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 081
+recorded**: `e418e41585ed7e8fdb4ee458942e372c`, 74 suites, 0 with something to
+look at. The container was fresh, so `user://` was empty rather than cleared -
+Godot's `app_userdata` directory did not exist. After the change, **THREE
+byte-identical full runs with `--all`**, md5
+`77dffd1f0f51ba42a04aaad6fa14f098`, 0 with something to look at - two on the
+code tree and **the third on the complete tree with `docs/` in place**, which
+is why there is no 082a. The diff against the baseline is the **two lines
+predicted in writing before the run**: `controller_reach_test` 139 -> 140 and
+`scene_light_test` 26 -> 27, and nothing else moved. `user://` was cleared
+before each run.
 **081 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
 what the two numbers above say.
 **080 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**.
@@ -8594,8 +8675,66 @@ place, which is why there is no 081a. **Do not start by re-running on 081's
 behalf** - take your own baseline so you learn the record and the container
 still agree, and spend the time on the work below.
 
-**THE FIRST LIVE ENTRY AS OF 081, AND IT IS A READING OF NINE FUNCTIONS, NOT
-A SUITE TO WRITE.** 081 struck `source_scan_test` section 2's claim that
+**NOTHING IS OWED FROM 082 EITHER.** Its baseline was byte-identical to the
+md5 081 recorded, it wrote its two-line diff down before running, and it took
+**three** byte-identical `--all` runs - the third on the complete tree with
+`docs/` in place - which is why there is no 082a. **Do not start by re-running
+on 082's behalf**; take your own baseline so you learn the record and the
+container still agree, and spend the time on the work below.
+
+**THE FIRST LIVE ENTRY AS OF 082: `scan_floor_test`'s CLASS IS DERIVED FROM
+ONE IDIOM OF DIRECTORY READ, AND THERE ARE TWO.** Found while giving
+`scene_light_test` its floor, measured rather than reasoned about.
+`scan_floor_test._sites()` derives its class from `DirAccess.open(` -
+`_open_call()` returns exactly that - so **seven `DirAccess.get_files_at(` sites in `tests/` are outside the class
+and have no row**: six in `player_door_test.gd` (`_the_scene`,
+`_the_scene_has_no_floor`, `_the_name_is_not_the_worlds`) and the one in
+`scene_light_test.gd`, which 082 gave a floor because it was already changing
+that function. **That is TRAPS 11's shape in the suite whose whole job is
+floors**, and it is the floor rule applied to one idiom of the two.
+**BUT MEASURE BEFORE BUILDING, BECAUSE THE CONSEQUENCE TODAY IS NIL.** Five of
+`player_door_test`'s six were pointed at a directory that exists and is empty
+(the sixth takes a variable, not a literal, so the same edit does not reach
+it): the suite came back **69 assertions, failures=2**, naming *"there are 0
+of them besides this file"* and *"the suites that really do stand a body on a
+floor build their own with a real shape ([])"*. **So nothing is silent today**
+- `player_door_test` catches its own empty read incidentally, and that is
+luck rather than design, which is the whole point of `scan_floor_test`
+existing. The job is therefore (a) widen `_sites()` to both idioms, (b) write
+the rows for the sites that appear, each naming the CONDITION that fires and
+not the wording (TRAPS 6), and (c) where a site is covered by a sibling's
+floor, say so in the row the way
+`check_wiring_test.gd::_no_door_rows` already does with `suite_level`. **Do
+not raise a number to close this**, and do not take the "failures=2" above as
+proof the other five are held: that was five reads redirected at once, which
+does not say that each is held on its own. Measuring them one at a time is
+part (b).
+
+**AND THE TWO ROUTES `scene_light_test` STILL DOES NOT HOLD ARE A LIMITATION,
+NOT A TASK - with the reason.** 082's whitelist asserts the construction
+routes that are at zero in `scripts/` today (a name ending `Light3D`,
+`WorldEnvironment`, `Environment.new(`, `ClassDB.instantiate(`,
+`.instantiate()`, `.tscn`). It does **not** hold a light duplicated from one
+already in the tree, or a class name assembled from pieces at runtime.
+`.duplicate()` is in legitimate use at **seven** places in `scripts/` — on a
+material, a vector, two dictionaries and an array — and `load(` at **two**,
+both `Image.load`, so a zero on either would be a false alarm rather than a
+check. Counted and read, not characterised from memory. What
+covers those two is section 3, which reads the light a *running* game has. Do
+not add a needle for them.
+
+**~~THE FIRST LIVE ENTRY AS OF 081, AND IT IS A READING OF NINE FUNCTIONS, NOT
+A SUITE TO WRITE.~~ DONE IN 082: all seven read, two faults found, both
+fixed.** Struck rather than deleted, with the original text below it, because
+the sketch is the record of what was asked for and the 082 entry under
+"Starting state" records what was measured. **The entry asked the wrong
+question and said so would be too strong - it asked a question that was
+necessary and not sufficient.** It asked of each function whether a *comment*
+could satisfy it; two of the seven could be satisfied by a **synonym**, which
+is the larger fault and is now TRAPS 79. Of the seven: four are safe and the
+reason is written down for each (two by an anchored needle, one by stripping
+inline, one by handing the raw text to `_code_of()` one call along), one reads
+raw ON PURPOSE and already said so, and two were faults. The original text:** 081 struck `source_scan_test` section 2's claim that
 *"every file that scans source reads it through `_code_of()`"* - it measures
 that a file HAS one - and measured that **nine functions across six files in
 `tests/` take the text of a `.gd` source out of this repository without
