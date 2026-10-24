@@ -2487,12 +2487,15 @@ file's row in its `KNOWN` list. **No other suite's result line moved** — in
 particular `look_test` stayed at 18 and `load_check_test` at 40, which is the
 measurement saying the two early-exit lines 077 fixed are on paths that do not
 run on a healthy tree, and therefore could never have shown in any run output.
-No suite's verdict moved. **THREE full runs, `user://` cleared before each,
-all byte-identical** (md5 `eacbafcdd519e7fd4caf08361e8a066c`). Three rather
-than two because a comment in `source_scan_test` was edited after the second,
-and 074a, 075a and 076a each had to take a third run for exactly that reason:
-**the third was taken on the final code tree**, and every doc edit after it is
-covered by the paragraph below rather than by a guess.
+No suite's verdict moved. **FOUR full runs, `user://` cleared before each,
+all byte-identical** (md5 `eacbafcdd519e7fd4caf08361e8a066c`). Three on the
+final code tree — three rather than two because a comment in
+`source_scan_test` was edited after the second — and **a FOURTH on the clean
+pushed tree at `17072e0`, byte-identical to all three**, with
+`git diff HEAD origin/prototype-002a` empty before it was taken. 074a, 075a
+and 076a each needed a follow-up commit to establish exactly this, and 077a
+is the same amendment: **the md5 above demonstrably covers what is on the
+remote**, not merely the tree the third run saw.
 **077 adds a suite, so the md5 above is a fresh baseline and 076's is not
 comparable to it.** There is nothing to strip-and-diff here the way 075 and
 076 needed: 077 changes no existing result line's FORMAT, so the raw diff
