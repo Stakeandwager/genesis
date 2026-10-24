@@ -24,7 +24,70 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **080**, which took 079's live "Next
+- Last commit at the time of writing: **081**, which took 080's live "Next
+  action" - *"check it, do not trust it"* - and found that **080's one-grep
+  screen was right about two of the four sibling tables and wrong about
+  two**. The job was to measure whether a second member can hide behind the
+  first in `check_wiring_test.DECLARED`/`BY_HAND`, `source_scan_test.KNOWN`,
+  `refusal_reach_test.DECLARED` and `result_line_test.NO_RESULT_LINE`. Each
+  fault in a throwaway copy with its own `config/name` (TRAPS 50), the suite
+  run alone:
+
+  | table | fault injected | result |
+  |---|---|---|
+  | `check_wiring_test.DECLARED` | a 2nd verdict-returning function in a file that already has rows | **CAUGHT** 191, failures=1 |
+  | `check_wiring_test.BY_HAND` | a 2nd non-verdict check arriving | **SILENT** 190, failures=0 |
+  | `source_scan_test` §2 | a 2nd, **RAW** read in a file that already has `_code_of()` | **SILENT** 30, failures=0 |
+  | `source_scan_test` §2 *(control)* | the same raw read in a file with **no** `_code_of()` | caught, 30, failures=2 |
+  | `refusal_reach_test.DECLARED` | a 4th `FAILED_LAYOUT` place in `farm_module.gd` | **SILENT** 105, failures=0 |
+  | `refusal_reach_test` | `FAILED_CORRIDOR` gaining a controller-side owner | **SILENT** 105, failures=0 |
+  | `result_line_test.NO_RESULT_LINE` | a 2nd result line carrying no count | **CAUGHT** 329, failures=3 |
+
+  **EVERY CLAUSE OF 080'S SCREEN IS TRUE AND ITS CONCLUSION IS FALSE**, which
+  is the finding and is now TRAPS **78**. Each clause answers for the table's
+  KEY; none answers for what the suite then DOES with it.
+  `source_scan_test`'s `KNOWN` *is* genuinely per file - and section 2 of the
+  same suite asks a question about **reads** with one `contains()` per file.
+  `refusal_reach_test`'s `DECLARED` *is* keyed by name - and the verdict in
+  the row is a claim about every **place** that produces the name.
+  **The two tables that held are strong for a reason worth copying**: both
+  derive their class from the source and assert membership in BOTH
+  directions. **The two that were silent each hold a hand-written claim the
+  suite's own derived data could have checked and did not** -
+  `source_scan_test._class()` already collects the sites as
+  `name -> ["file:line", ...]` and section 2 throws them away;
+  `refusal_reach_test._categories_in_source()` already collects the files per
+  category and nothing compared them with `SHARED_WITH_CONTROLLER`.
+  **WHAT WAS FIXED, and it is one of the two.** `refusal_reach_test`: every
+  row carries a third column, the number of **places** in `scripts/` that
+  name its category, asserted against a read of `scripts/`. A place is an
+  occurrence of the literal in CODE, **or** of a const whose declaration IS
+  that literal, the declaration line itself not counting - and the unit is
+  written down beside the number (TRAPS 77). **It is an EQUALITY, not a
+  floor, and that is the opposite of 080's choice for the same reason**:
+  there the danger was a site LEAVING, here it is a place ARRIVING that the
+  row's verdict has never been asked of. `SHARED_WITH_CONTROLLER` is now
+  **derived** as well as declared, and `LAYOUT_BRANCHES`'s size is tied to
+  the code. **A number this file has been stating since 054 is now arrived at
+  from the source rather than copied**: the six CONTROLLER rows' places plus
+  the two controller-side `FAILED_UNWALKABLE` branches come to **28**, which
+  is the count 054's own header gives for its branches.
+  **WHAT WAS NOT FIXED, with the reason, so nobody spends a session on it
+  blind.** `source_scan_test` §2's heading and message are **struck** (079's
+  rule) because what it measures is that a file HAS a `_code_of()`, not that
+  it uses one - but **no assertion replaced them**, because the per-function
+  rule was measured before it was believed and **is not a fact about this
+  repository**: eleven of the twenty-five text-taking functions in `tests/`
+  do not name `_code_of()` in the same function, and most are legitimate. An
+  assertion over them would need a hand-written allow-list - a hand table
+  over a derived class, which is the shape this whole investigation is about
+  (TRAPS 6). **And it is not hypothetical**: nine functions across six files
+  take the text of a `.gd` source out of this repository without naming
+  `_code_of()` in the same function. That reading is the live "Next action".
+  `refusal_reach_test` 105 -> **125**, `scan_floor_test` 73 -> **78**. New
+  TRAPS **78**.
+
+- The commit before it: **080**, which took 079's live "Next
   action" - a measurement written as though it might come back *"nothing to
   do"* - and found **three unheld sentences**: `tests/agreement_test.gd`
   pinned a class whose members are SITES with one needle per **FILE**, asked
@@ -2692,8 +2755,9 @@ than suites, leaving **74 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 74
 and are skipped without it.
-**080 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
+**081 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
 what the two numbers above say.
+**080 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**.
 **079 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**.
 **078 ADDED ONE** (`scan_floor_test`) and re-ran the `ls`: **76 and 74**.
 **077 ADDED ONE** (`result_line_test`) and re-ran the `ls`: **75 and 73**.
@@ -2716,7 +2780,58 @@ worlds, and suites fail for reasons that have nothing to do with the code.
 055 took four answers off such a run before noticing. If a run is being used
 as a measurement, clear `user://` before it, baseline included (TRAPS 50).
 
-Last full run (080, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+Last full run (081, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+headless, in a cloud container, sequential, `user://` empty): **suites with
+something to look at: 0** on all **74**, with `--all`. `ls tests/*.gd`
+returned **76** and the run reported **74**, re-counted rather than carried
+forward.
+**THE BASELINE AGREED WITH THE RECORD BEFORE ANYTHING WAS TOUCHED.** The
+`--all` run in this container, on a clean tree at `f8a0633` with
+`git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 080
+recorded** (`67053085a6427a70d30364d58747d5bb`) - so nothing was owed from
+080 and none was re-run on its behalf. This container was fresh: Godot's
+`app_userdata` directory did not exist, so `user://` was empty rather than
+cleared.
+**THE DIFF IS TWO LINES AND THEY ARE THE TWO LINES 081 PREDICTED BEFORE
+RUNNING.** Written down before the run finished: *exactly two of the 74 move,
+`refusal_reach_test` 105 -> 125 because sixteen row equalities, a floor, a
+derived shared-name set, a branch-count tie and a 28-place tie are added, and
+`scan_floor_test` 73 -> 78 because `_sites_in_code()` is a new
+`DirAccess.open` site in `tests/` and that suite asks five questions of each
+site; `source_scan_test` stays at 30, because its change is a struck heading,
+a struck message and comments, and `_code_of()` blanks comment lines before
+any assertion sees them.* **That is what the diff says** - those two lines and
+no others. No suite's verdict moved, so neither runner needed an edit: no file
+was added and no result line's format changed.
+**THE md5 WAS WRITTEN INTO THIS FILE BEFORE THE RUN THAT VERIFIES IT**, which
+is 080's standard: `e418e41585ed7e8fdb4ee458942e372c`, established on the code
+tree and then re-run on the complete tree with `docs/` in place. A `docs/`
+edit cannot reach a suite and that was re-measured here rather than carried
+forward (TRAPS 4): no file in `tests/` contains `res://docs` or `"docs/` at
+all.
+**AND THE DELIBERATE-FAULT RUNS, which are the evidence the full run cannot
+produce.** Each in a throwaway copy with its own `config/name` (TRAPS 50), the
+suite run alone. The seven-row measurement table is in the 081 entry under
+"Starting state". After the fix, on `refusal_reach_test`: the **fourth
+`FAILED_LAYOUT` place** fails at 125 with 2 failures naming *"produced in 4
+place(s) ... its row says 3"* and *"LAYOUT_BRANCHES names 3 of them"*; the
+**`FAILED_CORRIDOR` controller owner** fails at 125 with 2 failures naming the
+count and the derived shared set. **Three controls pass at 125**: three
+categories named in a **comment** only, an existing place **reworded** (the
+pin reads the place, not the wording), and - measured, not assumed - the new
+floor **fires**, at 18 failures, when `_sites_in_code()`'s read is pointed at
+a directory that exists and is empty.
+**ONE CONTROL CAME BACK A FAIL AND THE FAIL IS CORRECT**, recorded rather than
+tidied away: an unused `const CORRIDOR_ALIAS := "FAILED_CORRIDOR"` added to
+`game_controller.gd` leaves the **place count at 1** (a declaration is not a
+place, which is the rule working) but **fails the derived shared-name set**,
+because `_categories_in_source()` reads ownership as *named in code* and a
+declaration is code. That is this suite's pre-existing definition of
+ownership, not one 081 introduced, and the same pre-existing assertion
+*"is still RETURNED in scripts/"* reads it the same way. A reader who saw that
+FAIL would go and find a dead const.
+
+The run before it (080, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
 headless, in a cloud container, every run sequential with `user://` cleared
 first): **suites with something to look at: 0** on all **74**, with `--all`.
 `ls tests/*.gd` returned **76** and the run reported **74**, re-counted rather
@@ -8472,9 +8587,66 @@ there is no 080a. **Do not start by re-running on 080's behalf** -
 take your own baseline so you learn the record and the container still agree,
 and spend the time on the work below.
 
-**THE FIRST LIVE ENTRY AS OF 080, AND IT IS A MEASUREMENT THAT MAY COME BACK
-"NOTHING TO DO" - which is how 079's entry read, and that one came back with
-three unheld sentences.** 080 screened the sibling per-file pin tables in
+**NOTHING IS OWED FROM 081 EITHER.** Its baseline was byte-identical to the
+md5 080 recorded, it wrote its two-line diff down before running, and it took
+its runs on the code tree and then on the complete tree with `docs/` in
+place, which is why there is no 081a. **Do not start by re-running on 081's
+behalf** - take your own baseline so you learn the record and the container
+still agree, and spend the time on the work below.
+
+**THE FIRST LIVE ENTRY AS OF 081, AND IT IS A READING OF NINE FUNCTIONS, NOT
+A SUITE TO WRITE.** 081 struck `source_scan_test` section 2's claim that
+*"every file that scans source reads it through `_code_of()`"* - it measures
+that a file HAS one - and measured that **nine functions across six files in
+`tests/` take the text of a `.gd` source out of this repository without
+naming `_code_of()` in the same function**:
+`check_wiring_test._verdict_functions` and `._no_door_rows`,
+`controller_reach_test._enumeration`, `._guard_no_handler` and
+`._guard_spawn_opponents`, `handler_wiring_test._why_two_are_unreachable`,
+`record_id_test._run`, `refusal_reach_test._why_out_of_reach`, and
+`source_scan_test._definition`. **Two of the nine were read and are
+deliberate**: `_definition()` reads verbatim ON PURPOSE and says so, and
+`_verdict_functions` strips comments inline itself rather than calling the
+shared reader. **The other seven have NOT been read, and that is the job** -
+one at a time, asking of each whether a comment in `scripts/` could answer
+the question it asks, which is TRAPS 64's question. Some will be safe for a
+reason worth writing down; any that is not is a scan a comment can satisfy,
+which is the fault `source_scan_test` exists for. **Write the answers down
+even where the answer is "safe, because"**, because the list is the thing
+that does not exist today.
+**DO NOT START BY BUILDING A READER FOR THIS.** 081 measured the obvious one
+before believing it: the per-function rule *"a function that takes source
+text names `_code_of()`"* is **not** a fact about this repository - **eleven
+of the twenty-five** text-taking functions in `tests/` do not, and most are
+legitimate. An assertion over them needs a hand-written allow-list, which is a
+hand table over a derived class and the exact shape TRAPS 77 and 78 are
+about. The honest unit is *"is the text this read produces asked a question
+after being stripped"*, which is dataflow and not a grep. **Read the seven
+first; decide whether anything is worth holding afterwards, and in the light
+of what the reading found.**
+
+**AND `check_wiring_test.BY_HAND`'S ARRIVAL GAP IS A LIMITATION, NOT A TASK -
+with the reason.** 081 measured it: a second check that answers with
+something other than a verdict key, added to `scripts/`, leaves
+`check_wiring_test` at **190 assertions, failures=0**. `BY_HAND` exists
+precisely because that class **cannot be derived** - its definition is *"a
+check the mechanical rule cannot find"*, and no scan can tell such a function
+from any other function returning an Array. This is the same shape as "Human
+decision needed" 32 and is the owner's call for the same reason. Do not build
+a derived floor for it.
+
+**~~THE FIRST LIVE ENTRY AS OF 080, AND IT IS A MEASUREMENT THAT MAY COME
+BACK "NOTHING TO DO".~~ DONE IN 081, and it came back TWO faulty tables of
+four.** Struck rather than deleted, with the original text below it, because
+the sketch is the record of what was asked for and the 081 entry under
+"Starting state" records what was measured. The entry asked whether a second
+member can hide behind the first in four sibling tables. **The answer is that
+the screen was answering about the KEY and the faults were one layer along, in
+what the suite does with it** - `source_scan_test`'s section 2 and
+`refusal_reach_test`'s row verdicts, both silent, both now measured. The two
+tables that held (`check_wiring_test.DECLARED`,
+`result_line_test.NO_RESULT_LINE`) both derive their class and assert
+membership in both directions. New TRAPS **78**. The original text:** 080 screened the sibling per-file pin tables in
 `tests/` with ONE GREP and concluded `READS_THE_READER` was the only one whose
 members were SITES. **That is a reading, and 080 is the record of what a
 reading of this costs**: 079 read the same dictionary and could not tell. The

@@ -138,6 +138,10 @@ const FLOORS := {
 		"floor": "in_code.size() >= 16",
 		"why": "the FAILED_ categories come from this read and the floor is on the caller's side",
 	},
+	"refusal_reach_test.gd::_sites_in_code": {
+		"floor": "places_counted >= 16",
+		"why": "081: the per-category PLACE counts come from this read, and every one of the sixteen equalities that compare a row's number against it would compare zero with zero on a scripts/ that opened and held nothing. The floor is on the caller's side, as its sibling's is",
+	},
 	"result_line_test.gd::_test_files": {
 		"floor": "not files.is_empty()",
 		"why": "077 built this one with its floor, which is why it was the one scan that could not pass on an empty read",

@@ -155,23 +155,39 @@ func _check(ok: bool, what: String) -> void:
 # FAILED_LAYOUT is a GUARD in all three of its branches, but only two of the
 # three can be shown to be CONNECTED to the pipeline - see the header. The
 # row cannot say that, so this comment does.
+#
+# THE THIRD COLUMN IS HOW MANY PLACES IN scripts/ NAME THE CATEGORY, AND THE
+# UNIT IS WRITTEN DOWN HERE BECAUSE THE ROW IS KEYED BY NAME WHILE THE THING
+# IT ANSWERS FOR IS A PLACE (TRAPS 77, TRAPS 78). A PLACE is an occurrence of
+# the literal in CODE, or an occurrence of a const whose declaration IS that
+# literal - the declaration line itself is not a place, because naming a
+# category is not producing one. Asserted below against _sites_in_code(),
+# which reads scripts/ rather than taking this number's word for it.
+#
+# IT IS AN EQUALITY AND NOT A FLOOR, AND THAT DIRECTION IS THE POINT. A row
+# carries one verdict for every place that produces its name, so a place
+# ARRIVING is a place the verdict has never been asked of - which is the
+# fault 081 measured as silent. A floor would go stale in exactly the
+# direction that hides it. The cost is that adding a refusal to scripts/
+# fails this suite until the number here is moved, deliberately, by somebody
+# who has decided what the new place's verdict is.
 const DECLARED := {
-	"FAILED_UNREACHABLE": ["MODULE", "REACHABLE"],
-	"FAILED_PLACEMENT": ["MODULE", "GUARD"],
-	"FAILED_CORRIDOR": ["MODULE", "GUARD"],
-	"FAILED_UNWALKABLE": ["MODULE", "GUARD"],
-	"FAILED_TOO_BIG": ["MODULE", "GUARD"],
-	"FAILED_LAYOUT": ["MODULE", "GUARD"],
-	"FAILED_DEGREES_OF_FREEDOM": ["MODULE", "REACHABLE"],
-	"FAILED_INFEASIBLE": ["MODULE", "REACHABLE"],
-	"FAILED_CLOSURE": ["MODULE", "REACHABLE"],
-	"FAILED_SEPARATION": ["MODULE", "REACHABLE"],
-	"FAILED_SCHEMA": ["CONTROLLER", "ASKED_IN_054"],
-	"FAILED_SCENE": ["CONTROLLER", "ASKED_IN_054"],
-	"FAILED_NOTHING_BUILT": ["CONTROLLER", "ASKED_IN_054"],
-	"FAILED_NO_HANDLER": ["CONTROLLER", "ASKED_IN_054"],
-	"FAILED_PARSE": ["CONTROLLER", "ASKED_IN_054"],
-	"FAILED_AI": ["CONTROLLER", "ASKED_IN_054"],
+	"FAILED_UNREACHABLE": ["MODULE", "REACHABLE", 1],
+	"FAILED_PLACEMENT": ["MODULE", "GUARD", 1],
+	"FAILED_CORRIDOR": ["MODULE", "GUARD", 1],
+	"FAILED_UNWALKABLE": ["MODULE", "GUARD", 3],
+	"FAILED_TOO_BIG": ["MODULE", "GUARD", 1],
+	"FAILED_LAYOUT": ["MODULE", "GUARD", 3],
+	"FAILED_DEGREES_OF_FREEDOM": ["MODULE", "REACHABLE", 1],
+	"FAILED_INFEASIBLE": ["MODULE", "REACHABLE", 1],
+	"FAILED_CLOSURE": ["MODULE", "REACHABLE", 1],
+	"FAILED_SEPARATION": ["MODULE", "REACHABLE", 1],
+	"FAILED_SCHEMA": ["CONTROLLER", "ASKED_IN_054", 11],
+	"FAILED_SCENE": ["CONTROLLER", "ASKED_IN_054", 9],
+	"FAILED_NOTHING_BUILT": ["CONTROLLER", "ASKED_IN_054", 3],
+	"FAILED_NO_HANDLER": ["CONTROLLER", "ASKED_IN_054", 1],
+	"FAILED_PARSE": ["CONTROLLER", "ASKED_IN_054", 1],
+	"FAILED_AI": ["CONTROLLER", "ASKED_IN_054", 1],
 }
 
 # FAILED_UNWALKABLE is returned by DungeonModule.post_check AND by
@@ -183,10 +199,23 @@ const DECLARED := {
 # carrying - are now asked in controller_reach_test and both are REACHABLE,
 # by shutting a door and ordering a body through it. The dungeon's stays a
 # GUARD, swept here. Same name, three branches, three answers.
+#
+# 081: this list is DERIVED below as well as declared here, and asserted both
+# ways. It was measured silent first: giving FAILED_CORRIDOR an owner in
+# game_controller.gd - a name becoming shared, exactly as FAILED_UNWALKABLE
+# is - left this suite at 105 assertions, failures=0, because nothing read
+# the files _categories_in_source() had already collected.
 const SHARED_WITH_CONTROLLER := ["FAILED_UNWALKABLE"]
 
 # The three branches that share FAILED_LAYOUT. Each is fired separately
 # below; the name alone would hide two of them.
+#
+# 081: the SIZE of this list is now tied to the number of places scripts/
+# names FAILED_LAYOUT, so a fourth branch cannot arrive behind these three.
+# Measured silent first: a fourth FAILED_LAYOUT return added to
+# farm_module.gd left this suite at 105 assertions, failures=0. The branch
+# NAMES are a hand reading and cannot be derived - what is derived is how
+# many there are.
 const LAYOUT_BRANCHES := ["farm: nothing to lay out", "farm: lane check", "base: no solver"]
 
 # 074: which of those three this run actually drove to FAILED_LAYOUT, appended
@@ -246,6 +275,60 @@ func _categories_in_source(code_only: bool) -> Dictionary:
 	return found
 
 
+# How many PLACES in scripts/ CODE name each category. The unit is the one
+# written beside DECLARED's third column: an occurrence of the literal, or an
+# occurrence of a const whose declaration IS that literal. The declaration
+# line itself is not a place.
+#
+# WHY THE CONST HALF IS HERE AND NOT LEFT OUT AS A DETAIL: game_controller.gd
+# writes `const NOTHING_BUILT := "FAILED_NOTHING_BUILT"` and then uses the
+# const at three call sites. Counting literals alone would say that category
+# has ONE place, which is the number of places that do not produce it. With
+# the const half, the six CONTROLLER names plus the controller's two
+# FAILED_UNWALKABLE come to 28 - which is the number this file's own header
+# states for 054's branches, arrived at from the source rather than copied
+# from the sentence.
+func _sites_in_code() -> Dictionary:
+	var sources := {}
+	var dir := DirAccess.open("res://scripts")
+	if dir == null:
+		return {}
+	for name in dir.get_files():
+		if not name.ends_with(".gd"):
+			continue
+		var file := FileAccess.open("res://scripts/" + name, FileAccess.READ)
+		if file == null:
+			continue
+		sources[name] = _code_of(file.get_as_text())
+		file.close()
+
+	var decl := RegEx.create_from_string(
+		"const[ \t]+([A-Z][A-Z_0-9]*)[ \t]*:=[ \t]*\"(FAILED_[A-Z][A-Z_]*)\"")
+	var alias := {}
+	for name in sources:
+		for m in decl.search_all(str(sources[name])):
+			alias[m.get_string(1)] = m.get_string(2)
+
+	var literal := RegEx.create_from_string("FAILED_[A-Z][A-Z_]*")
+	var by_alias := {}
+	for a in alias:
+		by_alias[a] = RegEx.create_from_string("(^|[^A-Za-z_0-9])" + str(a) + "([^A-Za-z_0-9]|$)")
+
+	var out := {}
+	for name in sources:
+		for raw in str(sources[name]).split("\n"):
+			var line := str(raw)
+			if decl.search(line) != null:
+				continue
+			for m in literal.search_all(line):
+				out[m.get_string()] = int(out.get(m.get_string(), 0)) + 1
+			for a in by_alias:
+				var cat: String = str(alias[a])
+				for m in (by_alias[a] as RegEx).search_all(line):
+					out[cat] = int(out.get(cat, 0)) + 1
+	return out
+
+
 func _enumeration() -> void:
 	var mentioned := _categories_in_source(false)
 	var in_code := _categories_in_source(true)
@@ -279,6 +362,74 @@ func _enumeration() -> void:
 		if str((DECLARED[cat] as Array)[0]) == "MODULE":
 			module_cats += 1
 	_check(module_cats == 10, "10 of them belong to the module pipeline (got %d)" % module_cats)
+
+	# --- 081: the row is keyed by a NAME and answers for every PLACE ---
+	#
+	# TRAPS 77's fault, measured in this file's own table rather than reasoned
+	# about: a second place producing a category the table already has a row
+	# for was SILENT here, under two different shapes (a fourth
+	# FAILED_LAYOUT branch in farm_module.gd, and FAILED_CORRIDOR gaining an
+	# owner in game_controller.gd). Both left this suite at 105 assertions,
+	# failures=0. The count is read off scripts/ and compared with the number
+	# the row carries, so a place arriving fails and names both numbers.
+	var sites := _sites_in_code()
+	for cat in DECLARED:
+		var declared_sites: int = int((DECLARED[cat] as Array)[2])
+		var actual: int = int(sites.get(cat, 0))
+		_check(actual == declared_sites,
+			"%s is produced in %d place(s) in scripts/ and its row says %d - a place the row has never been asked about is the fault this line is for" % [
+				str(cat), actual, declared_sites])
+
+	# The floor for the read _sites_in_code() does, so the equalities above
+	# cannot all be equalities between two zeros on a scripts/ that opened
+	# and held nothing. This is the rule 078 wrote and scan_floor_test holds:
+	# a scan that reads a directory must assert that the read produced
+	# something. Its row there is refusal_reach_test.gd::_sites_in_code.
+	var places_counted := 0
+	for cat in sites:
+		places_counted += int(sites[cat])
+	_check(places_counted >= 16,
+		"the place counter read scripts/ and found %d places naming a category" % places_counted)
+
+	# The number 054's header states, arrived at from the source. Seven names
+	# with a controller-side owner: the six CONTROLLER rows, plus the two
+	# controller branches of FAILED_UNWALKABLE, whose third belongs to the
+	# dungeon and is swept here.
+	var controller_places := 0
+	for cat in DECLARED:
+		if str((DECLARED[cat] as Array)[0]) == "CONTROLLER":
+			controller_places += int((DECLARED[cat] as Array)[2])
+	_check(controller_places + 2 == 28,
+		"the controller's names are produced in %d places, which with the two controller-side FAILED_UNWALKABLE branches is the 28 this file's header states (got %d)" % [
+			controller_places, controller_places + 2])
+
+	# --- 081: and the hand list of SHARED names is derived, not only typed ---
+	#
+	# A category with an owner inside the module pipeline AND one outside it
+	# is the thing SHARED_WITH_CONTROLLER exists to name. The files are
+	# already collected above; until 081 nothing compared them with the list.
+	var derived_shared: Array = []
+	for cat in in_code:
+		var in_module := false
+		var outside := false
+		for f in (in_code[cat] as Array):
+			if str(f).ends_with("_module.gd"):
+				in_module = true
+			else:
+				outside = true
+		if in_module and outside:
+			derived_shared.append(str(cat))
+	derived_shared.sort()
+	var hand_shared: Array = SHARED_WITH_CONTROLLER.duplicate()
+	hand_shared.sort()
+	_check(derived_shared == hand_shared,
+		"the categories owned both inside and outside the module pipeline are %s (SHARED_WITH_CONTROLLER says %s)" % [
+			str(derived_shared), str(hand_shared)])
+
+	# --- 081: and the branch list's SIZE is tied to the code ---
+	_check(LAYOUT_BRANCHES.size() == int(sites.get("FAILED_LAYOUT", -1)),
+		"FAILED_LAYOUT is produced in %d places and LAYOUT_BRANCHES names %d of them" % [
+			int(sites.get("FAILED_LAYOUT", -1)), LAYOUT_BRANCHES.size()])
 
 
 # --- 2. the sweep: every legal shape of all three worlds ---

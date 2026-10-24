@@ -5339,3 +5339,118 @@ asked whether six rows covered nine sites, and expected the answer might be
 > sentences since the commit that wrote all three.
 
 ---
+
+## 78. A one-grep screen, written down as a screen, read as a result
+
+**Signature:** a commit fixes one member of a class, screens the siblings with
+a single grep, and writes *"that is a screen and not a measurement"* beside
+the answer. The next session reads the answer. The screen was right about two
+of the four and wrong about two, and the two it was wrong about had been
+printing a pass over a real fault.
+
+**Cause.** 080 fixed `agreement_test`'s `READS_THE_READER` — a table keyed by
+FILE over a class whose members are SITES (TRAPS 77) — and then did the thing
+TRAPS 11 asks for: it looked for the rest of the class. It found four sibling
+per-file pin tables in `tests/` and cleared all four in one paragraph:
+
+> of the per-file pin tables in `tests/`, `check_wiring_test`'s
+> `DECLARED`/`BY_HAND` pin `func <name>(`, which GDScript cannot declare twice
+> in a file; `source_scan_test`'s `KNOWN` makes a claim that is genuinely per
+> file (*does this file read a source*); `refusal_reach_test`'s `DECLARED` is
+> keyed by refusal name; `result_line_test`'s `NO_RESULT_LINE` names
+> non-suites. **`READS_THE_READER` was the only one whose members were
+> sites.**
+
+Every clause in that paragraph is true, and the conclusion is false. **Each
+clause answers for the table's KEY and none of them answers for what the
+suite then DOES with it.** `source_scan_test`'s `KNOWN` is genuinely per file,
+and section 2 of the same suite asks a question about READS with one
+`contains()` per file. `refusal_reach_test`'s `DECLARED` is genuinely keyed by
+name, and the verdict in the row is a claim about every PLACE that produces
+the name.
+
+**Measured in 081**, Godot 4.7.1, each fault in a throwaway copy with its own
+`config/name` (TRAPS 50), the suite run alone, on a baseline byte-identical to
+the md5 080 recorded:
+
+```
+check_wiring_test  2nd verdict function in a file with rows   191 assertions, failures=1  CAUGHT
+check_wiring_test  2nd non-verdict check (BY_HAND's class)    190 assertions, failures=0  SILENT
+source_scan_test   2nd, RAW read in a file that has _code_of   30 assertions, failures=0  SILENT
+source_scan_test   ... the control: raw read, NO _code_of      30 assertions, failures=2  caught
+refusal_reach_test 4th FAILED_LAYOUT place in farm_module      105 assertions, failures=0  SILENT
+refusal_reach_test FAILED_CORRIDOR gains a controller owner    105 assertions, failures=0  SILENT
+result_line_test   2nd result line, carrying no count          329 assertions, failures=3  CAUGHT
+```
+
+**Two of the four tables were wrong, and the strongest two are strong for a
+reason worth copying.** `check_wiring_test.DECLARED` and
+`result_line_test.NO_RESULT_LINE` both derive their class from the source and
+assert membership in BOTH directions — a member arriving fails, a row going
+stale fails. The two that were silent both hold a hand-written claim that the
+derived data could have checked and did not: `source_scan_test._class()
+already collects the sites` as `name -> ["file:line", ...]` and section 2
+throws them away; `refusal_reach_test._categories_in_source()` already
+collects the files per category and nothing compared them with
+`SHARED_WITH_CONTROLLER`.
+
+**And the screen's own hedge did not save it.** 080 wrote *"that is a screen
+and not a measurement"*, put *"check it, do not trust it"* in its "Next
+action", and set out the reasoning so it could be checked. That is as well as
+a screen can be labelled, and the label is still an answer in a document: a
+paragraph that gives a per-table reason for every table reads as a finding
+about every table. This is TRAPS 77's last line one layer out — *a prose
+account that balances is not a coverage proof* — with the accounting done in
+reasons rather than in numbers.
+
+**Fixed in 081** for `refusal_reach_test`, where the fix is a fact: each row
+carries the number of PLACES in `scripts/` that name its category — the
+literal, or a const whose declaration IS that literal, the declaration line
+itself not counting — asserted against a read of `scripts/`. It is an
+EQUALITY and not a floor, and that is the opposite of 080's choice for the
+same reason: there the danger was a site LEAVING, here it is a place
+ARRIVING that the row's verdict has never been asked of. `SHARED_WITH_CONTROLLER`
+is derived as well as declared, and `LAYOUT_BRANCHES`'s size is tied to the
+code. Both silent faults now fail and name both numbers; three controls pass
+(a category named only in a comment, an existing place reworded, and an
+unused const declaration leaving the place count alone).
+
+**Not fixed in 081, and the reason is in the file:** `source_scan_test`'s
+section 2. Its heading and message were struck, because what it measures is
+that a file HAS a `_code_of()`, not that it uses one. No assertion replaced
+them, because the per-function rule was measured before it was believed and
+is not a fact about this repository — eleven of the twenty-five text-taking
+functions in `tests/` do not name `_code_of()` in the same function, and most
+of those are legitimate. An assertion over them would need a hand-written
+allow-list: a hand table over a derived class, which is the shape this whole
+investigation is about (TRAPS 6).
+
+**Do:**
+
+- **A screen answers about the key. The fault is in what the suite does with
+  it.** Read the assertions the table feeds, not only the table. Two of these
+  four had a correct key and a claim one layer along that the key could not
+  carry.
+- **Before hand-writing a claim, ask what the suite has already derived.**
+  Both silent tables had the data in a variable, in the same file, and threw
+  it away. That is the cheapest fix there is and the easiest to walk past.
+- **A hedge is not a measurement, and labelling it does not make the reader
+  re-measure.** If a screen is worth writing down, write down what it would
+  cost to measure it, and expect the next session to read the conclusion.
+- **Ask which direction a count should go stale in, every time, and say
+  why.** A floor is right when a member LEAVING is the danger; an equality
+  when one ARRIVING is. 080 and 081 are the same shape of fix with opposite
+  answers, and neither is the default.
+- **When a rule does not hold, measure that too, and say so instead of
+  building it.** Eleven exceptions out of twenty-five is the measurement that
+  stopped a bad assertion being written; the number is more useful in the file
+  than the assertion would have been.
+
+Found in 081, doing the measurement 080 left as the live "Next action" — which
+said the screen's reasoning *"is written out in the 080 section so it can be
+checked rather than retyped; check it, do not trust it"*, and was right to.
+
+> Four tables, four true sentences about their keys, and two of them had been
+> reporting a pass over a fault since the sentence was written.
+
+---

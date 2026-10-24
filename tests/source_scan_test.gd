@@ -252,7 +252,44 @@ func _run() -> void:
 		_check(members.has(name),
 			"%s still reads source, so its row here is current" % str(name))
 
-	# --- 2. every one of them goes through the one reader ---
+	# --- 2. every one of them HAS the one reader ---
+	#
+	# ~~"every one of them goes through the one reader"~~ IS NOT WHAT THIS
+	# SECTION MEASURES, and the heading and the message both said it was.
+	# Struck rather than corrected (079's rule): what is asked is one
+	# contains() PER FILE, so it answers "this file has a _code_of()
+	# somewhere", not "this file routes its reads through it".
+	#
+	# MEASURED IN 081, not reasoned about. _class() above already collects
+	# the SITES - out[name] is a list of "file:line" - and this loop throws
+	# them away and asks the file one question. A SECOND, RAW read added to
+	# proxy_test.gd, which already has a _code_of() and so already passes,
+	# left this suite at 30 assertions, failures=0. The control separates the
+	# two claims: the same raw read added to walk_negative.gd, which has no
+	# _code_of() at all, FAILS here at 30 assertions, failures=2. So what is
+	# held is the presence of the reader, and what is not held is its use.
+	# TRAPS 77's shape, in the sibling table 080's one-grep screen cleared.
+	#
+	# AND IT IS NOT HYPOTHETICAL. Measured the same way: nine functions
+	# across six files in tests/ take the text of a .gd source out of this
+	# repository without naming _code_of() in the same function
+	# (check_wiring_test._verdict_functions and ._no_door_rows,
+	# controller_reach_test._enumeration, ._guard_no_handler and
+	# ._guard_spawn_opponents, handler_wiring_test._why_two_are_unreachable,
+	# record_id_test._run, refusal_reach_test._why_out_of_reach, and
+	# source_scan_test._definition). Some are deliberate and safe -
+	# _definition() reads verbatim ON PURPOSE and says so, _verdict_functions
+	# strips comments inline itself - and the rest have not been read one by
+	# one. That reading is the next action and is NOT claimed here.
+	#
+	# WHY NO ASSERTION IS ADDED FOR IT HERE (TRAPS 6). The per-function rule
+	# was measured before it was believed and it is not a fact about this
+	# repository: eleven of the twenty-five text-taking functions do not name
+	# _code_of(), and most are legitimate. An assertion over them would need
+	# a hand-written allow-list of exceptions - a hand table over a derived
+	# class, which is the shape this whole investigation is about. The
+	# honest unit is "is the text this read produces asked a question after
+	# being stripped", which is dataflow and not a grep.
 	var raw_readers: Array = []
 	for name in members:
 		var file := FileAccess.open("res://tests/" + str(name), FileAccess.READ)
@@ -264,8 +301,8 @@ func _run() -> void:
 		if not code.contains("_code" + "_of("):
 			raw_readers.append("%s (%s)" % [name, ", ".join(PackedStringArray(members[name]))])
 	_check(raw_readers.is_empty(),
-		"every file that scans source reads it through _code_of(): %s" % str(members.keys()) if raw_readers.is_empty() else
-		"a file in tests/ scans this project's source as raw text, so a comment can answer its questions: " + ", ".join(PackedStringArray(raw_readers)))
+		"every file that scans source HAS a _code_of() of its own - which is not the same as using it at every read, see above: %s" % str(members.keys()) if raw_readers.is_empty() else
+		"a file in tests/ scans this project's source and has no _code_of() at all, so a comment can answer its questions: " + ", ".join(PackedStringArray(raw_readers)))
 
 	# --- 3. and every copy of that reader is the same reader ---
 	#
