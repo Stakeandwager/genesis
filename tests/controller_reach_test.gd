@@ -143,6 +143,9 @@ var main: Node3D
 var notes: Array = []
 # Filled by _answers() in sections 3 and 4: the rows a fixture actually fired.
 var answered: Array = []
+# Filled by _reaches() in section 2: the REACHABLE rows a request actually
+# produced. 088's addition - see "THE 22 REACHABLE ROWS" in the header.
+var reached: Array = []
 
 const DUNGEON := '{"command": "CREATE_DUNGEON", "parameters": {"rooms": [{"name": "entrance", "width": 12, "depth": 12}, {"name": "store", "width": 12, "depth": 12}, {"name": "vault", "width": 12, "depth": 12}], "doors": [[1, 2], [2, 3]], "things": [{"name": "lamp", "in": 2}]}}'
 const CLEAR := '{"command": "CLEAR_WORLD", "parameters": {}}'
@@ -205,6 +208,53 @@ const UNSUPPORTED_SITES := 1
 # here; what was missing is anything that would notice if it became wrong.
 const KINDS := ["REACHABLE", "GUARD", "NEEDS_KEY"]
 const KIND_TOTALS := {"REACHABLE": 22, "GUARD": 5, "NEEDS_KEY": 1}
+
+# THE 22 REACHABLE ROWS, AND THE READING 088 DID BEFORE TYING THEM TO
+# ANYTHING. HANDOVER carried this as the live next action with a measurement
+# attached - "21 _reaches calls in section 2 against 22 REACHABLE rows" - and
+# told the next session to READ the 21 against the 22 one at a time and NOT to
+# relabel twenty-one fixtures on the assumption that the two numbers should
+# match. It was right. THE ONE-ROW GAP WAS NOT A HOLE, and here is the
+# arithmetic that was missing, counted off the code:
+#
+#   21 _reaches() calls in section 2 fire 19 DISTINCT rows, because TWO rows
+#      are each driven by TWO probes:
+#        FAILED_SCHEMA / "EQUIP: no tool named, or a tool the game lacks"
+#          - one call site (game_controller.gd:600) whose row text names two
+#            faults with an "or", probed with no tool and with a tool the
+#            game lacks.
+#        FAILED_SCHEMA / "ORDER: the goal does not check out"
+#          - one call site (:237), the only FAILED_SCHEMA ORDER site, probed
+#            with no dungeon at all and with no room named.
+#   + 3 rows driven by the two fixtures that use NO _reaches() AT ALL, each
+#     for a reason in the branch itself rather than by oversight:
+#        FAILED_PARSE / "main.gd: the answer never became a command"
+#          - _reachable_parse(). The record carries NO command, which is the
+#            branch's whole point, and _reaches() matches on command.
+#        FAILED_SCENE / "PLAN: the plan's own refusal"
+#        FAILED_SCENE / "PLAN: a built step, marked failed when the plan was"
+#          - _reachable_plan_placement(). Two rows from ONE request, arriving
+#            as several records under one id and told apart by
+#            result/construction; _reaches() takes the first record matching
+#            a category and breaks.
+#   = 22. Every REACHABLE row was already driven by a request. Nothing was
+#     missing, and nothing was relabelled.
+#
+# WHAT WAS MISSING IS ANYTHING THAT WOULD NOTICE. The 22 were tied to nothing:
+# each was driven through a free-text `label` that no code read, so a row
+# could lose its only probe, or arrive with none, and this suite stayed green.
+# MEASURED against the committed 087 file, this suite run alone in a throwaway
+# copy with its own config/name (TRAPS 50, TRAPS 80): deleting the only probe
+# for the CREATE_TRACK row gave 189 assertions, failures=0 - SILENT, and the
+# count went DOWN by two with nothing red, which is TRAPS 73's shape - and
+# rewording a REACHABLE row's text gave 191, failures=0, because nothing read
+# it. Both now fail BY NAME. Section 6 below; full table in TRAPS 85.
+#
+# THE BRANCH TEXT IS A KEY AND NOT A SENTENCE THIS SUITE ASSERTS. It is
+# matched against the table, exactly as _answers() has matched one since 086,
+# so a legitimate rewording has to be made in the row and in the probe
+# together - and failing in both directions when it is not is the intended
+# cost, not a defect.
 
 const CONTROLLER_FILES := ["game_controller.gd", "main.gd", "experiment_runner.gd"]
 # The two category constants game_controller.gd refuses through by name.
@@ -285,11 +335,21 @@ func _categories(records: Array) -> Array:
 	return out
 
 
-# One reachable branch: a named request, the state it was sent in, and the
-# category that came back. The state is asserted too, because for the two
-# pairs that share a category and a command it is the state that selects the
-# branch - see the header.
-func _reaches(label: String, json_text: String, category: String, command: String) -> void:
+# One reachable branch: a named request, the state it was sent in, the
+# category that came back, and THE ROW IT FIRES. The state is asserted too,
+# because for the two pairs that share a category and a command it is the
+# state that selects the branch - see the header.
+#
+# 088 ADDED THE `branch` ARGUMENT, AND THE REASON IS THAT IT CANNOT BE
+# DERIVED. The record carries a category and a command; the ROW is finer than
+# both. FAILED_SCENE/SPAWN_OPPONENTS is two different rows selected by
+# has_track(), and FAILED_UNWALKABLE/ORDER is two selected by the goal. So the
+# fixture has to name the row it meant, the way _answers() does in sections 3
+# and 4 - and naming it is what ties the row to something. The `label` stays:
+# it is free text for the failure message and is read by nothing, which is
+# exactly why it could not do this job.
+func _reaches(label: String, json_text: String, category: String, command: String,
+		branch: String) -> void:
 	var records: Array = await _send(json_text)
 	var found := false
 	for r in records:
@@ -301,6 +361,32 @@ func _reaches(label: String, json_text: String, category: String, command: Strin
 			break
 	_check(found, "%s: a legal request produces %s from %s (got %s)" % [
 		label, category, command, str(_categories(records))])
+	# At the END, after the measurement (TRAPS 81).
+	_fires(label, category, branch)
+
+
+# The row a _reaches() call just fired, checked against the table and - when
+# the table calls that row REACHABLE - claimed for the coverage check below.
+#
+# ONE RULE, NO SENTINEL. The four _reaches() calls inside the GUARD fixtures
+# of sections 3 and 4 fire rows the table calls out of reach, and they name
+# them here too: the row is checked for existence and for its category, and
+# nothing is claimed, because the _answers() call at the end of that fixture
+# is what claims an out-of-reach row. A branch text that names no row FAILS
+# and names itself rather than being dropped (TRAPS 83), so a typo in a probe
+# cannot go quiet.
+func _fires(label: String, category: String, branch: String) -> void:
+	var key := "%s / %s" % [category, branch]
+	for row in BRANCHES:
+		var r: Array = row
+		if str(r[1]) == branch:
+			_check(str(r[0]) == category,
+				"%s: the row '%s' is declared under %s, not under %s" % [
+					label, branch, str(r[0]), category])
+			if str(r[2]) == "REACHABLE" and not reached.has(key):
+				reached.append(key)
+			return
+	_check(false, "%s names the row '%s', which is not in the table" % [label, branch])
 
 
 # One row the table calls OUT OF REACH, claimed by the fixture that just fired
@@ -475,10 +561,12 @@ func _reachable_at_launch() -> void:
 		"main.gd leaves an unrecorded starter circuit standing, so has_drivable() is true before any request")
 	await _reaches("MODIFY_TRACK, composed track standing",
 		'{"command": "MODIFY_TRACK", "parameters": {"corner": 1}}',
-		"FAILED_SCENE", "MODIFY_TRACK")
+		"FAILED_SCENE", "MODIFY_TRACK",
+		"MODIFY_TRACK: there is a composed track")
 	await _reaches("SPAWN_OPPONENTS, composed track standing",
 		'{"command": "SPAWN_OPPONENTS", "parameters": {"count": 4}}',
-		"FAILED_SCENE", "SPAWN_OPPONENTS")
+		"FAILED_SCENE", "SPAWN_OPPONENTS",
+		"SPAWN_OPPONENTS: there is a composed track")
 
 
 func _reachable_after_a_clear() -> void:
@@ -487,16 +575,20 @@ func _reachable_after_a_clear() -> void:
 		"CLEAR_WORLD takes the starter circuit away, so the stubs' own branches are reachable")
 	await _reaches("MODIFY_TRACK, corner not a number",
 		'{"command": "MODIFY_TRACK", "parameters": {"corner": null}}',
-		"FAILED_SCHEMA", "MODIFY_TRACK")
+		"FAILED_SCHEMA", "MODIFY_TRACK",
+		"MODIFY_TRACK: corner is not a number")
 	await _reaches("MODIFY_TRACK, nothing to change",
 		'{"command": "MODIFY_TRACK", "parameters": {"corner": 1, "difficulty": "hard"}}',
-		"FAILED_NOTHING_BUILT", "MODIFY_TRACK")
+		"FAILED_NOTHING_BUILT", "MODIFY_TRACK",
+		"MODIFY_TRACK: no Prototype 001 ring to change")
 	await _reaches("SPAWN_OPPONENTS, no track at all",
 		'{"command": "SPAWN_OPPONENTS", "parameters": {"count": 4}}',
-		"FAILED_SCENE", "SPAWN_OPPONENTS")
+		"FAILED_SCENE", "SPAWN_OPPONENTS",
+		"SPAWN_OPPONENTS: there is no track at all")
 	await _reaches("CREATE_TRACK, sectionless ring",
 		'{"command": "CREATE_TRACK", "parameters": {"corners": 4}}',
-		"FAILED_NOTHING_BUILT", "CREATE_TRACK")
+		"FAILED_NOTHING_BUILT", "CREATE_TRACK",
+		"CREATE_TRACK: a sectionless ring is not built")
 
 
 func _reachable_parse() -> void:
@@ -514,31 +606,45 @@ func _reachable_parse() -> void:
 					"FAILED_PARSE (%s): the record carries no command, because the answer never became one" % str(probe[0]))
 				break
 		_check(found, "FAILED_PARSE is reached by %s" % str(probe[0]))
+	# This fixture uses no _reaches(), and the reason is the branch itself:
+	# the record carries NO command, which is the whole point of it, and
+	# _reaches() matches on command. So the row is claimed here, at the end,
+	# after all three probes (TRAPS 81).
+	_fires("FAILED_PARSE", "FAILED_PARSE", "main.gd: the answer never became a command")
 
 
 func _reachable_equip_and_plan() -> void:
 	await _reaches("EQUIP with no tool named",
-		'{"command": "EQUIP", "parameters": {}}', "FAILED_SCHEMA", "EQUIP")
+		'{"command": "EQUIP", "parameters": {}}', "FAILED_SCHEMA", "EQUIP",
+		"EQUIP: no tool named, or a tool the game lacks")
 	await _reaches("EQUIP naming a tool the game lacks",
-		'{"command": "EQUIP", "parameters": {"tool": "jetpack"}}', "FAILED_SCHEMA", "EQUIP")
+		'{"command": "EQUIP", "parameters": {"tool": "jetpack"}}', "FAILED_SCHEMA", "EQUIP",
+		"EQUIP: no tool named, or a tool the game lacks")
 	await _reaches("EQUIP with a spec out of bounds",
 		'{"command": "EQUIP", "parameters": {"tool": "boots", "spec": {"push": 99999}}}',
-		"FAILED_SCHEMA", "EQUIP")
+		"FAILED_SCHEMA", "EQUIP",
+		"EQUIP: the tool's own spec is out of bounds")
 	await _reaches("PLAN with a non-object intent",
 		'{"command": "PLAN", "parameters": {"intent": "a string", "steps": [{"command": "CREATE_FARM", "parameters": {"zones": [{"type": "barn", "width": 20, "depth": 20}]}}]}}',
-		"FAILED_SCHEMA", "PLAN")
+		"FAILED_SCHEMA", "PLAN",
+		"PLAN: intent is not an object")
 	await _reaches("PLAN whose steps are not a list",
-		'{"command": "PLAN", "parameters": {"steps": "x"}}', "FAILED_SCHEMA", "PLAN")
+		'{"command": "PLAN", "parameters": {"steps": "x"}}', "FAILED_SCHEMA", "PLAN",
+		"PLAN: steps is not a list")
 	await _reaches("PLAN with no steps",
-		'{"command": "PLAN", "parameters": {"steps": []}}', "FAILED_SCHEMA", "PLAN")
+		'{"command": "PLAN", "parameters": {"steps": []}}', "FAILED_SCHEMA", "PLAN",
+		"PLAN: too few or too many steps")
 	await _reaches("PLAN naming a command the game lacks",
 		'{"command": "PLAN", "parameters": {"steps": [{"command": "NOPE"}]}}',
-		"FAILED_SCHEMA", "PLAN")
+		"FAILED_SCHEMA", "PLAN",
+		"PLAN: a step is not a command this game has")
 	await _reaches("a world refused by its own validator",
 		'{"command": "CREATE_DUNGEON", "parameters": {"rooms": [{"name": "a", "width": 1, "depth": 1}], "doors": []}}',
-		"FAILED_SCHEMA", "CREATE_DUNGEON")
+		"FAILED_SCHEMA", "CREATE_DUNGEON",
+		"a world's own validator refused it")
 	await _reaches("SHUT with no dungeon",
-		'{"command": "SHUT", "parameters": {"between": ["a", "b"]}}', "FAILED_SCENE", "SHUT")
+		'{"command": "SHUT", "parameters": {"between": ["a", "b"]}}', "FAILED_SCENE", "SHUT",
+		"SHUT/OPEN: there is no dungeon")
 
 
 # The plan that fails when its worlds are PLACED, which is the only way to
@@ -564,6 +670,14 @@ func _reachable_plan_placement() -> void:
 	_check(plan_refused, "a plan refused when its worlds are placed returns FAILED_SCENE for the plan")
 	_check(step_marked >= 1,
 		"and marks each built step FAILED_SCENE with its proposal still valid (got %d)" % step_marked)
+	# TWO ROWS FROM ONE REQUEST, which is why this fixture uses no _reaches()
+	# either: the plan's own refusal and the step's arrive as several records
+	# under one id, told apart by result/construction, and _reaches() takes
+	# the FIRST record matching a category and breaks. Both rows are claimed
+	# here, at the end, after both measurements (TRAPS 81).
+	_fires("the plan's own refusal", "FAILED_SCENE", "PLAN: the plan's own refusal")
+	_fires("a built step marked failed", "FAILED_SCENE",
+		"PLAN: a built step, marked failed when the plan was")
 
 
 func _reachable_order() -> void:
@@ -573,22 +687,27 @@ func _reachable_order() -> void:
 	# Measured, and it is half of why that branch is a guard.
 	await _reaches("ORDER with no dungeon",
 		'{"command": "ORDER", "parameters": {"goal": "go_to", "room": 1}}',
-		"FAILED_SCHEMA", "ORDER")
+		"FAILED_SCHEMA", "ORDER",
+		"ORDER: the goal does not check out")
 	await _send(DUNGEON)
 	_check(main.controller.has_standable(), "a dungeon gives the controller somewhere to stand")
 	await _reaches("ORDER with no room named",
-		'{"command": "ORDER", "parameters": {"goal": "go_to"}}', "FAILED_SCHEMA", "ORDER")
+		'{"command": "ORDER", "parameters": {"goal": "go_to"}}', "FAILED_SCHEMA", "ORDER",
+		"ORDER: the goal does not check out")
 	await _reaches("SHUT naming a room the dungeon lacks",
 		'{"command": "SHUT", "parameters": {"between": ["store", "nowhere"]}}',
-		"FAILED_SCHEMA", "SHUT")
+		"FAILED_SCHEMA", "SHUT",
+		"SHUT/OPEN: the door does not check out")
 	# Shut the vault off, then try to reach it on foot and carrying.
 	await _send('{"command": "SHUT", "parameters": {"between": ["store", "vault"]}}')
 	await _reaches("ORDER walking to a room behind a shut door",
 		'{"command": "ORDER", "parameters": {"goal": "go_to", "room": "vault"}}',
-		"FAILED_UNWALKABLE", "ORDER")
+		"FAILED_UNWALKABLE", "ORDER",
+		"ORDER: no way through, walking")
 	await _reaches("ORDER carrying to a room behind a shut door",
 		'{"command": "ORDER", "parameters": {"goal": "carry", "thing": "lamp", "room": "vault"}}',
-		"FAILED_UNWALKABLE", "ORDER")
+		"FAILED_UNWALKABLE", "ORDER",
+		"ORDER: no way through, carrying")
 
 
 # The one branch of the three "thing" branches that a request CAN reach, and
@@ -610,7 +729,8 @@ func _reachable_thing_in_no_room() -> void:
 				ordered = true
 				await _reaches("a second ORDER while the thing is in a corridor",
 					'{"command": "ORDER", "parameters": {"goal": "carry", "thing": "lamp", "room": "entrance"}}',
-					"FAILED_SCENE", "ORDER")
+					"FAILED_SCENE", "ORDER",
+					"ORDER: the thing stands in no room")
 		if ordered and roomless_frames > 0:
 			break
 	_check(ordered,
@@ -813,10 +933,12 @@ func _guard_spawn_opponents() -> void:
 	_check(main.controller.track_builder.has_track(), "handed two corner nodes, has_track() is true")
 	await _reaches("SPAWN_OPPONENTS with a track and a count that is not a number",
 		'{"command": "SPAWN_OPPONENTS", "parameters": {"count": null}}',
-		"FAILED_SCHEMA", "SPAWN_OPPONENTS")
+		"FAILED_SCHEMA", "SPAWN_OPPONENTS",
+		"SPAWN_OPPONENTS: count is not a number")
 	await _reaches("SPAWN_OPPONENTS with a track and a sound count",
 		'{"command": "SPAWN_OPPONENTS", "parameters": {"count": 4}}',
-		"FAILED_NOTHING_BUILT", "SPAWN_OPPONENTS")
+		"FAILED_NOTHING_BUILT", "SPAWN_OPPONENTS",
+		"SPAWN_OPPONENTS: no opponent is placed")
 	main.controller.track_builder.corner_nodes.clear()
 	a.queue_free()
 	b.queue_free()
@@ -840,7 +962,8 @@ func _guard_order_no_module() -> void:
 	main.controller.standable["command"] = "NOT_A_WORLD"
 	await _reaches("ORDER into a standable world no module owns",
 		'{"command": "ORDER", "parameters": {"goal": "go_to", "room": "vault"}}',
-		"FAILED_SCENE", "ORDER")
+		"FAILED_SCENE", "ORDER",
+		"ORDER: no module owns the standable world")
 	main.controller.standable["command"] = "CREATE_DUNGEON"
 	_answers("FAILED_SCENE", "ORDER: no module owns the standable world")
 
@@ -874,7 +997,8 @@ func _guard_thing_gone() -> void:
 	_check(not _things_all_valid(), "the lamp's node is gone and it is still listed")
 	await _reaches("ORDER carrying a thing whose node is gone",
 		'{"command": "ORDER", "parameters": {"goal": "carry", "thing": "lamp", "room": "vault"}}',
-		"FAILED_SCENE", "ORDER")
+		"FAILED_SCENE", "ORDER",
+		"ORDER: the thing is not in the world any more")
 	_answers("FAILED_SCENE", "ORDER: the thing is not in the world any more")
 
 
@@ -945,6 +1069,56 @@ func _out_of_reach_coverage() -> void:
 			answered.size(), wanted.size()])
 
 
+# --- 6. 088: every row the table calls REACHABLE was produced by a request ---
+#
+# THE OTHER HALF OF SECTION 5, AND IT TOOK A READING FIRST. 086 tied the six
+# out-of-reach rows to their fixtures and left the 22 REACHABLE ones tied to
+# nothing: the fixtures drove them with a free-text `label` that no code read,
+# so a REACHABLE row could lose its fixture, or arrive with none, and this
+# suite stayed green. HANDOVER carried the measurement "21 _reaches calls in
+# section 2 against 22 REACHABLE rows" and was right not to call it a hole.
+# IT IS NOT ONE, and the reading is in the header.
+#
+# BOTH DIRECTIONS, one assertion per row, so a gap fails BY NAME rather than
+# as a count one short (TRAPS 84).
+#
+# AND NOT "EXACTLY ONCE", WHICH SECTION 5 ABOVE CAN ASSERT AND THIS CANNOT.
+# Two rows are legitimately driven by TWO probes each - the EQUIP row, whose
+# own text names two faults with an "or", and the ORDER goal row, probed with
+# no dungeon and with no room - so claims > rows here, and asserting equality
+# would fail on correct rows (TRAPS 6 pointing the other way). What is
+# asserted is the DISTINCT claimed set against the rows, which is derived off
+# the rows on both sides.
+#
+# ITS LIMIT, MEASURED AND NOT REASONED ABOUT: because the claim is a set, one
+# of the two probes for either doubly-probed row can be deleted and this stays
+# green. Injected and run after the fix was green; the number is in TRAPS 85.
+# That is the same limit TRAPS 84 recorded for a label spelled by several
+# rows, and it is written here rather than left to be discovered.
+#
+# IT CANNOT GO QUIET BY MEASURING NOTHING (TRAPS 75): the wanted set is
+# derived from the rows, so an empty `reached` fails once per row, and the
+# size is asserted positive.
+func _reachable_coverage() -> void:
+	var wanted: Array = []
+	for row in BRANCHES:
+		var r: Array = row
+		if str(r[2]) != "REACHABLE":
+			continue
+		wanted.append("%s / %s" % [str(r[0]), str(r[1])])
+	for key in wanted:
+		_check(reached.has(key),
+			"%s was produced by a request in this suite" % str(key))
+	for key in reached:
+		_check(wanted.has(key),
+			"%s is still a row this table calls REACHABLE" % str(key))
+	_check(wanted.size() > 0,
+		"the table calls %d rows REACHABLE, so there is something to cover" % wanted.size())
+	_check(reached.size() == wanted.size(),
+		"and every REACHABLE row was produced: %d distinct rows claimed for %d rows" % [
+			reached.size(), wanted.size()])
+
+
 func _run() -> void:
 	_make_main()
 	await process_frame
@@ -964,6 +1138,7 @@ func _run() -> void:
 	await _guard_thing_gone()
 	await _guard_ai()
 	_out_of_reach_coverage()
+	_reachable_coverage()
 
 	for line in notes:
 		print("  NOTE  ", line)

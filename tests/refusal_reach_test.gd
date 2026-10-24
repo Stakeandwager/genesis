@@ -228,6 +228,15 @@ const VERDICT_TOTALS := {"REACHABLE": 5, "GUARD": 5, "NOT_ASKED": 0, "ASKED_IN_0
 
 const SHARED_WITH_CONTROLLER := ["FAILED_UNWALKABLE"]
 
+# REACHABLE rows the random sweep is NOT expected to hit, with the reason in
+# the sweep's own comment: a composition that closes and then runs over itself
+# turned up about three times in twenty thousand random draws, so requiring
+# one would be requiring a coin to land. Its row is carried by the named
+# request in section 4 like every other REACHABLE row; what this names is only
+# the sweep's exemption. Asserted in _sweep() against the table, so an
+# exemption for a row that no longer exists fails.
+const RARE_IN_SWEEP := ["FAILED_SEPARATION"]
+
 # The three branches that share FAILED_LAYOUT. Each is fired separately
 # below; the name alone would hide two of them.
 #
@@ -248,6 +257,40 @@ const LAYOUT_BRANCHES := ["farm: nothing to lay out", "farm: lane check", "base:
 # label of a measurement, and the same fault as 073's numeral table one layer
 # out: a count typed beside the thing it claims to have counted.
 var layout_fired: Array = []
+
+# 088: the CATEGORY rows a fixture actually drove to its refusal. The
+# per-branch version of this has existed for FAILED_LAYOUT since 074
+# (`layout_fired` above, both directions, by name); what had never been tied
+# to anything is the ROW - which of the ten MODULE rows was driven by a
+# fixture at all. 086 made both classification columns a membership and gave
+# them a tally; a tally counts rows, not fixtures, so a row could lose the
+# block that fires it and this suite stayed green. Measured: TRAPS 85.
+var fired: Array = []
+
+
+# One MODULE row, claimed by the fixture that just drove it to its own
+# refusal. Called only when the measurement MATCHED - the idiom 074
+# established for `layout_fired` and 086 for controller_reach_test's
+# `answered` - so a fixture whose refusal did not come back claims nothing
+# and the coverage check below says which row went undriven (TRAPS 81).
+#
+# It checks the claim against the table in the other direction too: a claim
+# for a category this file does not declare, one the table gives to the
+# CONTROLLER, or one whose verdict is not the one the fixture is measuring,
+# FAILS and names itself rather than quietly widening the covered set
+# (TRAPS 83).
+func _fires(category: String, verdict: String) -> void:
+	if not DECLARED.has(category):
+		_check(false, "%s fired in this suite and has no row in the table" % category)
+		return
+	var row: Array = DECLARED[category]
+	_check(str(row[0]) == "MODULE",
+		"%s is a MODULE row, which is the class this file drives (declared %s)" % [
+			category, str(row[0])])
+	_check(str(row[1]) == verdict,
+		"%s is declared %s, which is what this fixture measures (declared %s)" % [
+			category, verdict, str(row[1])])
+	fired.append(category)
 
 
 # --- 1. the enumeration, read off the source rather than typed ---
@@ -721,7 +764,26 @@ func _sweep() -> void:
 	# then runs over itself turned up about three times in twenty thousand
 	# random draws when this was written, so requiring one here would be
 	# requiring a coin to land. Its row is carried by the named example.
-	for cat in ["FAILED_UNREACHABLE", "FAILED_DEGREES_OF_FREEDOM", "FAILED_INFEASIBLE", "FAILED_CLOSURE"]:
+	#
+	# 088: THIS LIST USED TO BE FOUR NAMES TYPED OUT HERE, which is a count
+	# written BESIDE the rows rather than read OFF them (TRAPS 82's shape) -
+	# so a sixth REACHABLE row could arrive and never be looked for in the
+	# sweep. It is now derived: every MODULE row the table calls REACHABLE,
+	# less the one named exception, whose own row is asserted to exist and to
+	# be MODULE/REACHABLE so the exception cannot outlive the row it excuses.
+	var swept_for: Array = []
+	for cat in DECLARED:
+		var r: Array = DECLARED[cat]
+		if str(r[0]) == "MODULE" and str(r[1]) == "REACHABLE" and not RARE_IN_SWEEP.has(str(cat)):
+			swept_for.append(str(cat))
+	for name in RARE_IN_SWEEP:
+		_check(DECLARED.has(str(name))
+				and str((DECLARED[str(name)] as Array)[0]) == "MODULE"
+				and str((DECLARED[str(name)] as Array)[1]) == "REACHABLE",
+			"%s, excused from the sweep above, is still a MODULE row the table calls REACHABLE" % str(name))
+	_check(swept_for.size() > 0,
+		"the table calls %d MODULE rows REACHABLE that the sweep is expected to hit" % swept_for.size())
+	for cat in swept_for:
 		_check(seen.has(cat), "%s turned up in the sweep (%d times)" % [cat, int(seen.get(cat, 0))])
 	print("  (FAILED_SEPARATION turned up %d times in the sweep; its row is carried by the named request)" % int(seen.get("FAILED_SEPARATION", 0)))
 
@@ -822,6 +884,8 @@ func _reached_how() -> void:
 		var pre: Dictionary = dm.pre_check(v["content"], {})
 		_check(str(pre["category"]) == "FAILED_UNREACHABLE",
 			"and pre_check refuses it: %s" % str(pre["category"]))
+		if str(pre["category"]) == "FAILED_UNREACHABLE":
+			_fires("FAILED_UNREACHABLE", "REACHABLE")
 
 	var rm := RacingModule.new()
 	_expect_track(rm, "pre", "FAILED_DEGREES_OF_FREEDOM", [
@@ -874,21 +938,29 @@ func _expect_track(rm: RacingModule, step: String, category: String, sections: A
 		return
 	var pre: Dictionary = rm.pre_check(v["content"], {})
 	if step == "pre":
-		_check(str(pre["category"]) == category,
-			"%s: pre_check says %s" % [category, str(pre["category"])])
+		var hit_pre := str(pre["category"]) == category
+		_check(hit_pre, "%s: pre_check says %s" % [category, str(pre["category"])])
+		if hit_pre:
+			_fires(category, "REACHABLE")
 		return
 	_check(bool(pre["ok"]), "%s: the gate passes it (%s)" % [category, str(pre["category"])])
 	if not bool(pre["ok"]):
 		return
 	var s: Dictionary = rm.solve(pre["content"])
 	if step == "solve":
-		_check(str(s["category"]) == category, "%s: solve says %s" % [category, str(s["category"])])
+		var hit_solve := str(s["category"]) == category
+		_check(hit_solve, "%s: solve says %s" % [category, str(s["category"])])
+		if hit_solve:
+			_fires(category, "REACHABLE")
 		return
 	_check(bool(s["ok"]), "%s: it closes (%s)" % [category, str(s["category"])])
 	if not bool(s["ok"]):
 		return
 	var post: Dictionary = rm.post_check(s["layout"])
-	_check(str(post["category"]) == category, "%s: post_check says %s" % [category, str(post["category"])])
+	var hit_post := str(post["category"]) == category
+	_check(hit_post, "%s: post_check says %s" % [category, str(post["category"])])
+	if hit_post:
+		_fires(category, "REACHABLE")
 
 
 # --- 5. and the half that matters: does each guard FIRE when violated? ---
@@ -913,6 +985,8 @@ func _guards_fire() -> void:
 		"200 rooms off one hub: solve says %s" % str(placed["category"]))
 	_check(not (placed["placement"]["failed"] as Array).is_empty(),
 		"and it names the rooms it could not place (%d of them)" % (placed["placement"]["failed"] as Array).size())
+	if str(placed["category"]) == "FAILED_PLACEMENT":
+		_fires("FAILED_PLACEMENT", "GUARD")
 
 	# FAILED_CORRIDOR: rooms wider than the pitch they are spaced at, so the
 	# lane a corridor runs down is inside a room. The pitch solve() computes
@@ -940,6 +1014,8 @@ func _guards_fire() -> void:
 	roomy["pitch"] = 46.0
 	_check(bool((dm.post_check(roomy))["ok"]),
 		"and the same three rooms at pitch 46 pass")
+	if str(crossed["category"]) == "FAILED_CORRIDOR":
+		_fires("FAILED_CORRIDOR", "GUARD")
 
 	# FAILED_TOO_BIG: the same three rooms, twenty pitches apart.
 	var spread := {}
@@ -957,6 +1033,8 @@ func _guards_fire() -> void:
 		"three rooms 20 slots apart: post_check says %s" % str(big["category"]))
 	_check(float(big["record"]["extent"]["width"]) > dm.MAX_EXTENT,
 		"and the width it measured (%.0f m) is over the limit" % float(big["record"]["extent"]["width"]))
+	if str(big["category"]) == "FAILED_TOO_BIG":
+		_fires("FAILED_TOO_BIG", "GUARD")
 
 	# FAILED_UNWALKABLE: the dungeon's own negative case. walk_negative.gd
 	# removes a doorway from a built layout; this asks the same question of
@@ -998,6 +1076,8 @@ func _guards_fire() -> void:
 	_check(dm.CORRIDOR > dm.BODY,
 		"a doorway is cut to the corridor's %.0f m, against a body %.1f m across, so no room size can pinch one" % [
 			dm.CORRIDOR, dm.BODY])
+	if str(shut["category"]) == "FAILED_UNWALKABLE":
+		_fires("FAILED_UNWALKABLE", "GUARD")
 
 	# FAILED_LAYOUT, branch 1: the farm with nothing in it.
 	var fm := FarmModule.new()
@@ -1064,6 +1144,10 @@ func _guards_fire() -> void:
 	_check(layout_fired.size() == LAYOUT_BRANCHES.size(),
 		"all %d declared FAILED_LAYOUT branches fired and no others (%d fired)" % [
 			LAYOUT_BRANCHES.size(), layout_fired.size()])
+	# The ROW is claimed once, and only when every branch under it fired - so
+	# the row's claim cannot be stronger than the branch coverage above it.
+	if layout_fired.size() == LAYOUT_BRANCHES.size():
+		_fires("FAILED_LAYOUT", "GUARD")
 
 	# 074. And the same for the shared name: this used to assert that an array
 	# of one name has one element. The FACT it claims is that the name has an
@@ -1084,6 +1168,57 @@ func _guards_fire() -> void:
 				str(name), str(files)])
 
 
+# --- 6. 088: every MODULE row the table gives a verdict to was DRIVEN ---
+#
+# BOTH DIRECTIONS, one assertion per row, so a row whose fixture went away
+# fails BY NAME rather than as a count one short (TRAPS 84).
+#
+# WHAT THIS ADDS TO 086's TALLY. 086 made both classification columns a
+# membership and asserted the per-verdict totals off the rows, so a verdict
+# this file does not know, or a miscount, fails. A tally counts ROWS. It
+# cannot notice that the block which drives a row to its refusal has been
+# deleted, or that a row arrived with no block at all - the whole of sections
+# 4 and 5 was tied to the table by nothing but the order the file is written
+# in. Measured against the committed 087 file, this suite run alone in a
+# throwaway copy with its own config/name (TRAPS 50, TRAPS 80): deleting the
+# FAILED_TOO_BIG block left it SILENT. Full table in TRAPS 85.
+#
+# THE UNIT IS THE ROW AND THE ROW IS A NAME, which is this table's own
+# granularity and its own known limit (TRAPS 77): FAILED_UNWALKABLE and
+# FAILED_LAYOUT each carry three places under one name. The branch-level
+# question is answered where it can be - FAILED_LAYOUT's three branches by
+# `layout_fired` since 074, and the row's claim above is made only when all
+# three of them fired, so this check is never stronger than the coverage
+# under it. FAILED_UNWALKABLE's three have three different owners and two
+# different suites, and that is written in the comment beside its row rather
+# than claimed here.
+#
+# IT CANNOT GO QUIET BY MEASURING NOTHING (TRAPS 75): the wanted set is
+# derived from the rows, so an empty `fired` fails once per row, and the size
+# is asserted positive.
+#
+# EXACTLY ONCE, which this file CAN assert where controller_reach_test's
+# section 6 cannot: every MODULE row here is driven by exactly one fixture,
+# so a doubled claim is a fault too.
+func _driven_coverage() -> void:
+	var wanted: Array = []
+	for cat in DECLARED:
+		var r: Array = DECLARED[cat]
+		if str(r[0]) == "MODULE" and (str(r[1]) == "REACHABLE" or str(r[1]) == "GUARD"):
+			wanted.append(str(cat))
+	for cat in wanted:
+		_check(fired.has(cat),
+			"%s was driven to its own refusal by a fixture in this suite" % str(cat))
+	for cat in fired:
+		_check(wanted.has(cat),
+			"%s is still a MODULE row this table gives a verdict to" % str(cat))
+	_check(wanted.size() > 0,
+		"the table gives a verdict to %d MODULE rows, so there is something to drive" % wanted.size())
+	_check(fired.size() == wanted.size(),
+		"and every one was driven exactly once: %d claims for %d rows" % [
+			fired.size(), wanted.size()])
+
+
 func _initialize() -> void:
 	print("REFUSAL REACH")
 	_enumeration()
@@ -1091,6 +1226,7 @@ func _initialize() -> void:
 	_why_out_of_reach()
 	_reached_how()
 	_guards_fire()
+	_driven_coverage()
 	print("REFUSAL REACH %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)
 

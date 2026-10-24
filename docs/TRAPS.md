@@ -6137,3 +6137,119 @@ assumed. The prompt is byte-identical and `PROMPT_VERSION` did not move.
 > thirteen, and no line of code had ever asked.
 
 ---
+
+## 85. A per-kind tally counts ROWS, so the fixture that drives a row can be deleted in silence
+
+**Signature:** a suite has a classification column that is a membership, and
+per-kind totals tallied off the rows and asserted — 086's and 087's fix, done
+properly — and it is still green after the block that drives one of those rows
+to its refusal has been deleted. The tally counted the rows. Nothing counted
+the fixtures.
+
+**Cause.** 088 was sent to do the reading HANDOVER left as the live next
+action: read `controller_reach_test`'s 21 `_reaches` calls in section 2
+against its 22 `REACHABLE` rows, one at a time, and *"do not relabel
+twenty-one fixtures on the assumption that the two numbers should match"*.
+
+**The reading came back "no hole", and the arithmetic that was missing is
+this.** Counted off the code, comment lines blanked:
+
+| | rows |
+|---|---|
+| 21 `_reaches()` calls in section 2 fire | **19** distinct rows |
+| …because **two** rows are each driven by **two** probes | `EQUIP: no tool named, or a tool the game lacks` (one site, `game_controller.gd:600`, whose row text names two faults with an "or") and `ORDER: the goal does not check out` (one site, `:237`, probed with no dungeon and with no room) |
+| `_reachable_parse()`, which uses no `_reaches()` because the record carries **no command** — the branch's whole point — while `_reaches()` matches on command | **1** |
+| `_reachable_plan_placement()`, which uses none either because **two rows arrive from one request** as several records under one id, told apart by result/construction, and `_reaches()` takes the first match and breaks | **2** |
+| | **22** |
+
+Every `REACHABLE` row was already driven by a request. HANDOVER was right to
+call the one-row gap a measurement and not a finding, and right to ask for the
+reading before the relabelling.
+
+**What was missing is anything that would notice.** The row was driven through
+a free-text `label` read by nothing — so 086's `answered` mechanism covered the
+**6** rows the table calls out of reach, and the **22** it calls reachable were
+tied to nothing at all. **And the same hole was in the second file, which is
+the part that makes this TRAPS 11 and not a one-file fix**: 086 gave
+`refusal_reach_test.DECLARED` the same membership and tally and tied **none**
+of its ten MODULE rows to the fixture that drives it.
+
+**Measured, each fault alone** (TRAPS 80), against the **committed 087 files**,
+in a throwaway copy with its own `config/name` (TRAPS 50), each suite run
+alone. Controls: `controller_reach_test` **191/0** before and **265/0** after;
+`refusal_reach_test` **162/0** before and **206/0** after.
+
+| fault injected | before 088 | after 088 |
+|---|---|---|
+| `controller_reach`: the only probe for a `REACHABLE` row deleted (`CREATE_TRACK`) | **189, failures=0 — SILENT**, and the count went DOWN by two | 261, failures=**2**, naming the row |
+| `controller_reach`: a `REACHABLE` row's text reworded in the table only | **191, failures=0 — SILENT** | 264, failures=**3**, naming it from both sides |
+| `controller_reach`: a probe names a row the table has not (one typo) | — | 264, failures=**3**, naming the typo and the row left uncovered |
+| `controller_reach`: a probe names a real row declared under another category | — | 265, failures=**3** |
+| `controller_reach`: `_reachable_parse`'s claim removed, fixture still running | — | 263, failures=**2** |
+| `controller_reach`: one of `_reachable_plan_placement`'s two claims removed | — | 263, failures=**2** |
+| `controller_reach`: a `GUARD` row reclassified `REACHABLE` (086's own fault) | 190, failures=**5** | 265, failures=**7** — 086's five plus the row named undriven |
+| `refusal_reach`: the `FAILED_TOO_BIG` block deleted | **160, failures=0 — SILENT**, count DOWN by two | 201, failures=**2**, naming the row |
+| `refusal_reach`: the `FAILED_CLOSURE` named request deleted | **159, failures=0 — SILENT**, count DOWN by three | 200, failures=**2**, naming the row |
+| `refusal_reach`: `FAILED_CORRIDOR` `GUARD` -> `REACHABLE` | 161, failures=**2** | 206, failures=**4** — and two of the four are new |
+| `refusal_reach`: a sweep exemption naming a row that is not `MODULE`/`REACHABLE` | — (the list was four names typed out) | 207, failures=**1** |
+| `controller_reach`: ONE of the TWO probes for the `EQUIP` row deleted | 190, failures=0 | **262, failures=0 — STILL SILENT** |
+| `controller_reach`: ONE of the TWO probes for the `ORDER` goal row deleted | 190, failures=0 | **262, failures=0 — STILL SILENT** |
+
+**THE TWO SILENT ROWS ARE THE LIMIT OF THE FIX AND NOT A WIN, AND BOTH
+MEMBERS OF THE CLASS WERE RUN RATHER THAN ONE.** The claim is a **set** of
+rows, so a row driven by two probes keeps its claim when one probe goes. That
+is TRAPS 84's `W03` limit arriving in a second file, it was **injected and run
+after the fix was green**, and it was measured on **both** doubly-probed rows
+rather than one and generalised (TRAPS 11 the other way round). The stronger
+assertion was **weighed and not built**: a declared probe count per row is a
+number written *beside* the rows rather than read *off* them, TRAPS 82's
+shape, and it would have to be moved by hand every time a probe was
+legitimately added.
+
+**And the two counts going DOWN with nothing red is the old enemy.** Three of
+the four silent faults above lost assertions — 191 to 189, 162 to 160, 162 to
+159 — exactly TRAPS 73's signature, where the alarm is the count and the
+runner reads only the failures (TRAPS 75). Every one of them now fails **by
+name**.
+
+**Do:**
+
+- **A tally is not coverage.** A per-kind total asserted off the rows catches a
+  miscount and a mistyped kind. It cannot catch a row whose fixture went away,
+  because a deleted fixture does not change the rows. Two different holes, two
+  different assertions.
+- **Tie the row to the fixture in both directions, one assertion per row.** A
+  row nothing drove fails by name; a fixture driving a row the table does not
+  declare, or declares under another kind, fails by name as well. A bare count
+  one short tells you only that something is missing (TRAPS 84).
+- **Claim what fired, at the end, and only when it fired.** The idiom was
+  already in this repository twice — `layout_fired` in `refusal_reach_test`
+  since 074, `answered` in `controller_reach_test` since 086 — and it was
+  copied rather than reinvented. A claim made before the measurement answers
+  for a run that did not happen (TRAPS 81).
+- **Read the counts before you believe the gap.** "21 calls against 22 rows"
+  looks like a hole and was not one. Two rows carried two probes each and three
+  rows were held by fixtures that cannot use the shared helper for a reason in
+  the branch itself. The reading cost one session and would have cost
+  twenty-one wrong relabellings.
+- **"Exactly once" is assertable in one of these two files and not the other,
+  and which is a fact to check and not to assume.** `refusal_reach_test` drives
+  each row from exactly one fixture, so a doubled claim is a fault there and is
+  asserted. `controller_reach_test` has two rows with two legitimate probes, so
+  asserting equality of claims to rows would fail on correct rows — TRAPS 6
+  pointing the other way.
+- **A list of names typed out beside a table is the same fault one level up.**
+  The sweep in `refusal_reach_test` looked for four categories by name; it now
+  derives them off the rows, less one named exemption whose own row is asserted
+  to exist. The derived version caught two faults the typed list did not.
+
+Found in 088, by doing the reading before the relabelling and then asking what
+the second file in the same class had.
+**Nothing in `scripts/`, `scenes/`, `netlify/`, `.github/`, either runner,
+`project.godot` or `export_presets.web.cfg` was touched**, read off
+`git status` rather than assumed. The prompt is byte-identical and
+`PROMPT_VERSION` did not move. **Nothing a player meets changed.**
+
+> The tally proved the rows were right. Nothing proved anybody had run them.
+
+---

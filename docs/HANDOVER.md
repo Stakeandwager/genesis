@@ -24,7 +24,136 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **087**, which answered the **reading**
+- Last commit at the time of writing: **088**, which did the **reading** 087
+  left as the live "Next action" - read `controller_reach_test`'s **21**
+  `_reaches` calls in section 2 against its **22** `REACHABLE` rows, one at a
+  time - and found **no hole**, exactly as HANDOVER said it might. What it
+  found instead is that the **22 were tied to nothing**, and that **the second
+  file in the same class had the identical hole**. New TRAPS **85**. No new
+  "Human decision needed".
+
+  **THE BASELINE AGREED WITH THE RECORD BEFORE ANYTHING WAS TOUCHED.** The
+  `--all` run in this container, on a clean tree at `430652d` with
+  `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 087
+  recorded**: `352c320b4745da31504e5cf6363a04a9`, 74 suites, 0 with something
+  to look at. `ls tests/*.gd` returned **76** and the run reported **74**,
+  re-counted. The container was fresh, so `user://` was empty rather than
+  cleared. **Nothing was owed from 087.**
+
+  **THE READING CAME BACK "NO HOLE", AND HERE IS THE ARITHMETIC THAT WAS
+  MISSING.** Counted off the code with comment lines blanked (TRAPS 64), per
+  function, not read off this file:
+
+  | | distinct rows |
+  |---|---|
+  | the 21 `_reaches()` calls in section 2 fire | **19** |
+  | because **two** rows are each driven by **two** probes | `EQUIP: no tool named, or a tool the game lacks` - **one** call site, `game_controller.gd:600`, whose row text names two faults with an "or", probed with no tool and with a tool the game lacks; and `ORDER: the goal does not check out` - **one** site, `:237`, the only `FAILED_SCHEMA` `ORDER` site, probed with no dungeon and with no room |
+  | `_reachable_parse()`, which uses no `_reaches()` **because the record carries no command** - the branch's whole point - while `_reaches()` matches on command | **1** |
+  | `_reachable_plan_placement()`, which uses none either because **two rows arrive from one request**, as several records under one id told apart by result/construction, and `_reaches()` takes the first match and breaks | **2** |
+  | | **22** |
+
+  **So HANDOVER was right twice**: right to carry the one-row gap as a
+  measurement and not a finding, and right to say *"do not relabel twenty-one
+  fixtures on the assumption that the two numbers should match"*. Nothing was
+  relabelled and nothing was missing.
+
+  **WHAT WAS MISSING IS ANYTHING THAT WOULD NOTICE, AND IT WAS MISSING IN TWO
+  FILES (TRAPS 11).** Each `REACHABLE` row was driven through a free-text
+  `label` that **no code read**, so 086's `answered` mechanism held the **6**
+  rows the table calls out of reach and the **22** it calls reachable were tied
+  to nothing. And `refusal_reach_test`, which 086 gave the same membership and
+  the same per-verdict tally, tied **none** of its **ten** MODULE rows to the
+  fixture that drives it. **A tally counts ROWS; it cannot notice that the
+  block which drives a row to its refusal has been deleted**, because a deleted
+  fixture does not change the rows.
+
+  **MEASURED AGAINST THE COMMITTED 087 FILES, EACH FAULT ALONE (TRAPS 80)**, in
+  a throwaway copy with its own `config/name` (TRAPS 50), each suite run alone.
+  Controls `191/0` -> `265/0` and `162/0` -> `206/0`. Full table in TRAPS 85;
+  the **four that were SILENT before and are named now**:
+
+  | fault | before 088 | after 088 |
+  |---|---|---|
+  | `controller_reach`: the only probe for a `REACHABLE` row deleted | **189, failures=0**, count DOWN by two | 261, failures=**2** |
+  | `controller_reach`: a `REACHABLE` row's text reworded in the table only | **191, failures=0** | 264, failures=**3** |
+  | `refusal_reach`: the `FAILED_TOO_BIG` block deleted | **160, failures=0**, count DOWN by two | 201, failures=**2** |
+  | `refusal_reach`: the `FAILED_CLOSURE` named request deleted | **159, failures=0**, count DOWN by three | 200, failures=**2** |
+
+  **Three of those four lost assertions and still printed `failures=0`**, which
+  is TRAPS 73's signature with the runner reading only the failures (TRAPS 75).
+  Seven further faults were injected and all seven fail by name, including
+  086's own `GUARD` -> `REACHABLE` fault, which went from 5 failures to 7.
+
+  **WHAT CHANGED.** In `controller_reach_test`, `_reaches()` takes the **row's
+  own text** as a fifth argument - it **cannot be derived**, because
+  `FAILED_SCENE`/`SPAWN_OPPONENTS` is two rows selected by `has_track()` and
+  `FAILED_UNWALKABLE`/`ORDER` is two selected by the goal - and `_fires()`
+  checks the named row exists, checks it is declared under the category the
+  probe claims, and claims it when the table calls it `REACHABLE`. The two
+  fixtures that cannot use the helper claim their three rows explicitly, at the
+  end, after the measurement (TRAPS 81). A new section 6 asserts the claimed
+  set against the `REACHABLE` rows **in both directions, one assertion per
+  row**. In `refusal_reach_test`, the same thing at that file's own granularity:
+  a `fired` array, a `_fires()` that rejects a claim for a row it does not
+  declare, gives to the CONTROLLER, or declares under another verdict, ten
+  claims made only when the refusal actually came back, and a `_driven_coverage()`
+  both ways. **And the sweep's list of four category names typed out beside the
+  table is now derived off the rows**, less one named exemption
+  (`RARE_IN_SWEEP`, `FAILED_SEPARATION`, about three hits in twenty thousand
+  draws) whose own row is asserted to exist and to be `MODULE`/`REACHABLE`. The
+  derived version caught **two** faults the typed list did not.
+
+  **"EXACTLY ONCE" IS ASSERTED IN ONE FILE AND NOT THE OTHER, AND THAT IS A
+  FACT THAT WAS CHECKED RATHER THAN ASSUMED.** `refusal_reach_test` drives each
+  row from exactly one fixture, so a doubled claim is a fault there and fails.
+  `controller_reach_test` has two rows with two legitimate probes each, so
+  asserting claims-equals-rows would **fail on correct rows** - TRAPS 6
+  pointing the other way - and what is asserted there is the **distinct** set.
+
+  **AND TWO FAULTS ARE STILL SILENT AFTER THE FIX, REPORTED AS A LIMIT AND NOT
+  AS A WIN.** Delete **one** of the two probes for either doubly-probed row and
+  `controller_reach_test` is **262 assertions, failures=0**. The claim is a
+  **set**, so a row spelled by two probes keeps its claim when one goes - TRAPS
+  84's `W03` limit arriving in a second file. It was **injected and run after
+  the fix was green**, it was measured on **both** members of the class rather
+  than one and generalised, and the limit is written into the function that has
+  it. The stronger assertion was **weighed and not built**: a declared probe
+  count per row is a number written *beside* the rows rather than read *off*
+  them, TRAPS 82's shape, and it would have to be moved by hand every time a
+  probe was legitimately added.
+
+  **THE RUNS: FOUR, BYTE-IDENTICAL**, md5
+  `8670c33b2dbd28bb582d721f79777404`, 74 suites, 0 with something to look at,
+  `--all`, `user://` cleared before each. **Said in the order they were taken,
+  because 080's standard is about the order and a vaguer sentence here would be
+  the thing 087 caught itself doing.** Run 1 was taken once the CODE was final,
+  with TRAPS 85 written and this file not yet; it produced the md5. **The md5
+  was then written into this file, twice, before runs 2 and 3**, which were on
+  the complete tree, code and docs together, and came back byte-identical.
+  **Run 4 was taken after one sentence in this paragraph was corrected** - the
+  first version said run 1 was "on the code tree", which would have been read
+  as "docs untouched" when `docs/TRAPS.md` was already edited - and it is on
+  the FINAL tree, every byte of it, byte-identical again. That is why there is
+  no 088a. **THE DIFF AGAINST THE BASELINE IS THE TWO LINES PREDICTED IN
+  WRITING BEFORE THE RUN**:
+  `controller_reach_test` **191 -> 265** and `refusal_reach_test`
+  **162 -> 206**, and nothing else moved.
+  **NO FILE IN `scripts/`, `scenes/`, `netlify/`, `.github/`, EITHER RUNNER,
+  `project.godot` OR `export_presets.web.cfg` WAS TOUCHED** - `git status`
+  named only `tests/controller_reach_test.gd`,
+  `tests/refusal_reach_test.gd` and `docs/`, read rather than assumed.
+  `PROMPT_FINGERPRINT` and `PROMPT_VERSION` did not move. No model was asked
+  anything, no request left the container, there is no API key here.
+  **NO SUITE CAN READ `docs/`, re-measured rather than carried forward
+  (TRAPS 4).**
+  **NOTHING A PLAYER MEETS CHANGED**: this commit is entirely in `tests/` and
+  `docs/`, so no fault the owner could see on real hardware is fixed by it, and
+  the suite that found this is the same suite that has missed eight of his
+  faults.
+  **064'S FINDING IS CARRIED FORWARD AND NOT RE-VERIFIED**; the live site's
+  commit cannot be read from this container.
+
+- Last commit before that: **087**, which answered the **reading**
   086 left as the live "Next action" - is `check_wiring_test`'s header 14/10/4
   over `DECLARED`, over `BY_HAND`, or over neither - and found the answer to
   be **neither**, the reconciliation **consistent**, the tally HANDOVER
@@ -3340,6 +3469,16 @@ than suites, leaving **74 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 74
 and are skipped without it.
+**088 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
+what the two numbers above say. Its baseline on the clean tree at `430652d`,
+`git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 087 recorded**:
+`352c320b4745da31504e5cf6363a04a9`. The container was fresh, so `user://` was
+empty rather than cleared. After the change, **THREE byte-identical full
+`--all` runs and a FOURTH on the final tree**, md5
+`8670c33b2dbd28bb582d721f79777404`, 0 with something to look at, the last three
+on the complete tree with `docs/` in place, `user://` cleared before each. The
+diff against the baseline is the **two lines predicted in writing before the
+run**: `controller_reach_test` 191 -> 265 and `refusal_reach_test` 162 -> 206.
 **087 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
 what the two numbers above say. Its baseline on the clean tree at `cd1a483`,
 `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 086 recorded**:
@@ -9429,12 +9568,53 @@ three byte-identical `--all` runs - the last two on the complete tree with
 on 087's behalf**; take your own baseline so you learn the record and the
 container still agree, and spend the time on the work below.
 
+**NOTHING IS OWED FROM 088 EITHER.** Its baseline was byte-identical to the
+md5 087 recorded, it wrote its two-line diff down before running, and it took
+three byte-identical `--all` runs - the last two on the complete tree with
+`docs/` in place - which is why there is no 088a. **Do not start by re-running
+on 088's behalf**; take your own baseline so you learn the record and the
+container still agree, and spend the time on the work below.
+
+**~~THE FIRST LIVE ENTRY AS OF 087: THE 22 REACHABLE ROWS OF
+`controller_reach_test` ARE STILL TIED TO NOTHING, AND THE JOB IS A READING
+BEFORE IT IS A RELABELLING.~~ DONE IN 088, AND THE READING CAME BACK "NO
+HOLE".** The entry was right to insist on the reading and right to forbid the
+relabelling: the 21 calls fire **19** distinct rows, because two rows carry
+**two** probes each, and the remaining **three** rows are held by the two
+fixtures that cannot use the shared helper for a reason in the branch itself -
+19 + 3 = 22, and nothing was uncovered. What 088 found instead is that the 22
+were **tied to nothing**, and that `refusal_reach_test` - which 086 gave the
+same membership and tally - had tied **none** of its ten MODULE rows to a
+fixture either, so the fix is in both files. See TRAPS **85** and the 088 entry
+under "Starting state". Struck rather than deleted, with the original text
+below, because the sketch is the record of what was asked for. The original
+text:**
+
 **THE FIRST LIVE ENTRY AS OF 087: THE 22 REACHABLE ROWS OF
 `controller_reach_test` ARE STILL TIED TO NOTHING, AND THE JOB IS A READING
 BEFORE IT IS A RELABELLING.** This was 086's second entry and 087 did not
 touch it; the text is below, unchanged, and it is now the live one. **Read the
 21 against the 22 one at a time first.** Do not relabel twenty-one fixtures on
 the assumption that the two numbers should match.
+
+**THE FIRST LIVE ENTRY AS OF 088, AND IT IS A LIMIT 088 MEASURED AND
+DELIBERATELY DID NOT CLOSE: A ROW SPELLED BY SEVERAL PROBES KEEPS ITS CLAIM
+WHEN ONE PROBE GOES.** Measured, injected after the fix was green, on **both**
+members of the class rather than one: delete one of the two probes for
+`controller_reach_test`'s `EQUIP` row or for its `ORDER` goal row and the
+suite is **262 assertions, failures=0**. This is TRAPS 84's `W03` limit in a
+second file and it is now **two** files' worth of the same shape.
+**THE ARGUMENT AGAINST CLOSING IT IS WRITTEN AND IS NOT "IT IS HARD".** The
+obvious fix - a declared probe count per row - is a number written *beside* the
+rows rather than read *off* them, which is TRAPS 82's shape, and it would have
+to be moved by hand every time a probe was legitimately added or removed; the
+cost falls on every correct future edit and the benefit is bounded by two rows.
+**What has NOT been read, and is the honest next step if anybody takes this
+on**, is whether the probes can be keyed off something the code already has -
+the request itself, or the refusal's own wording - so that the claim is a
+measurement rather than a second label. **That reading has not been done and
+nothing here claims it would work.** It may come back "leave it", which is a
+reason to spend one session reading and to build nothing on top of it.
 
 **AND A SMALLER ONE 087 MEASURED AND DELIBERATELY DID NOT BUILD: NOTHING KEEPS
 THE "const NOTHING READS" CLASS EMPTY.** TRAPS 84's class is **empty in
