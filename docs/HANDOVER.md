@@ -24,7 +24,144 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **088**, which did the **reading** 087
+- Last commit at the time of writing: **089**, which did the **reading** 088
+  left as the live "Next action" - can a doubly-probed row's probes be keyed
+  off something the **code** already has, so the claim becomes a measurement
+  rather than a second label - and the answer is **half yes**. The wording
+  **does** tell the probes apart and gives **no denominator**, so **088's limit
+  is still open**; what 089 closed is its **neighbour**. And the fault found
+  while measuring that neighbour is the one worth reading first: **a controller
+  refusal that names nothing was silent in both of the suites written to hold
+  that property**. New TRAPS **86**. No new "Human decision needed".
+
+  **THE BASELINE AGREED WITH THE RECORD BEFORE ANYTHING WAS TOUCHED.** The
+  `--all` run in this container, on a clean tree at `b66cf93` with
+  `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 088
+  recorded**: `8670c33b2dbd28bb582d721f79777404`, 74 suites, 0 with something
+  to look at. The container was fresh, so `user://` was empty rather than
+  cleared. **Nothing was owed from 088.**
+
+  **THE READING, AND WHY IT IS HALF AN ANSWER.** Measured by sending all four
+  probes of the two doubly-probed rows through `main.gd` and reading the
+  records, not by reading the code:
+
+  | probe | the refusal it drew |
+  |---|---|
+  | `EQUIP`, no tool named | `an EQUIP has to say which tool it is for (this game has car, boots, look)` |
+  | `EQUIP`, a tool the game lacks | `this game has no tool called 'jetpack' (it has car, boots, look)` |
+  | `ORDER`, no dungeon at all | `there is nobody to order about: build a dungeon first` |
+  | `ORDER`, no room named | `go_to needs a room (this dungeon has entrance, store, vault)` |
+
+  So **the wording distinguishes them and it is already in the record**. What
+  it does not give is **the number two**, and that number is the whole of 088's
+  limit: to notice a probe has been **deleted**, something has to know the row
+  had two. **And the number is derivable for one of the two rows and not the
+  other**, which is what settles it: the `EQUIP` row's two sentences are
+  **composed at the site**, in two arms of one `if asked_tool == ""` in
+  `game_controller.gd`, so 2 is readable there; the `ORDER` row's site **passes
+  `NpcGoals.validate()`'s errors straight through**, and that function has
+  **ten** `errors.append` sites (counted inside `validate`, lines 47-124), of
+  which the row probes **two**. A derived count would have been **right for one
+  member of a two-member class and wrong by eight on the other**, which is
+  TRAPS 11 pointing at the proposed **fix** rather than at the code. **It was
+  not built.** The same split holds wider - `SHUT/OPEN: the door does not check
+  out` passes `validate_door`'s six through, `a world's own validator refused
+  it` passes a whole module's set - so keying the claim by SENTENCE would not
+  tighten this table, it would replace it with a class three to five times
+  larger. **Whether the table should be keyed by sentence rather than by site
+  is a question about what the table is for**, and it is under "Next action"
+  as a reading, not as a task.
+
+  **088'S LIMIT IS STILL OPEN AND STILL MEASURED**: with 089 in place, deleting
+  one of the two probes for the `EQUIP` row gives **289 assertions,
+  failures=0** - the count falls by four and nothing is red, TRAPS 73's
+  signature. **This commit does not claim to have closed it.**
+
+  **WHAT WAS CLOSED, AND THE FAULT FOUND WHILE MEASURING IT.** Two probes of
+  one row that measure the **same** fault were as silent as a deleted one, and
+  that half needs no denominator: it is an arithmetic over **two numbers both
+  counted as the probes fire** (distinct row/refusal pairs against probes), so
+  nothing has to be edited when a probe is legitimately added or removed. While
+  measuring it, `_finish_nothing` was made to write `reasons = []` to see
+  whether the signature could collide - and **seven controller refusals then
+  told a player nothing with two suites green**.
+
+  **MEASURED AGAINST THE COMMITTED 088 FILE, EACH FAULT ALONE (TRAPS 80)**, in
+  a throwaway copy with its own `config/name` (TRAPS 50), this suite run alone.
+  Control **265/0** before and **293/0** after. Full table in TRAPS 86; the
+  five that were SILENT before and are named now:
+
+  | fault | before 089 | after 089 |
+  |---|---|---|
+  | the `EQUIP` row's second probe pointed at the same empty parameters as its first | **265, failures=0**, count unmoved | 293, failures=**1** |
+  | the dungeon build moved below the `ORDER` row's second probe, so both drew the same refusal | **265, failures=0**, count unmoved | 293, failures=**1** |
+  | `_finish_nothing` made to write `reasons = []`: seven refusals name nothing | **265, failures=0** - and `command_schema_test` **149, failures=0** | 293, failures=**7** |
+  | the `EQUIP` no-tool refusal alone made to write `reasons = []` | **265, failures=0** - and `command_schema_test` **149/0** | 293, failures=**3** |
+  | `_finish_nothing` made to write `reasons = [""]`: a blank sentence | 265/0 here; `command_schema_test` **149, failures=12** | 293, failures=**7** |
+
+  **AND THE TWO SUITES EACH HELD HALF OF ONE PROPERTY, WHICH IS WHY NEITHER
+  NOTICED.** `command_schema_test` walks each record's reasons and asserts that
+  no reason is the empty string; **an empty list has no elements, so the loop
+  body never runs and the check passes** - TRAPS 75's shape inside an
+  assertion, where zero is read as a pass. `controller_reach_test` asserted the
+  category and the command and never looked at the sentence. So *"a blank
+  sentence"* was held and *"no sentence at all"* was not, and the missing half
+  is the one a player meets as a refusal with nothing under it. **The new check
+  holds both shapes**, because they are one class and one line apart (TRAPS
+  11), and **both were injected and run before either was believed** (TRAPS 6).
+
+  **WHAT CHANGED.** `tests/controller_reach_test.gd` only. `_reaches()` reads
+  the matching record's `reasons` and passes it to `_fires()` as a signature;
+  `_fires()` counts the probe and collects the `(row, refusal)` pair for
+  REACHABLE rows; section 6 asserts **distinct pairs == probes** with both
+  numbers in the message and prints them as a NOTE so they can be read off a
+  run rather than only seen when they disagree. A new `_says_something()`
+  holds both shapes of an unnamed refusal, at every `_reaches()` call and at
+  `_guard_no_handler`, **whose own comment has claimed since 054 that the
+  record comes back "with the category and a reason" while nothing checked the
+  reason** (TRAPS 14 at the scale of one fixture).
+
+  **AND THE CLASS QUESTION WAS ASKED OF THE OTHER FILE RATHER THAN ASSUMED.**
+  `refusal_reach_test` asserts `fired.size() == wanted.size()`, so every row
+  there is driven **exactly once** and the duplicate-probe class is **empty**
+  in that file - read off its `_driven_coverage()` in this session rather than
+  carried forward from 088's commit message (TRAPS 14). **Nothing was added
+  there**, because machinery for a class with no members is what 084 and 085
+  each weighed and declined.
+
+  **A CLAIM THIS SESSION WROTE WAS WRONG BEFORE IT WAS CHECKED, AND IS
+  RECORDED RATHER THAN TIDIED AWAY.** The predicted count was 265 -> 288, from
+  21 probes gaining a sentence check. The run said **292**. `_reaches()` is
+  called **25** times, not 21: the four calls inside the GUARD fixtures drive
+  refusals too and the sentence check is in `_reaches()`. The prediction had
+  counted the probes that **claim** a row instead of the probes that **fire**
+  one. Nothing was adjusted to match - the gap was read off the file
+  (`grep -c "await _reaches("` = 25) before anything else was written, and the
+  final count after the `_guard_no_handler` line is **293**, predicted and
+  confirmed.
+
+  **THE RUNS.** md5 `9869bc3d87fad59f37d23ae0e131bf08`, 74 suites, 0 with
+  something to look at, `--all`, `user://` cleared before each, said in the
+  order they were taken (080's standard is about the order). Run 1 was taken
+  once the CODE was final with this file and TRAPS not yet written, and
+  produced the md5; **the md5 was then written into this file before runs 2 and
+  3**, which were on the complete tree, code and docs together.
+  **THE DIFF AGAINST THE BASELINE IS THE ONE LINE PREDICTED IN WRITING BEFORE
+  THE RUN**: `controller_reach_test` **265 -> 293**, and nothing else moved.
+  **NO FILE IN `scripts/`, `scenes/`, `netlify/`, `.github/`, EITHER RUNNER,
+  `project.godot` OR `export_presets.web.cfg` WAS TOUCHED** - `git status`
+  named only `tests/controller_reach_test.gd` and `docs/`, read rather than
+  assumed. `PROMPT_FINGERPRINT` and `PROMPT_VERSION` did not move. No model was
+  asked anything, no request left the container, there is no API key here.
+  **NOTHING A PLAYER MEETS CHANGED**: the unnamed refusal was INJECTED to
+  measure the gap, and the product writes its sentences today exactly as it did
+  before this commit. This is entirely `tests/` and `docs/`, so no fault the
+  owner could see on real hardware is fixed by it, and the suite that found
+  this is the same suite that has missed eight of his faults.
+  **064'S FINDING IS CARRIED FORWARD AND NOT RE-VERIFIED**; the live site's
+  commit cannot be read from this container.
+
+- Last commit before that: **088**, which did the **reading** 087
   left as the live "Next action" - read `controller_reach_test`'s **21**
   `_reaches` calls in section 2 against its **22** `REACHABLE` rows, one at a
   time - and found **no hole**, exactly as HANDOVER said it might. What it
@@ -9575,6 +9712,63 @@ three byte-identical `--all` runs - the last two on the complete tree with
 on 088's behalf**; take your own baseline so you learn the record and the
 container still agree, and spend the time on the work below.
 
+**NOTHING IS OWED FROM 089 EITHER.** Its baseline was byte-identical to the
+md5 088 recorded, it wrote its predicted diff down before running, and it took
+three byte-identical `--all` runs - the last two on the complete tree with
+`docs/` in place - which is why there is no 089a. **Do not start by re-running
+on 089's behalf**; take your own baseline so you learn the record and the
+container still agree, and spend the time on the work below.
+
+**THE FIRST LIVE ENTRY AS OF 089, AND IT IS A QUESTION ABOUT WHAT THE TABLE IS
+FOR RATHER THAN A FIX: SHOULD `controller_reach_test`'s TABLE BE KEYED BY
+REFUSAL SENTENCE INSTEAD OF BY CALL SITE?** 089 read 088's question - can the
+probes be keyed off something the code already has - and the answer was **half
+yes**: the refusal's **wording** tells the probes apart (all four sentences
+measured and different, they are in TRAPS 86) but gives **no denominator**, so
+**088's deleted-probe limit is still open and still measured at 289
+assertions, failures=0**. What the reading turned up on the way is the thing to
+weigh: **a row is a call SITE, and several of these sites pass a validator's
+whole error set through**, so the faults behind one row are not one.
+
+  | row | sentences its producer can make | the row probes |
+  |---|---|---|
+  | `ORDER: the goal does not check out` | **10** (`NpcGoals.validate`) | 2 |
+  | `SHUT/OPEN: the door does not check out` | **6** (`NpcGoals.validate_door`) | 1 |
+  | `a world's own validator refused it` | a whole module's set | 1 |
+  | `EQUIP: the tool's own spec is out of bounds` | the tool's set (boots 5, car 4, look 3) | 1 |
+  | `EQUIP: no tool named, or a tool the game lacks` | **2**, composed at the site | 2 |
+
+**DO NOT JUST RE-KEY IT.** Keying by sentence would replace 28 rows with a
+class three to five times larger, and most of that class is **another file's**
+to answer for - `refusal_reach_test` already owns the world modules' twelve
+branches, and the three `_prepare_world` sites are declared PASSTHROUGH here
+for exactly that reason. **The honest job, in order:** (1) read whether the
+sentences behind the delegating rows are already held somewhere - the tool
+validators' are the likeliest, `limits_test` and `said_fields_test` both walk
+tool fields - and say so either way; (2) only if they are not, decide whether
+this table or that one should carry them; (3) if the answer is "the table is
+right as it is, keyed by site", **write that in the file beside the table**, so
+the next session does not re-ask it. **It may well come back "leave it", and
+that is a reason to do the reading rather than to build.** The one thing 089
+is sure of: a derived probe count per row **cannot** be the fix, because it
+would have been right for one of the two doubly-probed rows and wrong by eight
+on the other (TRAPS 11 pointing at the fix).
+
+**AND A SECOND ONE 089 MEASURED AND DID NOT TAKE, BECAUSE IT IS IN ANOTHER
+FILE AND NEEDS A JUDGEMENT: `command_schema_test`'s no-empty-reason check
+PASSES ON A REFUSAL THAT NAMES NOTHING.** Measured, not read: with
+`_finish_nothing` writing `reasons = []`, `command_schema_test` is **149
+assertions, failures=0**, while the same file catches `reasons = [""]` with
+**12** failures. It walks the list, so the loop body never runs on an empty one
+- TRAPS 75's shape inside an assertion. 089 held **both** shapes in
+`controller_reach_test`, for the 25 branches it drives, and **did not touch the
+other file**, because its header says a command that builds nothing whatever it
+is sent is **not required to refuse**, so a bare non-empty assertion there
+would need the same `if schema_refusal` condition its fourth assertion already
+has - and getting that wrong is a false alarm on correct code. **The job is to
+read which of its probes must refuse before asserting that each names
+something.** The measurement is done and is in TRAPS 86.
+
 **~~THE FIRST LIVE ENTRY AS OF 087: THE 22 REACHABLE ROWS OF
 `controller_reach_test` ARE STILL TIED TO NOTHING, AND THE JOB IS A READING
 BEFORE IT IS A RELABELLING.~~ DONE IN 088, AND THE READING CAME BACK "NO
@@ -9597,9 +9791,15 @@ touch it; the text is below, unchanged, and it is now the live one. **Read the
 21 against the 22 one at a time first.** Do not relabel twenty-one fixtures on
 the assumption that the two numbers should match.
 
-**THE FIRST LIVE ENTRY AS OF 088, AND IT IS A LIMIT 088 MEASURED AND
-DELIBERATELY DID NOT CLOSE: A ROW SPELLED BY SEVERAL PROBES KEEPS ITS CLAIM
-WHEN ONE PROBE GOES.** Measured, injected after the fix was green, on **both**
+**THE FIRST LIVE ENTRY AS OF 088: A ROW SPELLED BY SEVERAL PROBES KEEPS ITS
+CLAIM WHEN ONE PROBE GOES. 089 DID ITS READING AND THE LIMIT IS STILL OPEN**,
+re-measured at **289 assertions, failures=0** with 089 in place. The reading
+came back **half yes**: the refusal's wording tells the probes apart and gives
+no denominator, and a derived count would have been right for one of the two
+rows and wrong by eight on the other - so it was **not built**, and what 089
+closed instead is the neighbouring fault (two probes measuring the same thing).
+See TRAPS 86 and the first live entry above, which is the question this one
+turned into. The entry as it stood, left because its argument still holds:** Measured, injected after the fix was green, on **both**
 members of the class rather than one: delete one of the two probes for
 `controller_reach_test`'s `EQUIP` row or for its `ORDER` goal row and the
 suite is **262 assertions, failures=0**. This is TRAPS 84's `W03` limit in a

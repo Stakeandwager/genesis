@@ -6253,3 +6253,145 @@ the second file in the same class had.
 > The tally proved the rows were right. Nothing proved anybody had run them.
 
 ---
+
+## 86. A refusal with nothing in it, and the two suites that each held half of "it says something"
+
+**Signature:** the repository's own first rule about refusals is *"refuse,
+never clamp — and name the limit, at every door"*. Make every refusal that
+goes through one of the controller's two record finishers carry an **empty**
+reasons array, so that seven of the controller's branches tell a player
+nothing at all, and two suites written to hold exactly that property are
+**green**.
+
+**Cause.** 088 closed a hole and left a limit: a `REACHABLE` row driven by two
+probes keeps its claim when one probe is deleted, because the claim is a set of
+rows. It weighed the obvious fix — a declared probe count per row — and
+declined it as a number written *beside* the rows rather than read *off* them
+(TRAPS 82), and it wrote down the honest next step: **read whether the probes
+can be keyed off something the code already has — the request, or the refusal's
+own wording — so the claim becomes a measurement rather than a second label.**
+089 did that reading. It answers **half yes**, and the fault above was found
+while measuring the other half.
+
+**THE READING: THE WORDING TELLS THE PROBES APART, AND GIVES NO DENOMINATOR.**
+Measured by sending all four probes of the two doubly-probed rows through
+`main.gd` and reading the records, not by reading the code:
+
+| probe | the refusal it drew |
+|---|---|
+| `EQUIP`, no tool named | `an EQUIP has to say which tool it is for (this game has car, boots, look)` |
+| `EQUIP`, a tool the game lacks | `this game has no tool called 'jetpack' (it has car, boots, look)` |
+| `ORDER`, no dungeon at all | `there is nobody to order about: build a dungeon first` |
+| `ORDER`, no room named | `go_to needs a room (this dungeon has entrance, store, vault)` |
+
+So the wording **does** distinguish them and it is already in the record.
+**What it does not give is the number two**, and that number is the whole of
+088's limit: to notice that a probe has been *deleted*, something has to know
+the row had two. **And the number is derivable for one of the two rows and not
+for the other**, which is the part that settles it:
+
+| row | where its sentences come from | distinct sentences the producer can make | the row probes |
+|---|---|---|---|
+| `EQUIP: no tool named, or a tool the game lacks` | **composed at the site** — two arms of one `if asked_tool == ""` in `game_controller.gd`, both appending to `problems` before one `_finish_failed` | **2** | 2 |
+| `ORDER: the goal does not check out` | **passed straight through** — `_finish_failed(record, "FAILED_SCHEMA", checked["errors"])` at `:237`, where `checked` is `NpcGoals.validate()` | **10** (`errors.append` sites counted inside `validate`, lines 47–124) | 2 |
+
+A count derived off the code would have been **right for the first row and
+wrong by eight on the second** — TRAPS 11 pointing at the proposed *fix*
+rather than at the code. **It was not built.** The same split holds wider:
+`SHUT/OPEN: the door does not check out` passes `validate_door`'s **6**
+sentences through, `a world's own validator refused it` passes a whole world
+module's set, and `EQUIP: the tool's own spec is out of bounds` passes the
+tool's. Keying the claim by sentence would not tighten the table; it would
+replace it with a class three to five times larger, and **whether the table
+should be keyed by SENTENCE rather than by SITE is a question about what the
+table is for**, not a tightening of what it already says.
+
+**SO 088'S LIMIT IS STILL OPEN AND IS STILL MEASURED**: with 089 in place,
+deleting one of the two probes for the `EQUIP` row gives **289 assertions,
+failures=0** — the count falls by four and nothing is red, TRAPS 73's
+signature again.
+
+**WHAT THE WORDING DOES BUY, WITH NO DENOMINATOR ANYWHERE, IS THE NEIGHBOUR:
+two probes of one row that measure the SAME fault.** That was as silent as
+deletion and left no count behind either. It is now an arithmetic over two
+numbers **both counted as the probes fire** — distinct row/refusal pairs
+against probes — so nothing has to be edited when a probe is legitimately
+added or removed, which is the test 088 set for a closure.
+
+**Measured, each fault alone** (TRAPS 80), against the **committed 088 file**,
+this suite run alone in a throwaway copy with its own `config/name`
+(TRAPS 50). Control **265/0** before and **293/0** after.
+
+| fault injected | before 089 | after 089 |
+|---|---|---|
+| the `EQUIP` row's second probe pointed at the same empty parameters as its first | **265, failures=0 — SILENT**, and the count did not move at all | 293, failures=**1**, with both numbers in the message |
+| the dungeon build moved below the `ORDER` row's second probe, so both probes drew *"there is nobody to order about"* | **265, failures=0 — SILENT**, count unmoved | 293, failures=**1** |
+| `_finish_nothing` made to write `reasons = []` — seven controller refusals name nothing | **265, failures=0 — SILENT** (and `command_schema_test` **149, failures=0 — SILENT**) | 293, failures=**7**, each by name |
+| the `EQUIP` no-tool refusal alone made to write `reasons = []` | **265, failures=0 — SILENT** (and `command_schema_test` **149/0**) | 293, failures=**3** |
+| `_finish_nothing` made to write `reasons = [""]` — a blank sentence | 265, failures=0 here; `command_schema_test` **149, failures=12** | 293, failures=**7** |
+| ONE of the TWO probes for the `EQUIP` row deleted (088's own limit) | 265, failures=0 | **289, failures=0 — STILL SILENT** |
+| a `REACHABLE` row's text reworded in the table only (088's guard) | — | 291, failures=**3**, still firing |
+
+**AND THE TWO SUITES EACH HELD HALF OF ONE PROPERTY, WHICH IS WHY NEITHER
+NOTICED.** `command_schema_test` walks each record's reasons and asserts that
+**no reason is the empty string**; an empty *list* has no elements, so the loop
+body never runs and the check passes — **TRAPS 75's shape inside an
+assertion**, where zero is read as a pass. `controller_reach_test` asserted the
+category and the command and never looked at the sentence at all. So *"a blank
+sentence"* was caught and *"no sentence"* was not, and the half that was
+missing is the one a player meets as a refusal with nothing under it. The new
+check in `controller_reach_test` holds **both** shapes, because they are one
+class and one line apart (TRAPS 11).
+
+**One claim this session wrote was wrong before it was checked, and is
+recorded rather than tidied away.** The predicted count was 265 -> 288, from
+21 probes gaining a sentence check. The run said **292**. The reason is that
+`_reaches()` is called **25** times, not 21: the four calls inside the GUARD
+fixtures of sections 3 and 4 drive refusals too, and the sentence check is in
+`_reaches()`. The prediction had counted the probes that *claim* a row instead
+of the probes that *fire* one. Nothing was adjusted to match; the gap was read
+off the file (`grep -c "await _reaches("` = 25) before anything else was
+written.
+
+**Do:**
+
+- **The key that tells two things apart is not the number that says how many
+  there should be.** A signature read off the record closes "these two measure
+  the same thing". Only a denominator closes "one of them is gone". Do not
+  accept the first as the second.
+- **Before deriving a count off the code, ask where the sentences are MADE.**
+  A door that composes its own refusal can be counted at the door. A door that
+  passes a validator's errors through cannot: the validator's set is larger
+  than the subset that door reaches, which is TRAPS 47's reachability question
+  one layer in. Both shapes sat in the same two-member class here.
+- **An assertion that walks a list cannot speak for an empty list.** `for x in
+  xs: check(x)` is green on `[]`. If the property is *"there is something, and
+  it is sound"*, both halves have to be written down.
+- **Hold a property where its absence does damage, not only where it is
+  convenient.** "A refusal names what was wrong" is the repository's own rule
+  and it had a reader at one door's worth of malformed requests and at none of
+  the controller's 28 branches.
+- **A guard you have not seen fail is a guard you have not tested (TRAPS 6).**
+  Both halves of the new check were injected and run — an empty list and a
+  blank sentence — before either was believed.
+- **Ask the second file rather than copying the machinery into it.**
+  `refusal_reach_test` asserts `fired.size() == wanted.size()`, so every row
+  there is driven exactly once and the duplicate-probe class is **empty** in
+  that file. Read off its `_driven_coverage()` in this session rather than
+  carried forward from 088's commit message (TRAPS 14). Nothing was added
+  there, because machinery for a class with no members is what 084 and 085
+  each weighed and declined.
+
+Found in 089, by doing the reading 088 left as the live next action and then
+asking what the key it turned up could and could not hold.
+**Nothing in `scripts/`, `scenes/`, `netlify/`, `.github/`, either runner,
+`project.godot` or `export_presets.web.cfg` was touched**, read off
+`git status` rather than assumed. The prompt is byte-identical and
+`PROMPT_VERSION` did not move. **Nothing a player meets changed** — the
+unnamed refusal was INJECTED to measure the gap and the product writes its
+sentences today, exactly as it did before this commit.
+
+> Two probes that say the same thing are one probe. Nothing in the record says
+> there should have been two.
+
+---

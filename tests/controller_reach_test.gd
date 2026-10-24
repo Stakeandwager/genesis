@@ -146,6 +146,11 @@ var answered: Array = []
 # Filled by _reaches() in section 2: the REACHABLE rows a request actually
 # produced. 088's addition - see "THE 22 REACHABLE ROWS" in the header.
 var reached: Array = []
+# 089: one entry per PROBE of a REACHABLE row - the row it fired paired with
+# the refusal SENTENCE the record carried - and a count of the probes that
+# produced one. See "THE PROBES OF ONE ROW" in the header and section 6.
+var probed: Array = []
+var probes := 0
 
 const DUNGEON := '{"command": "CREATE_DUNGEON", "parameters": {"rooms": [{"name": "entrance", "width": 12, "depth": 12}, {"name": "store", "width": 12, "depth": 12}, {"name": "vault", "width": 12, "depth": 12}], "doors": [[1, 2], [2, 3]], "things": [{"name": "lamp", "in": 2}]}}'
 const CLEAR := '{"command": "CLEAR_WORLD", "parameters": {}}'
@@ -255,6 +260,20 @@ const KIND_TOTALS := {"REACHABLE": 22, "GUARD": 5, "NEEDS_KEY": 1}
 # so a legitimate rewording has to be made in the row and in the probe
 # together - and failing in both directions when it is not is the intended
 # cost, not a defect.
+#
+# THE PROBES OF ONE ROW, WHICH IS 089's ADDITION AND IS NOT 088's LIMIT.
+# 088 left two rows carrying two probes each and a limit it measured and
+# deliberately did not close: the claim is a SET of rows, so DELETING one of
+# the two probes leaves the claim and this suite green. That limit is STILL
+# OPEN. What 089 read is 088's own next question - can the probes be keyed off
+# something the code already has - and the answer is that the refusal's own
+# WORDING distinguishes them (measured, all four sentences differ, they are in
+# section 6) but gives no DENOMINATOR, so deletion stays silent and a derived
+# count would have been right for one of the two rows and wrong by eight on
+# the other. What the wording DOES buy is the neighbouring fault: two probes
+# of one row that measure the SAME thing, which was equally silent before and
+# is now an arithmetic over two numbers both counted as the probes fire.
+# Section 6 carries the measurements, the limit and the reason.
 
 const CONTROLLER_FILES := ["game_controller.gd", "main.gd", "experiment_runner.gd"]
 # The two category constants game_controller.gd refuses through by name.
@@ -326,6 +345,25 @@ func _send(json_text: String) -> Array:
 	return mine
 
 
+# 089: does this refusal tell the player anything at all? Two shapes, held
+# together because they are one class and one line apart (TRAPS 11): a record
+# with NO sentence in it, and a record whose sentences are blank. MEASURED,
+# each alone, against the committed 088 tree: _finish_nothing made to write []
+# gave controller_reach 265 assertions failures=0 and command_schema 149
+# failures=0 - SILENT in both, and seven controller refusals telling a player
+# nothing - while [""] gave command_schema 12 failures. So the empty-LIST half
+# was held by nothing and the blank-SENTENCE half only for command_schema's own
+# class (one malformed request per command, not these 28 branches). Full table
+# in TRAPS 86.
+static func _says_something(reasons: Variant) -> bool:
+	if typeof(reasons) != TYPE_ARRAY or (reasons as Array).is_empty():
+		return false
+	for reason in (reasons as Array):
+		if str(reason).strip_edges() == "":
+			return false
+	return true
+
+
 func _categories(records: Array) -> Array:
 	var out: Array = []
 	for r in records:
@@ -352,17 +390,33 @@ func _reaches(label: String, json_text: String, category: String, command: Strin
 		branch: String) -> void:
 	var records: Array = await _send(json_text)
 	var found := false
+	var said := ""
 	for r in records:
 		var d: Dictionary = r
 		if str(d.get("category", "")) == category and str(d.get("command", "")) == command:
 			found = true
 			_check(str(d.get("result", "")) == "FAILED" or str(d.get("construction", "")) == "FAILED",
 				"%s: the record says the request did not succeed" % label)
+			# 089: the refusal this probe actually drew, read off the record
+			# rather than named by the fixture. All three finishers write the
+			# sentences here - _finish_failed its reasons array, _finish_nothing
+			# and record_rejection the one line - so this is the same field for
+			# every branch in the table.
+			said = JSON.stringify(d.get("reasons", []))
+			# A refusal with no sentence in it cannot be told from another
+			# refusal with no sentence in it, so the measurement below would
+			# read two probes of one row as one. It is asserted HERE, where
+			# that matters, rather than inferred from command_schema_test's
+			# own no-empty-reason check, which asks a different question of a
+			# different class (one malformed request per command).
+			_check(_says_something(d.get("reasons", [])),
+				"%s: the refusal says something (reasons: %s)" % [
+					label, JSON.stringify(d.get("reasons", []))])
 			break
 	_check(found, "%s: a legal request produces %s from %s (got %s)" % [
 		label, category, command, str(_categories(records))])
 	# At the END, after the measurement (TRAPS 81).
-	_fires(label, category, branch)
+	_fires(label, category, branch, said)
 
 
 # The row a _reaches() call just fired, checked against the table and - when
@@ -375,7 +429,7 @@ func _reaches(label: String, json_text: String, category: String, command: Strin
 # is what claims an out-of-reach row. A branch text that names no row FAILS
 # and names itself rather than being dropped (TRAPS 83), so a typo in a probe
 # cannot go quiet.
-func _fires(label: String, category: String, branch: String) -> void:
+func _fires(label: String, category: String, branch: String, said := "") -> void:
 	var key := "%s / %s" % [category, branch]
 	for row in BRANCHES:
 		var r: Array = row
@@ -385,6 +439,19 @@ func _fires(label: String, category: String, branch: String) -> void:
 					label, branch, str(r[0]), category])
 			if str(r[2]) == "REACHABLE" and not reached.has(key):
 				reached.append(key)
+			# 089: the probe, paired with the refusal it drew. Counted for
+			# REACHABLE rows only, because an out-of-reach row is claimed by
+			# the _answers() call at the end of its own fixture and the four
+			# _reaches() inside the guard fixtures claim nothing here.
+			# `said` is empty for the three rows claimed WITHOUT a probe -
+			# _reachable_parse's and _reachable_plan_placement's two - and
+			# those are not counted; see section 6 for why that is a reason
+			# and not an omission.
+			if str(r[2]) == "REACHABLE" and said != "":
+				probes += 1
+				var pair := "%s || %s" % [key, said]
+				if not probed.has(pair):
+					probed.append(pair)
 			return
 	_check(false, "%s names the row '%s', which is not in the table" % [label, branch])
 
@@ -811,6 +878,15 @@ func _guard_no_handler() -> void:
 			fired = true
 			_check(str(d.get("command", "")) == "A_COMMAND_WITH_NO_HANDLER",
 				"and the record names the command that had no handler")
+			# 089: the comment above this fixture has said "the record comes
+			# back with the category AND A REASON" since 054, and nothing
+			# checked the reason. Measured in 089: a controller refusal that
+			# names nothing is silent in this suite and in command_schema_test
+			# (which walks the reasons and so passes vacuously on an empty
+			# list - TRAPS 75). Held here for the same reason it is held in
+			# _reaches(): an unnamed refusal tells a player nothing.
+			_check(_says_something(d.get("reasons", [])),
+				"and it says something (reasons: %s)" % JSON.stringify(d.get("reasons", [])))
 	_check(fired, "handed a command with no case, execute() refuses FAILED_NO_HANDLER")
 	_answers("FAILED_NO_HANDLER", "execute(): a whitelisted command with no case")
 
@@ -1095,10 +1171,74 @@ func _out_of_reach_coverage() -> void:
 # green. Injected and run after the fix was green; the number is in TRAPS 85.
 # That is the same limit TRAPS 84 recorded for a label spelled by several
 # rows, and it is written here rather than left to be discovered.
+# 089 READ THAT LIMIT AND DID NOT CLOSE IT. It is still open and still
+# measured: delete one of the two probes for either doubly-probed row and this
+# suite is green. What 089 closed is its NEIGHBOUR - see below.
 #
 # IT CANNOT GO QUIET BY MEASURING NOTHING (TRAPS 75): the wanted set is
 # derived from the rows, so an empty `reached` fails once per row, and the
 # size is asserted positive.
+#
+# --- 089: AND NO TWO PROBES OF ONE ROW MAY MEASURE THE SAME FAULT ---
+#
+# 088 LEFT A QUESTION AND THIS IS ITS ANSWER, HALF YES AND HALF NO. The
+# question was whether the probes could be keyed off something the CODE
+# already has - the request, or the refusal's own wording - so that a row's
+# probes became a measurement rather than a second label. MEASURED, by sending
+# all four probes of the two doubly-probed rows and reading the records:
+#
+#   EQUIP, no tool named      "an EQUIP has to say which tool it is for
+#                              (this game has car, boots, look)"
+#   EQUIP, a tool it lacks    "this game has no tool called 'jetpack'
+#                              (it has car, boots, look)"
+#   ORDER, no dungeon         "there is nobody to order about: build a
+#                              dungeon first"
+#   ORDER, no room named      "go_to needs a room (this dungeon has
+#                              entrance, store, vault)"
+#
+# SO THE WORDING DOES DISTINGUISH THEM, and it is in the record already. What
+# it does NOT give is a DENOMINATOR, which is the whole of 088's limit: to
+# notice that a probe has been DELETED, something has to know the row had two.
+# The number is derivable for the EQUIP row - two arms of one `if asked_tool
+# == ""` in game_controller.gd, both composing a sentence at the site - and is
+# NOT derivable for the ORDER row, whose site passes NpcGoals.validate's
+# errors straight through and whose validator can produce TEN distinct
+# sentences, of which this row probes two. So a derived count would have held
+# one member of a two-member class and been wrong by eight on the other, which
+# is TRAPS 11 pointing at the proposed FIX rather than at the code. It was not
+# built. The reading is in HANDOVER and TRAPS 86.
+#
+# WHAT THE WORDING DOES BUY, with no denominator anywhere, is the other half
+# of the same class: TWO PROBES THAT MEASURE THE SAME FAULT. Before 089 that
+# was as silent as deletion and left no count behind either - measured against
+# the committed 088 file, this suite alone in a throwaway copy with its own
+# config/name (TRAPS 50, TRAPS 80): pointing the EQUIP row's second probe at
+# the same empty parameters as its first gave 265 assertions, failures=0, and
+# moving the dungeon below the ORDER row's second probe, so that both drew
+# "there is nobody to order about", gave 265 assertions, failures=0. The
+# control is 265 too, so neither fault moved the count by one.
+#
+# IT IS AN ARITHMETIC OVER TWO MEASURED NUMBERS AND NOT A STORED ONE: the
+# probes are counted as they fire and the pairs are collected as they fire, so
+# nothing here has to be edited when a probe is legitimately added or removed.
+# That is the test 088 set for a closure and the reason this one is built where
+# the declared count was not.
+#
+# ITS OWN LIMIT, STATED RATHER THAN LEFT: three of the 22 REACHABLE rows are
+# claimed with no probe signature and are not in this arithmetic -
+# _reachable_parse's one row, whose record carries no command, and
+# _reachable_plan_placement's two, which arrive from one request. Each of those
+# three is claimed EXACTLY ONCE, explicitly, in one fixture, so there is no
+# second probe for them to duplicate; that is the reason, and it is a fact
+# about those fixtures and not a convenience (TRAPS 78).
+#
+# AND THE CLASS QUESTION WAS ASKED OF THE OTHER FILE RATHER THAN ASSUMED
+# (TRAPS 11, TRAPS 14): refusal_reach_test asserts `fired.size() ==
+# wanted.size()`, so every row there is driven exactly ONCE and the
+# duplicate-probe class is EMPTY in that file. Read off its _driven_coverage()
+# in this session, not carried forward from 088's commit message. Nothing was
+# added there, because machinery for a class with no members is the thing 084
+# and 085 each weighed and declined.
 func _reachable_coverage() -> void:
 	var wanted: Array = []
 	for row in BRANCHES:
@@ -1117,6 +1257,18 @@ func _reachable_coverage() -> void:
 	_check(reached.size() == wanted.size(),
 		"and every REACHABLE row was produced: %d distinct rows claimed for %d rows" % [
 			reached.size(), wanted.size()])
+
+	# 089. Both numbers are measured as the probes fire, so this cannot pass by
+	# reading nothing (TRAPS 75) and cannot be satisfied by editing a constant.
+	_check(probes > 0,
+		"%d probes of REACHABLE rows carried a refusal, so there is something to compare" % probes)
+	_check(probed.size() == probes,
+		"and no two probes of one row drew the same refusal: %d distinct row/refusal pairs for %d probes" % [
+			probed.size(), probes])
+	# Printed as well as asserted, so the two numbers can be READ off a run
+	# rather than only seen when they disagree (TRAPS 75).
+	notes.append("089: %d distinct row/refusal pairs for %d probes of %d REACHABLE rows" % [
+		probed.size(), probes, reached.size()])
 
 
 func _run() -> void:
