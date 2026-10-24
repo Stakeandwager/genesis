@@ -5206,3 +5206,136 @@ Found in 079, doing the three rows 078 measured and left under "Next action".
 > the same file, and the list it sat on top of named twelve of fifteen.
 
 ---
+
+## 77. A guard keyed by FILE, holding a class whose members are SITES
+
+**Signature:** a suite pins each member of a class with one needle per **file**
+and asks `contains()`. Every file with two members has one of them held and
+the rest unheld, and the suite reports a pass. The table that lists the class
+and the dictionary that pins it were written in the same commit and already
+disagreed.
+
+**Cause.** 070 found a sentence that decided a count's agreeing word by hand
+and got it wrong at three of four counts, stated the general rule — *a sentence
+that states a count and a word that agrees with it must read that agreement
+from `Readback.agrees()`* — and applied it at every site it found. Its own
+message enumerated them: `session_report.gd:242, :248, :290, :291`,
+`race_director.gd:106`, `ai_interpreter.gd:542` and `:548`,
+`dungeon_module.gd:537`, `feasibility_gate.gd:83`, and `racing_module.gd:76`,
+**the AI prompt** — which it called "TRAPS 11 inside 068's own fix".
+
+Then it built the guard. Deliberate fault 5 had shown the hardcoded-plural
+scan goes blind exactly where the fault lives: the needles are derived from
+the nouns handed to `Readback.plural()` in `scripts/`, so reverting the only
+call passing a given noun deletes the fault and the needle that catches it in
+one edit. The answer was `READS_THE_READER`, described in its own comment as
+*"a per-site table naming the reader each site routes through"*. **It was keyed
+by file, with one needle each, asked with `contains()`** — and the files hold
+between one and four sites apiece.
+
+**Measured in 080**, Godot 4.7.1, each fault in a throwaway copy with its own
+`config/name` (TRAPS 50), FAIL lines read, on a baseline byte-identical to the
+md5 079 recorded:
+
+```
+ai_interpreter.gd  second HTTP sentence reverted alone   47 assertions, failures=0  SILENT
+ai_interpreter.gd  first  HTTP sentence reverted alone   47 assertions, failures=0  SILENT
+ai_interpreter.gd  BOTH reverted                        47 assertions, failures=1  caught
+race_director.gd   the "lap" half, NAIVE revert         47 assertions, failures=0  SILENT
+racing_module.gd   the PROMPT's two, hiding form        47 assertions, failures=0  SILENT
+                   ... and prompt_bounds_test on the
+                   same tree                            72 assertions, failures=0  SILENT
+```
+
+Three different shapes of the same fault:
+
+- **Two sites, one needle, `contains()`.** `ai_interpreter.gd` carries two of
+  the sentences and their needle text is identical. Either one could stop
+  reading the reader and the row still passed; only losing **both** failed.
+- **Two agreements in one sentence, one of them tabled.** 070 itself replaced
+  `"Race: %d laps against %d opponent%s"` with two `Readback.plural()` calls,
+  and the table named only the `opponent` half. The `lap` half was silent
+  against the **naive** revert — not a hiding one — because `"lap"` is the
+  only literal of its kind in `scripts/`, so fault 5's shape applied to a file
+  that already had a row.
+- **A member of the table with no row at all.** `racing_module.gd:76`, the
+  prompt, was in neither the dictionary nor the produced sentences. The prompt
+  is byte-identical while both floors are 2, so `PROMPT_FINGERPRINT` cannot see
+  it either — 070 recorded *that* half and not the first.
+
+**And the suite's own header did the arithmetic that hid it.** It read *"Four
+of the nine sites are held by a SOURCE SCAN ... The five that ARE produced are
+produced"*: four plus five is nine, the enumeration in 070's message has ten
+entries, and the one the arithmetic dropped is the prompt — the unpinned one.
+A paragraph that accounts for every member is read as proof that every member
+is accounted for.
+
+**THERE WERE THREE DIFFERENT COUNTS IN PLAY AND NONE OF THEM WAS THE ONE THAT
+MATTERED.** Ten table rows; nine sentences (`session_report.gd:290` and `:291`
+are two agreements in one sentence); and **thirteen hand-decided agreements**,
+because two table rows each name a PAIR and one table row's sentence held a
+second agreement the table never named. A pin covers an **agreement**, and no
+number anywhere in 070 says thirteen — which is why "six rows against nine
+sites" could be read either way for a whole commit without being settled.
+
+**Fixed in 080** by making the key the **site**: the value is a list of
+`[needle, least]` rows, one per hand-decided agreement, and the loop counts
+occurrences instead of asking whether there is one. All five silent faults now
+fail and name the number found (`found 1` against a floor of 2, `found 0`
+against a floor of 1). Two must-pass controls pass: a **third** correct HTTP
+sentence (the floor is a floor, so a correct arrival does not fail) and the
+sentence **reworded** with both reader calls kept (the pin reads the call, not
+the wording).
+
+**The right form already existed in this repository**, in a sibling suite:
+`tests/prompt_numeral_test.gd`'s `DECLARED` has been `[needle, count, kind]`
+rows since 073 — *"`"1"` twice as an ordinal ... once as the character inside
+the name `room_1`"* — because that suite's members are **occurrences** and it
+was built knowing it. `READS_THE_READER` is the same kind of class and asked
+`contains()`.
+
+**And the class was screened rather than assumed (TRAPS 11).** One grep, not a
+suite, so treat it as a starting point: of the per-file pin tables in `tests/`,
+`check_wiring_test`'s `DECLARED`/`BY_HAND` pin `func <name>(`, which GDScript
+cannot declare twice in a file; `source_scan_test`'s `KNOWN` makes a claim that
+is genuinely per file (*does this file read a source*); `refusal_reach_test`'s
+`DECLARED` is keyed by refusal name; `result_line_test`'s `NO_RESULT_LINE`
+names non-suites. **`READS_THE_READER` was the only one whose members were
+sites.** That is a screen and not a measurement.
+
+**Do:**
+
+- **Ask what the members of the class are before choosing the key.** If they
+  are sites, a file key holds one site per file however many it has. The
+  symptom is invisible: every row passes, and the count of rows looks like the
+  count of members.
+- **`contains()` answers "at least one". Where "how many" is the fact, count.**
+  A needle whose occurrences are counted against a floor fails on a departure
+  and passes on a correct arrival — which is the direction a stale number
+  should go stale in.
+- **A sentence can hold two of these, and the table will name one.** Read the
+  whole sentence the commit changed, not the one call it was about. 070's
+  own diff replaced two hand-written agreements and tabled one.
+- **When a commit's message enumerates a class, diff that enumeration against
+  the guard it then builds.** Both were written here within one commit, and
+  the dictionary both omitted a member of the table (`racing_module.gd`) and
+  named one that was never in it (`experiment_runner.gd`).
+- **Count the unit a pin COVERS, not the rows, and write the unit down beside
+  the number.** Rows, sentences and agreements were ten, nine and thirteen
+  here. A session argued about whether six covered nine; neither number was the
+  one a pin is measured against, and the arithmetic cannot be checked at all
+  until the unit is named.
+- **A prose count that balances is not a coverage proof.** "Four held by a
+  scan, five produced" summed to the stated nine and left out the tenth. The
+  claim to check is "which member is in neither list", and the list is in the
+  commit message.
+
+Found in 080, doing the measurement 079 left as the live "Next action" — which
+asked whether six rows covered nine sites, and expected the answer might be
+"nothing to do".
+
+> The dictionary was described as per-site in its own comment, keyed by file in
+> its own code, and the suite had been printing a pass over three unheld
+> sentences since the commit that wrote all three.
+
+---

@@ -69,13 +69,24 @@ extends SceneTree
 # count does - which is the fault and not the phrasing.
 #
 # WHAT IT DOES NOT PROVE, said plainly because the gap is the interesting
-# part. Four of the nine sites are held by a SOURCE SCAN and not by a
-# produced sentence: RaceDirector's announcement needs a race standing up on
-# stepped physics, AIInterpreter's two HTTP sentences need the node, and
-# DungeonModule's ring budget needs a dungeon whose placement actually runs
-# out of space. For those four the scan says the hand-written decision is
-# gone and that the sentence reads a Readback function; it does not watch the
-# word change with the count. The five that ARE produced are produced.
+# part. Some of these sentences are held by a SOURCE SCAN and not by a
+# produced one, because this harness cannot stand them up: RaceDirector's
+# announcement needs a race on stepped physics, AIInterpreter's two HTTP
+# sentences need the node, DungeonModule's ring budget needs a placement that
+# actually runs out of space, and the AI PROMPT's two floors in
+# racing_module.gd are a sentence no player ever reads. For those the scan
+# says the hand-written decision is gone and that the sentence reads a
+# Readback function; it does not watch the word change with the count. The
+# ones that ARE produced are produced: session_report's four and
+# FeasibilityGate's floor refusal, each a round trip above.
+#
+# 080: NO COUNT IS WRITTEN IN THIS PARAGRAPH ANY MORE. It used to say "four of
+# the nine sites" and "the five that are produced", and that arithmetic left
+# the PROMPT out altogether - the tenth row of 070's own table, which had no
+# pin at all until 080 gave it one. A count in a comment about a class the
+# code carries is the next session's stale count (079's rule, TRAPS 24), and
+# this one was load-bearing while it was wrong: it read as though every member
+# were accounted for.
 #
 # And the multi-word hole is closed by DERIVING the nouns from the code
 # rather than by widening the regex: every string literal handed to
@@ -98,14 +109,14 @@ const ALLOWED_BY_HAND := {
 	"session_report.gd: %d times": "the plural branch of a Readback.agrees() call",
 }
 
-# --- 070: the nine sites, each pinned to the reader it routes its count
-# --- through, because the scan above cannot see a revert that takes its own
-# --- needle with it
+# --- 070: the hand-decided agreements, each pinned to the reader it routes
+# --- its count through, because the scan above cannot see a revert that takes
+# --- its own needle with it
 #
-# MEASURED, as deliberate fault 5 of this commit, and it is a fault in the
-# GUARD and not in the code: reverting dungeon_module.gd's ring budget to
-# "%d rings" PASSED every check in this file. The hardcoded-plural scan builds
-# its needles from the nouns handed to Readback.plural() in scripts/, and that
+# MEASURED, as deliberate fault 5 of 070, and it is a fault in the GUARD and
+# not in the code: reverting dungeon_module.gd's ring budget to "%d rings"
+# PASSED every check in this file. The hardcoded-plural scan builds its
+# needles from the nouns handed to Readback.plural() in scripts/, and that
 # site was the only call in the project passing "ring" - so the revert deleted
 # the fault and the needle that catches it in one edit. A scan whose class is
 # derived from the code it is checking is blind to exactly the change that
@@ -114,15 +125,84 @@ const ALLOWED_BY_HAND := {
 # These rows are a weaker kind of assertion than the produced sentences above:
 # they say the sentence is BUILT from a Readback reader, not that its word was
 # watched changing with its count. That is the most a harness can say about
-# the four sentences it cannot stand up, and it is said plainly here rather
-# than dressed up as a measurement.
+# the sentences it cannot stand up, and it is said plainly here rather than
+# dressed up as a measurement.
+#
+# 080: THE PIN IS PER SITE AND IT USED TO BE PER FILE, which is the same fault
+# one level up (TRAPS 11). The table was keyed by file and asked contains(),
+# so one needle held one site however many the file had. Measured, each in its
+# own throwaway copy with its own config/name (TRAPS 50), reading the FAIL
+# lines:
+#
+#   ai_interpreter.gd carries TWO of these sentences with the SAME needle
+#   text. Either one reverted alone - "Genesis tried " + str(MAX_ATTEMPTS) +
+#   " times", which no "%d <plural>" needle can see - scored 47 assertions,
+#   failures=0. Only reverting BOTH failed.
+#
+#   race_director.gd's announcement carries TWO agreements and the table named
+#   one. 070 itself replaced "%d laps against %d opponent%s" with two
+#   Readback.plural() calls; the "lap" half was never tabled. Reverting it the
+#   NAIVE way, back to "%d laps", scored 47 assertions, failures=0, because
+#   "lap" is the only literal of its kind in scripts/ - fault 5's shape again,
+#   in a file that already had a row.
+#
+#   racing_module.gd's two PROMPT plurals - the tenth row of 070's own table,
+#   and the one it called "TRAPS 11 inside 068's own fix" - had NO ROW AT ALL
+#   and are not among the produced sentences either. Written out by hand in
+#   the hiding form, agreement_test scored 47 failures=0 AND prompt_bounds_test
+#   scored 72 failures=0: the prompt is byte-identical while both floors are 2,
+#   so no fingerprint moves. 070 recorded that second half and not the first.
+#
+# So the key is now the file and the VALUE IS A LIST OF [needle, least] ROWS,
+# one row per hand-decided agreement, and the loop COUNTS occurrences instead
+# of asking whether there is one. The count is a FLOOR and not an equality, so
+# it goes stale in the safe direction: a third HTTP sentence that correctly
+# reads the reader passes without this file moving, and a site that stops
+# reading it drops the count below the floor and fails. An arrival that
+# forgets its row is still silent - the same shape of gap source_scan_test
+# records under "Human decision needed" 32, and here it cannot be closed by
+# deriving the class: the members are the sites 070 found deciding agreement BY
+# HAND, and dungeon_module.gd has nineteen Readback.plural() calls of which one
+# is a member. See HANDOVER's "Next action", where that is written down as a
+# limitation rather than left as a task.
+#
+# feasibility_gate.gd and racing_module.gd state the same two floors in two
+# places - the refusal a player reads and the prompt the model reads - with
+# the same two noun literals and the constants reached by their own name in
+# one file and qualified in the other, so the four calls are four distinct
+# needles and all four are rowed. They have to be: the derived needle for
+# either noun survives ONE of its two call sites being reverted and vanishes
+# only when both go, which is how fault 5 hid.
+#
+# session_report.gd keeps ONE row for four hand-decided agreements on purpose:
+# the other three are PRODUCED above, by round trip against agrees(), which is
+# the stronger assertion. A row would add nothing a produced sentence has not
+# already said.
 const READS_THE_READER := {
-	"race_director.gd": "Readback.plural(count, \"opponent\")",
-	"ai_interpreter.gd": "Readback.plural(MAX_ATTEMPTS, \"time\")",
-	"dungeon_module.gd": "Readback.plural(MAX_RING, \"ring\")",
-	"experiment_runner.gd": "Readback.plural(int(wait), \"second\")",
-	"feasibility_gate.gd": "Readback.plural(MIN_TURNS, \"corner or hairpin\", \"corners or hairpins\")",
-	"session_report.gd": "Readback.agrees(int(s[\"changes\"]), \"changes\", \"change\")",
+	"race_director.gd": [
+		["Readback.plural(RACE_LAPS, \"lap\")", 1],
+		["Readback.plural(count, \"opponent\")", 1],
+	],
+	"ai_interpreter.gd": [
+		["Readback.plural(MAX_ATTEMPTS, \"time\")", 2],
+	],
+	"dungeon_module.gd": [
+		["Readback.plural(MAX_RING, \"ring\")", 1],
+	],
+	"experiment_runner.gd": [
+		["Readback.plural(int(wait), \"second\")", 1],
+	],
+	"feasibility_gate.gd": [
+		["Readback.plural(MIN_STRAIGHTS, \"straight\")", 1],
+		["Readback.plural(MIN_TURNS, \"corner or hairpin\", \"corners or hairpins\")", 1],
+	],
+	"racing_module.gd": [
+		["Readback.plural(FeasibilityGate.MIN_STRAIGHTS, \"straight\")", 1],
+		["Readback.plural(FeasibilityGate.MIN_TURNS, \"corner or hairpin\", \"corners or hairpins\")", 1],
+	],
+	"session_report.gd": [
+		["Readback.agrees(int(s[\"changes\"]), \"changes\", \"change\")", 1],
+	],
 }
 
 var lines: Array = []
@@ -350,13 +430,27 @@ func _no_agreement_by_hand() -> void:
 		"and does not see it in a comment that merely mentions it (TRAPS 63)")
 
 
-# --- the nine sites, pinned one by one ---
+# --- the hand-decided agreements, pinned one by one ---
 func _the_sites_read_the_reader() -> void:
 	for file in READS_THE_READER:
 		var code := _source("res://scripts/%s" % str(file))
-		_check(code.contains(str(READS_THE_READER[file])),
-			"%s routes its count through the reader: %s" % [
-				file, str(READS_THE_READER[file])])
+		for row in READS_THE_READER[file]:
+			var needle := str((row as Array)[0])
+			var least := int((row as Array)[1])
+			var seen := code.count(needle)
+			_check(seen >= least,
+				"%s routes %s through the reader: %s (found %d)" % [
+					file, Readback.plural(least, "count"), needle, seen])
+
+	# And the counting is not vacuous, which is the half contains() could not
+	# have: a needle present TWICE is counted twice, so a floor of two can fail
+	# at one, and a needle only MENTIONED in a comment is counted none (TRAPS
+	# 63/64 - the same control the scan above carries).
+	var twice := "\tvar a := Readback.plural(N, \"x\")\n\tvar b := Readback.plural(N, \"x\")\n"
+	_check(_code_of(twice).count("Readback.plural(N, \"x\")") == 2,
+		"a needle written twice in code is counted twice, so a floor of two can fall to one")
+	_check(_code_of("# Readback.plural(N, \"x\") used to be here\n").count("Readback.plural(N, \"x\")") == 0,
+		"and a needle only mentioned in a comment is counted none (TRAPS 63)")
 
 
 # --- the nouns, derived from the code and not listed in this file ---

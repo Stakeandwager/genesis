@@ -24,7 +24,39 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **079**, which did the three rows 078
+- Last commit at the time of writing: **080**, which took 079's live "Next
+  action" - a measurement written as though it might come back *"nothing to
+  do"* - and found **three unheld sentences**: `tests/agreement_test.gd`
+  pinned a class whose members are SITES with one needle per **FILE**, asked
+  with `contains()`. **Either of `ai_interpreter.gd`'s two HTTP sentences could
+  stop reading the reader in silence** (one needle, two sites); the **`lap`
+  half of `race_director.gd`'s announcement** was silent against even the
+  NAIVE revert, because `"lap"` is the only literal of its kind in `scripts/`
+  so the revert takes its own needle with it; and the **AI PROMPT's two
+  plurals in `racing_module.gd`** - the tenth row of 070's own table, which
+  070 itself called *"TRAPS 11 inside 068's own fix"* - had **no pin at all**,
+  invisible to `agreement_test` and to `prompt_bounds_test` both.
+  **THE SUITE'S OWN HEADER DID THE ARITHMETIC THAT HID IT**: *"Four of the
+  nine sites are held by a SOURCE SCAN ... The five that ARE produced are
+  produced"* - four plus five is nine, 070's table has ten rows, and the one
+  the arithmetic dropped is the prompt. A paragraph that accounts for every
+  member reads as proof that every member is accounted for. That paragraph is
+  struck rather than corrected (079's rule).
+  **THE KEY IS NOW THE SITE**: the value is a list of `[needle, least]` rows,
+  one per hand-decided agreement, and the loop **counts occurrences** instead
+  of asking whether there is one. Six rows over six files became ten over
+  seven, which is the table's ten. The count is a **floor**, so it goes stale
+  in the safe direction: a correct third sentence passes, a departing site
+  fails. All five previously-silent faults now fail and name the number found;
+  two must-pass controls still pass. `agreement_test` 47 -> **53 assertions**,
+  which is the only line of the full run that moved. New TRAPS **77**.
+  **What 080 did NOT close is the ARRIVAL half, and the reason is structural
+  rather than a gap to be filled** - the class is historical, not derivable:
+  `dungeon_module.gd` has nineteen `Readback.plural()` calls and one of them is
+  a member. Written under "Next action" as a limitation with that reason, so it
+  is not re-attempted as a task.
+
+- The commit before it: **079**, which did the three rows 078
   measured and left under "Next action" - and found that the comment the rows
   sat under was the smaller half of the fault: **the comment that said no
   count was written in it had four counts in the same file.**
@@ -2660,8 +2692,9 @@ than suites, leaving **74 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 74
 and are skipped without it.
-**079 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
+**080 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
 what the two numbers above say.
+**079 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**.
 **078 ADDED ONE** (`scan_floor_test`) and re-ran the `ls`: **76 and 74**.
 **077 ADDED ONE** (`result_line_test`) and re-ran the `ls`: **75 and 73**.
 **THESE TWO NUMBERS WERE STALE BY ONE WHEN 073 READ THEM**, and 073
@@ -2683,7 +2716,61 @@ worlds, and suites fail for reasons that have nothing to do with the code.
 055 took four answers off such a run before noticing. If a run is being used
 as a measurement, clear `user://` before it, baseline included (TRAPS 50).
 
-Last full run (079, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+Last full run (080, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+headless, in a cloud container, every run sequential with `user://` cleared
+first): **suites with something to look at: 0** on all **74**, with `--all`.
+`ls tests/*.gd` returned **76** and the run reported **74**, re-counted rather
+than carried forward.
+The baseline in this container before anything was touched was the same on
+**74** and was **byte-identical to the md5 079 recorded on the clean pushed
+tree** (`b300734ddb762252d1709d6a7aa1ede5`), on a tree with
+`git status --porcelain` empty at `63ffecc` - so the record and the container
+agreed before a line was changed, and 079's "Next action" was right that
+nothing was owed from it.
+**THE DIFF IS ONE LINE AND IT IS THE LINE 080 PREDICTED BEFORE RUNNING.**
+Written down before the run finished: *exactly one of the 74 moves,
+`agreement_test` 47 -> 53, because `_the_sites_read_the_reader()`'s six rows
+become ten and two counting controls are added; nothing else, because no file
+outside `tests/agreement_test.gd` changed.* **That is what the diff says** -
+one line - and no suite's verdict moved, so neither runner needed an edit: no
+file was added and no result line's format changed.
+**FIVE full runs, `user://` cleared before each, ALL BYTE-IDENTICAL** (md5
+`67053085a6427a70d30364d58747d5bb`), and `md5sum -c` confirmed on each that no
+file this commit touches moved during the run that measured it. Two were on the
+code tree before the comments in `tests/agreement_test.gd` were tightened, and
+**the last was on the final complete tree, code and docs together.** There are
+three extra runs rather than one because comment sentences in that file were
+corrected twice after a run had already been taken - a loose claim in a comment
+is the fault class TRAPS 76 and 77 are both about, so each correction was worth
+a re-run rather than a footnote, even though `_code_of()` blanks comment lines
+before any assertion sees them.
+**AND 080 CLOSED THE QUALIFICATION 078 AND 079 BOTH STOPPED ON, by predicting
+the md5 instead of recording it.** Those two had to write the checksum after
+the run that produced it, so the tree they ran differed from the tree they
+pushed in this file. Here the md5 was established by the first
+four runs and was **written into this file before the last run was started**,
+which then verified it - and `md5sum -c` over every file this commit touches
+came back **all OK, this file included**, so the tree that was measured is
+byte-for-byte the tree being pushed. Nothing was written here afterwards. That
+is checkable and not an argument: `git diff` against the final run's tree is
+empty, `docs/` included, and the measurement is in this commit's message.
+**A THIRD RUN WAS TAKEN ON THE COMPLETE TREE - CODE AND DOCS TOGETHER - AND
+THAT IS WHY THERE IS NO 080a.** See the paragraph below the 079 record for why
+a `docs/` edit cannot reach a suite; the greps were re-run in this container
+rather than carried forward (TRAPS 4): no file in `tests/` contains
+`res://docs` or `"docs/` at all, and every `DirAccess.open` in `tests/` targets
+`res://scripts` or `res://tests` - the only two literals that appear, one of
+them assembled from pieces (`"res:/" "/scripts"`).
+**AND THE DELIBERATE-FAULT RUNS, which are the evidence the full run cannot
+produce.** Each in a throwaway copy with its own `config/name` (TRAPS 50),
+`agreement_test` run alone. The full table, before and after, is in the 080
+section; the short form is that **five faults that were SILENT at 47
+assertions now fail and name the number found**, and **two must-pass controls
+pass at 53**: a third correctly-written HTTP sentence (the floor is a floor)
+and the sentence reworded with both reader calls kept (the pin reads the call,
+not the wording).
+
+The run before it (079, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
 headless, in a cloud container, every run sequential with `user://` cleared
 first): **suites with something to look at: 0** on all **74**, with `--all`.
 `ls tests/*.gd` returned **76** and the run reported **74**, re-counted rather
@@ -8377,8 +8464,61 @@ re-running on 079's behalf** - read the record under "Run the tests first",
 take your own baseline so you learn that the record and the container still
 agree, and spend the time on the work below.
 
-**THE FIRST LIVE ENTRY AS OF 079 IS A MEASUREMENT, NOT A FIX, AND IT MAY COME
-BACK "NOTHING TO DO".** `tests/agreement_test.gd` says *"the nine sites, each
+**NOTHING IS OWED FROM 080 EITHER.** It took its own baseline (byte-identical
+to the md5 079 recorded), wrote its one-line diff down before running, and took
+**five byte-identical full runs** with `--all` and `user://` cleared before
+each - the last on the complete tree, code and docs together, which is why
+there is no 080a. **Do not start by re-running on 080's behalf** -
+take your own baseline so you learn the record and the container still agree,
+and spend the time on the work below.
+
+**THE FIRST LIVE ENTRY AS OF 080, AND IT IS A MEASUREMENT THAT MAY COME BACK
+"NOTHING TO DO" - which is how 079's entry read, and that one came back with
+three unheld sentences.** 080 screened the sibling per-file pin tables in
+`tests/` with ONE GREP and concluded `READS_THE_READER` was the only one whose
+members were SITES. **That is a reading, and 080 is the record of what a
+reading of this costs**: 079 read the same dictionary and could not tell. The
+job is to take each of the four sibling tables -
+`check_wiring_test.DECLARED`/`BY_HAND`, `source_scan_test.KNOWN`,
+`refusal_reach_test.DECLARED`, `result_line_test.NO_RESULT_LINE` - and
+**measure** whether a second member can hide behind the first: in a throwaway
+copy with its own `config/name` (TRAPS 50), add a second instance of whatever
+the row pins and read whether the suite says anything. **If none can, write
+that down and change nothing.** The screen's reasoning is written out in the
+080 section so it can be checked rather than retyped; check it, do not trust
+it.
+
+**AND THE ARRIVAL GAP ON `READS_THE_READER` IS A LIMITATION, NOT A TASK - with
+the reason, so nobody spends two hours on it.** A hand-decided agreement
+ARRIVING in `scripts/` with no row is silent, as 079 found for
+`source_scan_test` ("Human decision needed" 32). It cannot be closed the way
+that one could, and the reason is structural: **the class is historical, not
+derivable.** `dungeon_module.gd` has nineteen `Readback.plural()` calls and
+exactly one of them is a member, because the members are the sites 070 found
+deciding agreement BY HAND - which no scan can tell from the eighteen that
+always read the reader. So *"the rows must cover every reader call in the
+file"* would be false, and there is no derived class to assert the rows
+against. What IS held is the other direction, departure; and the two scans
+catch the common arrival shapes (`== 1 else` inline, and `%d <plural>` for a
+noun already in the derived class). Do not build a derived floor here - it
+would assert a shape rather than a fact (TRAPS 6).
+
+**~~THE FIRST LIVE ENTRY AS OF 079 IS A MEASUREMENT, NOT A FIX, AND IT MAY COME
+BACK "NOTHING TO DO".~~ DONE IN 080, and it came back a fault - three
+sentences, and not the three the entry would have guessed. Struck rather than
+deleted, with the original text below it, because the sketch is the record of
+what was asked for and 080's section records what was actually measured. The
+entry asked whether six rows cover nine sites. **The answer is that neither
+number was the unit that matters**: 070's table has ten rows over nine
+sentences carrying THIRTEEN hand-decided agreements, and a pin covers an
+agreement. **Eight of the thirteen were held** (five by a row, three by a
+produced sentence) and **five were held by no row**, of which **three were
+measured silent**. The 080 section carries the table and the unit of each
+count. The three silent ones were `ai_interpreter.gd`'s second HTTP sentence (two sites, one
+needle, `contains()`), `race_director.gd`'s `lap` half (two agreements in one
+sentence, one of them tabled) and `racing_module.gd`'s PROMPT pair (a row of
+070's own table with no pin at all). Each was measured SILENT before and
+FAILING after. New TRAPS 77.** `tests/agreement_test.gd` says *"the nine sites, each
 pinned to the reader it routes its count through"* in two places, over a
 `READS_THE_READER` dictionary with **six** rows. 079 read it and **did not
 touch it**, because the dictionary is keyed by **file** while the nine are
@@ -11322,6 +11462,226 @@ be wrong and the corrections are the useful part.
    suite reads it. It is four lines and a `match`. Whether a colour is worth
    a test is a judgement about what a panel suite is for, so it is noted
    rather than taken.
+
+## 080 — the pin keyed by file, and the sentence the arithmetic left out
+
+**Objective.** Read the repository first, as instructed, and take the highest
+thing that is honestly useful. There is **no unaddressed owner finding** — the
+last owner session recorded in this file is still 2026-10-14/16, and nothing
+since. So: the **first live entry under 079's "Next action"**, which was a
+measurement and was written as though it might come back *"nothing to do"* —
+`tests/agreement_test.gd` says *"the nine sites, each pinned to the reader it
+routes its count through"* over a `READS_THE_READER` dictionary with **six**
+rows, and 079 could not tell from reading whether six rows cover nine sites or
+three sentences are unpinned. The entry's own instruction: *"If they are
+covered, write that down and change nothing."*
+
+**Starting state.** Branch `prototype-002a` at `63ffecc` (079), working tree
+clean. Baseline `--all` in this container before anything was touched, with
+`user://` cleared first: **74 suites, 0 with something to look at**, md5
+`b300734ddb762252d1709d6a7aa1ede5` — **byte-identical to the md5 079
+recorded**, so the record and the container agreed before a line was changed.
+`ls tests/*.gd` returned **76** and the run reported **74**, re-counted rather
+than carried forward. `agreement_test` scored **47 assertions, failures=0**.
+
+**Decision.** They are not covered, and the answer was read off the code and
+then **measured**, not reasoned about. **The class is three sentences short of
+pinned — and the three are not the three anyone would have guessed.**
+
+### Where the nine came from, and why both counts in the record are right
+
+The enumeration is in 070's own commit message and in this file's 070 section,
+as a table. **The table has TEN rows and its heading says nine** — and neither
+number is the number of things a pin has to cover, which is the whole reason
+this was hard to read. Counted off that table row by row, and off 070's own
+diff, with the unit named each time:
+
+| unit | count | why it is not one of the others |
+|---|---|---|
+| table rows | **10** | what 070 wrote down |
+| sentences | **9** | `session_report.gd:290` and `:291` are two agreements in ONE sentence |
+| hand-decided agreements | **13** | two table rows each name a PAIR (`feasibility_gate.gd:83`, `racing_module.gd:76`), and `race_director.gd:106`'s sentence held a SECOND agreement the table never named — the `lap` half, which 070's own diff replaced in the same line |
+
+**The unit that matters is the last one**, because a pin covers an agreement,
+not a row and not a sentence — and **no number anywhere in 070 says
+thirteen**. Every figure in that table is a reading of 070's table and 070's
+diff, both of which are in this repository to be re-read rather than trusted.
+
+The suite's `READS_THE_READER` was written in the same commit as the table and
+**already disagreed with it in both directions**: it omitted
+`racing_module.gd` (table row 10) and named `experiment_runner.gd`, which is
+in no row of the table at all.
+
+### What is actually held, measured each in its own throwaway copy
+
+Each fault in a throwaway copy of the repository with its own `config/name`
+(TRAPS 50), `agreement_test` run alone, **FAIL lines read**:
+
+```
+BEFORE (the pushed 63ffecc tree, 47 assertions):
+  ai_interpreter 2nd HTTP sentence, hiding form      failures=0   SILENT
+  ai_interpreter 1st HTTP sentence, hiding form      failures=0   SILENT
+  ai_interpreter BOTH, hiding form                   failures=1   caught (needle gone)
+  ai_interpreter 2nd sentence, NAIVE "%d times"      failures=1   caught (plural scan)
+  race_director's "lap" half, NAIVE "%d laps"        failures=0   SILENT
+  feasibility_gate MIN_STRAIGHTS, NAIVE              failures=1   caught (plural scan)
+  racing_module PROMPT pair, NAIVE                   failures=1   caught (plural scan)
+  racing_module PROMPT pair, hiding form             failures=0   SILENT
+    ... and prompt_bounds_test on that same tree      failures=0   SILENT (72 assertions)
+```
+
+Three shapes, one fault:
+
+1. **Two sites, one needle, `contains()`.** `ai_interpreter.gd` carries two of
+   the nine sentences and their needle text is **identical**. `contains()` is
+   satisfied by either, so **either one alone could stop reading the reader in
+   silence**; only losing both failed. The naive revert is caught, but by the
+   *other* net — the hardcoded-plural scan — not by the row.
+2. **Two agreements in one sentence, one of them tabled.** 070's own diff
+   replaced `"Race: %d laps against %d opponent%s"` with **two**
+   `Readback.plural()` calls and the table named only the `opponent` half.
+   Reverting the `lap` half **the naive way** was silent, because `"lap"` is
+   the only literal of its kind in `scripts/` — deliberate fault 5's shape,
+   in a file that already had a row.
+3. **A member of the table with no row at all.** `racing_module.gd:76`, the
+   **AI prompt**, was in neither `READS_THE_READER` nor the produced
+   sentences. Written out by hand in a form the derived needle cannot see,
+   `agreement_test` scored 47 failures=0 **and** `prompt_bounds_test` scored
+   72 failures=0 — the prompt is byte-identical while both floors are 2, so no
+   fingerprint moves. 070 recorded that second half and not the first.
+
+**And the suite's own header did the arithmetic that hid it.** It read *"Four
+of the nine sites are held by a SOURCE SCAN ... The five that ARE produced are
+produced."* Four plus five is nine; the table has ten; **the entry the
+arithmetic dropped is the prompt, which is the unpinned one.** A paragraph that
+accounts for every member reads as proof that every member is accounted for.
+That paragraph is struck rather than corrected (079's rule, TRAPS 24): it now
+names the kinds and writes no count.
+
+**Implementation.** One file, `tests/agreement_test.gd`.
+**The key is now the site, not the file.** `READS_THE_READER`'s value is a list
+of `[needle, least]` rows, and `_the_sites_read_the_reader()` **counts
+occurrences** instead of asking whether there is one. Rows added:
+`race_director.gd`'s `lap` half, `feasibility_gate.gd`'s `MIN_STRAIGHTS` half,
+both of `racing_module.gd`'s prompt plurals (a new file row), and a floor of
+**2** on `ai_interpreter.gd`'s shared needle.
+**The coverage, stated as a list rather than as a sum, because a sum is what
+hid this in the first place:**
+
+- **BEFORE: eight of the thirteen agreements were held.** Six rows, of which
+  five were members at all — `experiment_runner.gd`'s pins a real call that is
+  in no table row. Those five rows held five agreements; `session_report`'s
+  other three are PRODUCED, by round trip, which is the stronger assertion.
+  **Five agreements were held by no row**: `ai`'s second, `race_director`'s
+  `lap`, `feasibility_gate`'s `MIN_STRAIGHTS`, and both of `racing_module`'s.
+  Of those five, **three were measured SILENT**; two were caught by the other
+  net — the hardcoded-plural scan — because their nouns are each passed at a
+  second call site that keeps the needle alive when one goes.
+- **AFTER: thirteen of thirteen.** Ten needle rows over seven files, nine of
+  them members; those nine needles cover ten agreements, because `ai`'s one
+  needle covers two by its floor of 2. Plus the three produced. **The row
+  count is not the agreement count and is not meant to be** — reading it as
+  though it were is the error this commit is about.
+**The count is a FLOOR, not an equality**, so it goes stale in the safe
+direction: a correctly-written third HTTP sentence passes without this file
+moving, and a site that stops reading the reader drops below the floor and
+fails. An arrival that forgets its row is still silent — the same gap
+`source_scan_test` records, the same owner's design choice ("Human decision
+needed" 32), and **not** changed here.
+`session_report.gd` keeps **one** row for four hand-decided agreements on
+purpose: the other three are **produced** above, by round trip against
+`agrees()`, which is the stronger assertion. `experiment_runner.gd`'s row is
+**kept** and labelled rather than removed — it pins a real call, it is simply
+not one of the table's ten.
+
+**Evidence — what was actually run.**
+
+- **Baseline agreed with the record** before anything was touched (above).
+- **Every fault re-run on the fixed tree**, same method, FAIL lines read:
+
+```
+AFTER (53 assertions):
+  control, no fault                                  failures=0   53
+  ai_interpreter 2nd sentence alone                  failures=1   "routes 2 counts ... (found 1)"
+  ai_interpreter 1st sentence alone                  failures=1   "routes 2 counts ... (found 1)"
+  ai_interpreter BOTH                                failures=1   "routes 2 counts ... (found 0)"
+  race_director's "lap" half                         failures=1   "routes 1 count ... (found 0)"
+  racing_module PROMPT pair, hiding form             failures=2   both rows name themselves
+MUST-PASS CONTROLS:
+  a THIRD correct HTTP sentence added                failures=0   53   (the floor is a floor)
+  the sentence REWORDED, both reader calls kept      failures=0   53   (the pin reads the call)
+```
+
+- **THE DIFF IS ONE LINE AND IT IS THE LINE PREDICTED BEFORE RUNNING.**
+  Written down before the run finished: *exactly one of the 74 moves,
+  `agreement_test` 47 -> 53, because six rows become ten and two counting
+  controls are added; nothing else, because no file outside
+  `tests/agreement_test.gd` changed.* That is what the diff says — one line,
+  `47 assertions` to `53 assertions` — and no suite's verdict moved, so
+  neither runner needed an edit: no file was added and no result line's format
+  changed.
+- **FIVE full runs, `user://` cleared before each, ALL BYTE-IDENTICAL** (md5
+  `67053085a6427a70d30364d58747d5bb`), **0 with something to look at on all
+  74**, with `--all`. The **last was on the final complete tree, code and docs
+  together, which is why there is no 080a.** A checksum of every file this
+  commit touches was recorded before it and verified after it. The three extra
+  runs exist because comment sentences in `tests/agreement_test.gd` were
+  corrected twice after a run had been taken, and because the row/agreement
+  arithmetic in this very section was wrong the first time it was written -
+  which is TRAPS 77 happening inside the commit that files TRAPS 77, and is
+  recorded rather than tidied away.
+- **No suite can read `docs/`, re-measured here rather than carried forward**
+  (TRAPS 4): no file in `tests/` contains `res://docs` or `"docs/` at all, and
+  every `DirAccess.open` in `tests/` targets `res://scripts` or `res://tests`.
+  A checksum of `tests/agreement_test.gd` was recorded before the second run
+  and verified after it.
+- **Two counting controls are in the suite**, not just in this file: a needle
+  written twice in code is counted twice (so a floor of two can fall to one),
+  and a needle **mentioned in a comment** is counted none (TRAPS 63/64).
+- **THE CLASS WAS SCREENED RATHER THAN ASSUMED (TRAPS 11), and it is a screen
+  and not a measurement** — one grep, so treat it as a starting point and
+  re-measure. Of the per-file pin tables in `tests/`:
+  `check_wiring_test`'s `DECLARED`/`BY_HAND` pin `func <name>(`, which GDScript
+  cannot declare twice in one file; `source_scan_test`'s `KNOWN` makes a claim
+  that is genuinely per file (*does this file read a source at all*);
+  `refusal_reach_test`'s `DECLARED` is keyed by refusal name, not by file;
+  `result_line_test`'s `NO_RESULT_LINE` names non-suites. **`READS_THE_READER`
+  was the only one whose members were sites.**
+- **AND THE RIGHT FORM ALREADY EXISTED HERE**, in a sibling suite:
+  `prompt_numeral_test`'s `DECLARED` has been `[needle, count, kind]` rows
+  since 073, with a comment explaining why — *"1" twice as an ordinal ... once
+  as the character inside the name `room_1`* — because that suite's members are
+  occurrences and it was built knowing it. The shape 080 needed was one file
+  along.
+
+**Limitations — what this does NOT prove.**
+
+- **The rows are still the weaker kind of assertion**, and the suite says so
+  in its own comment: they say a sentence is **built** from a Readback reader,
+  not that its word was watched changing with its count. For the sentences
+  this harness cannot stand up — RaceDirector's announcement, AIInterpreter's
+  two, DungeonModule's ring budget, and the prompt — that is the most that can
+  be said.
+- **An ARRIVAL that forgets its row is still silent.** A new hand-decided
+  agreement in `scripts/` is caught only if its noun is already in the derived
+  class and it is written as `%d <plural>`. Measured in the "before" table:
+  the hiding form of a revert is invisible to both scans, which is why the
+  rows exist and is equally why the rows cannot be complete by themselves.
+- **A hardcoded agreeing word with no conditional and no derived noun behind
+  it is still invisible to both scans** — 070's own limitation, unchanged.
+  `session_report.gd:242` was exactly that shape and was caught only by the
+  produced sentence.
+- **Nothing was asked of a model.** No request left the container, there is no
+  API key here, the prompt is byte-identical, and `PROMPT_FINGERPRINT` and
+  `PROMPT_VERSION` did not move — no file in `scripts/` was touched at all.
+- **No secret was set and no workflow, netlify, export or project file was
+  edited.** `git status` named only `tests/agreement_test.gd` and `docs/`,
+  read rather than assumed.
+- **064's finding is carried forward and NOT re-verified**: the live site's
+  commit cannot be read from this container.
+- **No new "Human decision needed".** The floor-versus-equality question is
+  already 32, and this commit takes the floor rather than changing it.
+- New TRAPS **77**.
 
 ## 078 — the count was the alarm, and zero was being read as a pass
 
