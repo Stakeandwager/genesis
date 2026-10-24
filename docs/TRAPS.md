@@ -5573,3 +5573,113 @@ could be satisfied by something much cheaper than a comment: a synonym.
 > has been broken so far. An absence needs the other list.
 
 ---
+
+## 80. Five reads broken at once, and the run read as holding each of them
+
+**Signature:** a commit finds a class of unguarded scans, measures the
+consequence with one run that breaks all of them together, and writes down
+*"nothing is silent today"*. The run failed, so the class looks covered. Taken
+one at a time, most of its members pass in silence — and the one that fired
+was covering for the rest.
+
+**Cause.** 082 found that `scan_floor_test._sites()` derived its class from one
+idiom of directory read, `DirAccess.open(`, so the seven
+`DirAccess.get_files_at(` reads in `tests/` had no row at all. It then asked
+what that cost. The measurement it took was **five of `player_door_test`'s six
+reads redirected at an empty directory in one edit**: 69 assertions,
+**failures=2**. From which: *"So nothing is silent today — `player_door_test`
+catches its own empty read incidentally, and that is luck rather than
+design."*
+
+**An N-at-once treatment proves that AT LEAST ONE of the N is held.** It cannot
+distinguish that from all N being held, and the arithmetic says which is more
+likely: five reads redirected produced **two** failures. 082 wrote the warning
+itself — *"do not take the failures=2 above as proof the other five are held:
+that was five reads redirected at once, which does not say that each is held
+on its own"* — and still wrote *"the consequence today is nil"* in the same
+entry. The hedge and the conclusion were in the same paragraph, and the
+conclusion is the sentence that reads like a finding (TRAPS 78).
+
+**Measured in 083**, Godot 4.7.1, each read redirected **alone** at a
+directory that exists and is empty, each in a throwaway copy with its own
+`config/name` (TRAPS 50), the suite run alone, on a baseline byte-identical to
+the md5 082 recorded:
+
+```
+player_door_test :297 tests/      by_setting.size() >= 16     CAUGHT  69, failures=1
+player_door_test :349 (variable)  literals.is_empty()         SILENT  69, failures=0
+player_door_test :680 tests/      with_collision.is_empty()   SILENT  69, failures=0
+player_door_test :688 scripts/    in_scripts.is_empty()       SILENT  69, failures=0
+player_door_test :696 tests/      own_floor.size() >= 2       CAUGHT  69, failures=1
+player_door_test :762 scripts/    readers.is_empty()          SILENT  69, failures=0
+scene_light_test :405 scripts/    scanned > 0 and lines_read  CAUGHT  27, failures=1
+```
+
+**Four of the seven were silent, and all four assert an ABSENCE** — at their
+greenest when the scan has read nothing, which is TRAPS 75's direction. Two of
+the four are in the same function as the one read that fired: `:680` and
+`:696` both read `tests/`, so the single edit that emptied `tests/` broke both
+and `own_floor.size() >= 2` reported it. That is the whole mechanism. **The
+loudest member of a group answers for the group**, and the quiet ones are
+invisible for exactly as long as it is in there with them.
+
+**And one of the four underwrote a sentence in its own file.**
+`readers.is_empty()` is *"no script but the module that assigns it names
+`CircuitBuilder` at all, so no production code identifies a world by name"* —
+which is the stated reason the alternating world-node name (048's mechanism)
+is said to cost nothing today. An absence proved by reading no scripts is not
+an absence (TRAPS 14).
+
+**A SECOND CAUSE, AND IT IS WHY THE WORST OF THE FOUR WAS INVISIBLE TWICE
+OVER.** `_sites()` kept a site only if the quoted string on the line began
+`res://`. `player_door_test`'s second read is
+`for name in DirAccess.get_files_at(dir)` inside
+`for dir in ["res://tests", "res://scripts"]` — the path is a **loop
+variable**, so there is no quoted string on that line and the site was
+dropped in silence. A filter that discards what it cannot classify is TRAPS
+79 wearing different clothes: the blacklist decides what fails, and the filter
+decides what is never asked. Both go stale in the dangerous direction.
+
+**Fixed in 083.** All four reads carry a floor and each fails by name when
+redirected alone; the two that already fired still fire.
+`scan_floor_test` now **classifies** every `DirAccess` line in the code of
+`tests/` rather than filtering it: `open` and `get_files_at` are reads and are
+asked for a row, `remove_absolute` and `make_dir_recursive_absolute` are
+writes and are not, a literal path on another filesystem is filed as such, a
+path that is an **expression** is admitted and asked for a row like any other,
+and **anything else fails and names itself**. The four buckets are asserted to
+account for every such line, both reading idioms are asserted to be present,
+and the null question is put only to the idiom that has a handle to test —
+with the count of sites asked asserted, so the section cannot go quiet by
+classifying everything as the kind it does not ask.
+
+**Do:**
+
+- **One treatment, one member.** If a measurement breaks N things, it has
+  measured the maximum of the N, not each of them. Redirect one read, run,
+  record; then the next. 083's seven runs took minutes and changed the answer
+  from *nil* to *four faults*.
+- **Compare the failure count with the treatment count before believing the
+  run.** Five reads broken and two failures is the arithmetic saying *three of
+  these are not held*, in the run that was read as coverage.
+- **A group measurement hides the quiet members behind the loud one.** Ask
+  which assertion actually fired and which reads it could not have seen. Two
+  of 083's four silent reads shared a directory with the one that fired, which
+  is the only reason the group run failed at all.
+- **A filter is a blacklist of what you thought to look at.** Anything a
+  classifier cannot place must fail and name itself, not be dropped. The one
+  site whose path was an expression was both the hardest to see and one of the
+  four that were silent.
+- **Writing the hedge does not discharge it.** The next session reads the
+  conclusion. If a measurement is too coarse to support the sentence, do not
+  write the sentence — write the measurement that is still owed, and leave the
+  question open.
+
+Found in 083, doing the per-read measurement 082 left as the live "Next
+action" — which said *"measuring them one at a time is part of the job"*, and
+was right.
+
+> Break five things at once and the run tells you that one of them was held.
+> It does not tell you which, and it does not tell you about the other four.
+
+---

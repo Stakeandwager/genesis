@@ -345,10 +345,13 @@ func _the_scene() -> void:
 	# searched for ".tscn" and failed on all sixteen of those comments. A
 	# check that fires on a comment is checking the wording and not the fact.
 	var literals: Array = []
+	var literals_min := -1
 	for dir in ["res://tests", "res://scripts"]:
+		var here := 0
 		for name in DirAccess.get_files_at(dir):
 			if not name.ends_with(".gd") or name == "player_door_test.gd":
 				continue
+			here += 1
 			# Code, not prose (067). This needle was CHOSEN to dodge the
 			# sixteen comments that name the scene - the paragraph above says
 			# so - and reading the code instead is the general form of that
@@ -359,6 +362,19 @@ func _the_scene() -> void:
 			# failing on a comment in the throwaway suite written to test it.
 			if _code_of(FileAccess.get_file_as_string("%s/%s" % [dir, name])).contains("res://scenes"):
 				literals.append(name)
+		if literals_min < 0 or here < literals_min:
+			literals_min = here
+	# THE FLOOR, MISSING UNTIL 083 AND MEASURED RATHER THAN REASONED ABOUT.
+	# The assertion below is an ABSENCE, so it is at its greenest when this
+	# read has looked at nothing (TRAPS 75). 083 pointed this one read at a
+	# directory that exists and is empty and the suite came back 69
+	# assertions, failures=0 - a clean pass over a scan of nothing.
+	# THE FEWER OF THE TWO, not the total: this read runs twice, over
+	# tests/ and over scripts/, and a total would stay positive with one of
+	# the two directories empty. The condition is what decides, so it is the
+	# smaller count that has to clear zero.
+	_check(literals_min > 0,
+		"both directories were read and hold .gd files; the fewer of the two holds %d" % literals_min)
 	_check(literals.is_empty(),
 		"and a scene resource path is written out in this file and nowhere else in tests/ or scripts/ (others: %s)" % str(literals))
 
@@ -676,18 +692,36 @@ func _the_scene_has_no_floor() -> void:
 	# because what they measure is a body coming to rest. They do it through
 	# a shape and not through use_collision, and they stand up no main.gd, so
 	# neither this line nor 061 touched them.
+	#
+	# BOTH READS BELOW CARRY A FLOOR SINCE 083, AND NEITHER DID BEFORE.
+	# Both assertions are ABSENCES, and 083 measured each read on its own
+	# against a directory that exists and is empty: 69 assertions,
+	# failures=0 apiece. The third read in this function - the one feeding
+	# own_floor below - was the only one of the three that fired, which is
+	# why pointing all of tests/ at an empty directory at once looked like
+	# coverage and was not (TRAPS 75, TRAPS 78).
 	var with_collision: Array = []
+	var tests_scanned := 0
 	for name in DirAccess.get_files_at("res://tests"):
 		if not name.ends_with(".gd") or name == "player_door_test.gd":
 			continue
+		tests_scanned += 1
 		if _code_of(FileAccess.get_file_as_string("res://tests/%s" % name)).contains("use_collision"):
 			with_collision.append(name)
+	_check(tests_scanned > 0,
+		"tests/ was read for that slab: %d suite(s) besides this file" % tests_scanned)
 	_check(with_collision.is_empty(),
 		"and no suite in tests/ gives that slab the collision the game's scene has not got (%s)" % str(with_collision))
 	var in_scripts: Array = []
+	var scripts_scanned := 0
 	for name in DirAccess.get_files_at("res://scripts"):
-		if name.ends_with(".gd") and _code_of(FileAccess.get_file_as_string("res://scripts/%s" % name)).contains("use_collision"):
+		if not name.ends_with(".gd"):
+			continue
+		scripts_scanned += 1
+		if _code_of(FileAccess.get_file_as_string("res://scripts/%s" % name)).contains("use_collision"):
 			in_scripts.append(name)
+	_check(scripts_scanned > 0,
+		"and scripts/ was read for it: %d script(s)" % scripts_scanned)
 	_check(in_scripts.is_empty(),
 		"while nothing in scripts/ sets use_collision at all (%s)" % str(in_scripts))
 	# And the floors that ARE deliberate, named so that the assertion above
@@ -758,12 +792,23 @@ func _the_name_is_not_the_worlds() -> void:
 
 	# Why it costs nothing today, asserted off the source so that the day a
 	# script starts reading the name this file says the cost has changed.
+	#
+	# AND IT CARRIES A FLOOR SINCE 083. The assertion is an absence that
+	# underwrites a claim in the paragraph above - "no production code
+	# identifies a world by name", which is the whole reason the alternating
+	# name is said to cost nothing today. 083 pointed this read at a
+	# directory that exists and is empty: 69 assertions, failures=0, the
+	# claim at its greenest having read no script at all (TRAPS 75).
 	var readers: Array = []
+	var readers_scanned := 0
 	for name in DirAccess.get_files_at("res://scripts"):
 		if not name.ends_with(".gd") or name == "racing_module.gd":
 			continue
+		readers_scanned += 1
 		if _code_of(FileAccess.get_file_as_string("res://scripts/%s" % name)).contains('"CircuitBuilder"'):
 			readers.append(name)
+	_check(readers_scanned > 0,
+		"scripts/ was read: %d script(s) besides the module that assigns the name" % readers_scanned)
 	_check(readers.is_empty(),
 		"and no script but the module that assigns it names \"CircuitBuilder\" at all, so no production code identifies a world by name (%s)" % str(readers))
 	notes.append("world node names, in build order: %s - the builder's name alternates with a Godot dummy" % str(world_names))

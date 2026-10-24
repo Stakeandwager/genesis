@@ -76,6 +76,54 @@ extends SceneTree
 # file adds is that the named floor cannot be deleted or renamed in silence,
 # and that a NEW read arrives with no floor named at all.
 #
+# --- 083: and the class was derived from ONE idiom of directory read ---
+#
+# 082 found this while giving scene_light_test a floor and left it as the live
+# "Next action": _sites() derived its class from the open call alone, so the
+# SEVEN get_files_at reads in tests/ - six in player_door_test, one in
+# scene_light_test - were outside the class and had no row. That is TRAPS 11
+# in the suite whose whole job is floors.
+#
+# 082 ALSO WROTE THAT THE CONSEQUENCE WAS NIL, AND IT WAS NOT. Its evidence
+# was one run with five of player_door_test's six reads redirected at an empty
+# directory at once: 69 assertions, failures=2, so "nothing is silent today".
+# It said in as many words not to read that as proof that each read is held on
+# its own, and it was right. 083 measured them ONE AT A TIME, each in a
+# throwaway copy with its own config/name (TRAPS 50), the suite run alone:
+#
+#   player_door_test  :297 tests/      by_setting.size() >= 16   CAUGHT  69, 1
+#   player_door_test  :349 (variable)  literals.is_empty()       SILENT  69, 0
+#   player_door_test  :680 tests/      with_collision.is_empty() SILENT  69, 0
+#   player_door_test  :688 scripts/    in_scripts.is_empty()     SILENT  69, 0
+#   player_door_test  :696 tests/      own_floor.size() >= 2     CAUGHT  69, 1
+#   player_door_test  :762 scripts/    readers.is_empty()        SILENT  69, 0
+#   scene_light_test  :405 scripts/    scanned > 0 ...           CAUGHT  27, 1
+#
+# FOUR OF THE SEVEN WERE SILENT, and all four assert an ABSENCE - at their
+# greenest when the read has looked at nothing, which is TRAPS 75's direction.
+# One of them underwrites a sentence in its own file: "no production code
+# identifies a world by name" is why the alternating world name is said to
+# cost nothing today. The five-at-once run read as coverage because the THIRD
+# read of tests/ fired and covered for the other two; that is TRAPS 78's shape
+# - a measurement taken at the wrong granularity, read as a result. All four
+# now carry a floor and all four fail by name; the two that already fired
+# still fire.
+#
+# AND THE IDIOM LIST IS A WHITELIST, not a pair of needles (TRAPS 79). Every
+# line of code in tests/ that names DirAccess is classified: open and
+# get_files_at are READS and are asked for a row; remove_absolute and
+# make_dir_recursive_absolute are WRITES and are not; anything else FAILS and
+# names itself, so a third way of reading a directory arrives as a failure
+# rather than as silence. Both lists are asserted to be classifying something,
+# because a whitelist that matches nothing is TRAPS 75 one layer out.
+#
+# THE TWO IDIOMS ARE NOT ASKED THE SAME QUESTIONS, and that is deliberate
+# rather than an omission. open() hands back a handle that can be null and
+# section 3 asks whether it is tested; get_files_at() hands back an array and
+# there is no handle to test, so section 3 does not ask. What covers a
+# get_files_at site is the floor and nothing else, which is why four of them
+# were silent and why the kind is carried in the row rather than inferred.
+#
 # A SECOND THING IT DOES NOT PROVE, and it is the honest limit of the rows
 # below. check_wiring_test's _no_door_rows does "if dir == null: continue",
 # which on a null read drops its assertions rather than recording them - the
@@ -90,8 +138,9 @@ var asserted := 0
 var bad := 0
 
 
-# Every DirAccess.open site in tests/, as "file::function" -> the assertion
-# that fails when that read comes back empty.
+# Every directory read in tests/, as "file::function" (plus "#N" where one
+# function holds more than one) -> the assertion that fails when that read
+# comes back empty. Both idioms since 083.
 #
 # "floor" is a CONDITION and not a message. A row that named the wording would
 # be a test of the wording (TRAPS 6); the condition is the thing that decides,
@@ -126,6 +175,30 @@ const FLOORS := {
 		"floor": "loaded == 0",
 		"why": "078: this suite printed '0 assertions, bad=0' and exited 0 on an empty read, which run_tests.sh counts as a pass",
 	},
+	"player_door_test.gd::_the_scene#1": {
+		"floor": "by_setting.size() >= 16",
+		"why": "083: the two assertions this read feeds are absences; the count beside them is what fires. Measured on its own: 69 assertions, failures=1",
+	},
+	"player_door_test.gd::_the_scene#2": {
+		"floor": "literals_min > 0",
+		"why": "083 ADDED THIS FLOOR; the read was silent on its own at 69 assertions, failures=0. Its path is a LOOP VARIABLE over two directories, so the floor is on the SMALLER of the two counts - a total would stay positive with one directory empty",
+	},
+	"player_door_test.gd::_the_scene_has_no_floor#1": {
+		"floor": "tests_scanned > 0",
+		"why": "083 ADDED THIS FLOOR; silent on its own at 69 assertions, failures=0. The third read in this function fired and covered for it in 082's five-at-once run (TRAPS 78)",
+	},
+	"player_door_test.gd::_the_scene_has_no_floor#2": {
+		"floor": "scripts_scanned > 0",
+		"why": "083 ADDED THIS FLOOR; silent on its own at 69 assertions, failures=0, and it is the only read of scripts/ in this function, so no sibling could have covered it",
+	},
+	"player_door_test.gd::_the_scene_has_no_floor#3": {
+		"floor": "own_floor.size() >= 2",
+		"why": "083: the one read in this function that already fired on an empty read, 69 assertions, failures=1, and the reason the other two looked held",
+	},
+	"player_door_test.gd::_the_name_is_not_the_worlds": {
+		"floor": "readers_scanned > 0",
+		"why": "083 ADDED THIS FLOOR; silent on its own at 69 assertions, failures=0. The absence it holds underwrites a sentence in its own file - no production code identifies a world by name - which is why the alternating world name is said to cost nothing today (TRAPS 14)",
+	},
 	"prompt_numeral_test.gd::_initialize": {
 		"floor": "scanned > 0",
 		"why": "078: the stray-template row is an absence, and a null check cannot see a directory that is merely empty",
@@ -149,6 +222,10 @@ const FLOORS := {
 	"scan_floor_test.gd::_test_files": {
 		"floor": "not files.is_empty()",
 		"why": "this file reads tests/ to find the sites, so it is a member of its own class and is asked the same two questions",
+	},
+	"scene_light_test.gd::_everything_that_points_has_been_pointed": {
+		"floor": "scanned > 0 and lines_read > 0",
+		"why": "082 wrote this floor while fixing the light whitelist, and 083 is what put the site in this class at all. Re-measured on its own: 27 assertions, failures=1",
 	},
 	"source_scan_test.gd::_class": {
 		"floor": "members.size() >= KNOWN.size()",
@@ -179,6 +256,32 @@ func _initialize() -> void:
 # scanner.
 func _open_call() -> String:
 	return "DirAcc" + "ess.open("
+
+
+# 083: the second idiom. Assembled for the same reason as the first - this
+# file's own header tabulates seven get_files_at sites, and a needle its own
+# source answers is not a needle.
+func _files_at_call() -> String:
+	return "DirAcc" + "ess.get_files_at("
+
+
+# The class prefix itself, so every DirAccess line in tests/ can be
+# classified and an unrecognised member can fail by name (TRAPS 79).
+func _dir_prefix() -> String:
+	return "DirAcc" + "ess."
+
+
+# The members of DirAccess that READ a directory, and the kind each site gets.
+# A whitelist: see _writing_members() for the rest, and _scan() for what
+# happens to a member in neither.
+func _reading_members() -> Dictionary:
+	return {"open": "open", "get_files_at": "files_at"}
+
+
+# The members that do NOT read a directory. Named rather than skipped, so the
+# two lists together have to account for every DirAccess call in tests/.
+func _writing_members() -> Dictionary:
+	return {"remove_absolute": true, "make_dir_recursive_absolute": true}
 
 
 func _res_prefix() -> String:
@@ -244,6 +347,51 @@ func _quoted_on(line: String) -> String:
 	return rest.substr(0, close_at)
 
 
+# The DirAccess member named on a line, or "" - the word after the prefix.
+func _member_on(line: String) -> String:
+	var at := line.find(_dir_prefix())
+	if at < 0:
+		return ""
+	var rest := line.substr(at + _dir_prefix().length())
+	var name := ""
+	for i in rest.length():
+		var c := rest.substr(i, 1)
+		var wordy := (c >= "a" and c <= "z") or (c >= "A" and c <= "Z") or (c >= "0" and c <= "9") or c == "_"
+		if not wordy:
+			break
+		name += c
+	return name
+
+
+# The path argument of a directory read, as ["literal", path] or
+# ["expression", text]. An expression is a variable, a concatenation or a
+# format - a path this file cannot resolve by reading.
+#
+# WHY AN EXPRESSION IS ADMITTED RATHER THAN DROPPED, and it is the whole
+# reason this function exists. Until 083 the class was filtered by "the quoted
+# string on this line begins res://", and player_door_test's second read takes
+# a loop VARIABLE over two res:// directories. It would have been dropped in
+# silence - and it is one of the four that 083 measured as silent. A site this
+# file cannot classify is a site that needs a row, not a site to skip; its row
+# says which directories it reads. The cost is named under "Limitations": a
+# user:// read spelled as an expression would be admitted too, which errs
+# towards asking for a row that is not needed rather than towards dropping one
+# that is.
+func _argument_on(line: String, call: String) -> Array:
+	var at := line.find(call)
+	if at < 0:
+		return ["none", ""]
+	var trimmed := line.substr(at + call.length()).strip_edges()
+	if trimmed.begins_with("\""):
+		var body := trimmed.substr(1)
+		var close_at := body.find("\"")
+		if close_at >= 0:
+			return ["literal", body.substr(0, close_at)]
+		return ["expression", trimmed]
+	var cut := trimmed.find(")")
+	return ["expression", trimmed.substr(0, cut) if cut >= 0 else trimmed]
+
+
 # The name of the function a line of code sits in, or "<top>".
 func _function_at(lines: Array, index: int) -> String:
 	for i in range(index, -1, -1):
@@ -286,29 +434,85 @@ func _function_body(lines: Array, index: int) -> String:
 	return out
 
 
-# Every site in tests/: one row per DirAccess.open on a res:// path, read off
-# the CODE so a call written in a comment is not one (TRAPS 64).
-func _sites() -> Array:
-	var out: Array = []
+# Every directory read in tests/, read off the CODE so a call written in a
+# comment is not one (TRAPS 64), and classified rather than filtered.
+#
+# Returns {"sites": [...], "writes": [...], "unknown": [...], "elsewhere":
+# [...]}. Every line of code in tests/ naming DirAccess lands in exactly one
+# of the four, and section 1a asserts that "unknown" is empty, that the
+# writing list is classifying something, that both reading idioms are present,
+# and that the four together account for every DirAccess call in the code of
+# tests/ - a classifier that classifies nothing is TRAPS 75 one layer out.
+#
+# THE KEY IS "file::function", WITH "#N" WHEN THE FUNCTION HOLDS MORE THAN ONE
+# READ. Until 083 no function in tests/ held two, and section 2 asserted it.
+# Two now do: player_door_test._the_scene holds two and
+# ._the_scene_has_no_floor holds three, two of those three over the SAME
+# directory, so neither the function nor the path tells them apart. N is the
+# source order of the read inside its function. A line number would have been
+# simpler and would go stale on every unrelated edit above it; an ordinal goes
+# stale exactly when a read is added to, removed from or reordered inside that
+# function, which is when the row has to be read again anyway. The FIFTEEN
+# functions holding exactly one read keep their bare key - thirteen open sites
+# and two get_files_at ones, counted off the rows rather than remembered - so
+# adding a second read to one of them renames BOTH and fails section 1 in both
+# directions, by name.
+func _scan() -> Dictionary:
+	var sites: Array = []
+	var writes: Array = []
+	var unknown: Array = []
+	var elsewhere: Array = []
+	var reading := _reading_members()
+	var writing := _writing_members()
 	for name in _test_files():
 		var file_name := str(name)
 		var lines := Array(_code_for(file_name).split("\n"))
+		var found: Array = []
 		for i in lines.size():
 			var line := str(lines[i])
-			if not line.contains(_open_call()):
+			if not line.contains(_dir_prefix()):
 				continue
-			var path := _quoted_on(line)
-			if not path.begins_with(_res_prefix()):
+			var member := _member_on(line)
+			var where := "%s:%d %s%s" % [file_name, i + 1, _dir_prefix(), member]
+			if writing.has(member):
+				writes.append(where)
 				continue
-			out.append({
+			if not reading.has(member):
+				unknown.append(where)
+				continue
+			var call := _open_call() if member == "open" else _files_at_call()
+			var argument := _argument_on(line, call)
+			var how := str(argument[0])
+			var path := str(argument[1])
+			# A literal that is not res:// is another filesystem - user://
+			# worlds and ledgers - and not this repository's own files.
+			if how == "literal" and not path.begins_with(_res_prefix()):
+				elsewhere.append("%s (%s)" % [where, path])
+				continue
+			found.append({
 				"file": file_name,
 				"func": _function_at(lines, i),
+				"kind": str(reading[member]),
+				"how": how,
 				"var": _declared_on(line),
 				"path": path,
 				"line": i + 1,
 				"body": _function_body(lines, i),
 			})
-	return out
+		# the ordinal, per function, once the whole file is read
+		var per_function := {}
+		for site in found:
+			var f := str((site as Dictionary)["func"])
+			per_function[f] = int(per_function.get(f, 0)) + 1
+		var seen_so_far := {}
+		for site in found:
+			var row: Dictionary = site
+			var f := str(row["func"])
+			var n := int(seen_so_far.get(f, 0)) + 1
+			seen_so_far[f] = n
+			row["key"] = "%s::%s" % [file_name, f] if int(per_function[f]) == 1 else "%s::%s#%d" % [file_name, f, n]
+			sites.append(row)
+	return {"sites": sites, "writes": writes, "unknown": unknown, "elsewhere": elsewhere}
 
 
 func _occurrences(haystack: String, needle: String) -> int:
@@ -323,12 +527,13 @@ func _occurrences(haystack: String, needle: String) -> int:
 
 
 func _run() -> void:
-	print("--- 078: every directory read in tests/, and whether an empty read can pass ---")
+	print("--- 078/083: every directory read in tests/, and whether an empty read can pass ---")
 
-	var sites := _sites()
+	var scan := _scan()
+	var sites: Array = scan["sites"]
 	var keys: Array = []
 	for site in sites:
-		keys.append("%s::%s" % [str((site as Dictionary)["file"]), str((site as Dictionary)["func"])])
+		keys.append(str((site as Dictionary)["key"]))
 
 	# --- 1. the class enumerates itself, in both directions ---
 	#
@@ -337,6 +542,57 @@ func _run() -> void:
 	# that still exists - a row that has gone stale is a row to strike, and it
 	# should never go unremarked (TRAPS 14).
 	_check(not sites.is_empty(), "tests/ was read and holds %d directory reads" % sites.size())
+
+	# --- 1a. every DirAccess line in tests/ is CLASSIFIED, not filtered ---
+	#
+	# 083. A read that this file does not recognise must fail and name itself,
+	# or the class is a blacklist of the two idioms somebody thought of
+	# (TRAPS 79). The two counts below fail for different reasons: "unknown"
+	# fires on a third idiom arriving, and the floor under the reading list
+	# fires when the whole classification has read nothing at all.
+	var unknown: Array = scan["unknown"]
+	var writes: Array = scan["writes"]
+	var elsewhere: Array = scan["elsewhere"]
+	_check(unknown.is_empty(),
+		"every DirAccess call in tests/ is a member this file classifies as a read or not a read (%s)" % str(unknown))
+	_check(not writes.is_empty(),
+		"and the not-a-read list is classifying something: %d call(s) that change a directory rather than read one" % writes.size())
+	var open_kind := 0
+	var files_at_kind := 0
+	for site in sites:
+		match str((site as Dictionary)["kind"]):
+			"open": open_kind += 1
+			"files_at": files_at_kind += 1
+	_check(open_kind > 0 and files_at_kind > 0,
+		"and BOTH reading idioms are in the class, so neither is held by a list of one: %d open, %d get_files_at" % [open_kind, files_at_kind])
+	_check(open_kind + files_at_kind == sites.size(),
+		"and every site carries one of the two kinds, so none was counted without one (%d of %d)" % [open_kind + files_at_kind, sites.size()])
+	# CONSERVATION, which is what "classified rather than filtered" means:
+	# every DirAccess line in the code of tests/ is in exactly one of the four
+	# buckets. Counted off the files here rather than inside _scan(), so the
+	# total is arrived at twice by different code.
+	#
+	# "elsewhere" HOLDS A READ OF ANOTHER FILESYSTEM - a user:// ledger or
+	# saved world - AND IS EMPTY TODAY. That is stated and not asserted: the
+	# first draft of this section asserted it was non-empty, which is a claim
+	# about tests/ that is false, and the suite's own run caught it. What IS
+	# asserted is that the reader tells such a path apart, proven on a built
+	# source in section 6, and that nothing falls outside the four.
+	# COUNTED IN CALLS AND NOT IN LINES, and the difference is the one hole
+	# left in the classifier. _member_on() reads the FIRST DirAccess call on a
+	# line, so a line carrying two would have its second classified by nobody.
+	# There is no such line in tests/ today - counted, not assumed - and
+	# counting CALLS is what makes the day there is one a failure rather than
+	# a silence: the buckets hold one entry for that line and this total holds
+	# two, so the sum stops balancing and says so. Handling it would be the
+	# cheaper-looking fix and the wrong one; a case that does not exist should
+	# arrive as a failure, not as a branch nobody has ever run.
+	var dir_calls := 0
+	for name in _test_files():
+		dir_calls += _occurrences(_code_for(str(name)), _dir_prefix())
+	_check(dir_calls == sites.size() + writes.size() + unknown.size() + elsewhere.size(),
+		"and the four buckets account for every DirAccess call in tests/: %d = %d read + %d write + %d unknown + %d elsewhere" % [
+			dir_calls, sites.size(), writes.size(), unknown.size(), elsewhere.size()])
 	for i in sites.size():
 		var site: Dictionary = sites[i]
 		var key: String = str(keys[i])
@@ -366,14 +622,29 @@ func _run() -> void:
 	# This is the half loadcheck.gd failed: it was the only one of the eleven
 	# that never tested the result, and dir.get_files() on a null dir throws
 	# out of _initialize, which never reaches quit() (TRAPS 13).
+	#
+	# ASKED OF ONE OF THE TWO KINDS, AND THAT IS THE POINT RATHER THAN AN
+	# EXEMPTION (083). open() hands back a handle that can be null;
+	# get_files_at() hands back an array and there is no handle to test, so
+	# there is nothing here it could be asked. A get_files_at site is held by
+	# its floor and by nothing else, which is why four of the seven were
+	# silent. The count of sites actually asked is asserted below, so this
+	# section cannot go quiet by classifying everything as the kind it does
+	# not ask.
+	var asked_for_null := 0
 	for site in sites:
 		var s: Dictionary = site
+		if str(s["kind"]) != "open":
+			continue
+		asked_for_null += 1
 		var name: String = str(s["var"])
 		var body: String = str(s["body"])
 		var checked := name != "" and (body.contains(name + " == null") or body.contains(name + " != null"))
 		_check(checked,
 			"%s:%d tests %s for null in %s, rather than throwing on it" % [
 				str(s["file"]), int(s["line"]), name if name != "" else "<unnamed>", str(s["func"])])
+	_check(asked_for_null == open_kind and asked_for_null > 0,
+		"and the null question was put to every site that has a handle to test: %d of %d" % [asked_for_null, open_kind])
 
 	# --- 4. and the named floor is still in the code ---
 	#
@@ -465,6 +736,28 @@ func _run() -> void:
 		"and a user:// open is not a res:// site, so the class is the repository's own files")
 	_check(_code_of(in_a_comment).strip_edges() == "",
 		"an open written in a comment is not code, so it is not a site (TRAPS 64)")
+
+	# 083's reader, answered from built sources for the same reason: the
+	# second idiom, the member name, and the argument that is not a literal.
+	var a_files_at := "\tfor name in " + _files_at_call() + "\"" + _res_prefix() + "scripts\"):"
+	var a_variable := "\tfor name in " + _files_at_call() + "dir):"
+	var a_removal := "\t" + _dir_prefix() + "remove_absolute(path)"
+	_check(_member_on(a_files_at) == "get_files_at", "the DirAccess member is read off the line")
+	_check(_member_on(a_removal) == "remove_absolute",
+		"and a call that changes a directory names its own member, so it is classified rather than skipped")
+	_check(_member_on("\tvar n := 1") == "", "and a line that names no DirAccess member yields none")
+	_check(_reading_members().has(_member_on(a_files_at)) and not _reading_members().has(_member_on(a_removal)),
+		"so the reading list admits the one and refuses the other, by member and not by needle (TRAPS 79)")
+	_check(str(_argument_on(a_files_at, _files_at_call())[0]) == "literal"
+			and str(_argument_on(a_files_at, _files_at_call())[1]) == _res_prefix() + "scripts",
+		"a quoted path is read as a literal")
+	_check(str(_argument_on(a_variable, _files_at_call())[0]) == "expression",
+		"and a path that is a VARIABLE is read as an expression rather than as an empty string - the filter that dropped player_door_test's second read until 083")
+	_check(str(_argument_on(a_call, _open_call())[1]) == _res_prefix() + "scripts",
+		"and the same reader answers for the first idiom, so the two are not read by two rules")
+	_check(str(_argument_on(a_user_path, _open_call())[0]) == "literal"
+			and not str(_argument_on(a_user_path, _open_call())[1]).begins_with(_res_prefix()),
+		"and a user:// read is a literal that is not this repository's, so it is filed as elsewhere rather than asked for a floor")
 
 	var sample := Array(("func _one() -> void:\n\tvar dir := X\n\tif dir == null:\n\t\treturn\nfunc _two() -> void:\n\tpass\n").split("\n"))
 	_check(_function_at(sample, 1) == "_one", "a line's enclosing function is read upwards to the header")

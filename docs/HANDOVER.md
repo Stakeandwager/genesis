@@ -24,6 +24,98 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
+- Last commit at the time of writing: **083**, which did the per-read
+  measurement 082 left as the live "Next action" and found that **082's own
+  conclusion about it was wrong**. 082 had widened nothing and written that
+  `scan_floor_test`'s class was derived from one idiom of directory read -
+  `DirAccess.open(` - so the seven `DirAccess.get_files_at(` reads in `tests/`
+  had no row; it then measured the cost with **five of those reads redirected
+  at an empty directory in one edit**, got 69 assertions and **failures=2**,
+  and wrote *"the consequence today is nil"* and *"nothing is silent today"*.
+  **It also wrote the warning not to read it that way** - *"measuring them one
+  at a time is part of the job"* - and the warning was the half that was
+  right.
+
+  **MEASURED ONE AT A TIME, FOUR OF THE SEVEN WERE SILENT.** Each read
+  redirected **alone** at a directory that exists and is empty, each in a
+  throwaway copy with its own `config/name` (TRAPS 50), the suite run alone,
+  on a baseline byte-identical to the md5 082 recorded:
+
+  | read | feeds | alone |
+  |---|---|---|
+  | `player_door_test.gd:297` `tests/` | `by_setting.size() >= 16` | **CAUGHT** 69, failures=1 |
+  | `player_door_test.gd:349` *(path is a loop VARIABLE)* | `literals.is_empty()` | **SILENT** 69, failures=0 |
+  | `player_door_test.gd:680` `tests/` | `with_collision.is_empty()` | **SILENT** 69, failures=0 |
+  | `player_door_test.gd:688` `scripts/` | `in_scripts.is_empty()` | **SILENT** 69, failures=0 |
+  | `player_door_test.gd:696` `tests/` | `own_floor.size() >= 2` | **CAUGHT** 69, failures=1 |
+  | `player_door_test.gd:762` `scripts/` | `readers.is_empty()` | **SILENT** 69, failures=0 |
+  | `scene_light_test.gd:405` `scripts/` | `scanned > 0 and lines_read > 0` | **CAUGHT** 27, failures=1 |
+
+  **ALL FOUR SILENT ONES ASSERT AN ABSENCE**, so they are at their greenest
+  when the scan has read nothing (TRAPS 75). **The mechanism behind the
+  five-at-once run reading as coverage is worth keeping**: `:680` and `:696`
+  are in the same function and both read `tests/`, so the one edit that
+  emptied `tests/` broke both and `own_floor.size() >= 2` reported it. **An
+  N-at-once treatment measures the loudest of the N.** Five reads broken
+  produced two failures, which is the arithmetic saying three were not held,
+  in the run that was read as nil. New TRAPS **80**.
+  **AND ONE OF THE FOUR UNDERWRITES A SENTENCE IN ITS OWN FILE**:
+  `readers.is_empty()` is *"no production code identifies a world by name"*,
+  which is the stated reason the alternating world-node name (048's mechanism)
+  costs nothing today. An absence proved by reading no scripts is not an
+  absence (TRAPS 14).
+  **THE WORST OF THE FOUR WAS HIDDEN TWICE OVER, and this is the second
+  cause.** `_sites()` kept a site only if the quoted string on the line began
+  `res://`. `player_door_test`'s second read is
+  `for name in DirAccess.get_files_at(dir)` inside
+  `for dir in ["res://tests", "res://scripts"]` - the path is a **loop
+  variable**, there is no quoted string on that line, and the site was dropped
+  in silence. **A filter that discards what it cannot classify is TRAPS 79 in
+  different clothes**: the blacklist decides what fails, the filter decides
+  what is never asked, and both go stale in the dangerous direction.
+
+  **WHAT CHANGED.** All four reads carry a floor, written in the function that
+  does the read and counting what the read produced; the one whose path is a
+  loop variable is floored on **the smaller of its two counts**, because a
+  total would stay positive with one of the two directories empty.
+  `scan_floor_test` now **classifies** every `DirAccess` line in the code of
+  `tests/` instead of filtering it: `open` and `get_files_at` are reads and
+  are asked for a row, `remove_absolute` and `make_dir_recursive_absolute` are
+  writes and are not, a literal path on another filesystem is filed as such, a
+  path that is an **expression** is admitted and asked for a row like any
+  other, and **anything else fails and names itself**. The four buckets are
+  asserted to account for every such call - a count arrived at twice, by
+  different code, and counted in **calls** rather than in lines because
+  `_member_on()` reads the first call on a line: there is no line in `tests/`
+  with two today, counted rather than assumed, and counting calls is what
+  makes the day there is one a **failure** instead of a silence (measured: a
+  line with two fails at 121 with 2 failures, naming 25 calls against 24
+  bucket entries) - both reading idioms are asserted to be present, and the
+  null question is put only to the idiom that **has a handle to test**, with
+  the number of sites asked asserted so the section cannot go quiet by
+  classifying everything as the kind it does not ask.
+  **THE KEY GAINED AN ORDINAL, AND ONLY WHERE IT HAD TO.** Until 083 no
+  function in `tests/` held two directory reads and section 2 asserted it; two
+  now do, and `_the_scene_has_no_floor`'s three include two over the **same**
+  directory, so neither the function nor the path tells them apart. The key is
+  `file::function` with `#N` appended **only** when the function holds more
+  than one read, N being source order. A line number would go stale on every
+  unrelated edit above it; an ordinal goes stale exactly when a read is added
+  to, removed from or reordered inside that function. The **fifteen**
+  one-read functions keep their bare key - thirteen `open` sites and two
+  `get_files_at` ones, counted off the rows - so adding a second read to one
+  of them renames **both**; measured, and it fails in both directions by
+  name.
+  **ONE ASSERTION IN THE FIRST DRAFT WAS FALSE AND THE SUITE'S OWN RUN CAUGHT
+  IT**, which is recorded rather than tidied away: it asserted that the
+  "another filesystem" bucket was non-empty, and **no `user://` directory read
+  exists in `tests/` at all** - every directory read targets `res://scripts`
+  or `res://tests`, re-counted here. That bucket being empty is now *stated*
+  and the reader's ability to tell such a path apart is proven on a built
+  source instead.
+  `player_door_test` 69 -> **73**, `scan_floor_test` 78 -> **120**. New TRAPS
+  **80**. No new "Human decision needed".
+
 - Last commit at the time of writing: **082**, which did the reading 081 left
   as the live "Next action" - the seven of nine functions in `tests/` that take
   a `.gd` source out of this repository without naming `_code_of()` in the same
@@ -2823,8 +2915,9 @@ than suites, leaving **74 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 74
 and are skipped without it.
-**082 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
-what the two numbers above say. Its baseline on the clean tree at `f92697c`,
+**083 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
+what the two numbers above say.
+**082 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**. Its baseline on the clean tree at `f92697c`,
 `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 081
 recorded**: `e418e41585ed7e8fdb4ee458942e372c`, 74 suites, 0 with something to
 look at. The container was fresh, so `user://` was empty rather than cleared -
@@ -2861,7 +2954,54 @@ worlds, and suites fail for reasons that have nothing to do with the code.
 055 took four answers off such a run before noticing. If a run is being used
 as a measurement, clear `user://` before it, baseline included (TRAPS 50).
 
-Last full run (081, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+Last full run (083, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+headless, in a cloud container, sequential): **suites with something to look
+at: 0** on all **74**, with `--all`. `ls tests/*.gd` returned **76** and the
+run reported **74**, re-counted rather than carried forward.
+**THE BASELINE AGREED WITH THE RECORD BEFORE ANYTHING WAS TOUCHED.** The
+`--all` run in this container, on a clean tree at `842c775` with
+`git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 082 recorded**:
+`77dffd1f0f51ba42a04aaad6fa14f098`, 74 suites, 0 with something to look at - so
+nothing was owed from 082 and none was re-run on its behalf. The container was
+fresh, so `user://` was empty rather than cleared: Godot's `app_userdata`
+directory did not exist.
+**THE DIFF IS TWO LINES AND THEY ARE THE TWO PREDICTED IN WRITING BEFORE THE
+RUN**: `player_door_test` 69 -> **73** (four floors added, one per silent
+read) and `scan_floor_test` 78 -> **120** (seven sites arrive, each asked for
+a row, a floor and the questions its idiom can answer; plus the classifier's
+own assertions and its built-source controls). Nothing else moved. No suite's
+verdict changed and no file was added, so neither runner needed an edit.
+**THE md5 WAS WRITTEN INTO THIS FILE BEFORE THE RUNS THAT VERIFY IT**, which
+is 080's standard: `daeda78a164c55d8f1c390a152339e15`. **FIVE byte-identical
+full runs with `--all`**, `user://` cleared before each, 0 with something to
+look at - three on the code tree and **the last two on the complete tree with
+`docs/` in place**, which is why there is no 083a. The only edit after those
+last two is the wording of this paragraph, and no suite can read `docs/`
+(re-measured below).
+**NO SUITE CAN READ `docs/`, re-measured here rather than carried forward
+(TRAPS 4)**: no file in `tests/` contains `res://docs` or `"docs/`, and every
+directory read in `tests/` targets `res://scripts` or `res://tests` - which is
+now enumerated by `scan_floor_test` itself rather than by a grep.
+**AND THE DELIBERATE-FAULT RUNS, which are the evidence the full run cannot
+produce.** Each in a throwaway copy with its own `config/name` (TRAPS 50), the
+suite run alone. The seven-read measurement table is in the 083 entry under
+"Starting state". After the fix, each of the four previously-silent reads
+redirected **alone** fails at 73 assertions with 1 failure, naming its own
+floor; the two that already fired still fire. On `scan_floor_test`: a new
+`get_files_at` read with no row fails at 121/1 naming the function; a third
+idiom (`DirAccess.get_directories_at`) fails at 120/1 naming `file:line`; a
+read with a row deleted fails at 117/1 naming the stale row; a floor condition
+deleted from the code fails at 120/1 naming the condition and the count; a
+second read added to a one-read function fails at 119/**3**, in both
+directions; a line carrying **two** `DirAccess` calls fails at 121/2 on the
+conservation count, naming 25 calls against 24 bucket entries; and reverting
+the widening itself fails at 99/**10**. **Four
+must-pass controls**: the new idiom written in a comment and after code is
+prose and not a site (TRAPS 64), a `user://` read is filed as another
+filesystem and asked for no row, and the suite's own read of `tests/` pointed
+at an empty directory fails loudly including *"is in the class it derives"*.
+
+Previous full run (081, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
 headless, in a cloud container, sequential, `user://` empty): **suites with
 something to look at: 0** on all **74**, with `--all`. `ls tests/*.gd`
 returned **76** and the run reported **74**, re-counted rather than carried
@@ -3753,6 +3893,35 @@ verified, and what remains uncertain.
   produced traps 9 and 11.
 
 ## Limitations — unverified or absent
+
+**083, and all four are residuals rather than tasks.**
+
+- **`scan_floor_test` still cannot prove a floor is load-bearing**, and that
+  limit is 078's and unchanged: it asserts that the named condition is still in
+  the file's code, not that the condition would fire. Proving that needs the
+  suite RUN against an empty directory, which takes a throwaway project per
+  suite. 083 took those runs for all seven `get_files_at` sites and the numbers
+  are in the 083 entry; what the suite adds is that a named floor cannot be
+  deleted or renamed in silence and that a new read arrives with no floor at
+  all.
+- **A read whose path is an expression is admitted without being classified.**
+  083 admits it deliberately - dropping it is what hid the worst of the four
+  silent reads - but the cost is real: a `user://` read spelled as a variable
+  would be admitted too and asked for a row it does not need. That errs
+  towards a false alarm rather than towards a silent drop, which is the right
+  direction, and it is a limitation and not a check.
+- **The `#N` ordinal means a read inserted in the middle of a function renames
+  the rows after it.** Measured: it fails in both directions and names every
+  affected key, so nothing goes quiet - but the rows do have to be re-read,
+  and that is the intended cost of a key that is stable against unrelated
+  edits.
+- **The 46 `FileAccess` reads in `tests/` whose filename came out of a
+  directory loop are covered IN SUBSTANCE and NOT BY MEASUREMENT.** The reason
+  is that the loop's floor fires if the directory read produced no names. That
+  is a reason, and TRAPS 78 is about reasons that balance; it is written here
+  as a limitation and the eight named-file reads are under "Next action" to be
+  measured one at a time.
+
 
 - **Nothing has been tested by anybody but the owner.** No stranger has used
   Genesis. The external-usability claim is entirely unmeasured.
@@ -8682,8 +8851,66 @@ md5 081 recorded, it wrote its two-line diff down before running, and it took
 on 082's behalf**; take your own baseline so you learn the record and the
 container still agree, and spend the time on the work below.
 
-**THE FIRST LIVE ENTRY AS OF 082: `scan_floor_test`'s CLASS IS DERIVED FROM
-ONE IDIOM OF DIRECTORY READ, AND THERE ARE TWO.** Found while giving
+**NOTHING IS OWED FROM 083 EITHER.** Its baseline was byte-identical to the
+md5 082 recorded, it wrote its two-line diff down before running, and it took
+its runs on the code tree and then on the complete tree with `docs/` in place,
+which is why there is no 083a. **Do not start by re-running on 083's behalf**;
+take your own baseline so you learn the record and the container still agree,
+and spend the time on the work below.
+
+**THE FIRST LIVE ENTRY AS OF 083: THE SAME RULE ONE CLASS OUT - A READ OF A
+NAMED FILE THAT COMES BACK EMPTY.** Found while doing 083's work, and it
+starts from a count rather than a suspicion. `scan_floor_test` holds
+**directory** reads: a read that produced no files, with an absence asserted
+over the nothing. The identical shape one step along is a read of a **single
+named file**: `FileAccess.get_file_as_string()` returns the empty string for a
+path that is not there, `_code_of("")` is `""`, and `"".contains(needle)` is
+false - so an absence asserted over a file that has been renamed or moved is
+at its greenest. **Counted off the code of `tests/` rather than estimated, and
+the first count of it in this file was WRONG and was corrected before commit**
+- it counted the two `FileAccess.WRITE` opens as reads: **54** `FileAccess`
+READ sites in **22** files, being 11 `get_file_as_string` and 43 `open` with
+`FileAccess.READ`, of which **8** read a specific named `.gd` file by a
+literal path. Those eight are the class:
+
+```
+controller_reach_test.gd:580  res://scripts/game_controller.gd
+handler_wiring_test.gd:387    res://scripts/main.gd
+handler_wiring_test.gd:536    res://scripts/ai_interpreter.gd
+player_door_test.gd:386       res://scripts/main.gd
+player_door_test.gd:403       res://scripts/game_controller.gd
+record_id_test.gd:455         res://scripts/track_log.gd
+source_scan_test.gd:370       res://tests/session_test.gd
+view_frame_test.gd:372        res://scripts/game_controller.gd
+```
+
+The other **46** are reads of a file whose name came out of a directory loop,
+and those are covered **in substance** by that loop's floor - if the directory read
+produced the name, the file is there. **That is a reason and not a
+measurement, and it is exactly the kind of reason TRAPS 78 is about**, so do
+not write it down as a finding: the honest job is **MEASURE THE EIGHT FIRST,
+ONE AT A TIME** (TRAPS 80 - a run that breaks several measures the loudest),
+each by pointing that one read at a path that does not exist, in a throwaway
+copy with its own `config/name` (TRAPS 50), the suite run alone. Then decide
+what, if anything, is worth holding. **Do not start by building a floor for
+all eight**: **one of the eight was read and IS already held**, which is why
+this entry carries no count of faults - `player_door_test.gd:386` reads
+`main.gd` and the enumeration over it ends `_check(found == 4, ...)`, which
+fails on an empty read. Whether the other seven are held was NOT read and is
+the job; nothing here claims how many of them are faults. **And do not widen `scan_floor_test` to file
+reads on a guess** - a directory read and a named-file read fail for different
+reasons and the suite's rows say what fires, so whether they belong in one
+class is a question the eight runs answer.
+
+**~~THE FIRST LIVE ENTRY AS OF 082: `scan_floor_test`'s CLASS IS DERIVED FROM
+ONE IDIOM OF DIRECTORY READ, AND THERE ARE TWO.~~ DONE IN 083, and 082's
+"the consequence today is nil" was FALSE: four of the seven reads were silent
+when measured one at a time.** Struck rather than deleted, with the original
+text below it, because the sketch is the record of what was asked for and the
+083 entry under "Starting state" records what was measured. The entry asked
+for exactly the right measurement - *"measuring them one at a time is part of
+the job"* - and its own summary sentence contradicted it; see TRAPS **80**.
+The original text:** Found while giving
 `scene_light_test` its floor, measured rather than reasoned about.
 `scan_floor_test._sites()` derives its class from `DirAccess.open(` -
 `_open_call()` returns exactly that - so **seven `DirAccess.get_files_at(` sites in `tests/` are outside the class
@@ -8711,7 +8938,8 @@ does not say that each is held on its own. Measuring them one at a time is
 part (b).
 
 **AND THE TWO ROUTES `scene_light_test` STILL DOES NOT HOLD ARE A LIMITATION,
-NOT A TASK - with the reason.** 082's whitelist asserts the construction
+NOT A TASK - with the reason.** (Still true after 083, which gave that site a
+row in `scan_floor_test` and did not touch the whitelist.) 082's whitelist asserts the construction
 routes that are at zero in `scripts/` today (a name ending `Light3D`,
 `WorldEnvironment`, `Environment.new(`, `ClassDB.instantiate(`,
 `.instantiate()`, `.tscn`). It does **not** hold a light duplicated from one
