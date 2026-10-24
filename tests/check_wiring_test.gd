@@ -43,6 +43,14 @@ extends SceneTree
 # THE ANSWER: FOURTEEN CALL SITES, TEN HELD, FOUR NOT - AND ONLY ONE OF THE
 # FOUR IS THE FARM'S PROBLEM
 #
+# (087 RECONCILED THESE THREE NUMBERS AGAINST THE TWO CONSTANTS BELOW, off
+# 055's own table, because HANDOVER had carried the reconciliation as a
+# READING and not a measurement. Ten and four are the fourteen. The tenth
+# held is W13, the solve step, held only by a suite most runs skip - so
+# NOT_HELD_BEFORE_055 counts FIVE, the four not held plus that one, and
+# 14 - 5 = 9 is the number held by a FAST suite, not a disagreement with
+# "ten". The three numbers and the two constants are consistent.)
+#
 #   HELD BEFORE 055 (wiring out the call failed a suite, named in the table):
 #     racing's SectionValidator, FeasibilityGate and SeparationCheck;
 #     ORDER's and SHUT/OPEN's goal validators; EQUIP's tool validator;
@@ -147,6 +155,13 @@ extends SceneTree
 #      Genesis has, a circuit that cannot close sent through main.gd, and
 #      a tool spec the validator normalises. Each reads the LEDGER or the
 #      readback for the evidence, not a status line.
+#   4. (087) that the file still NAMES the fourteen call sites the two
+#      constants below count - tallied off the rows, W01 to W14 contiguous,
+#      nothing unplaceable - and that the five 055 and 056 found unheld are
+#      among them. Both constants were read by nothing until 087 and the
+#      file named thirteen of the fourteen. See the constants' own note for
+#      what those numbers are over, and _measured_sites() for what the
+#      tally does not catch.
 #
 # What it does NOT assert: that the nine already-held rows are still held.
 # That is the other suites' job and the table says which one each time.
@@ -229,7 +244,7 @@ const DECLARED := {
 	"farm_module.gd:solve": ["CONNECTED",
 		"the controller's solve step (W13), caught only by session_test under --all"],
 	"farm_module.gd:_check_reachable": ["NO_DOOR",
-		"053's: called inside solve() on the layout solve() built. HANDOVER 'Human decision needed' 18"],
+		"W06, 053's: called inside solve() on the layout solve() built. HANDOVER 'Human decision needed' 18"],
 	"feasibility_gate.gd:check": ["CONNECTED", "W03 failed refusal_reach_test"],
 	"game_controller.gd:_prepare_world": ["CONNECTED",
 		"its four steps are W10, W11, W13 and W12"],
@@ -286,8 +301,61 @@ const BASE_OVERRIDES := {
 
 # Rows measured in a throwaway copy. The suite does not re-measure them; it
 # names them so a reader can find the run.
+#
+# --- 087: BOTH NUMBERS BELOW WERE READ BY NOTHING, AND THIS FILE CARRIED
+# THIRTEEN OF THE FOURTEEN SITES THEY COUNT ---
+#
+# WHAT THE TWO NUMBERS ARE OVER, answered because HANDOVER asked it as a
+# reading and read off the code rather than off that file: NEITHER DECLARED
+# NOR BY_HAND. They are over the fourteen CALL SITES W01-W14 that 055 wired
+# out one at a time, whose table lives in docs/HANDOVER.md under 055 and
+# which no suite can read. DECLARED has 35 rows over SEVEN of VERDICTS'
+# eight - NOT_ASKED has had no row since 056 measured both of its - and
+# BY_HAND has one. 35 is not 14 and never was.
+#
+# AND A PER-VERDICT TALLY OVER DECLARED CANNOT HOLD THE HEADER'S 14/10/4,
+# which is why this file has not got one and should not grow one. The map
+# from site to row is many-to-many in BOTH directions: game_controller.gd's
+# _prepare_world row names FOUR sites, W03 is named by TWO rows - and the
+# part that settles it, boots_tool, car_tool and look_tool each name two
+# sites with OPPOSITE outcomes, "EQUIP's refusal (W09) failed
+# controller_reach_test; the readback's branch (W14) was held by nothing".
+# That row's verdict field is about W14. W09 is held. A tally over the
+# verdict column asserted as though it were the ten-and-the-four would be
+# asserting a comment, which is TRAPS 6, so it is NOT BUILT.
+#
+# WHAT IS DERIVABLE OFF THE ROWS IS THE SET OF LABELS, and nothing read it.
+# Swept mechanically, comment lines blanked: of 94 const declarations in
+# tests/ these two were the ONLY ones no other code line reads, and of 315
+# across scripts/ and tests/ the only others are three vestigial values
+# track_builder.gd's own header already accounts for. A number a header
+# counts and nothing reads is TRAPS 83's rule arriving at a CONSTANT instead
+# of at a column. W06 was missing from this file altogether - the farm's row
+# named 053 and not the site - so a reader sent to find the fourteen found
+# thirteen. That row now carries it, and _measured_sites() below tallies all
+# fourteen off the rows.
 const CALL_SITES_MEASURED := 14
 const NOT_HELD_BEFORE_055 := 5
+
+# WHICH five, and this is a DECLARATION of 055's and 056's measurement rather
+# than a derivation of it, said plainly because that difference is the whole
+# point of the paragraph above. W01 LoadCheck.compare, W02
+# RefusalCheck.quarrel_with and W14 ToolRegistry's validated branch were
+# caught by nothing; W06 FarmModule._check_reachable has no door; W13 the
+# controller's solve step was caught only by session_test, which runs only
+# with --all, so no fast suite held it. The four not held plus the thinly
+# held one is the five, and 14 - 5 = 9 is the number of sites a FAST suite
+# held before 055 - which is the arithmetic the header's "TEN HELD" does not
+# do, because its tenth is W13.
+#
+# WHAT IS ASSERTED about this array is its SIZE against NOT_HELD_BEFORE_055
+# and its MEMBERSHIP in the fourteen labels tallied off the rows. What is NOT
+# asserted is any row's verdict: a verdict is a measurement taken once by the
+# method in the header, and a test that asserted one would be asserting a
+# comment (TRAPS 6). So a site that stops being unheld will not fail here,
+# and re-measuring is the method's job - the header says so and this does not
+# pretend otherwise.
+const NOT_HELD_BEFORE_055_SITES := ["W01", "W02", "W06", "W13", "W14"]
 
 const DUNGEON := '{"command": "CREATE_DUNGEON", "parameters": {"rooms": [{"name": "hall", "width": 20, "depth": 20}, {"name": "store", "width": 10, "depth": 10}, {"name": "vault", "width": 10, "depth": 10}], "doors": [[1, 2], [2, 3]], "things": [{"name": "lamp", "in": "store"}]}}'
 # refusal_reach_test's: three 120 deg corners do add to 360, so the gate lets
@@ -428,6 +496,93 @@ func _defines(script_path: String, method: String) -> bool:
 	var text := _code_of(file.get_as_text())
 	file.close()
 	return text.contains("\nfunc %s(" % method) or text.contains("\nstatic func %s(" % method)
+
+
+# --- 1b. the fourteen call sites, tallied off the rows (087) ---
+#
+# The labels live in the SECOND COLUMN of DECLARED and BY_HAND, which is code
+# data and not a comment, so this reads the tables the way refusal_reach_test
+# reads its verdict column since 086 - copied rather than reinvented.
+#
+# IT FAILS CLOSED IN BOTH DIRECTIONS, which is the half TRAPS 83 says a
+# filter gets wrong. A label this file cannot place FAILS AND NAMES ITSELF
+# rather than being skipped by a `continue`, and a label that goes missing
+# takes the distinct count down and fails naming the number that is gone.
+# Reword a row's sentence past its label, mistype W13 as W31, or add a
+# fifteenth site without asking this question of it, and this is what says
+# so. Before 087 all three were silent.
+#
+# WHAT IT DOES NOT DO, MEASURED AND NOT ESTIMATED, because a limit written
+# from a feeling is worth nothing (TRAPS 14). This holds the SET of labels,
+# so a label removed from ONE of several rows that name it is NOT CAUGHT:
+# take "W03" off feasibility_gate.gd:check and racing_module.gd:pre_check
+# still spells it, the distinct set is still fourteen, and the suite is
+# 217 assertions, failures=0. That fault was injected and run, not reasoned
+# about. The stronger assertion was WEIGHED AND NOT BUILT: a per-row label
+# table would be a count written BESIDE the rows rather than read off them,
+# which is the shape TRAPS 82 is about, and it would fail every time a row's
+# sentence was legitimately reworded.
+#
+# AND THE NARROWER VERSION WAS CHECKED BEFORE BEING RULED OUT rather than
+# assumed false: "every row whose verdict came from a wire-out names a site"
+# does not hold, counted off the rows - command_parser.gd:parse and
+# game_controller.gd:record_load_check carry no label, and 056's two
+# (game_controller.gd:finish_order, main.gd:_on_revision_requested) are not
+# in 055's fourteen at all. Asserting it would have failed on correct rows.
+#
+# Nor does it know whether a label is on the RIGHT row. The labels and the
+# rows were put beside each other by hand off 055's table, and tying a site
+# to a row mechanically would need the call sites themselves, which is 055's
+# method and not a tally's job.
+func _measured_sites() -> void:
+	var seen := {}
+	var strays: Array = []
+	var pattern := RegEx.create_from_string("W[0-9]+")
+	for table in [DECLARED, BY_HAND]:
+		for key in table:
+			var row: Array = table[key]
+			for hit in pattern.search_all(str(row[1])):
+				var label := hit.get_string()
+				var n := int(label.substr(1))
+				if label.length() != 3 or n < 1 or n > CALL_SITES_MEASURED:
+					strays.append("%s on %s" % [label, str(key)])
+					continue
+				if not seen.has(label):
+					seen[label] = []
+				(seen[label] as Array).append(str(key))
+
+	_check(strays.is_empty(),
+		"every W-label in the two tables is one of W01-W%02d (unplaceable: %s)"
+			% [CALL_SITES_MEASURED, ", ".join(strays)])
+	_check(seen.size() == CALL_SITES_MEASURED,
+		"the tables name %d distinct call sites and CALL_SITES_MEASURED says %d"
+			% [seen.size(), CALL_SITES_MEASURED])
+
+	# Contiguous, one assertion each, so a gap NAMES the site that is missing
+	# instead of arriving as a count that is one short. W06 is here because it
+	# was the one this file did not name.
+	for i in range(1, CALL_SITES_MEASURED + 1):
+		var want := "W%02d" % i
+		_check(seen.has(want),
+			"%s is named by a row in DECLARED or BY_HAND" % want)
+
+	# The five 055 and 056 found unheld are among the fourteen. This holds the
+	# ARRAY against the rows and against its own count; it re-measures no
+	# verdict - see the constant's own note.
+	_check(NOT_HELD_BEFORE_055_SITES.size() == NOT_HELD_BEFORE_055,
+		"NOT_HELD_BEFORE_055_SITES has %d entries and NOT_HELD_BEFORE_055 says %d"
+			% [NOT_HELD_BEFORE_055_SITES.size(), NOT_HELD_BEFORE_055])
+	var listed := {}
+	for raw in NOT_HELD_BEFORE_055_SITES:
+		var label := str(raw)
+		_check(not listed.has(label),
+			"%s is listed once in NOT_HELD_BEFORE_055_SITES" % label)
+		listed[label] = true
+		_check(seen.has(label),
+			"%s, which 055 or 056 found unheld, is named by a row" % label)
+
+	notes.append("087: %d distinct call sites tallied off the rows, W01-W%02d contiguous, %d unplaceable; %d listed unheld, all named by a row"
+		% [seen.size(), CALL_SITES_MEASURED, strays.size(), NOT_HELD_BEFORE_055_SITES.size()])
 
 
 func _enumeration() -> void:
@@ -894,6 +1049,8 @@ func _run() -> void:
 
 	print("--- the enumeration ---")
 	_enumeration()
+	print("--- the fourteen call sites, tallied off the rows ---")
+	_measured_sites()
 	print("--- the NO_DOOR rows ---")
 	_no_door_rows()
 	print("--- the load verdict, through /load ---")

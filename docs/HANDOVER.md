@@ -24,7 +24,131 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **086**, which did the **reading** 085
+- Last commit at the time of writing: **087**, which answered the **reading**
+  086 left as the live "Next action" - is `check_wiring_test`'s header 14/10/4
+  over `DECLARED`, over `BY_HAND`, or over neither - and found the answer to
+  be **neither**, the reconciliation **consistent**, the tally HANDOVER
+  sketched **not buildable**, and the live fault one question in: **both
+  constants were read by nothing, and the file named thirteen of the fourteen
+  sites they count**. New TRAPS **84**.
+
+  **THE BASELINE AGREED WITH THE RECORD BEFORE ANYTHING WAS TOUCHED.** The
+  `--all` run in this container, on a clean tree at `cd1a483` with
+  `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 086
+  recorded**: `f4a589dada011f0ca754d839f55898ea`, 74 suites, 0 with something
+  to look at. `ls tests/*.gd` returned **76** and the run reported **74**,
+  re-counted. The container was fresh, so `user://` was empty rather than
+  cleared. **Nothing was owed from 086.**
+
+  **THE READING, ANSWERED IN THE ORDER HANDOVER ASKED FOR IT.**
+
+  *(1) What the numbers are over: NEITHER TABLE.* They are over the fourteen
+  call sites `W01`-`W14` that 055 wired out one at a time, and **that table
+  lives in this file**, under 055 - which **no suite can read**. `DECLARED`
+  has **35** rows over **seven** of `VERDICTS`' eight (`NOT_ASKED` has had no
+  row since 056 measured both of its); `BY_HAND` has **one**. 35 is not 14 and
+  never was. Counted off the code, not read off this file.
+
+  *(2) The reconciliation HANDOVER carried as a READING is now a measurement,
+  and it holds.* Ten held and four not are the fourteen. The tenth held is
+  `W13`, the controller's solve step, held only by `session_test`, which runs
+  only with `--all` - so `NOT_HELD_BEFORE_055` counts **five**, the four plus
+  that one, and **14 - 5 = 9** is the number a **fast** suite held before 055.
+  That is not a disagreement with "ten". The three header numbers and the two
+  constants are consistent, and the reconciliation is now written beside them
+  in the file rather than here.
+
+  *(3) The tally HANDOVER sketched CANNOT BE BUILT, and this is the part that
+  mattered.* A per-verdict tally over `DECLARED` cannot hold the header's
+  14/10/4, because the map from site to row is **many-to-many in both
+  directions**: `game_controller.gd:_prepare_world` names **four** sites, `W03`
+  is named by **two** rows, and - the row that settles it - `boots_tool`,
+  `car_tool` and `look_tool` each name **two sites with OPPOSITE outcomes**,
+  *"EQUIP's refusal (W09) failed controller_reach_test; the readback's branch
+  (W14) was held by nothing"*. That row's verdict field is about `W14`; `W09`
+  is held. Asserting a verdict tally as though it were the ten-and-the-four
+  would be **TRAPS 6**, so **it was not built** - which is HANDOVER's own step
+  (3), and the file now says so where the next session will look, so nobody
+  builds it later.
+
+  **THE LIVE FAULT: TWO NUMBERS A HEADER COUNTS AND NOTHING READS.** Swept
+  mechanically with comment lines blanked, every `const` declaration matched
+  against every other code line: of **94** declarations in `tests/`, exactly
+  **2** were read by no other code line, and both are in the one file HANDOVER
+  had pointed at. Cross-file over `scripts/` + `tests/`: **315** declarations,
+  **5** unread, the other three being `dungeon_module.DIRS`,
+  `track_builder.SEGMENT_WIDTH` and `SEGMENT_THICKNESS` - vestigial values
+  from the 148 lines 002B took out of `track_builder.gd`, which that file's
+  own header already accounts for. They were **grepped across the whole
+  repository before being called unused**, `.tscn` and `project.godot`
+  included, and **were not touched**: see "Human decision needed" below.
+  **AND `W06` APPEARED NOWHERE IN THE FILE** - `FarmModule._check_reachable`'s
+  row named 053 and not the site - so a reader sent by the header to find the
+  fourteen found **thirteen**, and nothing said so.
+
+  **WHAT CHANGED, AS THE CLASS AND NOT ONE MEMBER (TRAPS 11).** The farm's row
+  carries `W06`; `_measured_sites()` tallies the labels **off the rows** of
+  both tables, asserts the distinct count against `CALL_SITES_MEASURED`,
+  asserts `W01`-`W14` **contiguous with one assertion per site** so a gap
+  fails **by name**, and fails closed on anything it cannot place - a stray
+  **names itself** rather than being dropped by a `continue` (TRAPS 83). And
+  `NOT_HELD_BEFORE_055` is now read: a new `NOT_HELD_BEFORE_055_SITES` names
+  the five, asserted against that count and against membership in the fourteen
+  tallied off the rows. **After the change the class is EMPTY in `tests/`**:
+  95 declarations, **0** read by nothing, re-swept rather than assumed.
+
+  **MEASURED, EACH FAULT ALONE (TRAPS 80)**, in a throwaway copy with its own
+  `config/name` (TRAPS 50), the suite run alone. Controls **190/0** before and
+  **217/0** after. **AND RE-MEASURED AGAINST THE FILE THAT WAS COMMITTED**,
+  md5 `e4f42e9e2ee80bb31dce7b88ac9cda6a`: the first pass was taken on a
+  snapshot made before the last comment-only edits, and a number measured on a
+  file nobody has is not a measurement, so all seven were run again on the
+  committed bytes and all seven reproduced exactly. Full table in TRAPS 84; the five that were **silent before
+  and are named now**: `W13` mistyped `W31` (190/0 -> 217/1), a fifteenth site
+  appearing (190/0 -> 217/1), `CALL_SITES_MEASURED` saying 15 (190/0 ->
+  218/2), `NOT_HELD_BEFORE_055` saying 4 (190/0 -> 217/1), and the farm row
+  losing `W06` again - **the state 086 left** - at 217/**3**.
+
+  **AND ONE FAULT IS STILL SILENT AFTER THE FIX, WHICH IS REPORTED AS A LIMIT
+  AND NOT AS A WIN.** Remove `W03` from **one** of the two rows that name it
+  and the suite is **217 assertions, failures=0**: the tally holds the **set**
+  of labels, so the distinct count is still fourteen and contiguous. That
+  fault was **injected and run after the fix was green**, not reasoned about,
+  and the limit is written into the function that has it. The stronger
+  assertion was **weighed and not built** - a per-row label table is a count
+  written *beside* the rows rather than read *off* them, TRAPS 82's shape, and
+  it would fail on every legitimate rewording. **And the narrower version was
+  checked before being ruled out**: *"every row whose verdict came from a
+  wire-out names a site"* does **not** hold - `command_parser.gd:parse` and
+  `game_controller.gd:record_load_check` carry no label, and 056's two are not
+  in 055's fourteen at all - so asserting it would have **failed on correct
+  rows**.
+
+  **THE RUNS: THREE, BYTE-IDENTICAL**, md5
+  `352c320b4745da31504e5cf6363a04a9`, 74 suites, 0 with something to look at,
+  `--all`, `user://` cleared before each. **Said exactly**, because 080's
+  standard is about the ORDER: run 1 was on the code tree and produced that
+  md5, the md5 was then **written into this file, twice, before runs 2 and
+  3**, and runs 2 and 3 - on the **complete tree, code and docs
+  together** - came back byte-identical to it. That is why there is no 087a.
+  **THE DIFF IS THE ONE LINE PREDICTED IN WRITING BEFORE THE RUN**:
+  `check_wiring_test` **190 -> 217**, and nothing else moved. **NO SUITE CAN
+  READ `docs/`, re-measured rather than carried forward (TRAPS 4)**: no file
+  in `tests/` contains `res://docs` or `"docs/`, and every bare mention of
+  `docs` in `tests/` is on a comment line.
+  **NO FILE IN `scripts/`, `scenes/`, `netlify/`, `.github/`, EITHER RUNNER,
+  `project.godot` OR `export_presets.web.cfg` WAS TOUCHED** - `git status`
+  named only `tests/check_wiring_test.gd` and `docs/`, read rather than
+  assumed. `PROMPT_FINGERPRINT` and `PROMPT_VERSION` did not move. No model
+  was asked anything, no request left the container, there is no API key here.
+  The diff was grepped for key, secret, token, GEMINI, netlify and
+  export_presets; every hit is a local `var key` or a loop variable.
+  **NOTHING A PLAYER MEETS CHANGED**: this commit is entirely in `tests/` and
+  `docs/`, so no fault the owner could see on real hardware is fixed by it,
+  and the suite that found this is the same suite that has missed eight of
+  his faults.
+
+- Last commit before that: **086**, which did the **reading** 085
   left as the live "Next action" - where else does this file generalise a
   measured per-member table into kinds and then reason about the kinds - and
   found **the three named candidates clean and the real fault one layer down,
@@ -3216,6 +3340,15 @@ than suites, leaving **74 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 74
 and are skipped without it.
+**087 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
+what the two numbers above say. Its baseline on the clean tree at `cd1a483`,
+`git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 086 recorded**:
+`f4a589dada011f0ca754d839f55898ea`. The container was fresh, so `user://` was
+empty rather than cleared. After the change, **THREE byte-identical full
+`--all` runs**, md5 `352c320b4745da31504e5cf6363a04a9`, 0 with something to
+look at, the last two on the complete tree with `docs/` in place, `user://`
+cleared before each. The diff against the baseline is the **one line predicted
+in writing before the run**: `check_wiring_test` 190 -> 217.
 **086 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
 what the two numbers above say. Its baseline on the clean tree at `121cb7c`,
 `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 085 recorded**:
@@ -9288,6 +9421,53 @@ three byte-identical `--all` runs - the last two on the complete tree with
 `docs/` in place - which is why there is no 086a. **Do not start by re-running
 on 086's behalf**; take your own baseline so you learn the record and the
 container still agree, and spend the time on the work below.
+
+**NOTHING IS OWED FROM 087 EITHER.** Its baseline was byte-identical to the
+md5 086 recorded, it wrote its one-line diff down before running, and it took
+three byte-identical `--all` runs - the last two on the complete tree with
+`docs/` in place - which is why there is no 087a. **Do not start by re-running
+on 087's behalf**; take your own baseline so you learn the record and the
+container still agree, and spend the time on the work below.
+
+**THE FIRST LIVE ENTRY AS OF 087: THE 22 REACHABLE ROWS OF
+`controller_reach_test` ARE STILL TIED TO NOTHING, AND THE JOB IS A READING
+BEFORE IT IS A RELABELLING.** This was 086's second entry and 087 did not
+touch it; the text is below, unchanged, and it is now the live one. **Read the
+21 against the 22 one at a time first.** Do not relabel twenty-one fixtures on
+the assumption that the two numbers should match.
+
+**AND A SMALLER ONE 087 MEASURED AND DELIBERATELY DID NOT BUILD: NOTHING KEEPS
+THE "const NOTHING READS" CLASS EMPTY.** TRAPS 84's class is **empty in
+`tests/` today** - 95 `const` declarations, 0 read by no other code line,
+re-swept after the fix rather than assumed. A scan that held it empty would be
+cheap and mechanical (take the name off each `const`, grep that file's code
+lines for it, anything unplaceable fails and names itself) and it has a natural
+floor in the declaration count. **The argument against is the one 084 and 085
+both made and both accepted, twice, for the identical shape**: it is an
+**absence** assertion, at its greenest when it reads nothing (TRAPS 75), for a
+class with **zero** live members - which is `scan_floor_test`'s machinery a
+third time. **And it would fail today if pointed at `scripts/`**, on the three
+vestigial constants under "Human decision needed" below, so its scope would
+have to be `tests/`-only and that scope would have to be argued for rather
+than assumed. **The measurement is done and is in TRAPS 84; what is not
+settled is whether the scan is worth its code, and that is a weighed open
+question and not a task.**
+
+**~~THE FIRST LIVE ENTRY AS OF 086: `check_wiring_test` IS THE ONE MEMBER OF
+086'S CLASS LEFT WITHOUT A PER-KIND TALLY, AND THE JOB IS A RECONCILIATION
+BEFORE IT IS AN ASSERTION.~~ DONE IN 087, AND THE ANSWER WAS "DO NOT BUILD THE
+TALLY" PLUS A LIVE FAULT ONE QUESTION IN.** The reading was right to be a
+reading: the header's 14/10/4 is over **neither** `DECLARED` nor `BY_HAND` but
+over 055's fourteen call sites, whose table lives in **this file** and which no
+suite can read; the 14/10/4-against-5 reconciliation **holds** and is now a
+measurement rather than a reading; and a per-verdict tally over `DECLARED`
+**cannot** carry those numbers, because one row names two sites with opposite
+outcomes - so it was not built, which is this entry's own step (3). What 087
+found instead is that **both constants were read by nothing and the file named
+thirteen of the fourteen sites they count**. See TRAPS 84 and the 087 entry
+under "Starting state". Struck rather than deleted, with the original text
+below, because the sketch is the record of what was asked for. The original
+text:**
 
 **THE FIRST LIVE ENTRY AS OF 086: `check_wiring_test` IS THE ONE MEMBER OF
 086'S CLASS LEFT WITHOUT A PER-KIND TALLY, AND THE JOB IS A RECONCILIATION
@@ -18303,3 +18483,60 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     unrelated file's assertion - and because the second option deliberately
     makes a green tree go red to teach something. 079 wrote the measurement
     into section 1's comment so the next session does not have to re-take it.
+
+33. **Whether the three vestigial constants in `scripts/` should be deleted.**
+    Found in 087 as the by-product of TRAPS 84's sweep, **measured, and
+    deliberately not touched**, because it is a change to game code on a
+    Prototype 001 path the owner may be about to delete.
+
+    The fact, read off the code and not argued. Every `const` declaration in
+    `scripts/` and `tests/` was matched against every other code line with
+    comment lines blanked: **316 declarations, 3 read by nothing anywhere in
+    the repository** — `dungeon_module.gd:63 DIRS`,
+    `track_builder.gd:4 SEGMENT_WIDTH` and `track_builder.gd:5
+    SEGMENT_THICKNESS`. Each was then **grepped across the whole repository
+    before being called unused**, `.tscn`, `project.godot`,
+    `export_presets.web.cfg`, the runners, `netlify/` and `.github/`
+    included: the declaration is the only occurrence of all three. (`docs/`
+    was excluded from that grep, deliberately — a mention in a document is
+    not a read.)
+
+    **Two of the three are already explained by the file that holds them**,
+    which is why this is a decision and not a finding. `track_builder.gd`'s
+    own header records that 002B took 148 lines out of it and left the
+    signatures: the node builds nothing, `corner_nodes` is appended to
+    nowhere, and `has_track()` can never be true. `SEGMENT_WIDTH` 12.0 and
+    `SEGMENT_THICKNESS` 0.5 are the geometry those 148 lines used. **There is
+    no inline duplicate of either value in that file** — grepped for `12.0`
+    and `0.5`, and the only other hit is a comment about a 0.5 m corner
+    request — so nothing is reading the number the long way round, which was
+    the fault worth checking for. `DIRS` in `dungeon_module.gd` is the same
+    shape, a north/east/south/west table beside five live colour constants,
+    and **no commit's reason for it was found, so none is invented here**.
+
+    The options:
+
+    - **Leave them.** Costs nothing at runtime; a `const` is free. The cost is
+      that three values in game code look load-bearing and are not, and the
+      next sweep of this class finds them again.
+    - **Delete all three.** Six lines, and no behaviour change **as far as
+      the one mechanism that could hide one was checked**: there is no
+      lookup-by-name anywhere in `scripts/` or `tests/` that could reach a
+      script constant dynamically — no `get_script_constant_map`, no
+      `ClassDB`, no `["DIRS"]` — grepped, and every `.get("…")` hit is a
+      Dictionary read on parsed JSON. `has_track()` is already unreachable
+      and the dungeon already builds without `DIRS`. The
+      cost is a diff in `scripts/` that no test can prove is safe beyond the
+      grep above, on files whose future is the owner's.
+    - **Delete the dungeon's and leave the track builder's**, on the grounds
+      that `track_builder.gd` is already documented as a husk and its two
+      values record what the removed code did. Arguably the most honest, and
+      the least tidy.
+
+    **It is the owner's because 032, 033 and 036 all declined to change
+    `track_builder.gd`'s behaviour for the same reason** — *"a Prototype 001
+    path the owner may be about to delete"*, in that file's own header — and
+    because deleting a value is irreversible in the only sense that matters
+    here: nobody will remember what 12.0 was. 087 took the measurement and
+    wrote it here rather than acting on it, and **touched no file in
+    `scripts/`**.

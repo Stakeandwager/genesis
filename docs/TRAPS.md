@@ -6018,3 +6018,122 @@ move.
 > The header counted the column. Nothing else ever looked at it.
 
 ---
+
+## 84. A number a header counts, declared as a constant and read by nothing
+
+**Signature:** a suite declares `const SOMETHING_MEASURED := 14` beside a
+table, the file's header states the answer in prose — *"FOURTEEN CALL SITES,
+TEN HELD, FOUR NOT"* — and no code in the repository ever reads the constant.
+The number is a comment with a `const` in front of it. Worse than TRAPS 83's
+unread column, because a constant *looks* like something the code uses.
+
+**Cause.** 087 was sent to do the reading HANDOVER left as the live next
+action: is `check_wiring_test`'s header 14/10/4 over `DECLARED`, over
+`BY_HAND`, or over neither. It is over **neither** — it is over the fourteen
+call sites `W01`–`W14` that 055 wired out one at a time, and that table lives
+in `docs/HANDOVER.md`, which **no suite can read**. `DECLARED` has 35 rows and
+`BY_HAND` one.
+
+Swept mechanically, comment lines blanked, every `const` declaration matched
+against every other code line:
+
+| swept | declarations | read by no other code line |
+|---|---|---|
+| `tests/` | 94 | **2** — `CALL_SITES_MEASURED`, `NOT_HELD_BEFORE_055`, both in `check_wiring_test.gd` |
+| `scripts/` + `tests/`, cross-file | 315 | **5** — those two, plus `dungeon_module.DIRS`, `track_builder.SEGMENT_WIDTH` and `SEGMENT_THICKNESS` |
+
+The three in `scripts/` are vestigial values from the 148 lines 002B took out
+of `track_builder.gd`, which that file's own header already accounts for. They
+were **grepped across the whole repository before being called unused**,
+`.tscn` and `project.godot` included, and **were not touched**: deleting
+constants in game code on a Prototype 001 path the owner may be about to
+delete is his call. So the live class was **two members, both in the one file
+HANDOVER had pointed at**.
+
+**And the file named thirteen of the fourteen sites it counted.** `W06`,
+`FarmModule._check_reachable`, appeared **nowhere** in `check_wiring_test.gd`
+— its row named 053 and not the site. A reader sent by the header to find the
+fourteen found thirteen, and nothing said so.
+
+**Measured, each fault alone** (TRAPS 80), in a throwaway copy with its own
+`config/name` (TRAPS 50), the suite run alone. Controls: 190/0 before, 217/0
+after. **Every row below was re-measured against the file that was actually
+committed**, md5 `e4f42e9e2ee80bb31dce7b88ac9cda6a`, after the last
+comment-only edit — because the first pass was taken on a snapshot that
+differed from it, and a number measured on a file nobody has is not a
+measurement. All seven reproduced exactly.
+
+| fault injected | before 087 | after 087 |
+|---|---|---|
+| `W13` mistyped `W31` on one row | 190, failures=**0** — SILENT | 217, failures=**1**, naming the stray and its row |
+| a fifteenth site `W15` appears on a row | 190, failures=**0** — SILENT | 217, failures=**1**, naming it unplaceable |
+| `CALL_SITES_MEASURED` says 15 | 190, failures=**0** — SILENT | 218, failures=**2**: the count, and `W15` named as missing |
+| `NOT_HELD_BEFORE_055` says 4 | 190, failures=**0** — SILENT | 217, failures=**1** |
+| an entry drops out of `NOT_HELD_BEFORE_055_SITES` | — (the array is new) | 215, failures=**1**, on the size and not on the total |
+| the farm row loses `W06` — **the state 086 left** | — | 217, failures=**3**: the count, the gap, and the unheld site |
+| `W03` removed from **one** of the two rows that name it | 190, failures=**0** | **217, failures=0 — STILL SILENT** |
+
+**THE LAST ROW IS THE ONE WORTH KEEPING, AND IT IS A LIMIT OF THE FIX AND NOT
+A WIN.** The tally holds the **set** of labels, so a label lost from one of
+several rows that spell it is invisible: the distinct count is still fourteen
+and contiguous. That fault was **injected and run** rather than reasoned
+about, and the limit is written into the function that has it. The stronger
+assertion was **weighed and not built**: a per-row label table is a count
+written *beside* the rows rather than read *off* them, which is TRAPS 82's
+shape, and it would fail every time a row's sentence was legitimately
+reworded.
+
+**And the narrower version was checked before being ruled out**, not assumed
+false. *"Every row whose verdict came from a wire-out names a site"* does
+**not** hold, counted off the rows: `command_parser.gd:parse` and
+`game_controller.gd:record_load_check` carry no label, and 056's two
+(`finish_order`, `_on_revision_requested`) are not in 055's fourteen at all.
+Asserting it would have failed on correct rows — TRAPS 6 pointing the other
+way.
+
+**What the reading also settled, and it was the thing HANDOVER could not:**
+the header's three numbers and the two constants are **consistent**, which had
+been carried as a *reading* and not a measurement. Ten held and four not are
+the fourteen; the tenth held is `W13`, held only by `session_test`, which runs
+only with `--all` — so `NOT_HELD_BEFORE_055` counts **five**, the four plus
+that one, and `14 - 5 = 9` is the number a **fast** suite held. Not a
+disagreement with "ten". The reconciliation is now in the file beside the
+numbers.
+
+**Do:**
+
+- **A declared number is a claim, so something must read it.** TRAPS 83's rule
+  for a classification column has no exemption for a `const`. Either assert it
+  or delete it; a number a header counts and nothing reads is the worse of the
+  two, because `const` looks load-bearing.
+- **Ask what the number is OVER before asserting anything against it.** The
+  honest answer here was "neither of this file's two tables", and a tally over
+  `DECLARED`'s verdict column asserted as though it were the 14/10/4 would
+  have been TRAPS 6. The map from site to row is many-to-many in both
+  directions — one row names **four** sites, and `boots_tool`, `car_tool` and
+  `look_tool` each name **two with opposite outcomes** (*"EQUIP's refusal
+  (W09) failed controller_reach_test; the readback's branch (W14) was held by
+  nothing"*). A tally cannot be derived from that, and the file now says so
+  where the next session will look.
+- **Tally the labels, not the verdicts.** The set of labels is derivable off
+  the rows; a verdict is a measurement taken once by 055's method, and a test
+  that asserted one would be asserting a comment.
+- **Contiguity, one assertion per member.** `W06 is named by a row` fails by
+  name. A bare count one short tells you only that something is missing.
+- **Measure the limit of your own guard and write it down.** The `W03` row
+  above was found by injecting a fault into the fix, after it was green. A fix
+  whose limits were reasoned about rather than run is a fix whose limits are
+  unmeasured.
+
+Found in 087, by answering the reading HANDOVER asked for and finding that the
+question one layer in — *what reads these two numbers* — had a shorter answer
+than the one it was sent to get. **Nothing in `scripts/`, `scenes/`,
+`netlify/`, `.github/`, either runner, `project.godot` or
+`export_presets.web.cfg` was touched**, read off `git status` rather than
+assumed. The prompt is byte-identical and `PROMPT_VERSION` did not move.
+**Nothing a player meets changed.**
+
+> The header counted fourteen. The constant said fourteen. The file named
+> thirteen, and no line of code had ever asked.
+
+---
