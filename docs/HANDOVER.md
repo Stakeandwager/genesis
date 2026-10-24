@@ -2619,15 +2619,27 @@ verdict moved**, so neither runner needed an edit: `run_tests.sh`'s three
 lists match on whole words and `run_tests.bat`'s `findstr` patterns on
 substrings, and both were **READ** against the new name rather than assumed
 (TRAPS 4) — neither matches `scan_floor_test`.
-**THREE full runs on the final tree, `user://` cleared before each, all
-BYTE-IDENTICAL** (md5 `a3bc1d31b13b27db03e8d3949d84b63d`) — three rather than
-two because comments in `tests/loadcheck.gd` were corrected after the second,
-which is the same reason 077 took a third. **This md5 covers
-the CODE tree only.** 074a, 075a, 076a and 077a each needed a follow-up commit
-because their doc edits landed after the last run; 078's doc edits land after
-these three runs as well, so **the same amendment is owed and is the first entry
-under "Next action"** — a run on the clean pushed tree, which is the only thing
-that makes the md5 demonstrably cover what is on the remote.
+**FOUR full runs, `user://` cleared before each, ALL BYTE-IDENTICAL** (md5
+`a3bc1d31b13b27db03e8d3949d84b63d`). Three on the final code tree — three
+rather than two because comments in `tests/loadcheck.gd` were corrected after
+the second, which is the same reason 077 took a third — and **a FOURTH on the
+clean pushed tree at `ce8f49c`, byte-identical to all three**, with
+`git status --porcelain` and `git diff HEAD origin/prototype-002a` both empty
+before it was taken. **074a, 075a, 076a and 077a each needed a SEPARATE
+follow-up commit for exactly this; 078 took the run in the same session
+instead, so no 078a is owed.** The md5 above demonstrably covers what is on
+the remote and not merely the tree the third run saw.
+**THE ONE HONEST QUALIFICATION, because this is the sentence 074a through 077a
+kept having to re-earn.** The paragraph you are reading was itself written
+after that fourth run, so a follow-up commit carries it. **That commit edits
+`docs/` ONLY** — `git diff ce8f49c -- . ':!docs'` is empty, which is the thing
+to re-run rather than to trust — so **the CODE tree the md5 covers is
+byte-identical to the one that was run**, and the greps that make doc edits
+irrelevant to any suite's result were re-run on it: no file in `tests/`
+contains `res://docs` or `"docs/` at all, and every `DirAccess.open` in
+`tests/` targets `res://scripts` or `res://tests`. The recursion stops there
+rather than at another full run, and it stops on a measurement rather than on
+an argument.
 Checked rather than reasoned about (TRAPS 4), and re-run in 078 rather than
 carried forward: **every `DirAccess.open` in `tests/` targets `res://scripts`
 or `res://tests`** — `scan_floor_test`'s included, and that suite now asserts
@@ -8186,18 +8198,18 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
-**THE FIRST LIVE ENTRY AS OF 078, AND IT IS OWED RATHER THAN CHOSEN: a full
-run on the clean pushed tree.** 078's two byte-identical runs
-(`a3bc1d31b13b27db03e8d3949d84b63d`) were taken before its doc edits landed,
-so the recorded md5 does not yet demonstrably cover what is on the remote.
-074a, 075a, 076a and 077a were each this same amendment. Before taking it,
-**check rather than reason** (TRAPS 4) that the doc edits could not have moved
-a result: every `DirAccess.open` in `tests/` targets `res://scripts` or
-`res://tests`, and no file in `tests/` contains `res://docs` or `"docs/` at
-all. 078 re-ran both greps; re-run them rather than trusting this sentence,
-and take the run anyway, which is what each of the four did.
+**NOTHING IS OWED FROM 078 ITSELF, WHICH IS NEW.** 074a, 075a, 076a and 077a
+were each a follow-up commit whose only job was to re-run the suites on the
+clean pushed tree, because the doc edits had landed after the last run. **078
+took that run in the same session**, at `ce8f49c` with the working tree clean
+and `git diff HEAD origin/prototype-002a` empty, and it came back
+byte-identical to the three before it. If you are the next session, **do not
+start by re-running for 078's benefit** — read the record under "Run the tests
+first", take your own baseline, and spend the time on the work below. (Take a
+baseline regardless: that is how you learn the record and the container still
+agree.)
 
-**THE SECOND, AND IT IS THREE ROWS AT ONE LINE EACH.** 078 measured
+**THE FIRST LIVE ENTRY AS OF 078, AND IT IS THREE ROWS AT ONE LINE EACH.** 078 measured
 `source_scan_test`'s own floor: its derived class has **fifteen** members and
 `KNOWN` names **twelve**, so **`agreement_test.gd`, `prompt_numeral_test.gd`
 and `source_scan_test.gd` could each stop scanning source and nobody would be
@@ -11173,10 +11185,9 @@ which cannot be taken from inside a sibling suite. It does not cover
 `FileAccess.open` loops fed by a path list rather than a directory. And **the
 original question the entry asked — whether a counter is incremented at every
 site that decides pass or fail — is still held by nothing**; 078 measured that
-it currently holds everywhere, and measuring is not holding. The md5 above
-covers the code tree only; the doc edits land after the last run, so the
-clean-pushed-tree re-run that 074a through 077a each had to do is owed again
-and is the first entry under "Next action".
+it currently holds everywhere, and measuring is not holding. The md5 is not a
+limitation this time: the fourth run was taken on the clean pushed tree at
+`ce8f49c`, so unlike 074 through 077 this commit owes no follow-up.
 
 **Human decision needed.** None new.
 
