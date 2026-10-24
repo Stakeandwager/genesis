@@ -90,6 +90,17 @@ const KNOWN := [
 	# prints, so it is in this class by the same door formula_test came in
 	# by: a question about what the code DOES, answered from the code.
 	"result_line_test.gd",
+	# 078: scan_floor_test reads every suite's CODE to find its DirAccess.open
+	# sites, so it is in this class by the same door result_line_test came in
+	# by. Added here for the reason this list exists - so a file that STOPS
+	# scanning source is noticed - and not because section 1 required it:
+	# KNOWN is a floor by design. 078 measured that floor: the derived class
+	# has FIFTEEN members and this list names TWELVE of them, so
+	# agreement_test.gd, prompt_numeral_test.gd and source_scan_test.gd could
+	# each leave the class in silence. That is the floor working as its
+	# comment describes rather than a fault, and it is recorded in
+	# docs/HANDOVER.md as three rows available to the next session.
+	"scan_floor_test.gd",
 	"scene_light_test.gd",
 	"view_frame_test.gd",
 ]

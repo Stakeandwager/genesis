@@ -347,6 +347,7 @@ func _initialize() -> void:
 	for c in contributors:
 		paths[str((c as Array)[0])] = true
 	var strays: Array = []
+	var scanned := 0
 	var dir := DirAccess.open("res://scripts")
 	_check(dir != null, "scripts/ can be read")
 	if dir != null:
@@ -354,9 +355,18 @@ func _initialize() -> void:
 			var name := str(file_name)
 			if not name.ends_with(".gd"):
 				continue
+			scanned += 1
 			var path := "res://scripts/" + name
 			if _code_of(_read(path)).contains(_fence()) and not paths.has(path):
 				strays.append(name)
+	# 078: THE FLOOR, and the null check above was not one. The assertion
+	# below is an ABSENCE - "no file holds a stray template" - so it passes
+	# most easily when the scan has read the fewest files: an empty read makes
+	# strays empty and the row green. Measured at 116 assertions, failures=0
+	# with this read pointed at a directory that exists and is empty, which
+	# "dir != null" cannot see. An absence is only worth what the breadth
+	# behind it is worth (TRAPS 6). See tests/scan_floor_test.gd.
+	_check(scanned > 0, "scripts/ was read and holds %d .gd files to scan for stray templates" % scanned)
 	_check(strays.is_empty(),
 		"every prompt template in scripts/ is in a file the registries name (%s)" % str(strays))
 

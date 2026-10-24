@@ -5033,3 +5033,91 @@ Found in 077, reading the paragraph 076 wrote about what it had not done.
 > is the thing that gets read.
 
 ---
+
+## 75. The count was the alarm, and zero was being read as a pass
+
+**Signature:** every suite prints how many assertions it ran, and nothing
+reads the number. A suite prints `0 assertions, failures=0` and the runner
+counts it as a pass. Worse and quieter: a row that asserts an **absence**
+turns green because the scan behind it read nothing, and the absence is then
+quoted as a fact about what Genesis cannot do.
+
+**Cause.** 077 closed the result-line class so that every line says how many
+assertions **ran** as well as how many failed — the point being that a line
+reporting only failures cannot report that an assertion stopped running. It
+then wrote down the live gap: *"nothing holds that `asserted` is incremented
+at every site that decides pass or fail."* Reading for that found something
+one step earlier. **A count is only an alarm if somebody reads it, and the
+loudest reading — zero — was being read as success.** `run_tests.sh` matches
+`*failures=0` and `*bad=0` as a pass, so the cleanest-looking line a suite can
+print is the line it prints when it measured nothing.
+
+Eleven `DirAccess.open` sites in `tests/`, in nine files. **Measured, not
+argued**: each suite was run in a throwaway project with its own `config/name`
+(TRAPS 50) with its read pointed at a directory that **exists and is empty**.
+Eight sites failed, between 1 and 37 failures apiece. Three did not:
+
+```
+loadcheck.gd              LOADCHECK 0 assertions, bad=0   exit 0
+controller_reach_test.gd  120 assertions, failures=0      (two sites)
+prompt_numeral_test.gd    116 assertions, failures=0      (one site)
+```
+
+`loadcheck.gd` is the whole fault in one line: a load check that had loaded
+**nothing whatsoever** reported a pass in both channels. It was also the only
+one of the eleven that never tested the open for null, and **until 078 it was
+named in no document in this repository** — not `TRAPS.md`, not `HANDOVER.md`,
+not either runner. **Nothing had ever read it.** This entry and the 078 section
+are what changed that, so the sentence is past tense: the commit that found the
+fault is the commit that made the claim false, and leaving it in the present
+would be TRAPS 14 inside the entry warning about TRAPS 14. Neither runner names
+it even now — both find it by globbing `tests/`. This is TRAPS 11 one filename away from
+where 077 was working: 077 fixed exactly this fault in `load_check_test.gd`
+and did not ask which other suites could pass having measured nothing.
+
+**An empty directory is not a null directory, and a null check does not see
+it.** `prompt_numeral_test` had `_check(dir != null, "scripts/ can be read")`
+and still passed, because the directory it was handed opened fine and held
+nothing.
+
+**The two that PASSED are worse than the one that vanished.** An assertion
+that stops running takes the count down with it, and the count is at least
+visible to a person reading the list. An assertion that **passes vacuously**
+reports a fact. `prompt_numeral_test`'s row says no file in `scripts/` holds a
+stray prompt template. `controller_reach_test`'s says nothing in `scripts/`
+appends to `corner_nodes` — **and that row is the premise for its claim that
+two of the controller's refusal branches are out of a player's reach.** Both
+rows are at their greenest when the scan has read the fewest files. The
+comment above the second one says *"Grepped, not remembered"*, which is
+exactly what it stops being when the grep reads nothing. TRAPS 6 and TRAPS 14
+in one assertion: a test guarding an assumption, underwriting a published
+claim about what Genesis cannot do.
+
+**Do:**
+
+- **A scan that reads a directory must assert that the read produced
+  something.** Otherwise its cleanest result is the one it gives when it has
+  looked at nothing. This is not a new rule — `record_id_test` already states
+  it: *"at least one suite in `tests/` starts a session, so this section is
+  measuring something"*. 078's work was applying it everywhere it holds.
+- **Ask of every absence: how wide was the net, and is the width asserted?**
+  An absence is worth exactly what the breadth behind it is worth. `X.is_empty()`
+  and `strays.is_empty()` prove nothing on their own; pair every one of them
+  with a floor on what was searched.
+- **A null check is not a floor.** Null means "could not open". Empty means
+  "opened and held nothing". The second is the one that passes.
+- **Zero is a verdict, not a neutral value.** Any assertion count that can
+  reach zero needs a line that turns zero into a failure. Grep your runner
+  for what it accepts as a pass before trusting a result line.
+- **When a commit fixes a fault, grep for the fault's own words, not its
+  file.** 077 wrote *"a load check that had measured nothing whatsoever would
+  have been counted as a pass"* and fixed `load_check_test.gd`. `loadcheck.gd`
+  was one `ls` away.
+
+Found in 078, reading 077's "Next action" entry for a drifted counter and
+finding a zero nobody read.
+
+> The suites all counted their assertions. Nothing asked what it meant when
+> the count was none.
+
+---

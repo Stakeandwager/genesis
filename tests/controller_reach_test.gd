@@ -375,6 +375,7 @@ func _enumeration() -> void:
 		"FAILED_INFEASIBLE", "FAILED_CLOSURE", "FAILED_SEPARATION"]
 	var dir := DirAccess.open("res://scripts")
 	var every := {}
+	var scanned := 0
 	if dir != null:
 		for name in dir.get_files():
 			if not name.ends_with(".gd"):
@@ -382,11 +383,22 @@ func _enumeration() -> void:
 			var f := FileAccess.open("res://scripts/" + name, FileAccess.READ)
 			if f == null:
 				continue
+			scanned += 1
 			var text := f.get_as_text()
 			f.close()
 			var re := RegEx.create_from_string("FAILED_[A-Z][A-Z_]*")
 			for m in re.search_all(text):
 				every[m.get_string()] = true
+	# 078: THE FLOOR. Every assertion below this comes out of the loop above,
+	# so an empty read made ZERO of them and the suite still printed
+	# "failures=0" - measured at 120 assertions, failures=0 with this read
+	# pointed at an empty directory. An assertion that stopped running was
+	# indistinguishable from one that passed (TRAPS 73). See
+	# tests/scan_floor_test.gd, which holds this rule for every
+	# DirAccess.open site in tests/.
+	_check(scanned > 0, "scripts/ was read and holds %d .gd files to scan for FAILED_ names" % scanned)
+	_check(not every.is_empty(),
+		"and they hold %d distinct FAILED_ names to answer for" % every.size())
 	for name in every:
 		var n := str(name)
 		_check(declared.has(n) or module_names.has(n),
@@ -626,6 +638,7 @@ func _guard_no_handler() -> void:
 # scripts/ appends to. Grepped, not remembered.
 func _guard_spawn_opponents() -> void:
 	var appends := 0
+	var scanned := 0
 	var dir := DirAccess.open("res://scripts")
 	if dir != null:
 		for name in dir.get_files():
@@ -634,6 +647,7 @@ func _guard_spawn_opponents() -> void:
 			var f := FileAccess.open("res://scripts/" + name, FileAccess.READ)
 			if f == null:
 				continue
+			scanned += 1
 			var text := f.get_as_text()
 			f.close()
 			for raw_line in text.split("\n"):
@@ -642,6 +656,15 @@ func _guard_spawn_opponents() -> void:
 					continue
 				if line.contains("corner_nodes.append") or line.contains("corner_nodes +="):
 					appends += 1
+	# 078: THE FLOOR, and this one carries more than a count. The assertion
+	# below is an ABSENCE - "nothing in scripts/ appends to corner_nodes" -
+	# and it is the PREMISE for the claim that SPAWN_OPPONENTS' two branches
+	# are out of a player's reach. An absence found by reading nothing is not
+	# an absence, so without this line a failed or empty read would have
+	# underwritten a claim about what Genesis cannot do (TRAPS 6, TRAPS 14).
+	# The comment above says "Grepped, not remembered"; this is the line that
+	# keeps that true.
+	_check(scanned > 0, "scripts/ was read and holds %d .gd files to scan for corner_nodes appends" % scanned)
 	_check(appends == 0,
 		"nothing in scripts/ puts a node in TrackBuilder.corner_nodes (found %d), so has_track() is always false" % appends)
 	await _send(CLEAR)

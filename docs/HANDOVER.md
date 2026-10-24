@@ -24,7 +24,132 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **077**, which built the reader 076 said
+- Last commit at the time of writing: **078**, which went looking for the
+  drifted counter 077's "Next action" named and found something one step
+  earlier: **the count was the alarm, and zero was being read as a pass.**
+  077 gave every result line an assertion count so that a line could report an
+  assertion that stopped RUNNING, not merely one that failed. Nothing reads
+  the number. `run_tests.sh` matches `*failures=0` and `*bad=0` as a pass, so
+  **the cleanest line a suite can print is the line it prints when it measured
+  nothing.**
+  **ELEVEN `DirAccess.open` SITES IN `tests/`, IN NINE FILES, AND THE CLASS WAS
+  TWO THIRDS RIGHT.** Measured, not argued: each suite was run in a throwaway
+  project with its own `config/name` (TRAPS 50), with its read pointed at a
+  directory that **exists and is empty** — the case a null check cannot see.
+  Eight sites failed, between 1 and 37 failures apiece. **Three did not:**
+  **`loadcheck.gd`** printed `LOADCHECK 0 assertions, bad=0` **and exited 0**;
+  **`controller_reach_test.gd`** scored 120 assertions, failures=0 across two
+  sites; **`prompt_numeral_test.gd`** scored 116 assertions, failures=0.
+  **`loadcheck.gd` IS THE WHOLE FAULT IN ONE LINE: a load check that had
+  loaded nothing whatsoever reported a pass in both channels.** It was also
+  the only one of the eleven that never tested the open for null, and **until
+  this commit it was named in no document in this repository** — not
+  `TRAPS.md`, not this file, not either runner. Nothing had ever read it. The
+  tense is deliberate: 078 is the commit that made that claim false, and this
+  paragraph is the one place it would have gone stale unremarked (TRAPS 14).
+  Neither runner names it even now — both find it by globbing `tests/`. **This is TRAPS 11 one filename
+  away from where 077 was working**: 077 fixed exactly this fault in
+  `load_check_test.gd` ("a load check that had measured nothing whatsoever
+  would have been counted as a pass") and did not ask which other suites could
+  pass having measured nothing.
+  **AND THE TWO THAT PASSED ARE WORSE THAN THE ONE THAT VANISHED.** An
+  assertion that stops running takes the count down with it, and the count is
+  at least visible to a person reading the list. An assertion that **passes
+  vacuously reports a fact.** `prompt_numeral_test`'s row says no file in
+  `scripts/` holds a stray prompt template — and it had
+  `_check(dir != null, "scripts/ can be read")`, which passed, because the
+  directory opened fine and held nothing. `controller_reach_test`'s row says
+  nothing in `scripts/` appends to `corner_nodes`, **and that row is the
+  premise for its claim that two of the controller's refusal branches are out
+  of a player's reach.** Both rows are at their greenest when the scan has read
+  the fewest files. The comment above the second one says *"Grepped, not
+  remembered"*, which is exactly what it stops being when the grep reads
+  nothing. TRAPS 6 and TRAPS 14 in one assertion.
+  **THE RULE IS THIS PROJECT'S OWN, AND 078'S WORK WAS APPLYING IT.**
+  `record_id_test` already states it: *"at least one suite in `tests/` starts a
+  session, so this section is measuring something"*. Generalised: **a scan that
+  reads a directory must assert that the read produced something, or its
+  cleanest result is the one it gives when it has looked at nothing.** All four
+  faulty sites now carry a floor, and **both fixed suites were re-measured
+  against the empty directory and now FAIL** — `controller_reach_test` 123
+  assertions, failures=3; `prompt_numeral_test` 117 assertions, failures=1.
+  Measured in both directions.
+  **THE READER: `tests/scan_floor_test.gd`, 73 assertions.** The class is
+  **derived, not listed** — every `.gd` in `tests/` whose CODE calls
+  `DirAccess.open` on a `res://` path is a site, so a scan added tomorrow is in
+  the class by arriving. Of each site it asks the two questions it can answer
+  from source: **is the open checked for null** (the half `loadcheck` failed),
+  and **is there a named assertion that fails when the read comes back empty**.
+  It asserts a **unique key per site** so one row cannot silently answer for
+  two reads, counts each named floor's occurrences so two sites sharing a
+  condition need two of them, and asserts each row names a **condition and not
+  a message** — a row naming the wording would be a test of the wording
+  (TRAPS 6). **It is a member of its own class and carries its own row**,
+  asserted rather than left to be noticed.
+  **MEASURED, NOT ARGUED: eight deliberate faults, each in its own throwaway
+  copy with its own `config/name` (TRAPS 50), every one caught and naming
+  itself.** `loadcheck`'s floor deleted; a **new unrowed `DirAccess.open` site**
+  added to `shape_test` (caught by file, line and key); a null check removed
+  from `result_line_test`; a floor condition renamed `>= 16` -> `>= 15`; a
+  `FLOORS` row for a live site deleted; a row renamed to name a **vanished**
+  site (2 FAILs, both directions of the class); **two opens in one function**,
+  which is the key collision (2 FAILs); and a suite-level row made to name a
+  condition **no site relies on**.
+  **TWO MUST-PASS CONTROLS PASS AT THE SAME 73** — an open written **in a
+  comment**, and a **`user://`** open rather than `res://`. So the scan reads
+  code and reads the repository's own files, and neither is a site (TRAPS 64).
+  **THE SUITE CAUGHT A MODELLING ERROR IN ITS OWN FIRST ROW, WHICH IS WHY THE
+  ROWS HAVE TWO KINDS.** `check_wiring_test::_no_door_rows` does
+  `if dir == null: continue`, so its assertions **vanish rather than fail** —
+  the exact shape this class is about. It is covered at **suite** level, by
+  `_verdict_functions`' floor in the same file, not at site level. The first
+  version of the reader counted every row alike and failed on it by name:
+  *"holds the condition 'found.size() >= 30' 1 time(s), and 2 site(s) name
+  it"*. Such a row is now marked `suite_level`, asked the **weaker** question
+  (presence, not count), **told apart in the output so nobody reads it as the
+  stronger one**, and required to name a condition some **other** site's row
+  names, so a row cannot invent a floor nothing relies on.
+  **WHAT CHANGED.** One file added to `tests/` and four edited
+  (`loadcheck.gd`, `controller_reach_test.gd`, `prompt_numeral_test.gd`, and
+  `source_scan_test.gd` for the new member's row). **Nothing in `scripts/`,
+  `scenes/`, `docs/harness/` or either runner.**
+  **AND A MEASUREMENT OF `source_scan_test`'S OWN FLOOR, RECORDED RATHER THAN
+  ACTED ON.** Its derived class has **FIFTEEN** members and its `KNOWN` list
+  names **twelve** with 078's row added, so **`agreement_test.gd`,
+  `prompt_numeral_test.gd` and `source_scan_test.gd` could each leave the
+  class in silence.** That is the floor working as its own comment describes
+  ("a floor and not an equality, so a tenth scanner does not have to edit this
+  line") rather than a fault — the owner's design choice is not being changed
+  here. Three rows, one line each, are available to the next session; see
+  "Next action".
+  **NOT VERIFIED, AND THE GAPS ARE THE PART TO READ. The reader does NOT prove
+  a floor is load-bearing.** `FLOORS` names the condition covering each site
+  and the suite asserts that condition is still in that file's code; it cannot
+  prove the condition would actually fail on an empty read. **Proving that
+  needs the suite RUN against an empty directory, which cannot be done from
+  inside a sibling suite** — it takes a throwaway project apiece. That
+  measurement was taken for all eleven sites in 078 and its numbers are above
+  and under "Run the tests first"; what the suite adds is that a named floor
+  cannot be deleted or renamed in silence and that a NEW read arrives with no
+  floor named at all. It also does not read `FileAccess.open` loops that are
+  fed by a path list rather than a directory, and the original "Next action"
+  question — **whether a counter is incremented at every site that decides
+  pass or fail** — is **still held by nothing**; 078 re-measured 077's screen
+  of it and the screen reproduced (58 of 72 members have exactly one increment
+  line, 14 do not, and the fourteen are the same fourteen 077 named). See
+  "Next action".
+  **Nothing was rendered, no window was opened, no model was asked anything and
+  no request left the container. There is no API key here.** The prompt is
+  byte-identical, `PROMPT_FINGERPRINT` did not move and `PROMPT_VERSION` stays
+  at `050-no-command-for-a-question-1`. No secret was set and no workflow file
+  was edited — `git status` names only `tests/` and `docs/`, read rather than
+  assumed. **064's finding is carried forward, not re-verified**: that the two
+  deploy secrets are empty and the `web build` workflow has failed on every
+  push since run 28 was 064's measurement, and nothing here re-took it; the
+  live site's commit cannot be read from this container at all, so no claim is
+  made about it beyond what 064 recorded. **No new "Human decision needed."**
+  New TRAPS 75.
+- Before 078: **077**, which built the reader 076 said
   did not exist, and the reader found **seven faults in 076's own class on its
   first run**. 076 closed TRAPS 73 by hand — 71 suites, a count on every result
   line — and wrote down plainly, in TRAPS 73 and in its own "Next action", that
@@ -2446,11 +2571,12 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-**75** files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **73 suites**, counted with `ls tests/*.gd` rather than
+**76** files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **74 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
-broken. `--all` adds the two slow racing suites, which are counted in the 73
+broken. `--all` adds the two slow racing suites, which are counted in the 74
 and are skipped without it.
+**078 ADDED ONE** (`scan_floor_test`) and re-ran the `ls`: **76 and 74**.
 **077 ADDED ONE** (`result_line_test`) and re-ran the `ls`: **75 and 73**.
 **THESE TWO NUMBERS WERE STALE BY ONE WHEN 073 READ THEM**, and 073
 re-counted rather than carrying them forward: they said 72 files and 70
@@ -2471,7 +2597,62 @@ worlds, and suites fail for reasons that have nothing to do with the code.
 055 took four answers off such a run before noticing. If a run is being used
 as a measurement, clear `user://` before it, baseline included (TRAPS 50).
 
-Last full run (077, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+Last full run (078, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
+headless, in a cloud container, every run sequential with `user://` cleared
+first): **suites with something to look at: 0** on all **74**, with `--all`.
+`ls tests/*.gd` returned **76** and the run reported **74**, re-counted rather
+than carried forward.
+The baseline in this container before anything was touched was the same on
+**73** and was **byte-identical to the md5 077a recorded on the clean pushed
+tree** (`eacbafcdd519e7fd4caf08361e8a066c`), so the record and the container
+agreed before a line was changed.
+**THE LISTS WERE DIFFED AND THE DIFF IS EXACTLY WHAT 078 PREDICTED BEFORE
+RUNNING, LINE FOR LINE.** One line **added** — `scan_floor_test` at 73
+assertions — and five counts moved, each for a stated reason:
+`controller_reach_test` **136 -> 139** (two floors plus the FAILED_-name
+non-emptiness row), `loadcheck` **37 -> 39** (the open as an assertion, plus
+the floor), `prompt_numeral_test` **116 -> 117** (one floor),
+`result_line_test` **322 -> 326** (the new suite's own result line, read by
+its four per-member sections) and `source_scan_test` **26 -> 27** (the new
+file's row in `KNOWN`). **No other suite's result line moved and no suite's
+verdict moved**, so neither runner needed an edit: `run_tests.sh`'s three
+lists match on whole words and `run_tests.bat`'s `findstr` patterns on
+substrings, and both were **READ** against the new name rather than assumed
+(TRAPS 4) — neither matches `scan_floor_test`.
+**THREE full runs on the final tree, `user://` cleared before each, all
+BYTE-IDENTICAL** (md5 `a3bc1d31b13b27db03e8d3949d84b63d`) — three rather than
+two because comments in `tests/loadcheck.gd` were corrected after the second,
+which is the same reason 077 took a third. **This md5 covers
+the CODE tree only.** 074a, 075a, 076a and 077a each needed a follow-up commit
+because their doc edits landed after the last run; 078's doc edits land after
+these three runs as well, so **the same amendment is owed and is the first entry
+under "Next action"** — a run on the clean pushed tree, which is the only thing
+that makes the md5 demonstrably cover what is on the remote.
+Checked rather than reasoned about (TRAPS 4), and re-run in 078 rather than
+carried forward: **every `DirAccess.open` in `tests/` targets `res://scripts`
+or `res://tests`** — `scan_floor_test`'s included, and that suite now asserts
+it of all eleven sites — and **no file in `tests/` contains `res://docs` or
+`"docs/` at all**, not even in a comment. So no suite can read anything under
+`docs/` and the doc edits could not have moved any suite's result.
+**078 adds a suite, so the md5 above is a fresh baseline and 077's is not
+comparable to it.** There is nothing to strip-and-diff: 078 changes no existing
+result line's FORMAT, so the raw diff above is the comparison.
+**THE EMPTY-DIRECTORY MEASUREMENT, which is the evidence `scan_floor_test`
+cannot produce itself.** Each of the nine directory-reading suites was run in a
+throwaway project with its own `config/name`, with every `DirAccess.open`
+rewritten to a directory that exists and is empty. Before 078's fixes:
+`agreement_test` failures=3, `check_wiring_test` failures=37,
+`record_id_test` failures=1, `refusal_reach_test` failures=18,
+`result_line_test` failures=6, `source_scan_test` failures=13 — and
+**`controller_reach_test` failures=0 at 120 assertions**,
+**`prompt_numeral_test` failures=0 at 116**, **`loadcheck` `0 assertions,
+bad=0` at exit 0**. After 078's fixes, re-measured the same way:
+**`controller_reach_test` 123 assertions, failures=3** and
+**`prompt_numeral_test` 117 assertions, failures=1**. The covering assertion
+for each of the other six was read off that run's FAIL lines rather than
+guessed, which is where each row in `FLOORS` comes from.
+
+The run before it (077, Godot 4.7.1 on Linux, `4.7.1.stable.official.a13da4feb`,
 headless, in a cloud container, every run sequential with `user://` cleared
 first): **suites with something to look at: 0** on all **73**, with `--all`.
 `ls tests/*.gd` returned **75** and the run reported **73**, re-counted rather
@@ -8005,9 +8186,44 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
-**THE LIVE ENTRY AS OF 077, AND IT IS THE LAST THING IN THE RESULT-LINE CLASS
-WITH NO READER: nothing holds that `asserted` is incremented at every site
-that decides pass or fail.** 077 holds that a count is printed and that it is
+**THE FIRST LIVE ENTRY AS OF 078, AND IT IS OWED RATHER THAN CHOSEN: a full
+run on the clean pushed tree.** 078's two byte-identical runs
+(`a3bc1d31b13b27db03e8d3949d84b63d`) were taken before its doc edits landed,
+so the recorded md5 does not yet demonstrably cover what is on the remote.
+074a, 075a, 076a and 077a were each this same amendment. Before taking it,
+**check rather than reason** (TRAPS 4) that the doc edits could not have moved
+a result: every `DirAccess.open` in `tests/` targets `res://scripts` or
+`res://tests`, and no file in `tests/` contains `res://docs` or `"docs/` at
+all. 078 re-ran both greps; re-run them rather than trusting this sentence,
+and take the run anyway, which is what each of the four did.
+
+**THE SECOND, AND IT IS THREE ROWS AT ONE LINE EACH.** 078 measured
+`source_scan_test`'s own floor: its derived class has **fifteen** members and
+`KNOWN` names **twelve**, so **`agreement_test.gd`, `prompt_numeral_test.gd`
+and `source_scan_test.gd` could each stop scanning source and nobody would be
+told.** That is the floor working as its own comment describes — *"a floor and
+not an equality, so a tenth scanner does not have to edit this line"* — and
+**the owner's design choice is not being changed without him**, which is why
+078 recorded it instead of acting on it. Adding the three rows makes *"one
+LEAVING is noticed"* true of every member rather than of twelve of fifteen,
+and costs nothing else. **Read the list before trusting this paragraph**: 078
+added its own row, so the numbers here are the numbers after that.
+
+**AND THE ORIGINAL ENTRY BELOW IS STILL OPEN, BUT IT IS NOT WHAT IT LOOKED
+LIKE.** 078 went after it, re-measured 077's screen, and found the screen
+reproduces and **the per-function pairing holds in every one of the fourteen**
+— `report_test` counts inside `_eq`/`_near` and records the failure at the
+`bad += _eq(...)` call site, so a line-order rule would flag it falsely, and
+`formula_test`'s second `lines.append` is a note `_notes()` subtracts back
+out. **So there is no fault to fix here today, and a suite written to hold the
+shape anyway would assert a shape rather than a fact** (TRAPS 6), against this
+entry's own closing warning. What 078 did instead is under the 078 section.
+**Measuring is not holding**, so the entry stays open — but whoever takes it
+should read that paragraph first and decide whether a reader of this is worth
+its code, rather than starting from the sketch below.
+
+**THE ORIGINAL ENTRY, 077'S, LEFT AS WRITTEN: nothing holds that `asserted` is
+incremented at every site that decides pass or fail.** 077 holds that a count is printed and that it is
 fed by something the suite increments; it cannot see whether the increment
 happens on every path. 076 did that reading by hand, 71 files, and TRAPS 73
 records the shape it costs when it is wrong: one condition removed from a
@@ -10882,6 +11098,87 @@ be wrong and the corrections are the useful part.
    suite reads it. It is four lines and a `match`. Whether a colour is worth
    a test is a judgement about what a panel suite is for, so it is noted
    rather than taken.
+
+## 078 — the count was the alarm, and zero was being read as a pass
+
+**Objective.** Read the repository first, as instructed, and take the highest
+thing that is honestly useful. There is **no unaddressed owner finding** — the
+last owner session recorded in this file is still 2026-10-14/16, and nothing
+since. So: the **first live entry under 077's "Next action"**, which is that
+nothing holds that the assertion counter is incremented at every site that
+decides pass or fail.
+
+**Starting state.** `prototype-002a` at `9c0dffd` (077a), working tree clean
+and `git diff HEAD origin/prototype-002a` empty. Baseline in this container
+before anything was touched: `ls tests/*.gd` returned **75**, the run reported
+**73 suites**, `--all`, `user://` cleared first, **0 suites with something to
+look at**, and the output **byte-identical to the md5 077a recorded on the
+clean pushed tree** (`eacbafcdd519e7fd4caf08361e8a066c`). The record and the
+container agreed before a line was changed. Godot was checked rather than
+assumed: `4.7.1.stable.official.a13da4feb`, the same build the record names.
+
+**Decision, and it is a departure from what the entry asked for.** The entry
+proposed a scan that sorts the 72 members into "funnels every assertion
+through one helper" (safe by construction) and a named short list of fourteen
+that do not. **That screen was re-measured first and it reproduced exactly** —
+58 with one increment line, 14 without, the same fourteen 077 named. Then the
+per-function pairing was measured for all fourteen, and **it holds in every
+one of them**: `report_test` counts inside `_eq`/`_near` and records the
+failure at the `bad += _eq(...)` call site, which is why a line-order
+alternation rule would have flagged it falsely, and `formula_test`'s second
+`lines.append` is a note that `_notes()` subtracts back out. **So the fourteen
+were not where the fault was, and bookkeeping them would have produced a
+suite that asserted a shape rather than a fact** (TRAPS 6), with the entry's
+own warning against it: *"Do not attempt to hold this by raising a number."*
+
+**What reading for it found instead, one step earlier.** A count is only an
+alarm if somebody reads the alarm, and **the loudest possible reading — zero —
+was being read as a pass.** `run_tests.sh` matches `*failures=0` and `*bad=0`
+as a pass, so the cleanest-looking line a suite can print is the one it prints
+when it measured nothing. Three suites could do exactly that, and the details,
+the numbers and the two directions of the lesson are under "Starting state"
+and "Run the tests first" above rather than repeated here. The short version:
+**`loadcheck.gd` printed `LOADCHECK 0 assertions, bad=0` and exited 0** — a
+load check that had loaded nothing reporting a pass in both channels, the same
+fault 077 fixed in `load_check_test.gd` one filename away (TRAPS 11) — and
+**`controller_reach_test` and `prompt_numeral_test` each had a row that
+asserted an ABSENCE and therefore passed hardest when its scan read least**,
+one of them the premise for a published claim about what Genesis cannot do
+(TRAPS 6, TRAPS 14).
+
+**Implementation.** `tests/scan_floor_test.gd` added (73 assertions, six
+sections, class derived from every `DirAccess.open` on a `res://` path in
+`tests/`). `tests/loadcheck.gd`: the open becomes a recorded assertion instead
+of a throw, and a floor records a failure when nothing was loaded.
+`tests/controller_reach_test.gd`: a `scanned` floor at both scan sites, plus a
+non-emptiness row on the `FAILED_` names the first one collects.
+`tests/prompt_numeral_test.gd`: a `scanned` floor at its stray-template scan.
+`tests/source_scan_test.gd`: the new file added to `KNOWN` as the twelfth
+member of the source-scanner class it holds. Nothing in `scripts/`, `scenes/`,
+`docs/harness/` or either runner.
+
+**Evidence.** The empty-directory measurement for all eleven sites, before and
+after, with its numbers under "Run the tests first"; eight deliberate faults
+against the new reader and two must-pass controls at the same count, each in
+its own throwaway copy with its own `config/name`; three full runs on the
+final tree, all byte-identical; and the full-run diff **exactly as predicted before
+running, line for line**. The reader caught a modelling error in its own first
+row on its first run, which is why `FLOORS` has two kinds of row — recorded
+under "Starting state".
+
+**Limitations.** The reader does **not** prove a floor is load-bearing: it
+asserts that the named condition is still in the code, not that the condition
+would fail on an empty read. That evidence is the empty-directory measurement,
+which cannot be taken from inside a sibling suite. It does not cover
+`FileAccess.open` loops fed by a path list rather than a directory. And **the
+original question the entry asked — whether a counter is incremented at every
+site that decides pass or fail — is still held by nothing**; 078 measured that
+it currently holds everywhere, and measuring is not holding. The md5 above
+covers the code tree only; the doc edits land after the last run, so the
+clean-pushed-tree re-run that 074a through 077a each had to do is owed again
+and is the first entry under "Next action".
+
+**Human decision needed.** None new.
 
 ## 077 — the class was counted in suites, and the fault was in result lines
 
