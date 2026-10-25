@@ -191,6 +191,30 @@ const BRANCHES := [
 	["FAILED_AI", "ExperimentRunner: the model failed every retry", "NEEDS_KEY"],
 ]
 
+# 090: SHOULD THIS TABLE BE KEYED BY REFUSAL SENTENCE INSTEAD OF BY CALL
+# SITE? NO, AND THIS NOTE IS HERE SO THE QUESTION IS NOT RE-ASKED. It was
+# 089's live next action and the reading is done. Four of these rows DELEGATE:
+# the site passes a validator's whole error set through, so one row stands for
+# many sentences - NpcGoals.validate makes 10, validate_door 5, the three
+# tools' validate 17 between them, and only the EQUIP no-tool row composes its
+# two at the site. Keying by sentence would replace 28 rows with a class three
+# to five times larger and most of it is another file's to answer for: the
+# three PASSTHROUGH sites below are refusal_reach_test's, and the tools' and
+# NpcGoals' sentences belong to the suites that drive those functions
+# directly. SO THE ROWS STAY KEYED BY SITE.
+#
+# WHAT THE READING FOUND INSTEAD IS THE COST OF THAT KEYING, AND IT WAS
+# MEASURED RATHER THAN REASONED ABOUT. A row keyed by site says nothing about
+# how many of its producer's sentences anything drives. Every sentence site in
+# the four producers was instrumented in a throwaway copy and all 74 suites run
+# one at a time: of 32 sentences, FOUR WERE EXECUTED BY NO SUITE AT ALL, and
+# all four are reachable - each was sent through main.gd and the record read.
+# Three of them are probed in section 2 now and the fourth is look_test's.
+# Blanked one at a time against the committed 089 tree, EIGHT of the 31
+# blankable sentences were silent; 090 closed five. The other four, the
+# arithmetic, and the design for the reader that would hold the whole class
+# are in TRAPS 87 and in HANDOVER's next action.
+
 # Passed through from a world module's four steps, not decided here. These
 # are refusal_reach_test's twelve branches arriving at the controller.
 const PASSTHROUGH_SITES := 3
@@ -231,6 +255,12 @@ const KIND_TOTALS := {"REACHABLE": 22, "GUARD": 5, "NEEDS_KEY": 1}
 #        FAILED_SCHEMA / "ORDER: the goal does not check out"
 #          - one call site (:237), the only FAILED_SCHEMA ORDER site, probed
 #            with no dungeon at all and with no room named.
+#      090 MADE IT 24 CALLS FIRING THE SAME 19 ROWS, and the two numbers
+#      above are left as 088 measured them because this paragraph is about
+#      what 088 read. The ORDER goal row now carries FOUR probes and the
+#      SHUT/OPEN door row TWO; the count below in section 6 is read off the
+#      probes as they fire, so neither number here is relied on by any
+#      assertion. Why those three were added is at the call sites.
 #   + 3 rows driven by the two fixtures that use NO _reaches() AT ALL, each
 #     for a reason in the branch itself rather than by oversight:
 #        FAILED_PARSE / "main.gd: the answer never became a command"
@@ -765,6 +795,41 @@ func _reachable_order() -> void:
 		'{"command": "SHUT", "parameters": {"between": ["store", "nowhere"]}}',
 		"FAILED_SCHEMA", "SHUT",
 		"SHUT/OPEN: the door does not check out")
+	# 090: THREE MORE PROBES OF THE TWO DELEGATING ROWS, AND WHY THEY ARE
+	# HERE RATHER THAN SOMEWHERE ELSE. These three refusals are REACHABLE
+	# from a legal request - each was sent through main.gd this session and
+	# the record read - and before 090 NO SUITE IN THE REPOSITORY EXECUTED
+	# THE LINE THAT WRITES THEM. Measured, not reasoned about: every sentence
+	# site in NpcGoals.validate, NpcGoals.validate_door and the three tool
+	# validators was instrumented in a throwaway copy, all 74 suites were run
+	# one at a time, and the sites each suite reached were collected. Four of
+	# the thirty-two sentences behind these rows were reached by NOTHING -
+	# these three and LookTool's "too small to be a face", which is
+	# look_test's and is driven there. See TRAPS 87 and HANDOVER.
+	#
+	# THE ROWS ARE RIGHT AS THEY ARE, KEYED BY CALL SITE, AND THAT IS WHAT
+	# MAKES THESE PROBES THE FIX RATHER THAN A RE-KEY. HANDOVER carried the
+	# question "should this table be keyed by refusal SENTENCE instead?" as
+	# 089's live next action. The reading is done and the answer is no: the
+	# five delegating rows stand for 32 sentences, most of them another
+	# file's to answer for (the three `_prepare_world` sites are declared
+	# PASSTHROUGH here for exactly that reason), so keying by sentence would
+	# replace 28 rows with a class three to five times larger. What the
+	# reading DID buy is the arithmetic above: a row keyed by site says
+	# nothing about how many of its producer's sentences are driven, and
+	# nobody had counted. Three of the four it found are added here.
+	await _reaches("ORDER with no goal at all",
+		'{"command": "ORDER", "parameters": {"room": "vault"}}',
+		"FAILED_SCHEMA", "ORDER",
+		"ORDER: the goal does not check out")
+	await _reaches("ORDER to carry with nothing named",
+		'{"command": "ORDER", "parameters": {"goal": "carry", "room": "vault"}}',
+		"FAILED_SCHEMA", "ORDER",
+		"ORDER: the goal does not check out")
+	await _reaches("SHUT a door between one room and itself",
+		'{"command": "SHUT", "parameters": {"between": ["entrance", "entrance"]}}',
+		"FAILED_SCHEMA", "SHUT",
+		"SHUT/OPEN: the door does not check out")
 	# Shut the vault off, then try to reach it on foot and carrying.
 	await _send('{"command": "SHUT", "parameters": {"between": ["store", "vault"]}}')
 	await _reaches("ORDER walking to a room behind a shut door",
@@ -1159,21 +1224,26 @@ func _out_of_reach_coverage() -> void:
 # as a count one short (TRAPS 84).
 #
 # AND NOT "EXACTLY ONCE", WHICH SECTION 5 ABOVE CAN ASSERT AND THIS CANNOT.
-# Two rows are legitimately driven by TWO probes each - the EQUIP row, whose
-# own text names two faults with an "or", and the ORDER goal row, probed with
-# no dungeon and with no room - so claims > rows here, and asserting equality
-# would fail on correct rows (TRAPS 6 pointing the other way). What is
-# asserted is the DISTINCT claimed set against the rows, which is derived off
-# the rows on both sides.
+# THREE rows are legitimately driven by more than one probe - the EQUIP row,
+# whose own text names two faults with an "or"; the ORDER goal row, which
+# since 090 is probed with no dungeon, no room, no goal and nothing to carry;
+# and the SHUT/OPEN door row, probed with a room the dungeon lacks and with a
+# door between one room and itself - so claims > rows here, and asserting
+# equality would fail on correct rows (TRAPS 6 pointing the other way). What
+# is asserted is the DISTINCT claimed set against the rows, which is derived
+# off the rows on both sides.
 #
-# ITS LIMIT, MEASURED AND NOT REASONED ABOUT: because the claim is a set, one
-# of the two probes for either doubly-probed row can be deleted and this stays
-# green. Injected and run after the fix was green; the number is in TRAPS 85.
-# That is the same limit TRAPS 84 recorded for a label spelled by several
-# rows, and it is written here rather than left to be discovered.
-# 089 READ THAT LIMIT AND DID NOT CLOSE IT. It is still open and still
-# measured: delete one of the two probes for either doubly-probed row and this
-# suite is green. What 089 closed is its NEIGHBOUR - see below.
+# ITS LIMIT, MEASURED AND NOT REASONED ABOUT: because the claim is a set, a
+# row carrying more than one probe can lose one of them and this stays green.
+# Injected and run after the fix was green; 088's number is in TRAPS 85 and
+# 089's in TRAPS 86. That is the same limit TRAPS 84 recorded for a label
+# spelled by several rows, and it is written here rather than left to be
+# discovered.
+# 089 READ THAT LIMIT AND DID NOT CLOSE IT, AND 090 DID NOT EITHER. It is
+# still open and RE-MEASURED with 090's three probes in place rather than
+# carried forward (TRAPS 14): the number is in TRAPS 87. 090 made the class
+# LARGER - three rows carry several probes now instead of two - which is a
+# cost of its own and is said here rather than left to be found.
 #
 # IT CANNOT GO QUIET BY MEASURING NOTHING (TRAPS 75): the wanted set is
 # derived from the rows, so an empty `reached` fails once per row, and the

@@ -24,7 +24,142 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **089**, which did the **reading** 088
+- Last commit at the time of writing: **090**, which did the **reading** 089
+  left as the live "Next action" - should `controller_reach_test`'s table be
+  keyed by refusal SENTENCE instead of by call SITE - and the answer is
+  **no, leave it keyed by site**, which is now written **beside the table** so
+  the question is not re-asked. What the reading found on the way is the part
+  worth reading first: **a row keyed by a call site says nothing about how many
+  of its producer's sentences anything drives, and nobody had counted. Four of
+  the thirty-two sentences behind those rows were executed by NO SUITE AT ALL,
+  and all four are reachable from a legal request.** New TRAPS **87**. No new
+  "Human decision needed".
+
+  **THE BASELINE AGREED WITH THE RECORD BEFORE ANYTHING WAS TOUCHED.** The
+  `--all` run in this container, on a clean tree at `1c700eb` with
+  `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 089
+  recorded**: `9869bc3d87fad59f37d23ae0e131bf08`, 74 suites, 0 with something
+  to look at. `ls tests/*.gd` returned **76** and the run reported **74**,
+  re-counted. The container was fresh, so `user://` was empty rather than
+  cleared. **Nothing was owed from 089.**
+
+  **THE READING, AND WHY IT IS AN ANSWER AND NOT A RE-KEY.** 089's own argument
+  against re-keying holds and is unchanged: four of the 28 rows DELEGATE - the
+  site passes a validator's whole error set through - so keying by sentence
+  would replace 28 rows with a class three to five times larger, most of it
+  another file's to answer for. Counted off the code this session, with comment
+  lines blanked (TRAPS 64):
+
+  | row | its producer | sentences | probed before 090 |
+  |---|---|---|---|
+  | `ORDER: the goal does not check out` | `NpcGoals.validate` | **10** | 2 |
+  | `SHUT/OPEN: the door does not check out` | `NpcGoals.validate_door` | **5** | 1 |
+  | `EQUIP: the tool's own spec is out of bounds` | the three tools' `validate` | **17** (boots 6, car 5, look 6) | 1 |
+  | `EQUIP: no tool named, or a tool the game lacks` | composed at the site | **2** | 2 |
+
+  **AND TWO OF 089'S OWN NUMBERS IN THIS FILE WERE WRONG, RECORDED RATHER THAN
+  TIDIED AWAY.** 089's table said `validate_door` makes **6** and the tools
+  **5/4/3**. Recounted: `validate_door` makes **five** - three `errors.append`
+  sites and two inline `return`s - and the tools **6/5/6**, because 089 counted
+  only the `errors.append` lines inside `validate()` while each of those three
+  functions also refuses through an inline `return [spec_error()]`, and
+  `_bounded()` and `trouble_with()` each make several sentences from one call.
+  **Neither correction changes 089's conclusion**; the unit the count was taken
+  in was never written down, which is what made the two numbers slide
+  (TRAPS 24, TRAPS 77).
+
+  **THE FINDING: EIGHT OF THE THIRTY-ONE BLANKABLE SENTENCES WERE HELD BY
+  NOTHING, AND FOUR WERE NOT EXECUTED BY ANY SUITE.** Measured twice over, not
+  read off the code. First an EXECUTION SWEEP: every sentence site in the four
+  producers was instrumented in a throwaway copy to write a marker naming
+  itself, and all **74** suites were run **one at a time** with the markers
+  cleared before each. Then a BLANKING SWEEP: each sentence made to say nothing,
+  one at a time, against the committed 089 tree, in a throwaway copy with its
+  own `config/name` (TRAPS 50, TRAPS 80), running the suites that execute it
+  plus every suite that reads `scripts/` as text. **The instrumented copy with
+  no site selected is byte-identical to the uninstrumented control**, so the
+  instrumentation holds nothing of its own.
+
+  | sentence | reached by | blanked, before 090 | after 090 |
+  |---|---|---|---|
+  | `an order needs a goal (it has go_to, carry)` | **nothing** | SILENT | **caught** |
+  | `carrying needs something to carry (this dungeon has lamp)` | **nothing** | SILENT | **caught** |
+  | `a door joins two different rooms` | **nothing** | SILENT | **caught** |
+  | `'...' is only 8 by 8, which is too small to be a face` | **nothing** | SILENT | **caught** |
+  | `'...' is not a picture this game can read` | `look_test` | SILENT | **caught** |
+  | `'x' is not something a character can be asked to do` | `order_test` | SILENT | **STILL SILENT** |
+  | `this dungeon has 3 rooms, so there is no room 9` | `container_door_test`, `procedure_test` | SILENT | **STILL SILENT** |
+  | `there is nothing to carry in this dungeon` | `carry_test` | SILENT | **STILL SILENT** |
+  | `a door is named by the two rooms it joins, for example ...` | `panel_refused_test` | SILENT | **STILL SILENT** |
+
+  **THE SECOND HALF OF THAT TABLE IS THE SHARPER LESSON: a suite drove the
+  sentence and asserted only that the refusal happened.** `carry_test` sends a
+  carry order into an empty dungeon and checks `ok == false`; `order_test` sends
+  an invented goal and checks the same. **Execution is not holding**, and the
+  four still-silent ones were **re-measured against the 090 tree** rather than
+  assumed to be unchanged.
+
+  **ALL FOUR OF THE UNEXECUTED SENTENCES WERE DRIVEN THROUGH `main.gd` THIS
+  SESSION BEFORE ANYTHING WAS WRITTEN**, and all four are reachable and all four
+  said the right thing: `ORDER` with no `goal`, `ORDER` to carry with no
+  `thing`, `SHUT` between one room and itself, and an `EQUIP look` with an 8x8
+  face. **No product fault was found** - what was missing is anything that would
+  notice if one of them stopped saying anything.
+
+  **WHAT CHANGED.** `tests/controller_reach_test.gd` and `tests/look_test.gd`
+  only. Three new `_reaches()` probes in section 2, on the two delegating rows
+  they belong to, so the row stays keyed by site and **089's own arithmetic ties
+  them**: each draws a DIFFERENT refusal and the suite already asserts distinct
+  row/refusal pairs against probes. In `look_test`, the picture too small to be
+  a face - the third of `trouble_with`'s three sentences, where the file held
+  two, TRAPS 11 at the scale of three adjacent lines - and the three are now
+  asserted to be three DIFFERENT sentences each of which says something. And
+  the answer to the keying question is written beside the `BRANCHES` table,
+  which is what 089's entry asked for.
+
+  **THE OTHER FOUR WERE NOT CLOSED AND THE REASON IS WRITTEN RATHER THAN
+  IMPLIED.** Each needs a sentence assertion inside a suite whose subject is
+  something else, and the honest fix for the class is one reader that drives
+  every sentence a delegating validator can make, with its count read OFF the
+  producers rather than written beside them. That is a suite and it is under
+  "Next action" with the arithmetic; 090 did not build it on the way past.
+
+  **TWO LIMITS, BOTH INJECTED AFTER THE FIX WAS GREEN.** A row carrying several
+  probes can still lose one in silence - 088's limit **re-measured with 090 in
+  place rather than carried forward** (TRAPS 14): delete one of the three new
+  probes and the suite is **301 assertions, failures=0**, the count down by four
+  with nothing red, TRAPS 73's signature. **090 made that class larger**, three
+  multiply-probed rows where there were two, and that is said here rather than
+  left to be found. And `look_test`'s distinctness check holds *"told apart"*
+  and not *"told correctly"*: with `trouble_with`'s "not a picture" sentence
+  made to read *"is only 0 by 0, which is too small to be a face"*, the suite is
+  **23 assertions, failures=0** - correctly, because the sentences still differ.
+  No assertion was added pretending otherwise.
+
+  **THE RUNS.** md5 `a7809dc41e9adb8d963da70255bdc42d`, 74 suites, 0 with
+  something to look at, `--all`, `user://` cleared before each, said in the
+  order they were taken (080's standard is about the ORDER): run 1 was taken
+  once the CODE was final with TRAPS 87 written and this file not yet, and
+  produced the md5; **the md5 was then written into this file before runs 2 and
+  3**, which were on the complete tree, code and docs together. Which is why
+  there is no 090a.
+  **THE DIFF AGAINST THE BASELINE IS THE TWO LINES PREDICTED IN WRITING BEFORE
+  THE RUN**: `controller_reach_test` **293 -> 305** and `look_test`
+  **18 -> 23**, and nothing else moved.
+  **NO FILE IN `scripts/`, `scenes/`, `netlify/`, `.github/`, EITHER RUNNER,
+  `project.godot` OR `export_presets.web.cfg` WAS TOUCHED** - `git status`
+  named only `tests/controller_reach_test.gd`, `tests/look_test.gd` and
+  `docs/`, read rather than assumed. `PROMPT_FINGERPRINT` and `PROMPT_VERSION`
+  did not move. No model was asked anything, no request left the container,
+  there is no API key here.
+  **NOTHING A PLAYER MEETS CHANGED**: this commit is entirely `tests/` and
+  `docs/`, every one of the four sentences is written today exactly as it was
+  before it, and the suite that found this is the same suite that has missed
+  eight of the owner's faults.
+  **064'S FINDING IS CARRIED FORWARD AND NOT RE-VERIFIED**; the live site's
+  commit cannot be read from this container.
+
+- Last commit before that: **089**, which did the **reading** 088
   left as the live "Next action" - can a doubly-probed row's probes be keyed
   off something the **code** already has, so the claim becomes a measurement
   rather than a second label - and the answer is **half yes**. The wording
@@ -3606,6 +3741,18 @@ than suites, leaving **74 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 74
 and are skipped without it.
+**090 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
+what the two numbers above say. Its baseline on the clean tree at `1c700eb`,
+`git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 089 recorded**:
+`9869bc3d87fad59f37d23ae0e131bf08`. The container was fresh, so `user://` was
+empty rather than cleared. After the change, **THREE byte-identical full
+`--all` runs**, md5 `a7809dc41e9adb8d963da70255bdc42d`, 0 with something to
+look at, the last two on the complete tree with `docs/` in place, `user://`
+cleared before each. The diff against the baseline is the **two lines predicted
+in writing before the run**: `controller_reach_test` 293 -> 305 and `look_test`
+18 -> 23.
+**089 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
+what the two numbers above say.
 **088 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
 what the two numbers above say. Its baseline on the clean tree at `430652d`,
 `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 087 recorded**:
@@ -9718,6 +9865,85 @@ three byte-identical `--all` runs - the last two on the complete tree with
 `docs/` in place - which is why there is no 089a. **Do not start by re-running
 on 089's behalf**; take your own baseline so you learn the record and the
 container still agree, and spend the time on the work below.
+
+**NOTHING IS OWED FROM 090 EITHER.** Its baseline was byte-identical to the
+md5 089 recorded, it wrote its two-line diff down before running, and it took
+three byte-identical `--all` runs - the last two on the complete tree with
+`docs/` in place - which is why there is no 090a. **Do not start by re-running
+on 090's behalf**; take your own baseline so you learn the record and the
+container still agree, and spend the time on the work below.
+
+**THE FIRST LIVE ENTRY AS OF 090, AND IT IS THE HALF OF ITS OWN FINDING THAT
+090 DID NOT CLOSE: FOUR REFUSAL SENTENCES ARE DRIVEN BY A SUITE AND HELD BY
+NOTHING, AND THE FIX IS ONE READER RATHER THAN FOUR ASSERTIONS.** Measured both
+ways and re-measured against the 090 tree, so this is a number and not a
+worry:
+
+  | sentence | the suite that drives it | asserts |
+  |---|---|---|
+  | `'x' is not something a character can be asked to do` | `order_test` | `ok == false` only |
+  | `this dungeon has 3 rooms, so there is no room 9` | `container_door_test`, `procedure_test` | neither reads the sentence |
+  | `there is nothing to carry in this dungeon` | `carry_test` | `ok == false` only |
+  | `a door is named by the two rooms it joins, for example ...` | `panel_refused_test` | neither reads the sentence |
+
+**DO NOT JUST ADD FOUR ASSERTIONS.** Each of those suites is about something
+else - an errand, a panel, a container's doors - and a sentence check bolted
+into each is TRAPS 11's shape solved four times and still not solved: the class
+is *"every sentence a delegating validator can make says something, and the
+sentences a probe tells apart are different"*, and its members are **32**, of
+which 090 holds **nine** (the five it closed plus the four 088 and 089 already
+probed). **The honest shape, if anybody takes this on**: one reader that counts
+the sentence sites OFF the producers - `NpcGoals.validate`, `validate_door` and
+the three tools' `validate`, read with comment lines blanked (TRAPS 64) - drives
+one input per site, and asserts each refusal says something and that no two
+sites draw the same sentence. The count is read off the code, so a sentence
+ADDED to a validator fails the suite until it is driven, which is the direction
+that matters and the one a list written beside the rows cannot hold (TRAPS 82).
+**The measurement is done and is in TRAPS 87**; what is not settled is whether
+that reader belongs in a new suite or in `limits_test`'s file, and that is worth
+one session's reading before a line is written. **It may come back "four
+assertions after all", and the argument for the reader is the direction of its
+count, not its size.**
+
+**AND THE SECOND, UNCHANGED FROM 089 AND STILL MEASURED:
+`command_schema_test`'s NO-EMPTY-REASON CHECK PASSES ON A REFUSAL THAT NAMES
+NOTHING.** 090 did not touch it. Re-measured this session rather than carried
+forward: with `_finish_nothing` writing `reasons = []`, `command_schema_test` is
+**149 assertions, failures=0**. 089's reason for leaving it stands - its header
+says a command that builds nothing whatever it is sent is not required to refuse
+- **and 090 read the thing that dissolves the difficulty**: the condition does
+not have to be "which probes must refuse", it can be **read off the record's own
+category**. A record whose `category` is a `FAILED_` one has refused, by its own
+report, and a refusal that carries no reason is the fault; a command that
+answers some other way never writes such a record. That is the same shape as
+assertion 4's existing `if schema_refusal` condition and needs no new list.
+**THAT IS A READING THAT HAS BEEN DONE AND A CHANGE THAT HAS NOT BEEN MADE** -
+whether the invariant holds over every record every suite writes was NOT
+measured, and asserting it before measuring is TRAPS 6.
+
+**AND A THIRD, WHICH 090 ASKED OF THE OTHER FILE AND DID NOT ANSWER (TRAPS 11):
+`refusal_reach_test` DOES NOT CHECK THAT A MODULE'S REFUSAL SAYS ANYTHING.**
+Read off the file this session, not assumed: its `_fires(category, verdict)`
+takes the category and the declared verdict and **never looks at `reasons`**,
+so the ten MODULE rows are held exactly as `controller_reach_test`'s 28 were
+before 089. Every `_fires` call site already has the refusal dictionary in hand
+(`pre`, `s`, `placed`, `crossed`, `big`, `shut`, `nothing`), so the change is
+the same one 089 made in the sibling file. **IT WAS NOT MEASURED, and that is
+the first step**: blank a module branch's reasons one at a time and see what
+goes red before anything is built, because a module's sentences are also read
+by `said_set_test`, `counted_said_test` and `layout_key_test` and the class may
+have fewer members there than it looks.
+
+**~~THE FIRST LIVE ENTRY AS OF 089: SHOULD `controller_reach_test`'s TABLE BE
+KEYED BY REFUSAL SENTENCE INSTEAD OF BY CALL SITE?~~ DONE IN 090, AND THE
+ANSWER IS "LEAVE IT KEYED BY SITE", WRITTEN BESIDE THE TABLE.** The entry was
+right to insist on the reading and right that re-keying would import another
+file's class. What the reading found instead is the cost of the keying: a row
+that stands for ten sentences says nothing about how many are driven, and four
+of the thirty-two were executed by no suite at all. See TRAPS 87 and the 090
+entry under "Starting state". Struck rather than deleted, with the original
+text below, because the sketch is the record of what was asked for. The
+original text:**
 
 **THE FIRST LIVE ENTRY AS OF 089, AND IT IS A QUESTION ABOUT WHAT THE TABLE IS
 FOR RATHER THAN A FIX: SHOULD `controller_reach_test`'s TABLE BE KEYED BY

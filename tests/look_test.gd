@@ -3,9 +3,14 @@ extends SceneTree
 # 021 - how a body looks, as a tool with no bounded capabilities at all.
 #
 # Every field here is free, because none of them changes what anybody can do.
-# What is still enforced is the wall: a picture that is not there, or is not a
-# picture, is refused with the reason - the same treatment a car's power gets,
-# applied to a file.
+# What is still enforced is the wall: a picture that is not there, is not a
+# picture, or is too small to be a face is refused with the reason - the same
+# treatment a car's power gets, applied to a file.
+#
+# 090: THOSE ARE THREE SENTENCES AND THIS FILE HELD TWO OF THEM. The third -
+# too small - was executed by no suite in the repository, measured rather
+# than noticed (TRAPS 87). It is driven below, and the three are asserted to
+# be three DIFFERENT sentences, each of which says something.
 
 var bad := 0
 var asserted := 0
@@ -53,6 +58,47 @@ func _initialize() -> void:
 		"a picture that is not there is refused: " + str(missing["errors"][0]))
 	var not_a_picture: Dictionary = look.validate({"tool": "look", "spec": {"face": "res://project.godot"}})
 	_check(not bool(not_a_picture["ok"]), "a file that is not a picture is refused")
+
+	# 090: THE THIRD OF trouble_with()'s THREE SENTENCES, AND IT WAS REACHED
+	# BY NOTHING. LookTool.trouble_with() refuses a picture for three
+	# different reasons - it is not there, it is not an image, or it is too
+	# small to be a face - and two lines above this one hold two of them. The
+	# third was executed by no suite in the repository: measured by
+	# instrumenting every sentence site in the three tool validators and in
+	# NpcGoals, running all 74 suites one at a time in a throwaway copy, and
+	# collecting the sites each one reached (TRAPS 87). A rule applied to two
+	# members of a three-member list is TRAPS 11's shape at the scale of
+	# three adjacent lines.
+	var small := Image.create(8, 8, false, Image.FORMAT_RGB8)
+	small.fill(Color(0.2, 0.4, 0.6))
+	var small_path := "user://test_face_too_small.png"
+	if small.save_png(small_path) != OK:
+		_check(false, "could not write an 8 by 8 picture to disk")
+	else:
+		var tiny := ProjectSettings.globalize_path(small_path)
+		var too_small: Dictionary = look.validate({"tool": "look", "spec": {"face": tiny}})
+		_check(not bool(too_small["ok"]),
+			"a picture too small to be a face is refused")
+		# WHAT IS ASSERTED IS NOT THE WORDING. Every sentence here may be
+		# rewritten. What is asserted is that the three faults a picture can
+		# have draw THREE DIFFERENT refusals, each of which says something -
+		# which is the property that makes a probe a measurement rather than
+		# a second label, and it is the same property 089 asserted for the
+		# controller's branches. Before 090 the "not a picture" line above
+		# asserted only that ok was false, so it would have passed against a
+		# refusal that said nothing at all.
+		var whys: Array = []
+		for result in [missing, not_a_picture, too_small]:
+			var errs: Array = (result as Dictionary).get("errors", []) as Array
+			var why := "" if errs.is_empty() else str(errs[0])
+			_check(why.strip_edges() != "",
+				"a refused picture is told why (said: \"%s\")" % why)
+			if not whys.has(why):
+				whys.append(why)
+		_check(whys.size() == 3,
+			"and the three faults draw three different refusals (%d distinct: %s)" % [
+				whys.size(), str(whys)])
+		_clean_up(tiny)
 	var bad_skin: Dictionary = look.validate({"tool": "look", "spec": {"skin": "chartreuse"}})
 	_check(not bool(bad_skin["ok"]), "a skin this game has not got is refused")
 	var invented: Dictionary = look.validate({"tool": "look", "spec": {"hairstyle": "mullet"}})

@@ -6395,3 +6395,149 @@ sentences today, exactly as it did before this commit.
 > there should have been two.
 
 ---
+
+## 87. A row keyed by call site, and the thirty sentences behind it that nobody had counted
+
+**The rule it produced: when one row of a table stands for a function that can
+refuse in several different sentences, the row says nothing about how many of
+those sentences anything drives — so count them off the code and measure which
+are reached, because "the row is covered" and "the refusals under it are
+covered" are different claims and the first one hides the second.**
+
+### What was asked, and why it was a reading before it was a change
+
+089 left the live next action as a question about what
+`controller_reach_test`'s table is *for*: should its rows be keyed by the
+**refusal sentence** rather than by the **call site**? It came with its own
+argument against re-keying — several rows are sites that pass a validator's
+whole error set through, so keying by sentence would replace 28 rows with a
+class three to five times larger, most of it `refusal_reach_test`'s to answer
+for — and with an instruction: do the reading, say so either way, and **if the
+answer is "the table is right as it is", write that in the file beside the
+table so the next session does not re-ask it.**
+
+**THE ANSWER IS "LEAVE IT KEYED BY SITE", and it is written beside the table.**
+What the reading bought is not a re-key. It is the arithmetic nobody had done.
+
+### The measurement, which is an execution sweep and not a reading of the code
+
+Every sentence site in the four delegating producers was **instrumented in a
+throwaway copy** — each one made to write a marker file naming itself when it
+executed — and **all 74 suites were then run one at a time**, with the markers
+cleared before each, so the result is per suite and per sentence. Counted off
+the code with comment lines blanked (TRAPS 64), the producers behind the
+delegating rows make:
+
+| row | its producer | sentences | probed before 090 |
+|---|---|---|---|
+| `ORDER: the goal does not check out` | `NpcGoals.validate` | **10** | 2 |
+| `SHUT/OPEN: the door does not check out` | `NpcGoals.validate_door` | **5** | 1 |
+| `EQUIP: the tool's own spec is out of bounds` | the three tools' `validate` | **17** (boots 6, car 5, look 6) | 1 |
+| `EQUIP: no tool named, or a tool the game lacks` | composed at the site | **2** | 2 |
+
+**AND TWO OF THOSE NUMBERS WERE WRONG IN HANDOVER, WHICH IS WHY THE UNIT IS
+WRITTEN DOWN HERE.** 089's table said `validate_door` makes **6** and the tools
+**5/4/3**. Recounted off the code: `validate_door` makes **five** sentences —
+three `errors.append` sites and two inline `return`s — and the tools make
+**6/5/6**, because 089 counted only the `errors.append` lines inside
+`validate()` and those three functions each also refuse through an inline
+`return [spec_error()]`, while `_bounded()` and `trouble_with()` each produce
+several sentences from one call. Neither correction changes 089's conclusion;
+both are recorded rather than tidied away, because a count in a document is
+TRAPS 24's shape and the unit it is counted in was never stated.
+
+### The finding: eight of the thirty-one sentences were held by nothing
+
+Of the 32 sentences, 31 are blankable one at a time (the 32nd is the append of
+`trouble_with`'s three, which shares a line). **Each was made to say nothing —
+one at a time, in a throwaway copy with its own `config/name`, against the
+committed 089 tree (TRAPS 50, TRAPS 80)** — and the suites that execute it were
+run, plus every suite that reads `scripts/` as text. **The instrumented copy
+with no site selected is byte-identical to the uninstrumented control**, so the
+instrumentation itself holds nothing.
+
+**EIGHT WERE SILENT.** Four of them were reached by **no suite at all**, and
+all four are reachable by a legal request — each was sent through `main.gd`
+this session and the record read, not argued from the code:
+
+| sentence | reached by | blanked, before 090 |
+|---|---|---|
+| `an order needs a goal (it has go_to, carry)` | **nothing** | SILENT |
+| `carrying needs something to carry (this dungeon has lamp)` | **nothing** | SILENT |
+| `a door joins two different rooms` | **nothing** | SILENT |
+| `'...' is only 8 by 8, which is too small to be a face` | **nothing** | SILENT |
+| `'x' is not something a character can be asked to do` | `order_test` | SILENT |
+| `this dungeon has 3 rooms, so there is no room 9` | `container_door_test`, `procedure_test` | SILENT |
+| `there is nothing to carry in this dungeon` | `carry_test` | SILENT |
+| `a door is named by the two rooms it joins, for example ...` | `panel_refused_test` | SILENT |
+
+The second four are the sharper half of the lesson: **a suite drove the
+sentence and asserted only that the refusal happened.** `carry_test` sends a
+carry order into an empty dungeon and checks `ok == false`; `order_test` sends
+an invented goal and checks the same. Execution is not holding.
+
+### What was changed, and what was deliberately not
+
+**Three probes in `controller_reach_test` and one in `look_test`** — the four
+sentences nothing executed. The three new probes go on the two delegating rows
+they belong to, which is what makes them the fix rather than a re-key: the row
+stays keyed by site and 089's own arithmetic ties them, because each draws a
+**different** refusal and the suite asserts distinct row/refusal pairs against
+probes. In `look_test` the picture too small to be a face is the third of
+`trouble_with`'s three sentences; the file held two of them, which is TRAPS 11
+at the scale of three adjacent lines, and the three are now asserted to be
+three **different** sentences each of which says something.
+
+**THE OTHER FOUR WERE NOT CLOSED AND THE REASON IS WRITTEN RATHER THAN
+IMPLIED.** Each needs a sentence assertion inside a suite whose subject is
+something else — `carry_test` is about an errand, `panel_refused_test` about a
+panel — and the honest fix for the class is not four more assertions but one
+reader that drives every sentence a delegating validator can make and asserts
+each says something distinct, with its count read **off** the producers rather
+than written beside them. That is a suite, it is in HANDOVER's next action with
+this arithmetic, and 090 did not build it on the way past.
+
+### Measured, each fault alone, controls stated
+
+Against the committed 089 tree: `controller_reach_test` **293/0**, `look_test`
+**18/0**, `order_test` **18/0**, `carry_test` **21/0**. After 090: **305/0** and
+**23/0**, the others unmoved.
+
+| fault | before 090 | after 090 |
+|---|---|---|
+| `an order needs a goal` made to say nothing | 293/0 and `order_test` 18/0 — **SILENT** | 305, failures=**1** |
+| `carrying needs something to carry` made to say nothing | 293/0 and `carry_test` 21/0 — **SILENT** | 305, failures=**1** |
+| `a door joins two different rooms` made to say nothing | 293/0 — **SILENT** | 305, failures=**1** |
+| `too small to be a face` made to say nothing | `look_test` 18/0 — **SILENT** | 23, failures=**1** |
+| `is not a picture this game can read` made to say nothing | `look_test` 18/0 — **SILENT** | 23, failures=**1** |
+| the new ORDER probe pointed at an existing probe's request | — (090's own code) | 305, failures=**1** |
+
+### Two limits, both injected after the fix was green
+
+- **A ROW THAT CARRIES SEVERAL PROBES CAN STILL LOSE ONE IN SILENCE**, which is
+  088's limit re-measured rather than carried forward (TRAPS 14): delete one of
+  090's three new probes and the suite is **301 assertions, failures=0** — the
+  count falls by four and nothing is red, TRAPS 73's signature. **090 made this
+  class larger**, three multiply-probed rows where there were two, which is a
+  cost of its own and is written into the function that has it.
+- **`look_test`'s DISTINCTNESS CHECK HOLDS "TOLD APART", NOT "TOLD CORRECTLY".**
+  Injected: `trouble_with`'s "not a picture" sentence made to read *"is only 0
+  by 0, which is too small to be a face"*. The suite is **23 assertions,
+  failures=0** — correctly, because the two sentences still differ (the path
+  in each differs), and distinctness is the property asserted. Naming the right
+  fault is not something a distinctness check can hold, and no assertion was
+  added pretending otherwise.
+
+Found in 090, by doing the reading 089 left as the live next action and
+counting what the answer was about.
+**Nothing in `scripts/`, `scenes/`, `netlify/`, `.github/`, either runner,
+`project.godot` or `export_presets.web.cfg` was touched**, read off
+`git status` rather than assumed. **Nothing a player meets changed**: all four
+sentences are written today exactly as they were before this commit, and all
+four were already correct when driven — what was missing is anything that would
+notice if they stopped being.
+
+> A row that stands for ten sentences is covered by two probes and tells you
+> nothing about the other eight. Count them.
+
+---
