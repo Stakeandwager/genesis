@@ -13,6 +13,29 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
+- **TWO RUNS OVERLAPPED AGAIN ON 2026-10-29, AND THIS TIME THEY DID THE SAME
+  WORK.** Both read `532ae1c` (090) as the last commit, both took 090's third
+  next action, both counted **twelve** module refusal sites and both found the
+  same **seven** held by nothing. `4018b60` pushed first at 21:38 UTC and
+  **keeps 091**. The second run's change was **discarded, not renumbered**, and
+  the difference from the 048/049 overlap is the reason: there, the two runs
+  touched no file in `scripts/` in common and renumbering preserved two pieces
+  of work. Here it was **one piece of work done twice**, in the same file, so a
+  092 carrying it would have been motion and no progress. The second run's
+  implementation was also the worse of the two - it wrote a **second shape** of
+  089's `_says_something` predicate instead of reusing it, which is the
+  two-files-half-a-property trap (TRAPS 86) that 091's byte-identical predicate
+  deliberately avoids. **Nothing was force-pushed and nothing was lost.**
+  What the second run contributed instead is this section, the finding below,
+  and one thing worth more than its commit would have been:
+  **091 WAS INDEPENDENTLY VERIFIED FROM A SECOND CONTAINER.** The `--all` run
+  on a clean tree at `4018b60`, `git status --porcelain` empty, `user://`
+  cleared, came back **BYTE-IDENTICAL to the md5 091 recorded**:
+  `695896af9d7812330e7f6d271081e6e6`, 74 suites, 0 with something to look at,
+  `refusal_reach_test` **219 assertions, failures=0**. That is the first time a
+  commit's own recorded md5 has been reproduced by a session that did not write
+  it, and it is worth knowing that the number travels.
+
 - **TWO RUNS OF THE UNATTENDED TASK OVERLAPPED ON 2026-10-16**, which is
   worth knowing because it is the first time it has happened and it will
   happen again. The task fires every two hours and starts a fresh session
@@ -10015,6 +10038,40 @@ three byte-identical `--all` runs - the last two on the complete tree with
 on 091's behalf**; take your own baseline so you learn the record and the
 container still agree, and spend the time on the work below.
 
+**AND 091 HAS BEEN RE-RUN ONCE ALREADY, BY THE OVERLAPPING RUN, SO THERE IS
+GENUINELY NOTHING OWED.** The `--all` run on a clean `4018b60` in a second
+container reproduced `695896af9d7812330e7f6d271081e6e6` exactly. Take your own
+baseline anyway - the point of it is that you learn the record and the
+container still agree today - but do not re-measure 091's twelve injections.
+They were measured twice, independently, and agreed on all seven.
+
+**A NEW ENTRY FROM THE OVERLAPPING RUN, AND IT IS THE ONE PRODUCER THE TWO
+REACH TABLES BETWEEN THEM DO NOT REACH: `experiment_runner.gd:140` WRITES A
+`FAILED_AI` REFUSAL WHOSE ONE SENTENCE IS WHATEVER THE FAILED AI CALL SAID.**
+Found while enumerating the class 091 closed, checked against this file and
+`TRAPS.md` before being called new: `experiment_runner.gd` is named in both,
+but every mention is about **plural agreement** in its four counted sentences,
+and none is about this. The line is `"reasons": [reason]`, where `reason` is
+the text handed back by a failed interpret call. **Nothing in `tests/` holds
+that it says anything**; `grep` found no suite naming `ExperimentRunner` and
+`reason` together. It is a CONTROLLER-class producer by the legend's own
+definition in `refusal_reach_test`, and it is in **neither** reach table's
+drive path - so neither 089's fix nor 091's covers it, and it is the
+thirteenth site of a class 091 correctly counted as twelve **within the module
+pipeline**.
+**THE FIRST STEP IS A READING, NOT A CHECK** (TRAPS 6, and the order 090 set
+that paid off twice in 091): whether `reason` can arrive empty is a question
+about the AI error path - what `ai_interpreter.gd` puts in it when a request
+fails, and whether any of those routes yields `""`. That is readable off the
+code in this container. What is **not** measurable here is the live path:
+there is no API key here, so a real failed call cannot be driven, and
+`experiment_runner.gd` is the file this file already records as one the
+harness does not reach. **If the reading says `reason` can be empty, the
+honest question before the assertion is which suite drives
+`ExperimentRunner` at all** - if none does, the check has nowhere to live and
+the answer is a fixture before it is a check, which is a bigger piece of work
+than it looks and should be weighed rather than started.
+
 **THE FIRST LIVE ENTRY AS OF 091, AND IT IS THE HALF OF ITS OWN FINDING THAT
 091 COULD NOT CLOSE FROM WHERE IT STOOD: ONE OF THE SEVEN SILENT MODULE
 REFUSAL SITES IS `farm_module.solve()`'s PASSTHROUGH, AND NO FIXTURE CAN REACH
@@ -18030,6 +18087,65 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
   by this commit, and they are the first item under "Next action" below.
 
 ## Human decision needed
+
+33. **TWO QUESTIONS ABOUT THE UNATTENDED TASK ITSELF, BOTH MEASURED AND
+    NEITHER ONE THE ASSISTANT'S TO ANSWER.** Raised by the run that overlapped
+    091 and stood down, which is the first run to have had the evidence for
+    both in front of it at once. Nothing was changed on account of either;
+    they are written here because they are about cost and direction.
+
+    **(a) Two runs spent a full cycle each on the same measurement, and
+    neither could see the other.** Both read 090 as the last commit, both
+    counted twelve sites, both injected into each one separately, both ran the
+    suite dozens of times, both found the same seven. One of the two commits
+    was then thrown away. The task starts a fresh session with no memory of
+    any other and no lock, so this is not a mistake either run made - it is
+    what the schedule does when two firings overlap, and it has now happened
+    twice (2026-10-16, 2026-10-29). **The 2026-10-16 overlap cost nothing**
+    because the two runs happened to pick different work; this one cost a
+    whole cycle. Whether that is worth addressing - a longer interval, a
+    claim written to the branch before work starts, or simply accepting it -
+    is a question about how the owner wants the time spent.
+
+    **(b) TWENTY-SIX COMMITS, INCLUDING 091, HAVE TOUCHED NO FILE IN
+    `scripts/`, `scenes/`, `netlify/`, EITHER RUNNER OR `project.godot`.**
+    Counted with `git rev-list`, not estimated: the last commit to change
+    anything a player meets is **`a331e40` (070), 2026-10-23**. Every commit
+    since is `tests/` and `docs/`, and each one says so plainly in its own
+    "NOTHING A PLAYER MEETS CHANGED" line - the record is honest about it at
+    every step, which is why this is not a discovery so much as an arithmetic
+    nobody had done. Over the same stretch `docs/HANDOVER.md` has gone from
+    **14,088 lines to 19,344** and `docs/TRAPS.md` to **6,704**.
+
+    **This is not a complaint about the work, and the work is not busywork:**
+    every one of those commits closed a measured hole in what the suite can
+    notice, 091's included, and the standing caveat in this file - *the tests
+    are written by the same hand as the code* - is exactly what that work is
+    for. **The question is one of proportion, and it is the owner's.** The
+    roadmap in this file is the **Verified Living World**: objects created,
+    carried and delivered by NPCs, with the world verifying what happened.
+    Six days of cycles have gone into verifying the verifier instead, because
+    that is what "the smallest useful task that advances the roadmap" keeps
+    resolving to when each session's honest next step is the hole the last
+    session measured. **An assistant following this protocol cannot decide to
+    stop doing that**; the protocol is working as written. Only the owner can
+    say whether the next cycles should go to the test harness or to the
+    roadmap - and if it is the roadmap, the useful instruction is a named
+    milestone to build, because "advance the roadmap" has not been specific
+    enough to outcompete a measured hole.
+
+    **Nothing here is urgent and nothing is broken.** The suite is green, the
+    record is accurate, and the next session will find an honest next action
+    either way.
+
+    **A third fact, recorded because it bears on (a) and (b) and the
+    assistant cannot explain it:** 090 was committed **2026-10-25 02:58 UTC**
+    and 091 **2026-10-29 21:38 UTC** - a gap of **four days and nineteen
+    hours** against a task that fires every two hours. No commit and no
+    no-commit note landed on this branch in between. Whether those firings
+    did not happen, failed, or ran and correctly judged there was nothing
+    worth committing without leaving the note this task asks for, **cannot be
+    read from the repository** and is not guessed at here.
 
 1. **The six section types the prompt withholds — the owner's call, and there
    is no hurry.** Found and deliberately left alone in 028; the full account is
