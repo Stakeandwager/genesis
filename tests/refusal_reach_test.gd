@@ -258,6 +258,16 @@ const LAYOUT_BRANCHES := ["farm: nothing to lay out", "farm: lane check", "base:
 # out: a count typed beside the thing it claims to have counted.
 var layout_fired: Array = []
 
+# 091: the REASONS each of those branches refused with, keyed by the branch
+# name and written by the same call that appends the name above, so the two
+# cannot drift apart. The row's claim reads this, which is why there is no
+# per-branch check beside each append: FAILED_LAYOUT is one row standing for
+# three places, and a check that read only one of them would be the row's own
+# known limit (TRAPS 77) wearing the label of a measurement. KEYED BY NAME and
+# not a bare list, so a branch that refuses with nothing fails naming ITSELF
+# rather than naming the row all three share (TRAPS 84, TRAPS 85).
+var layout_said: Dictionary = {}
+
 # 088: the CATEGORY rows a fixture actually drove to its refusal. The
 # per-branch version of this has existed for FAILED_LAYOUT since 074
 # (`layout_fired` above, both directions, by name); what had never been tied
@@ -279,7 +289,27 @@ var fired: Array = []
 # CONTROLLER, or one whose verdict is not the one the fixture is measuring,
 # FAILS and names itself rather than quietly widening the covered set
 # (TRAPS 83).
-func _fires(category: String, verdict: String) -> void:
+#
+# 091: AND IT READS WHAT THE REFUSAL SAID, WHICH UNTIL NOW IT DID NOT. This
+# function took the category and the declared verdict and never looked at
+# `reasons`, so the ten MODULE rows were held exactly as
+# controller_reach_test's 28 were before 089. MEASURED FIRST, not supposed:
+# every one of the twelve places in scripts/ that puts sentences into a MODULE
+# refusal this file drives was made to refuse with an EMPTY reasons array, one
+# at a time, and the whole suite run against each. SEVEN OF THE TWELVE WERE
+# HELD BY NOTHING AT ALL - and this suite stayed at 206 assertions,
+# failures=0 for every one of the twelve, including the five something else
+# caught. Full table in TRAPS 88. Those five were caught by suites about the
+# RACING prompt's wording rather than by anything asking whether a refusal
+# says anything: FAILED_PLACEMENT by agreement_test, and the racing gate and
+# solver branches by said_set_test, counted_said_test and prompt_bounds_test.
+# THIS CHECK CLOSES SIX OF THE SEVEN. The seventh is farm_module.solve()'s
+# passthrough of the lane check's reasons, and it is NOT closed here, for the
+# reason in the comment beside branch 2 below: solve() lays the zones out
+# itself, so no fixture can hand it a pinched layout, and the branch is driven
+# at _check_reachable instead. That is the farm's known wiring limitation and
+# it is the owner's (see HANDOVER).
+func _fires(category: String, verdict: String, said: Dictionary) -> void:
 	if not DECLARED.has(category):
 		_check(false, "%s fired in this suite and has no row in the table" % category)
 		return
@@ -290,7 +320,47 @@ func _fires(category: String, verdict: String) -> void:
 	_check(str(row[1]) == verdict,
 		"%s is declared %s, which is what this fixture measures (declared %s)" % [
 			category, verdict, str(row[1])])
+	# 091: AND IT TOLD THE PLAYER SOMETHING. `said` is one reasons array per
+	# PLACE behind the row, keyed by that place's name - one entry for the nine
+	# rows with a single producer, three for FAILED_LAYOUT - so a row that
+	# stands for several places is held at every one of them rather than at
+	# whichever the fixture reached first. One entry per place rather than one
+	# flattened array on purpose: a flattened array stays non-empty while one
+	# branch of three falls silent, which is the shape 085 measured as a tally
+	# that counts rows.
+	for place in said:
+		_check(_says_something(said[place]),
+			"%s: the refusal it drove says something (reasons: %s)" % [
+				str(place), JSON.stringify(said[place])])
 	fired.append(category)
+
+
+# 091: does this refusal tell the player anything at all? Two shapes, held
+# together because they are one class and one line apart (TRAPS 11): a refusal
+# with NO sentence in it, and a refusal whose sentences are blank. An
+# assertion that walks the list cannot speak for an empty list, so both halves
+# are written down (TRAPS 75, TRAPS 86).
+#
+# BYTE-IDENTICAL TO 089'S HELPER IN controller_reach_test, DELIBERATELY. The
+# class is one class - "a refusal names what was wrong, at every door" is this
+# repository's own first rule about refusals - and it is answered for the
+# controller's 28 branches in that file and for the modules' here. A second
+# shape for the same question is how two files come to each hold half of one
+# property, which is the fault 089 found (TRAPS 86).
+static func _says_something(reasons: Variant) -> bool:
+	if typeof(reasons) != TYPE_ARRAY or (reasons as Array).is_empty():
+		return false
+	for reason in (reasons as Array):
+		if str(reason).strip_edges() == "":
+			return false
+	return true
+
+
+# 091: one FAILED_LAYOUT branch, named and with what it refused with, appended
+# together so a branch cannot be recorded as fired with nothing read off it.
+func _layout_branch(name: String, refusal: Dictionary) -> void:
+	layout_fired.append(name)
+	layout_said[name] = refusal.get("reasons", [])
 
 
 # --- 1. the enumeration, read off the source rather than typed ---
@@ -885,7 +955,7 @@ func _reached_how() -> void:
 		_check(str(pre["category"]) == "FAILED_UNREACHABLE",
 			"and pre_check refuses it: %s" % str(pre["category"]))
 		if str(pre["category"]) == "FAILED_UNREACHABLE":
-			_fires("FAILED_UNREACHABLE", "REACHABLE")
+			_fires("FAILED_UNREACHABLE", "REACHABLE", {"FAILED_UNREACHABLE": pre.get("reasons", [])})
 
 	var rm := RacingModule.new()
 	_expect_track(rm, "pre", "FAILED_DEGREES_OF_FREEDOM", [
@@ -941,7 +1011,7 @@ func _expect_track(rm: RacingModule, step: String, category: String, sections: A
 		var hit_pre := str(pre["category"]) == category
 		_check(hit_pre, "%s: pre_check says %s" % [category, str(pre["category"])])
 		if hit_pre:
-			_fires(category, "REACHABLE")
+			_fires(category, "REACHABLE", {category: pre.get("reasons", [])})
 		return
 	_check(bool(pre["ok"]), "%s: the gate passes it (%s)" % [category, str(pre["category"])])
 	if not bool(pre["ok"]):
@@ -951,7 +1021,7 @@ func _expect_track(rm: RacingModule, step: String, category: String, sections: A
 		var hit_solve := str(s["category"]) == category
 		_check(hit_solve, "%s: solve says %s" % [category, str(s["category"])])
 		if hit_solve:
-			_fires(category, "REACHABLE")
+			_fires(category, "REACHABLE", {category: s.get("reasons", [])})
 		return
 	_check(bool(s["ok"]), "%s: it closes (%s)" % [category, str(s["category"])])
 	if not bool(s["ok"]):
@@ -960,7 +1030,7 @@ func _expect_track(rm: RacingModule, step: String, category: String, sections: A
 	var hit_post := str(post["category"]) == category
 	_check(hit_post, "%s: post_check says %s" % [category, str(post["category"])])
 	if hit_post:
-		_fires(category, "REACHABLE")
+		_fires(category, "REACHABLE", {category: post.get("reasons", [])})
 
 
 # --- 5. and the half that matters: does each guard FIRE when violated? ---
@@ -986,7 +1056,7 @@ func _guards_fire() -> void:
 	_check(not (placed["placement"]["failed"] as Array).is_empty(),
 		"and it names the rooms it could not place (%d of them)" % (placed["placement"]["failed"] as Array).size())
 	if str(placed["category"]) == "FAILED_PLACEMENT":
-		_fires("FAILED_PLACEMENT", "GUARD")
+		_fires("FAILED_PLACEMENT", "GUARD", {"FAILED_PLACEMENT": placed.get("reasons", [])})
 
 	# FAILED_CORRIDOR: rooms wider than the pitch they are spaced at, so the
 	# lane a corridor runs down is inside a room. The pitch solve() computes
@@ -1015,7 +1085,7 @@ func _guards_fire() -> void:
 	_check(bool((dm.post_check(roomy))["ok"]),
 		"and the same three rooms at pitch 46 pass")
 	if str(crossed["category"]) == "FAILED_CORRIDOR":
-		_fires("FAILED_CORRIDOR", "GUARD")
+		_fires("FAILED_CORRIDOR", "GUARD", {"FAILED_CORRIDOR": crossed.get("reasons", [])})
 
 	# FAILED_TOO_BIG: the same three rooms, twenty pitches apart.
 	var spread := {}
@@ -1034,7 +1104,7 @@ func _guards_fire() -> void:
 	_check(float(big["record"]["extent"]["width"]) > dm.MAX_EXTENT,
 		"and the width it measured (%.0f m) is over the limit" % float(big["record"]["extent"]["width"]))
 	if str(big["category"]) == "FAILED_TOO_BIG":
-		_fires("FAILED_TOO_BIG", "GUARD")
+		_fires("FAILED_TOO_BIG", "GUARD", {"FAILED_TOO_BIG": big.get("reasons", [])})
 
 	# FAILED_UNWALKABLE: the dungeon's own negative case. walk_negative.gd
 	# removes a doorway from a built layout; this asks the same question of
@@ -1077,7 +1147,7 @@ func _guards_fire() -> void:
 		"a doorway is cut to the corridor's %.0f m, against a body %.1f m across, so no room size can pinch one" % [
 			dm.CORRIDOR, dm.BODY])
 	if str(shut["category"]) == "FAILED_UNWALKABLE":
-		_fires("FAILED_UNWALKABLE", "GUARD")
+		_fires("FAILED_UNWALKABLE", "GUARD", {"FAILED_UNWALKABLE": shut.get("reasons", [])})
 
 	# FAILED_LAYOUT, branch 1: the farm with nothing in it.
 	var fm := FarmModule.new()
@@ -1085,7 +1155,7 @@ func _guards_fire() -> void:
 	_check(str(nothing["category"]) == "FAILED_LAYOUT",
 		"a farm of no zones: solve says %s" % str(nothing["category"]))
 	if str(nothing["category"]) == "FAILED_LAYOUT":
-		layout_fired.append("farm: nothing to lay out")
+		_layout_branch("farm: nothing to lay out", nothing)
 
 	# FAILED_LAYOUT, branch 2: two zones with no lane between them. 052's
 	# assertion, repeated here so this file's row for FAILED_LAYOUT covers
@@ -1120,7 +1190,7 @@ func _guards_fire() -> void:
 	# already the owner's to move. The branch is real and its refusal is
 	# measured; what is not claimed is that a player can get to it.
 	if not bool(pinched["ok"]):
-		layout_fired.append("farm: lane check")
+		_layout_branch("farm: lane check", pinched)
 
 	# FAILED_LAYOUT, branch 3: a module that does not override solve().
 	var base := WorldModule.new()
@@ -1128,7 +1198,7 @@ func _guards_fire() -> void:
 	_check(str(no_solver["category"]) == "FAILED_LAYOUT",
 		"the base module's own solve says %s" % str(no_solver["category"]))
 	if str(no_solver["category"]) == "FAILED_LAYOUT":
-		layout_fired.append("base: no solver")
+		_layout_branch("base: no solver", no_solver)
 
 	# 074. What this used to assert was LAYOUT_BRANCHES.size() == 3, which is
 	# the length of a literal three lines above. It now asserts the branches
@@ -1144,10 +1214,18 @@ func _guards_fire() -> void:
 	_check(layout_fired.size() == LAYOUT_BRANCHES.size(),
 		"all %d declared FAILED_LAYOUT branches fired and no others (%d fired)" % [
 			LAYOUT_BRANCHES.size(), layout_fired.size()])
+	# 091: and one reasons array was read off each branch that fired. Both
+	# appends go through _layout_branch, so this cannot be false unless a bare
+	# layout_fired.append is written again - which is the edit it is here to
+	# catch, and it is the line that stops the loop in _fires from being
+	# vacuous on an empty array (TRAPS 75): three names in, three arrays read.
+	_check(layout_said.size() == layout_fired.size(),
+		"and what each of those %d branches refused with was read off it (%d read)" % [
+			layout_fired.size(), layout_said.size()])
 	# The ROW is claimed once, and only when every branch under it fired - so
 	# the row's claim cannot be stronger than the branch coverage above it.
 	if layout_fired.size() == LAYOUT_BRANCHES.size():
-		_fires("FAILED_LAYOUT", "GUARD")
+		_fires("FAILED_LAYOUT", "GUARD", layout_said)
 
 	# 074. And the same for the shared name: this used to assert that an array
 	# of one name has one element. The FACT it claims is that the name has an

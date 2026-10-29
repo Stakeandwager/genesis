@@ -6541,3 +6541,164 @@ notice if they stopped being.
 > nothing about the other eight. Count them.
 
 ---
+
+## 88. Ten rows that said a refusal fired, and the seven whose refusal could say nothing
+
+**Signature:** make any one of the three world modules refuse with an **empty**
+`reasons` array — a player is told a build failed and told nothing about why —
+and `refusal_reach_test`, the suite written to answer *"does each of these
+refusals fire?"*, is **206 assertions, failures=0** for every one of the twelve
+places that can do it. For **seven of the twelve**, nothing anywhere else in
+the repository notices either.
+
+**Cause.** 089 found that `controller_reach_test` asserted a refusal's
+*category* and never its *sentence*, and closed it for the controller's 28
+branches (TRAPS 86). Its "Do" list ended with **"ask the second file rather
+than copying the machinery into it"**, and the question it asked of
+`refusal_reach_test` was the narrow one — whether that file had 088's
+duplicate-probe class, which it does not. **The wider question was written into
+HANDOVER as the next action and not asked**: `_fires(category, verdict)` in
+that file takes the category and the declared verdict, and **never looks at
+`reasons` at all**. So the modules' ten MODULE rows were held exactly as the
+controller's 28 were before 089 — TRAPS 11, one file at a time, with the entry
+that names the class sitting in HANDOVER for two sessions.
+
+**THE UNIT, WRITTEN DOWN BEFORE THE COUNT (TRAPS 24, TRAPS 77).** A **MODULE
+REFUSAL SITE** is one place in `scripts/` that puts a non-empty `reasons` array
+into a refusal whose category is one of the ten MODULE rows this suite
+declares. There are **twelve** sites behind the ten rows, because
+`FAILED_LAYOUT` is one row over three branches in two files. Counted off the
+code, then each one measured — not read off it.
+
+**THE MEASUREMENT: EACH SITE BLANKED ALONE, THE WHOLE SUITE RUN AGAINST IT.**
+Twelve throwaway copies, each with its own `config/name` (TRAPS 50), each with
+exactly one site's `reasons` emptied and nothing else changed (the diffs were
+read before the runs), each run with `--all` and compared against a control
+copy built the same way. **The control was byte-identical to the md5 090
+recorded** — `a7809dc41e9adb8d963da70255bdc42d` — so the copying holds nothing
+of its own.
+
+| site | the row it is behind | what noticed | verdict |
+|---|---|---|---|
+| `dungeon pre_check` | `FAILED_UNREACHABLE` | nothing | **SILENT** |
+| `dungeon solve` | `FAILED_PLACEMENT` | `agreement_test` (1) | caught |
+| `dungeon post_check`, crossings | `FAILED_CORRIDOR` | nothing | **SILENT** |
+| `dungeon post_check`, walkable | `FAILED_UNWALKABLE` | nothing | **SILENT** |
+| `dungeon post_check`, extent | `FAILED_TOO_BIG` | nothing | **SILENT** |
+| `farm solve`, no zones | `FAILED_LAYOUT` br. 1 | nothing | **SILENT** |
+| `farm solve`, lane passthrough | `FAILED_LAYOUT` br. 2 | nothing | **SILENT** |
+| `world_module solve` | `FAILED_LAYOUT` br. 3 | nothing | **SILENT** |
+| `FeasibilityGate`, composition | `FAILED_DEGREES_OF_FREEDOM` | `agreement_test` (3), `counted_said_test` (2), `prompt_bounds_test` (2) | caught |
+| `FeasibilityGate`, net turn | `FAILED_INFEASIBLE` | `prompt_bounds_test` (1), `said_set_test` (1) | caught |
+| `racing solve` | `FAILED_CLOSURE` | `said_set_test` (2) | caught |
+| `SeparationCheck` | `FAILED_SEPARATION` | nothing | **SILENT** |
+
+**THE SHAPE OF THAT COLUMN IS THE PART WORTH READING.** Not one of the five
+catches was a suite asking whether a refusal says anything. Read off the four
+suites rather than inferred from the counts: `said_set_test`,
+`counted_said_test` and `prompt_bounds_test` read the **racing** sentences for
+a plural, a noun or a number that the racing **prompt** also states, so they go
+red when the sentence is gone; and `agreement_test` is a **source scan** that
+asserts `Readback.plural(MAX_RING, "ring")` occurs exactly once in
+`dungeon_module.gd`, which is why deleting `FAILED_PLACEMENT`'s two sentences
+registers at all — it is the plural idiom being counted, not the refusal being
+read. **The whole of the dungeon and the whole of the farm are otherwise
+silent.** The property was held **by accident, where it was held at all**.
+
+**THE FIX IS IN THE FUNNEL, NOT AT THE DOORS.** `_fires` is the one function
+every row's claim goes through, so the check goes there and the whole class is
+held at once rather than nine rows of it (TRAPS 11). It takes `said`, a
+Dictionary of **one reasons array per PLACE behind the row, keyed by that
+place's name**:
+
+- one entry for the nine rows with a single producing place;
+- **three** for `FAILED_LAYOUT`, collected by `_layout_branch()`, which is now
+  the only way a branch is recorded as fired, so a name cannot be appended with
+  nothing read off it.
+
+**Keyed by place and not flattened into one array, on purpose.** A flattened
+array stays non-empty while one branch of three falls silent, which is exactly
+the shape 085 measured in a tally that counts rows. Keyed, the failure **names
+the branch**: `farm: nothing to lay out: the refusal it drove says something`.
+
+The predicate is **byte-identical to 089's `_says_something` in
+`controller_reach_test`**, checked with a diff and not by eye. One class, one
+shape: a second shape for the same question is how two files came to hold half
+a property each, which is the fault 089 found.
+
+**Measured, each fault alone** (TRAPS 80), against the **final** suite, run
+alone in a throwaway copy with its own `config/name` and its own import pass.
+Control **219/0** before each.
+
+| fault injected | result |
+|---|---|
+| each of the eleven blankable sites in turn (all but the lane passthrough) | **219, failures=1**, naming the row or the branch |
+| `farm solve`'s lane passthrough blanked | **219, failures=0 — STILL SILENT** (see below) |
+| `FAILED_UNREACHABLE`'s two sentences replaced by `[""]` | 219, failures=**1**, `reasons: [""]` |
+| `farm: nothing to lay out` made to say `["  "]` | 219, failures=**1**, `reasons: ["  "]` |
+| `FAILED_TOO_BIG`'s `_fires` call deleted (088's shape, **re-measured** here rather than carried forward) | **215, failures=2**, by name and by count |
+| `base: no solver` recorded with a bare `layout_fired.append` again | **218, failures=1**, naming the arrays out of step |
+| `FAILED_TOO_BIG` made to refuse with *"this dungeon is a perfectly reasonable size"* | **219, failures=0 — SILENT**, and correctly: see the limit below |
+
+**WHAT IT DOES NOT HOLD, MEASURED AND NOT INFERRED.**
+
+- **"Says something" is not "says the right thing".** The wrong-sentence
+  injection above is green, because the sentence is there and it is not blank.
+  This is 089's limit in the sibling file and no assertion was added pretending
+  otherwise. What holds the *content* of these sentences is the handful of
+  suites in the table's third column, for the racing prompt's wording only.
+- **One of the seven silent sites is still silent and it cannot be closed from
+  this suite.** `farm_module.solve()` passes `_check_reachable()`'s reasons
+  through, and **no fixture can hand `solve()` a pinched layout** — it lays the
+  zones out itself and throws the request's coordinates away. The suite drives
+  that branch at `_check_reachable` instead and says so in its own comment. The
+  branch's refusal **is** held, at the place it can be reached; the
+  passthrough line is not, and moving the check into `post_check()` is the
+  owner's call and already in HANDOVER.
+
+**One thing this session got wrong and is recorded rather than tidied away.**
+The first blank-sentence injection reported the fault it was looking for and
+was measuring the wrong line: the substitution replaced the **first**
+`"reasons": []` in `dungeon_module.gd`, which is a **successful** return 200
+lines above the site. It was found because the FAIL line printed `reasons: []`
+where `[""]` was expected — the message named what it read, which is the only
+reason the wrong measurement did not become a recorded one. **And a second:**
+the first run of a freshly copied project reported three failures instead of
+one. Without the import pass `run_tests.sh` does first,
+`DirAccess.open("res://scripts")` returns null, `_sites_in_code()` comes back
+empty, and two assertions that read `scripts/` fail for a reason that has
+nothing to do with the injected fault. Every measurement in the tables above
+was re-taken with an import pass of its own.
+
+**Do:**
+
+- **When a session writes "and the same question should be asked of the other
+  file" into the handover, that is the task, not a note.** It sat for two
+  sessions while two commits worked on the file that had already been fixed.
+  089 even wrote the instruction down — *ask the second file* — and asked it
+  the narrow question it had in hand.
+- **Put the check in the funnel every claim goes through.** One line inside
+  `_fires` holds ten rows; ten lines beside ten fixtures hold ten rows until
+  the eleventh arrives without one.
+- **A row that stands for several places needs one reading per place, keyed by
+  the place.** Flatten them and the row stays green while one place falls
+  silent; key them and the failure says which.
+- **Count the sites before measuring them, and write down what a site is.**
+  "Ten rows" and "twelve places" are different numbers for the same class, and
+  the gap is entirely `FAILED_LAYOUT`'s three branches.
+- **A measurement whose injection you did not read is not a measurement.** Two
+  of the ones above were wrong on their first take, and both were caught by
+  reading what the failure message *said* against what was injected.
+
+Found in 091, by taking the third live entry in HANDOVER — *"`refusal_reach_test`
+does not check that a module's refusal says anything. IT WAS NOT MEASURED, and
+that is the first step"* — and measuring it first.
+**Nothing in `scripts/`, `scenes/`, `netlify/`, `.github/`, either runner,
+`project.godot` or `export_presets.web.cfg` was touched**, read off
+`git status` rather than assumed. **Nothing a player meets changed**: every one
+of the twelve sentences is written today exactly as it was before this commit,
+and all twelve were already correct when driven — the empty arrays were
+INJECTED to measure what would notice.
+
+> Ten rows said a refusal fired. Seven of them could have fired with nothing
+> in it.

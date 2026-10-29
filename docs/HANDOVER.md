@@ -24,7 +24,123 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **090**, which did the **reading** 089
+- Last commit at the time of writing: **091**, which did the **measurement** 090
+  left as its third live "Next action" - `refusal_reach_test` does not check
+  that a module's refusal says anything, *"and measuring is the first step"* -
+  and then closed what the measurement found. The number is the part worth
+  reading first: **of the twelve places in `scripts/` that put sentences into a
+  world module's refusal, SEVEN were held by nothing at all. Blank any one of
+  them and a player is told a build failed and told nothing about why, and the
+  suite written to ask whether these refusals fire stayed at 206 assertions,
+  failures=0 for every one of the twelve.** New TRAPS **88**. No new "Human
+  decision needed".
+
+  **THE BASELINE AGREED WITH THE RECORD BEFORE ANYTHING WAS TOUCHED.** The
+  `--all` run in this container, on a clean tree at `532ae1c` with
+  `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 090
+  recorded**: `a7809dc41e9adb8d963da70255bdc42d`, 74 suites, 0 with something
+  to look at. `ls tests/*.gd` returned **76** and the run reported **74**,
+  re-counted. The container was fresh, so `user://` was empty rather than
+  cleared. **Nothing was owed from 090.**
+
+  **THE UNIT WAS WRITTEN DOWN BEFORE THE COUNT** (TRAPS 24, TRAPS 77): a
+  MODULE REFUSAL SITE is one place in `scripts/` that puts a non-empty
+  `reasons` array into a refusal whose category is one of the ten MODULE rows
+  `refusal_reach_test` declares. There are **twelve** sites behind the **ten**
+  rows, and the whole of that gap is `FAILED_LAYOUT`, which is one row over
+  three branches in two files.
+
+  **THE MEASUREMENT, EACH SITE BLANKED ALONE AND THE WHOLE SUITE RUN AGAINST
+  IT.** Twelve throwaway copies, each with its own `config/name` (TRAPS 50),
+  each with exactly one site's `reasons` emptied and nothing else changed - the
+  diffs were read before the runs - and each compared against a control copy
+  built the same way, which came back **byte-identical to 090's md5**, so the
+  copying holds nothing of its own.
+
+  | site | row | what noticed | verdict |
+  |---|---|---|---|
+  | dungeon `pre_check` | `FAILED_UNREACHABLE` | nothing | **SILENT** |
+  | dungeon `solve` | `FAILED_PLACEMENT` | `agreement_test` | caught |
+  | dungeon `post_check`, crossings | `FAILED_CORRIDOR` | nothing | **SILENT** |
+  | dungeon `post_check`, walkable | `FAILED_UNWALKABLE` | nothing | **SILENT** |
+  | dungeon `post_check`, extent | `FAILED_TOO_BIG` | nothing | **SILENT** |
+  | farm `solve`, no zones | `FAILED_LAYOUT` br.1 | nothing | **SILENT** |
+  | farm `solve`, lane passthrough | `FAILED_LAYOUT` br.2 | nothing | **SILENT** |
+  | `world_module.solve` | `FAILED_LAYOUT` br.3 | nothing | **SILENT** |
+  | `FeasibilityGate`, composition | `FAILED_DEGREES_OF_FREEDOM` | `agreement_test`, `counted_said_test`, `prompt_bounds_test` | caught |
+  | `FeasibilityGate`, net turn | `FAILED_INFEASIBLE` | `prompt_bounds_test`, `said_set_test` | caught |
+  | racing `solve` | `FAILED_CLOSURE` | `said_set_test` | caught |
+  | `SeparationCheck` | `FAILED_SEPARATION` | nothing | **SILENT** |
+
+  **THE SHAPE OF THAT THIRD COLUMN IS THE FINDING UNDER THE FINDING.** Not one
+  of the five catches was a suite asking whether a refusal says anything. Read
+  off the four suites rather than inferred from the counts: `said_set_test`,
+  `counted_said_test` and `prompt_bounds_test` read the **racing** sentences
+  for a plural, a noun or a number the racing **prompt** also states, so they
+  go red when the sentence is gone; and `agreement_test` is a **source scan**
+  asserting that `Readback.plural(MAX_RING, "ring")` occurs exactly once in
+  `dungeon_module.gd`, which is why deleting `FAILED_PLACEMENT`'s two sentences
+  registers at all - it is the plural idiom being counted, not the refusal
+  being read. **The dungeon and the farm are otherwise silent.** The property
+  was held **by accident, where it was held at all**.
+
+  **WHAT CHANGED. `tests/refusal_reach_test.gd` only.** The check went into
+  `_fires()`, which is the one function every row's claim goes through, so the
+  whole class is held at once rather than nine rows of it (TRAPS 11). It now
+  takes `said`: one reasons array per **place** behind the row, **keyed by that
+  place's name** - one entry for the nine single-place rows, **three** for
+  `FAILED_LAYOUT`, collected by a new `_layout_branch()` which is now the only
+  way a branch is recorded as fired. Keyed and not flattened on purpose: a
+  flattened array stays non-empty while one branch of three falls silent, which
+  is 085's shape, and keyed, the failure **names the branch**. The predicate is
+  **byte-identical to 089's `_says_something` in `controller_reach_test`**,
+  checked with a diff rather than by eye, because it is one class and a second
+  shape for the same question is how two files came to hold half a property
+  each (TRAPS 86).
+
+  **MEASURED, EACH FAULT ALONE** (TRAPS 80), against the final suite run alone
+  in a throwaway copy with its own `config/name` and its own import pass.
+  Control **219/0** before each. Eleven of the twelve blanked sites now give
+  **219, failures=1** naming the row or the branch; `[""]` and `["  "]` each
+  give **219, failures=1** showing what was read; 088's shape **re-measured
+  here rather than carried forward** - `FAILED_TOO_BIG`'s `_fires` call deleted
+  - gives **215, failures=2** by name and by count; a branch recorded with a
+  bare `layout_fired.append` again gives **218, failures=1** naming the arrays
+  out of step.
+
+  **THE THREE RUNS.** md5 `695896af9d7812330e7f6d271081e6e6`, 74 suites, 0 with
+  something to look at, `--all`, `user://` cleared before each, said in the
+  order they were taken (080's standard is about the ORDER): run 1 once the
+  CODE was final with TRAPS 88 written and this file not yet, producing the
+  md5; the md5 then written into this file before runs 2 and 3, both on the
+  complete tree, code and docs together. Which is why there is no 091a.
+  **THE DIFF AGAINST THE BASELINE IS THE ONE LINE PREDICTED IN WRITING BEFORE
+  THE RUN**: `refusal_reach_test` **206 -> 219**, and nothing else moved.
+  **NO FILE IN `scripts/`, `scenes/`, `netlify/`, `.github/`, EITHER RUNNER,
+  `project.godot` OR `export_presets.web.cfg` WAS TOUCHED** - `git status`
+  named only `tests/refusal_reach_test.gd` and `docs/`, read rather than
+  assumed. `PROMPT_FINGERPRINT` and `PROMPT_VERSION` did not move. No model was
+  asked anything, no request left the container, there is no API key here.
+  **NOTHING A PLAYER MEETS CHANGED**: every one of the twelve sentences is
+  written today exactly as it was before this commit, and all twelve were
+  already correct when driven - the empty arrays were INJECTED to measure what
+  would notice.
+
+  **TWO LIMITS, BOTH MEASURED RATHER THAN INFERRED.** *"Says something" is not
+  "says the right thing"*: `FAILED_TOO_BIG` made to refuse with *"this dungeon
+  is a perfectly reasonable size"* gives **219, failures=0**, correctly, and no
+  assertion was added pretending otherwise - this is 089's limit in the sibling
+  file. And **one of the seven silent sites is still silent and cannot be
+  closed from this suite**: `farm_module.solve()`'s passthrough of the lane
+  check's reasons, because no fixture can hand `solve()` a pinched layout - it
+  lays the zones out itself and throws the request's coordinates away. The
+  branch's refusal **is** held, at `_check_reachable` where it can be reached;
+  the passthrough line is not, and moving that check into `post_check()` is
+  already the owner's under "Human decision needed".
+  **064'S FINDING IS CARRIED FORWARD AND NOT RE-VERIFIED**; the live site's
+  commit cannot be read from this container.
+
+- Last commit before that: **090**, which did the **reading** 089
   left as the live "Next action" - should `controller_reach_test`'s table be
   keyed by refusal SENTENCE instead of by call SITE - and the answer is
   **no, leave it keyed by site**, which is now written **beside the table** so
@@ -3741,6 +3857,25 @@ than suites, leaving **74 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 74
 and are skipped without it.
+**091 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
+what the two numbers above say. Its baseline on the clean tree at `532ae1c`,
+`git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 090 recorded**:
+`a7809dc41e9adb8d963da70255bdc42d`. The container was fresh, so `user://` was
+empty rather than cleared. After the change, **THREE byte-identical full
+`--all` runs**, md5 `695896af9d7812330e7f6d271081e6e6`, 0 with something to
+look at, the last two on the complete tree with `docs/` in place, `user://`
+cleared before each. The diff against the baseline is the **one line predicted
+in writing before the run**: `refusal_reach_test` 206 -> 219.
+**ONE THING ABOUT RUNNING A SUITE OUTSIDE THE RUNNER, LEARNED THE HARD WAY AND
+WORTH KNOWING BEFORE THE NEXT MEASUREMENT.** `run_tests.sh` runs
+`--headless --import` before anything else, and `refusal_reach_test` needs it:
+in a freshly copied project with no import cache, `DirAccess.open("res://scripts")`
+returns null, `_sites_in_code()` comes back empty and two assertions that read
+`scripts/` fail for a reason that has nothing to do with whatever is being
+measured. 091's first injected measurement reported three failures instead of
+one for exactly that reason, and every number in its tables was re-taken with
+an import pass of its own. See TRAPS 88.
+
 **090 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
 what the two numbers above say. Its baseline on the clean tree at `1c700eb`,
 `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 089 recorded**:
@@ -9873,6 +10008,55 @@ three byte-identical `--all` runs - the last two on the complete tree with
 on 090's behalf**; take your own baseline so you learn the record and the
 container still agree, and spend the time on the work below.
 
+**NOTHING IS OWED FROM 091 EITHER.** Its baseline was byte-identical to the
+md5 090 recorded, it wrote its one-line diff down before running, and it took
+three byte-identical `--all` runs - the last two on the complete tree with
+`docs/` in place - which is why there is no 091a. **Do not start by re-running
+on 091's behalf**; take your own baseline so you learn the record and the
+container still agree, and spend the time on the work below.
+
+**THE FIRST LIVE ENTRY AS OF 091, AND IT IS THE HALF OF ITS OWN FINDING THAT
+091 COULD NOT CLOSE FROM WHERE IT STOOD: ONE OF THE SEVEN SILENT MODULE
+REFUSAL SITES IS `farm_module.solve()`'s PASSTHROUGH, AND NO FIXTURE CAN REACH
+IT.** Measured, not argued: blank `"reasons": reach["reasons"]` at
+`farm_module.gd:277` and the whole `--all` suite is green, **before and after
+091**, because `solve()` lays the zones out itself and throws the request's
+coordinates away, so there is nowhere to hand it a pinched layout.
+`refusal_reach_test` drives that branch at `_check_reachable` instead and says
+so in its own comment, which is honest and is not the same claim.
+**THIS IS NOT A TEST TASK. IT IS THE WIRING QUESTION THE FARM MODULE'S OWN
+COMMENT HAS ASKED SINCE 053**, and it is already under "Human decision
+needed": the farm is the only world whose clearance check lives **inside**
+`solve()`, where the dungeon's and racing's are reached through
+`post_check(layout)` and can therefore be handed a violation. Moving it is
+**behaviour-identical today** and it is a change to where a refusal comes from,
+so it is the owner's. **Do not build a test for the passthrough**: a fixture
+that could reach it would have to be a second entrance into `solve()`, which is
+the thing the move exists to avoid. What a session CAN honestly do is write the
+one-paragraph case for the move - what it would cost, what it would buy, which
+suites would change - and leave the decision where it is.
+
+**AND A SECOND THING 091 MEASURED AND DELIBERATELY DID NOT BUILD: NOTHING
+ANYWHERE HOLDS THE *CONTENT* OF A WORLD MODULE'S REFUSAL EXCEPT FOR RACING.**
+Measured: `FAILED_TOO_BIG` made to refuse with *"this dungeon is a perfectly
+reasonable size"* leaves `refusal_reach_test` at **219 assertions,
+failures=0**, correctly - "says something" is not "says the right thing" and
+091's check does not pretend to be. What the measurement also showed is the
+asymmetry: the racing sentences ARE read for their content at runtime, by
+`said_set_test`, `counted_said_test` and `prompt_bounds_test`, because the
+racing prompt states the same plurals, nouns and numbers and those suites hold
+the prompt against the code. **The dungeon's and the farm's sentences are read
+by nothing of the kind** - the one thing that touches them is
+`agreement_test`'s SOURCE SCAN of the `Readback.plural(MAX_RING, "ring")`
+idiom, which counts a call and never reads a sentence. The honest shape, if
+anybody takes this on, is the same one those four suites already have - the
+sentence against the constant it reports - and **it is a bigger job than it
+looks**: the dungeon's five refusals name `MAX_RING`, `MAX_EXTENT`, `BODY`,
+`CORRIDOR` and a pitch computed at runtime, and getting it wrong is a false
+alarm on correct code. **The measurement is in TRAPS 88; what is not settled
+is whether the class is worth its code, and that is a weighed open question
+and not a task.**
+
 **THE FIRST LIVE ENTRY AS OF 090, AND IT IS THE HALF OF ITS OWN FINDING THAT
 090 DID NOT CLOSE: FOUR REFUSAL SENTENCES ARE DRIVEN BY A SUITE AND HELD BY
 NOTHING, AND THE FIX IS ONE READER RATHER THAN FOUR ASSERTIONS.** Measured both
@@ -9920,6 +10104,18 @@ assertion 4's existing `if schema_refusal` condition and needs no new list.
 **THAT IS A READING THAT HAS BEEN DONE AND A CHANGE THAT HAS NOT BEEN MADE** -
 whether the invariant holds over every record every suite writes was NOT
 measured, and asserting it before measuring is TRAPS 6.
+
+**~~AND A THIRD, WHICH 090 ASKED OF THE OTHER FILE AND DID NOT ANSWER:
+`refusal_reach_test` DOES NOT CHECK THAT A MODULE'S REFUSAL SAYS ANYTHING.~~
+DONE IN 091, AND THE MEASUREMENT IT ASKED FOR FOUND SEVEN SILENT SITES OF
+TWELVE.** The entry was right to insist on the measurement before the build,
+and right that the class might have fewer members than it looked: it has
+**seven**, and the five that were held were held **by accident**, by suites
+about the racing prompt's wording. `_fires()` now reads what the refusal said,
+keyed by the place that said it. **One of the seven is still open and is
+below.** See TRAPS 88 and the 091 entry under "Starting state". Struck rather
+than deleted, with the original text below, because the sketch is the record of
+what was asked for. The original text:**
 
 **AND A THIRD, WHICH 090 ASKED OF THE OTHER FILE AND DID NOT ANSWER (TRAPS 11):
 `refusal_reach_test` DOES NOT CHECK THAT A MODULE'S REFUSAL SAYS ANYTHING.**
