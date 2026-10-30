@@ -417,6 +417,32 @@ const SOUND := {
 }
 
 
+# 097: one sound request per command the whitelist admits, for group (f). The
+# worlds reuse SOUND above rather than repeating it. These are the PARAMETERS
+# a readback is handed, not whole requests - WorldRegistry.readback() takes the
+# command apart from them.
+const PLAN_SHAPE := {"steps": [
+	{"command": "EQUIP", "parameters": {"tool": "boots"}},
+	{"command": "ORDER", "parameters": {"goal": "go_to", "room": 2}},
+]}
+
+
+static func _shapes() -> Dictionary:
+	var out := {
+		"PLAN": PLAN_SHAPE,
+		"MODIFY_TRACK": {"corner": 1, "difficulty": "hard"},
+		"SPAWN_OPPONENTS": {"count": 3},
+		"CLEAR_WORLD": {},
+		"EQUIP": {"tool": "boots", "spec": {"colour": "brown"}},
+		"ORDER": {"goal": "carry", "thing": "red key", "room": 2},
+		"SHUT": {"between": ["hall", "vault"]},
+		"OPEN": {"between": ["hall", "vault"]},
+	}
+	for command in SOUND:
+		out[command] = SOUND[command]
+	return out
+
+
 func _every_door_with_a_null_in_it() -> void:
 	var before := said_in_this_run.size()
 
@@ -430,16 +456,32 @@ func _every_door_with_a_null_in_it() -> void:
 		if not SOUND.has(cmd):
 			continue
 		modules += 1
+		# 097: PER THING AND NOT PER RUN. 096 left this as its third live
+		# entry, MEASURED: empty one of the sweep's groups and the whole thing
+		# was silent, because the denominator at the bottom is a floor over the
+		# WHOLE collection. 096 named the fix as a per-group count and warned
+		# against closing it with hardcoded expected counts (TRAPS 82). This is
+		# neither: it asks, of each thing the REGISTRY declares, whether
+		# driving it produced a sentence at all - so there is no number here to
+		# maintain and a group that stops driving one of its members fails by
+		# that member's name. 097 had to write it because 097 adds a sixth
+		# group, (f), with the same hole.
+		var before_module := said_in_this_run.size()
 		for poisoned in _one_null_each(SOUND[cmd]):
 			_errors_said(m.validate(poisoned))
 			_record(WorldRegistry.readback(cmd, poisoned))
 			_record(m.readback_short(poisoned))
+		_check(said_in_this_run.size() > before_module,
+			"driving %s with a null in it said something" % cmd)
 	_check(modules >= 3, "the registry declares world modules for this to drive (drove %d)" % modules)
 
 	# (b) the section validator directly, because RacingModule delegates to it
 	# and the delegate is where the sentences are written.
+	var before_sections := said_in_this_run.size()
 	for poisoned in _one_null_each(SOUND["CREATE_TRACK"]):
 		_errors_said(SectionValidator.validate(poisoned))
+	_check(said_in_this_run.size() > before_sections,
+		"driving the section validator with a null in it said something")
 
 	# (c) every registered tool, at its validator and at the readback a player
 	# meets for a REFUSED spec. Keyed off defaults(), like section 2.
@@ -447,9 +489,12 @@ func _every_door_with_a_null_in_it() -> void:
 	for tool in ToolRegistry.tools():
 		var t := tool as ToolModule
 		tools += 1
+		var before_tool := said_in_this_run.size()
 		for poisoned in _one_null_each({"tool": t.name(), "spec": t.defaults().duplicate(true)}):
 			_errors_said(t.validate(poisoned))
 			_record(ToolRegistry.readback(poisoned))
+		_check(said_in_this_run.size() > before_tool,
+			"driving the %s with a null in it said something" % t.name())
 	_check(tools >= 3, "the registry declares tools for this to drive (drove %d)" % tools)
 
 	# (d) the orders and the doors, which are the dungeon's own sentences and
@@ -458,13 +503,48 @@ func _every_door_with_a_null_in_it() -> void:
 	var things := [{"name": "red key"}]
 	var layout := {"rooms": rooms, "doors": [Vector2i(0, 1)]}
 	for base in [{"goal": "go_to", "room": 2}, {"goal": "carry", "thing": "red key", "room": 2}]:
+		var before_goal := said_in_this_run.size()
 		for poisoned in _one_null_each(base):
 			_errors_said(NpcGoals.validate(poisoned, rooms, things))
 			_record(NpcGoals.readback(poisoned))
+		_check(said_in_this_run.size() > before_goal,
+			"driving a %s order with a null in it said something" % str(base["goal"]))
+	var before_door := said_in_this_run.size()
 	for poisoned in _one_null_each({"between": ["hall", "vault"]}):
 		_errors_said(NpcGoals.validate_door(poisoned, rooms, layout))
 		_record(NpcGoals.door_readback(poisoned, true))
 		_record(NpcGoals.door_readback(poisoned, false))
+	_check(said_in_this_run.size() > before_door,
+		"driving a door with a null in it said something")
+
+	# (f) 097: EVERY COMMAND THE WHITELIST ADMITS, through the one readback a
+	# player meets before anything is validated. (a) above drives
+	# WorldRegistry.readback() for the REGISTERED MODULE commands only, which
+	# is three of the eleven, so PLAN's readback was never driven here at all -
+	# and it said "a <null>" for a plan whose step command is null, because
+	# _doing()'s fallback says an unrecognised command back as a word. Found by
+	# driving main.gd, not by reading the code; fixed in world_registry.gd in
+	# the same commit. Keyed off CommandParser.allowed_commands() rather than a
+	# list beside the code (TRAPS 82), so a twelfth command is driven from the
+	# moment the whitelist admits it, and off SHAPES keyed by command so a
+	# command with no shape here is a FAILURE and never a skip - the same rule
+	# (a) uses for a module with no fixture.
+	var SHAPES := _shapes()
+	var commands := 0
+	for command in CommandParser.allowed_commands():
+		_check(SHAPES.has(command),
+			"this sweep has a request for %s to poison (a command with none is not being driven)" % command)
+		if not SHAPES.has(command):
+			continue
+		commands += 1
+		var before_command := said_in_this_run.size()
+		for poisoned in _one_null_each(SHAPES[command]):
+			_record(WorldRegistry.readback(command, poisoned))
+		_check(said_in_this_run.size() > before_command,
+			"driving %s's readback with a null in it said something" % command)
+	_check(commands == CommandParser.allowed_commands().size(),
+		"every command the whitelist admits was driven (%d of %d)" % [
+			commands, CommandParser.allowed_commands().size()])
 
 	# (e) the parser, whose own field is the command.
 	for body in [
@@ -472,7 +552,10 @@ func _every_door_with_a_null_in_it() -> void:
 		'{"command":"CREATE_FARM","parameters":null}',
 		'{"command":["x"],"parameters":{}}',
 	]:
+		var before_body := said_in_this_run.size()
 		_record(str(CommandParser.parse(body).get("error", "")))
+		_check(said_in_this_run.size() > before_body,
+			"parsing %s said something" % body)
 
 	# The denominator (TRAPS 75). A sweep that drives nothing passes every
 	# absence question ever asked of it, which is half this project's findings.

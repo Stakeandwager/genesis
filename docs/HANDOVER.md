@@ -13,7 +13,264 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **096**, which took **HANDOVER's FIRST
+- Last commit at the time of writing: **097**, which took **HANDOVER's SECOND
+  live "Next action"** - *the sweep is as wide as its fixtures, and two files
+  are outside it altogether* - and found that **the reason that entry gave for
+  why they are outside it was false, and a suite in this repository had been
+  disproving it since 054.** New TRAPS **94**. No new file;
+  `tests/controller_reach_test.gd` 305 -> **330** assertions and
+  `tests/says_nothing_test.gd` 72 -> **108**. No new "Human decision needed".
+  **The owner's question is STILL the first live entry and 097 did not touch
+  it either**, for the reason that entry gives: he is absent, and it says
+  LEAVE IT.
+
+  **THE BASELINE AGREED WITH THE RECORD BEFORE ANYTHING WAS TOUCHED.** The
+  `--all` run in this container, on a clean tree at `9234c43` with
+  `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 096
+  recorded**: `1061b65ac016f23c1d03448037dec514`, 75 suites, 0 with something
+  to look at. The container was fresh, so `user://` was empty rather than
+  cleared. `ls tests/*.gd` returned **77** and the run reported **75**,
+  re-counted rather than remembered.
+
+  **WHAT THE ENTRY SAID, AND WHY IT WAS WRONG.** It said
+  `says_nothing_test`'s sweep drives nothing in `main.gd` or
+  `game_controller.gd` *"because neither can be instantiated by a suite -
+  `GameController` is a `Node3D`, which is the wall 043 and 044 both hit"*,
+  and prescribed, in place of a sweep, *"asking which of their sentences any
+  existing suite can already reach"*, adding that it *"may come back 'nothing
+  a player meets', and that is a reason to read rather than to build"*.
+  **`controller_reach_test._make_main()` loads the main scene through
+  `ProjectSettings` and adds it to the root, and that file has driven real
+  JSON requests through `main.gd` since 054** - which is the whole method of
+  its twelve sections. The wall was real when 043 and 044 hit it and **054
+  went through it.** So the reading was not the method. The sweep was, and
+  **it is ~160 lines, most of them borrowed**: `_make_main()` and `_send()`
+  from the suite that already had them, `_one_null_each()` from
+  `says_nothing_test`.
+
+  **WHAT IT FOUND, DRIVEN AND NOT READ. 1814 SENTENCES, FOUR DISTINCT STRINGS
+  LEAKING, THREE OF THEM SENTENCES A PLAYER MEETS.** One leaf of every request
+  the whitelist admits, set to null at a time, nested fields included:
+
+  | what a player read, AFTER 096 | where |
+  |---|---|
+  | *"this game has no tool called '`<null>`' (it has car, boots, look)"* | `game_controller.gd` `_equip` |
+  | *"step 1: '`<NULL>`' is not a command this game has"* | `game_controller.gd` `_execute_plan` |
+  | *"a `<null>`"* | `world_registry.gd` `_plan_readback`, through `_doing`'s fallback |
+  | `"tool": "<null>"` - the record's own field, not a sentence | `game_controller.gd` `_equip`, said rather than rounded up |
+
+  **THE THIRD IS A READBACK AND NOT A REFUSAL, WHICH IS TRAPS 93 A THIRD
+  TIME.** 095 wrote that a readback could no longer say `<null>`; 096 found
+  five sites that still did and struck the claim; **this is a sixth, one door
+  along**, and it is the one line a player reads BEFORE anything is validated.
+  `_doing()`'s fallback says an unrecognised command back as a word -
+  `Readback.article(command.to_lower())` - so a plan step whose command is
+  null read back *"a `<null>`"*. It is outside `says_nothing_test`'s sweep
+  because that sweep drives `WorldRegistry.readback()` for the **registered
+  module commands only** - three of the eleven - and never for `PLAN`.
+
+  **AND THE UPPER-CASED ONE WAS INVISIBLE TO A CASE-SENSITIVE SCREEN, AGAIN
+  (TRAPS 78).** Measured: revert that one site and screen for the lower-case
+  spelling only and `controller_reach_test` is **330, failures=0 - SILENT**;
+  screen case-insensitively and it is **330, failures=1**, naming the
+  sentence. The same result 096 recorded at `CommandParser`, reproduced
+  independently at a new door by a check written in the commit that recorded
+  it.
+
+  **WHAT CHANGED. SIX CALL SITES, ONE READER, AND TWO SWEEPS WIDENED.** The
+  reader is 096's own `Readback.spelled()` and **no branch moves anywhere**:
+  every one of these requests is refused exactly as it was, and the only
+  thing that changes is that a null is said as `null`. The sites, counted off
+  `git diff -U0 -- scripts/` rather than off a list: `_equip`'s record field
+  and its `asked_tool`, `_execute_plan`'s schema-pass `step_command`,
+  `_plan_readback`'s `step_command`, and **the two passes of `_execute_plan`
+  that read `str(step["command"])` behind that schema pass.** Those last two
+  **cannot be reached by a null today** - the pass above refuses a step
+  command that is not on the whitelist, and `NULL` is not - so they change
+  nothing a player meets and were changed anyway, for the reason 095 gave for
+  the same two sites in `LookTool`: a reader that is right only by the grace
+  of the door in front of it is TRAPS 11's next instance.
+
+  **MEASURED OVER THE IDENTICAL SWEEP, BEFORE AND AFTER.** With all six call
+  sites reverted and both widened suites left in place: `controller_reach_test`
+  **6 leaking occurrences, 4 distinct strings** out of **1814** sentences
+  driven, and `says_nothing_test` **2 sentences** out of the **311** it
+  collects in all. After: **0** and **0**. Its sweep now drives **273** where
+  096 recorded 204, measured by forcing both denominators to fail so the run
+  prints them rather than by adding them up.
+
+  **AND THE SHAPE COUNT MOVED THE WAY IT SHOULD HAVE.**
+  `str(x.get(k, ""))` was **72** lines of `scripts/` after 096 and is **68**
+  now, grepped both times; the other two sites are
+  `str(x["command"])`, which that pattern cannot see - **2** before and **0**
+  after. The pattern the 096 entry's own figures were taken with was
+  re-derived rather than guessed at, and it reproduces 81 -> 72 across
+  `85e4d62..9234c43` exactly, so that figure is sound.
+
+  **AND 097 THEN CLOSED 096'S THIRD LIVE ENTRY, BECAUSE IT HAD JUST WIDENED
+  THE HOLE.** That entry said emptying one of the sweep's five door groups is
+  not caught - the denominator is a floor over the WHOLE collection - and it
+  warned: *"the honest first question is whether a per-group count keyed off
+  the registries can be had without a list beside the code (TRAPS 82). Do not
+  close it with five hardcoded expected counts."* **097's group (f) was a
+  sixth group with the same hole, and it was measured silent before it was
+  fixed.** What closed it is **neither a per-group count nor a hardcoded one**:
+  it asks, of each thing a REGISTRY or the WHITELIST declares, whether driving
+  that thing produced a sentence at all. There is no number in it, and a group
+  that stops driving one of its members **fails by that member's name**.
+  Measured, before and after:
+
+  | the group made to drive nothing | before 097 | after 097 |
+  |---|---|---|
+  | `says_nothing_test` group (f), the eleven commands | would not have existed | **108, failures=11**, by command |
+  | `says_nothing_test` group (a), the three modules | 72, failures=**0 - SILENT** | **108, failures=4**, by module |
+  | `says_nothing_test` group (c), the three tools | 72, failures=**0 - SILENT** | **108, failures=3**, by tool |
+  | `controller_reach_test`'s sweep, EQUIP left undriven | would not have existed | **330, failures=1**, by command |
+
+  The two SILENT rows are the ones 096 wrote down and are now measured a
+  second time in this container before being closed, rather than taken from
+  its entry.
+
+  **MEASURED, EACH FAULT ALONE**, in its own copy with its own `config/name`
+  and its own `--headless --import` (TRAPS 50, 80, 88), `scripts/` and
+  `tests/` taken from the working tree for each. Controls **330** and **108**
+  assertions, failures=0. **ELEVEN deliberate breakages, ten named:**
+
+  | reverted | after 097 |
+  |---|---|
+  | `_equip`'s record field back to `str()` | 330, failures=**1**, naming `<null>` |
+  | `_equip`'s `asked_tool` back to `str()` | 330, failures=**1**, naming the sentence |
+  | `_execute_plan`'s `step_command` back to `str()` | 330, failures=**1**, naming *"step 1: '`<NULL>`'..."* |
+  | `_plan_readback`'s `step_command` back to `str()` | 108, failures=**1**, naming *"a `<null>`"* in two forms |
+  | the plan site reverted **and the screen narrowed** | 330, failures=**0 - SILENT** |
+  | the controller sweep's collection made to collect nothing | 330, failures=**1** (the denominator) |
+  | the controller sweep's poison made to plant no null | 330, failures=**1** (310 of 1814 sentences left) |
+  | `PLAN` removed from the controller sweep's shapes | 330, failures=**2** (by name, and the whitelist count) |
+  | `PLAN` removed from `says_nothing_test`'s shapes | 108, failures=**2** (the same two) |
+  | one command left undriven in the controller sweep | 330, failures=**1**, by command |
+  | the three group-emptying rows above | as tabled |
+
+  **THE ONE THAT CAME BACK SILENT IS SAID RATHER THAN ROUNDED UP**: the narrow
+  screen **on its own** is correctly silent - there is nothing left to see once
+  the code is fixed - which is exactly why it is attributed by reverting a
+  site WITH it, the row above it.
+
+  **THE PREDICTION WAS WRITTEN DOWN BEFORE EACH FULL RUN AND HELD EXACTLY BOTH
+  TIMES (TRAPS 89).** The first said two lines move - `controller_reach_test`
+  305 -> 319 and `says_nothing_test` 72 -> 84 - and named, with a reason each,
+  the eleven suites it said would not. The diff was exactly those two lines.
+  The per-thing denominators were then added, **a second prediction was
+  written before the next run** - 305 -> **330** and 72 -> **108** - and the
+  diff was again exactly those two lines.
+
+  **THE RUNS, AND THE TWO THAT ARE RECORDED AND NOT COUNTED.** The three
+  counted runs are **THREE byte-identical full `--all` runs on the settled
+  complete tree, code and docs together**: md5 `bd55be050366e233831b48cb281eaa4c`, **75 suites,
+  0 with something to look at**. The md5 is written in after the runs it
+  describes. No suite in `tests/` reads `docs/` at all — all eight mentions are
+  comment lines and nothing names `res://docs`, grepped this session.
+  **`docs/` was still being written during the first of the three and was in
+  place for the last two**, said rather than glossed; it cannot move the number
+  for the reason just given, and the md5 went in after all three.
+  **Two earlier runs are recorded rather than counted, and the reason is said
+  because a later session would otherwise read it out of a gap.** The first
+  (`e76edc32b486670acd2180de2031a779`, 305 -> 319 and 72 -> 84, 0 to look at)
+  was taken before the per-thing denominators existed, so it measured a tree
+  that is not this one. The second measured the final code tree except for
+  **two comment lines** written into `game_controller.gd` afterwards, and it
+  came back **`bd55be050366e233831b48cb281eaa4c` — the same md5 as the three
+  counted runs**, which is what a comment-only difference should do and is
+  written down because it was not assumed. Both predictions held exactly
+  against those two trees, which is why both are recorded. **And a third run
+  was killed mid-flight rather than counted**: those two comments were written
+  while it was running, so the tree moved under it. The change was comment-only
+  and could not have moved a number, and the run was discarded anyway — a run
+  on a moving tree is not a run, which is exactly what 094 said when it threw
+  one away for the same reason.
+  TRAPS 4: `says_nothing_test` ran with `--fixed-fps 120`, with
+  `--fixed-fps 30` and without any, **108/0 all three times**, and its name
+  matches **none** of `run_tests.bat`'s three name patterns (lines 34, 38, 42),
+  read rather than assumed. `controller_reach_test` matches
+  `/c:"controller_reach"` on line 42 and is in `run_tests.sh`'s `TIMED` list,
+  which is **where it already was** - so neither runner needed changing, and
+  neither was touched.
+
+  **NOT DONE AND NOT VERIFIED.**
+  **THE OWNER'S QUESTION IS STILL UNTOUCHED AND IS STILL THE FIRST LIVE
+  ENTRY.** Whether the refusal doors that meet a value saying nothing should
+  quote it or say what is MISSING is his (PROTOCOL 6), the entry says to leave
+  it with him absent, and he is absent. **097 added a thirteenth door to that
+  question's list rather than answering it**: `_equip`'s *"this game has no
+  tool called 'null'"* is the same shape, and the empty string already gets
+  the better sentence there - *"an EQUIP has to say which tool it is for"*.
+  That is written into the entry rather than acted on.
+  **THE CONTROLLER SWEEP IS AS WIDE AS ITS FIXTURES TOO**, which is the
+  sentence 096 wrote about its own and is true of this one: eleven shapes, one
+  per command the whitelist admits, each poisoned one leaf at a time. A door
+  reachable only from a state none of those eleven requests puts the game in
+  is not driven. **What it does guarantee is that a twelfth command cannot be
+  admitted without a shape here**, which is the part a list cannot give.
+  **`main.gd`'s OWN SITES ARE STILL NOT DRIVEN, AND ONE OF THEM IS NAMED WITH
+  A READING DONE.** `main.gd:584` reads `str(world["command"]).to_upper()` out
+  of a SAVED WORLD FILE and refuses with *"'%s' is not a command this game
+  has. The saved world cannot be built."* - so a file whose `command` is null
+  reads `'<NULL>'`. **`WorldStore.save_world()` cannot write one**: its
+  `command` parameter is typed `String`, read this session, so GDScript
+  refuses a null at the call. **`WorldStore.load_world()` checks only
+  `data.has("command")` and not its type**, so the hole is real for a
+  hand-edited file and the honest fix is in `load_world`'s damage check rather
+  than in `main.gd`'s spelling. Left as a live entry with that reading beside
+  it, not changed on a guess.
+  **AND THAT READING ANSWERS 095'S THIRD LIVE ENTRY, WHICH IS STRUCK BELOW.**
+  It asked whether `WorldStore.save()` can write a world whose name says
+  nothing. **It cannot**: `name_given` is cleaned by `clean_name()` and an
+  empty result is refused *"Give the world a name..."* before the file is
+  opened, and the stored `name` is that cleaned non-empty string. So
+  `main.gd`'s two `get("name", name)` reads are reachable only by hand-editing
+  a save file, exactly as 095 guessed and now measured.
+  **THE NUMERIC HALF OF 095'S WIDENING IS STILL NOT DONE** - the 40 float and
+  19 int defaults, where `float(null)` THROWS rather than printing. **And 097
+  is weak evidence that it may be smaller than feared, said as weak**: the
+  controller sweep put a null through 1814 sentences' worth of requests,
+  numeric leaves included, and produced **no `SCRIPT ERROR` and no `Parse
+  Error`** in any run. That is not the count that entry asks for and does not
+  replace it.
+  **094'S SECOND LIVE ENTRY IS UNTOUCHED** - the seven unmeasured members of
+  the silent-validator class.
+  **NO LIVE PATH WAS DRIVEN.** No model was asked anything, no request left
+  the container, there is no API key here, no browser ran, no web export was
+  made, `interpret.js` was not executed.
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is **2026-10-16**, checked by grep before this was
+  started, not assumed.
+  **064'S FINDING IS CARRIED FORWARD AND NOT RE-VERIFIED**; the live site's
+  commit cannot be read from this container.
+
+  **NOTHING IN `scenes/`, `netlify/`, `.github/`, EITHER RUNNER,
+  `project.godot` OR `export_presets.web.cfg` WAS TOUCHED** -
+  `git status --porcelain` over those paths returned **nothing**, read rather
+  than assumed, and named two files in `scripts/`, two in `tests/` and two in
+  `docs/`. `ai_interpreter.gd` is **0 lines** of diff, so `PROMPT_FINGERPRINT`
+  and `PROMPT_VERSION` cannot have moved, and `prompt_bounds_test` asserts
+  that as a sha256 rather than as my reading. The diff was grepped for `AIza`,
+  `api key`, `secret`, `token`, `bearer`, `GEMINI`, `netlify` and
+  `export_presets`: **six hits, every one of them in THIS FILE's own sentence
+  describing that grep and in the "no live path was driven" paragraph above
+  it** - nothing in `scripts/`, `tests/` or anywhere else. Said that way rather
+  than as "no hits", which is what the first draft of this sentence claimed and
+  which its own words made false. Every injection was made in a
+  throwaway copy under the scratch directory, never in the repository, and the
+  tree was `git status --porcelain` clean of them throughout.
+
+  **AND WHAT A PLAYER MEETS DID CHANGE, WHICH IS THE POINT AND IS SAID
+  PLAINLY.** Three sentences that quoted the engine's own debug spelling at a
+  player no longer do: an EQUIP for a tool that says nothing no longer answers
+  *"no tool called '`<null>`'"*, a plan step whose command says nothing no
+  longer answers *"step 1: '`<NULL>`'"*, and the readback a player reads
+  before any of it no longer says *"a `<null>`"*. Every value that says
+  something is said exactly as it was before, asserted rather than assumed.
+
+- Before 097: **096**, which took **HANDOVER's FIRST
   live "Next action"** - *a refusal that quotes `<null>` back at the player* -
   took the option that entry said to prefer with the owner absent (**the
   SPELLING, not the branch**), and then found, by driving the class instead of
@@ -4828,6 +5085,42 @@ than suites, leaving **75 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 75
 and are skipped without it.
+**097 ADDED NO FILE** and re-ran the `ls` anyway: **77** and **75**, which is
+what the two numbers above say. Its baseline on the clean tree at `9234c43`,
+`git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 096
+recorded**: `1061b65ac016f23c1d03448037dec514`, 75 suites, 0 with something to
+look at. The container was fresh, so `user://` was empty rather than cleared.
+After the change, **THREE byte-identical full `--all` runs on the settled
+complete tree, code and docs together**, md5 `bd55be050366e233831b48cb281eaa4c`, 0 with
+something to look at. **The md5 is written into this file AFTER the runs**, for
+the reason 093 through 096 all gave. No suite in `tests/` reads `docs/` at all.
+The diff against the baseline is the **two lines predicted in writing before
+the run**: `controller_reach_test` **305 -> 330** and `says_nothing_test`
+**72 -> 108**, and nothing else moved. The prediction also named, with a reason
+each, the eleven suites it said would NOT move.
+**AND THREE OTHER RUNS WERE TAKEN AND ARE NOT COUNTED, which is said because a
+later session would otherwise read them out of the numbers.** 097's first full
+run (md5 `e76edc32b486670acd2180de2031a779`, 305 -> 319 and 72 -> 84, 0 with
+something to look at) was taken **before the per-thing denominators existed**;
+its second (`bd55be050366e233831b48cb281eaa4c`, 305 -> 330 and 72 -> 108)
+measured the final code tree **except for two comment lines** added afterwards;
+and a third was **killed mid-flight** because those comments were written while
+it was running. Both completed predictions held exactly, and the second came
+back with the **same md5 as the three counted runs** — which is what a
+comment-only difference should do, and is recorded because it was checked
+rather than assumed. A run on a tree that is not the committed one is a
+measurement of something else, and a run on a moving tree is not a run at all
+(094 threw one away for the same reason). The three above are the only ones
+counted.
+**AND WHAT `controller_reach_test` NOW COSTS WAS MEASURED RATHER THAN
+GUESSED AT**, because the first draft of this paragraph guessed and was wrong
+by an order of magnitude. Timed with `date` either side, in this container:
+**1 s before 097 and 9 s after**, for ~250 extra requests through `main.gd`.
+That is well inside `run_tests.sh`'s 600-second per-suite `timeout`, and it is
+**not** a visible change to the length of an `--all` run, which is dominated
+by the two racing suites. Said this way because a figure nobody measured is
+TRAPS 14 in its smallest form, and this file has carried two of those.
+
 **096 ADDED NO FILE** and re-ran the `ls` anyway: **77** and **75**, which is
 what the two numbers above say. Its baseline on the clean tree at `85e4d62`,
 `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 095
@@ -11170,6 +11463,71 @@ the 096 entry with their counts, each was measured alone in its own copy, and
 the property they attribute is `tests/says_nothing_test.gd` section 7 rather
 than a table in a document.
 
+**NOTHING IS OWED FROM 097 EITHER.** Its baseline was byte-identical to the
+md5 096 recorded, it wrote its predicted diff down before running — **twice,
+and both held exactly** — and it took three byte-identical `--all` runs, the
+last two on the complete tree with `docs/` in place, which is why there is no
+097a. **Do not start by re-running on 097's behalf**; take your own baseline so
+you learn the record and the container still agree, and spend the time on the
+work below. **And do not re-take 097's eleven injections** — they are in the
+097 entry with their counts, each was measured alone in its own copy, and the
+property they attribute is `controller_reach_test`'s sweep and
+`says_nothing_test` group (f) rather than a table in a document.
+
+**THE FIRST LIVE ENTRY AS OF 097, AND IT IS STILL THE OWNER'S QUESTION, NOW
+WITH A THIRTEENTH DOOR ON IT. 097 DID NOT TOUCH IT EITHER, FOR THE REASON THE
+ENTRY BELOW GIVES: HE IS ABSENT, AND IT SAYS LEAVE IT.** The one thing 097
+adds is a door: `game_controller.gd`'s `_equip` answers *"this game has no
+tool called 'null' (it has car, boots, look)"* for a tool that says nothing,
+and the EMPTY string already gets the better sentence there — *"an EQUIP has
+to say which tool it is for (this game has car, boots, look)"*, the order
+`ToolRegistry.names()` actually returns, driven rather than written from
+memory. **That is the
+same question as the twelve below and not a new one**: should the door quote
+the value, or say what is missing? Ask him. **If he is absent again, LEAVE
+IT** — the spelling is already fixed at all thirteen, and the rest is a
+wording change with a better alternative at every site.
+
+**THE SECOND LIVE ENTRY AS OF 097, AND IT IS SMALL, READ RATHER THAN GUESSED
+AT, AND NOT CHANGED: `main.gd:584` READS A SAVED FILE'S `command` AND QUOTES
+IT.** `var command := str(world["command"]).to_upper()`, refused with *"'%s'
+is not a command this game has. The saved world cannot be built."* — so a save
+file whose `command` is null reads *"'`<NULL>`'"*. **The reading that matters
+is done and both halves of it are facts:** `WorldStore.save_world()` cannot
+write such a file, because its `command` parameter is typed `String` and
+GDScript refuses a null at the call; and `WorldStore.load_world()` checks only
+`data.has("command")` and **not its type**, so a hand-edited file reaches that
+sentence. **So the honest fix is in `load_world`'s damage check and not in
+`main.gd`'s spelling** — *"The file for '%s' is damaged."* is already the
+sentence for a missing `command` and a non-string one is the same fault — and
+it is a change to what a refusal says about a file a player edited by hand,
+which is small enough to do and was left because 097 had not driven it.
+**Drive it first**: write a save file by hand into `user://` and `/load` it
+through `main.gd`, which is one `_send` in the suite that already stands
+`main.gd` up.
+
+**~~THE SECOND LIVE ENTRY AS OF 096: THE SWEEP IS AS WIDE AS ITS FIXTURES, AND
+TWO FILES ARE OUTSIDE IT ALTOGETHER.~~ DONE IN 097, AND ITS PREMISE WAS
+FALSE.** The entry said neither `main.gd` nor `game_controller.gd` *"can be
+instantiated by a suite"* and prescribed a code reading instead.
+**`controller_reach_test._make_main()` has stood `main.gd` up and driven real
+requests through it since 054.** So 097 built the sweep the entry said could
+not be built, and it found **three sentences a player meets** carrying the
+engine's spelling, one of them a READBACK. See the 097 entry and TRAPS 94.
+Struck rather than deleted, because the record of the premise is the useful
+part.
+
+**~~THE THIRD LIVE ENTRY AS OF 096: EMPTYING ONE OF THE SWEEP'S FIVE DOOR
+GROUPS IS NOT CAUGHT.~~ DONE IN 097, AND NOT THE WAY THAT ENTRY SKETCHED
+IT.** The entry warned against closing it with five hardcoded expected counts,
+and asked first whether a per-group count keyed off the registries could be
+had without a list beside the code. **The answer is that a per-GROUP count is
+not what is wanted at all**: the check is per THING the registry or the
+whitelist declares — did driving this module, this tool, this command say
+anything? — so there is no number in it and a group that drops a member fails
+by that member's name. Measured in both directions and tabled in the 097
+entry. 097 had to do it because it added a sixth group with the same hole.
+
 **THE FIRST LIVE ENTRY AS OF 096, AND IT IS THE OWNER'S QUESTION THAT 095
 ASKED AND 096 DELIBERATELY DID NOT ANSWER: SHOULD A REFUSAL THAT MEETS A VALUE
 SAYING NOTHING QUOTE IT, OR SAY WHAT IS MISSING?** 096 took the half that
@@ -11285,8 +11643,18 @@ build (TRAPS 6).
 `game_controller.gd` says the same shape was live and unheld three commits
 after the rule was written for it.
 
-**THE THIRD LIVE ENTRY AS OF 095, AND IT IS SMALL AND SAID SO THAT IT IS NOT
-RE-DERIVED: `main.gd`'s TWO `get("name", name)` READS.** Both are in the
+**~~THE THIRD LIVE ENTRY AS OF 095: `main.gd`'s TWO `get("name", name)`
+READS.~~ ITS OWN FIRST QUESTION IS ANSWERED IN 097 AND THE ANSWER IS NO.** It
+asked *"whether `WorldStore.save()` can write a world whose name says
+nothing, which is a read of one function"*. **It cannot**: `save_world()`
+puts `name_given` through `clean_name()` and refuses an empty result with
+*"Give the world a name, for example: /save hillclimb"* before the file is
+opened, so the stored `name` is a cleaned, non-empty string. So both reads are
+reachable only by hand-editing a save file — which is the same reachability as
+097's second live entry above, in the same function, and the two should be
+done together. The original text follows.
+
+**095's ENTRY, AS WRITTEN: `main.gd`'s TWO `get("name", name)` READS.** Both are in the
 `/load` path and both read a SAVED WORLD FILE rather than an AI answer, so a
 save whose `name` says nothing makes `pending_request` read *"load "* and
 `record_load_check` name nothing. **Genesis writes those files itself**, so

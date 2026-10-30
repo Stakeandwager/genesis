@@ -228,7 +228,17 @@ static func _plan_readback(parameters: Dictionary) -> String:
 		if typeof(entry) != TYPE_DICTIONARY:
 			continue
 		var step: Dictionary = entry
-		var step_command := str(step.get("command", "")).to_upper()
+		# 097: a READBACK that said "a <null>". _doing()'s fallback below says
+		# an unrecognised command back as a word - Readback.article(command
+		# .to_lower()) - so a plan step whose command is null read back as
+		# "a <null>", the engine's own debug spelling in the one line a player
+		# reads before anything is validated. MEASURED by driving main.gd; this
+		# door is outside says_nothing_test's sweep, which drives
+		# WorldRegistry.readback() only for the REGISTERED module commands and
+		# never for PLAN. Spelling only, and the sweep is widened to the whole
+		# whitelist in the same commit so the next one is caught by the check
+		# rather than by a reading (TRAPS 93).
+		var step_command := Readback.spelled(step.get("command", "")).to_upper()
 		var step_parameters: Dictionary = step.get("parameters", {})
 		var module := find(step_command)
 		if module != null:

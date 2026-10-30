@@ -554,7 +554,17 @@ const EQUIP_INTENT_EXAMPLE := "lightweight"
 
 func _equip(parameters: Dictionary) -> void:
 	var record := _new_record("EQUIP")
-	record["tool"] = str(parameters.get("tool", ""))
+	# 097: the engine's spelling, at a door says_nothing_test's sweep cannot
+	# reach - it drives static calls, and this sentence is composed inside a
+	# Node3D. "tool": null wrote the six characters <null> into the record and
+	# the refusal below quoted them back - MEASURED by driving main.gd, not
+	# read off the code. Spelling only: the EQUIP is refused either way, and
+	# the branch that refuses it does not move (TRAPS 93).
+	# WHAT HOLDS IT NOW: controller_reach_test's own sweep, which stands
+	# main.gd up and poisons one leaf of every command the whitelist admits.
+	# HANDOVER said no suite could do that; _make_main() had been doing it
+	# since 054 (TRAPS 94).
+	record["tool"] = Readback.spelled(parameters.get("tool", ""))
 	# 037: MEASURED, not inferred. All three EQUIP skeletons in the assembled
 	# prompt carry "intent": {"style": STYLE}, and nothing in Genesis read it:
 	# not this function, not ToolRegistry, not one of the three tools. So a
@@ -580,7 +590,7 @@ func _equip(parameters: Dictionary) -> void:
 	if intent_wrong != "":
 		problems.append(intent_wrong)
 
-	var asked_tool := str(parameters.get("tool", "")).strip_edges()
+	var asked_tool := Readback.spelled(parameters.get("tool", "")).strip_edges()
 	var tool := ToolRegistry.find(asked_tool)
 	if tool == null:
 		# 022: a missing field and a wrong name are two different faults and
@@ -812,7 +822,14 @@ func _execute_plan(parameters: Dictionary) -> void:
 			problems.append(Readback.member_error(plan_list(), n))
 			continue
 		var step: Dictionary = steps[i]
-		var step_command := str(step.get("command", "")).to_upper()
+		# 097: the same reader as CommandParser's own, for the same reason and
+		# in the same form - put through to_upper() AFTER the spelling, so the
+		# sentence below reads 'NULL' and never '<NULL>' (TRAPS 78). Measured
+		# by driving a plan whose step command is null through main.gd, and
+		# held by controller_reach_test's sweep. MEASURED SILENT with a
+		# case-SENSITIVE screen, which is why that screen reads
+		# Readback.ENGINE_NOTHING in lower case on both sides.
+		var step_command := Readback.spelled(step.get("command", "")).to_upper()
 		if step_command == "PLAN":
 			problems.append("step %d: a plan may not contain another plan" % n)
 		elif not step_command in CommandParser.allowed_commands():
@@ -870,7 +887,13 @@ func _execute_plan(parameters: Dictionary) -> void:
 	var prepared: Array = []
 	for i in steps.size():
 		var step: Dictionary = steps[i]
-		var step_command := str(step["command"]).to_upper()
+		# 097: one field, one reading. A null cannot reach here today - the
+		# schema pass above refuses a step command that is not on the
+		# whitelist, and 'NULL' is not - so this changes nothing a player
+		# meets and is changed anyway: a reader that is right only by the
+		# grace of the door in front of it is TRAPS 11's next instance, which
+		# is the reason 095 gave for the same two sites in LookTool.
+		var step_command := Readback.spelled(step["command"]).to_upper()
 		var step_parameters: Dictionary = step.get("parameters", {})
 		var module := WorldRegistry.find(step_command)
 		if module == null:
@@ -905,7 +928,8 @@ func _execute_plan(parameters: Dictionary) -> void:
 		cleared_for_building = true
 		for i in steps.size():
 			var step: Dictionary = steps[i]
-			var step_command := str(step["command"]).to_upper()
+			# 097: the same reading as pass 1's, for the same reason.
+			var step_command := Readback.spelled(step["command"]).to_upper()
 			var step_parameters: Dictionary = step.get("parameters", {})
 			plan_pending = step
 			var out: Dictionary = prepared[i]

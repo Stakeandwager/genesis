@@ -1361,6 +1361,7 @@ func _run() -> void:
 	await _guard_ai()
 	_out_of_reach_coverage()
 	_reachable_coverage()
+	await _no_engine_spelling_through_main()
 
 	for line in notes:
 		print("  NOTE  ", line)
@@ -1395,3 +1396,187 @@ static func _code_of(source: String) -> String:
 		var hash_at := line.find("#")
 		out += (line if hash_at < 0 else line.substr(0, hash_at)) + "\n"
 	return out
+
+
+# --- 097: the ENGINE'S SPELLING of nothing, at the doors only a scene reaches ---
+#
+# WHERE THIS CAME FROM, AND THE CLAIM IT CORRECTS. HANDOVER's second live entry
+# as of 096 said that nothing in game_controller.gd or main.gd is driven by
+# says_nothing_test's sweep "because neither can be instantiated by a suite",
+# and named the reading to do instead. THE PREMISE WAS FALSE AND THIS FILE IS
+# THE PROOF: _make_main() has stood main.gd up and driven real requests through
+# it since 054, which is the whole method of the twelve sections above. So the
+# reading is not a reading. It is a sweep, and this is it.
+#
+# WHAT IT FOUND, MEASURED BEFORE A LINE WAS CHANGED. Three sentences a player
+# meets carried the engine's own debug spelling, at two doors 096 could not
+# reach:
+#
+#   "this game has no tool called '<null>' (it has car, boots, look)"
+#       game_controller.gd _equip, and the record's own "tool" field with it
+#   "step 1: '<NULL>' is not a command this game has"
+#       game_controller.gd _execute_plan - upper-cased on the way, TRAPS 78's
+#       form, which is the one 096 found in CommandParser one file along
+#   "a <null>"
+#       the PLAN READBACK, world_registry.gd _plan_readback - a readback and
+#       not a refusal, which is TRAPS 93's exact shape a third time
+#
+# WHY IT IS HERE AND NOT IN says_nothing_test. That file holds the same
+# question for every door that is a static call, and its sweep is widened in
+# the same commit to every command the whitelist admits - which is what catches
+# the PLAN readback. These two sentences are composed INSIDE a Node3D, so the
+# only instrument that can reach them is a scene, and this is the file that
+# stands one up. One spelling, read from Readback.ENGINE_NOTHING in both
+# places, so the two screens cannot drift apart.
+#
+# WHAT IT ASSERTS IS THE PROPERTY AND NEVER THE WORDING (TRAPS 6, TRAPS 14).
+# No sentence above is written down below. The claims are "the engine's
+# spelling does not appear in anything these doors said, in any case", "every
+# command the whitelist admits was driven", and "this sweep actually drove
+# something" - and a refusal whose wording legitimately changes moves none of
+# them.
+#
+# A COMMAND WITH NO SHAPE HERE IS A FAILURE AND NEVER A SKIP, keyed off
+# CommandParser.allowed_commands() rather than a list of its own (TRAPS 82), so
+# a twelfth command is driven from the moment the whitelist admits it.
+const SPELLING_SHAPES := {
+	"EQUIP": {"tool": "boots", "spec": {"colour": "brown"}, "intent": {"style": "light"}},
+	"ORDER": {"goal": "carry", "thing": "lamp", "room": 2},
+	"SHUT": {"between": ["entrance", "store"]},
+	"OPEN": {"between": ["entrance", "store"]},
+	"MODIFY_TRACK": {"corner": 1, "difficulty": "hard"},
+	"SPAWN_OPPONENTS": {"count": 3},
+	"CLEAR_WORLD": {},
+	"PLAN": {"steps": [{"command": "EQUIP", "parameters": {"tool": "boots"}}]},
+	"CREATE_FARM": {"intent": {"style": "a farm"}, "zones": [
+		{"type": "crop", "crop": "wheat", "width": 40.0, "depth": 40.0},
+		{"type": "barn", "width": 20.0, "depth": 20.0}]},
+	"CREATE_TRACK": {"intent": {"style": "a circuit"}, "mode": "circuit", "sections": [
+		{"type": "straight", "length": 200.0},
+		{"type": "corner", "radius": 50.0, "angle": 90.0},
+		{"type": "straight", "length": 200.0},
+		{"type": "corner", "radius": 50.0, "angle": 90.0},
+		{"type": "straight", "length": 200.0},
+		{"type": "corner", "radius": 50.0, "angle": 90.0},
+		{"type": "straight", "length": 200.0},
+		{"type": "corner", "radius": 50.0, "angle": 90.0}]},
+	"CREATE_DUNGEON": {"rooms": [
+		{"name": "entrance", "width": 12.0, "depth": 12.0},
+		{"name": "store", "width": 12.0, "depth": 12.0}],
+		"doors": [[1, 2]], "things": [{"name": "lamp", "in": 2}]},
+}
+
+# The lowest number of sentences this sweep has ever collected, less a margin.
+# A floor and not an equality, for the reason every denominator in this project
+# is one: the point is that a sweep which drove nothing cannot pass the absence
+# question above it (TRAPS 75), and an exact count would be a second thing to
+# maintain. MEASURED at 1814 on the run this was written for, read off the NOTE
+# the function prints so the number can be checked against a run rather than
+# taken from here.
+const SPELLING_FLOOR := 1200
+
+
+func _no_engine_spelling_through_main() -> void:
+	# A dungeon first, so ORDER, SHUT and OPEN reach their OWN doors rather
+	# than the "there is nobody to order about" guard four lines earlier.
+	await _send(DUNGEON)
+	var said := 0
+	var leaking: Array[String] = []
+	var driven := 0
+	for command in CommandParser.allowed_commands():
+		_check(SPELLING_SHAPES.has(command),
+			"this sweep has a request for %s to poison (a command with none is not driven)" % command)
+		if not SPELLING_SHAPES.has(command):
+			continue
+		driven += 1
+		# 097: per COMMAND and not per run, the same shape this commit put into
+		# says_nothing_test's six groups and for the same measured reason - a
+		# floor over the whole collection does not notice one door falling out
+		# of it. Keyed off the whitelist, so there is no number here.
+		var before_command := said
+		for poisoned in _one_null_each(SPELLING_SHAPES[command]):
+			var records := await _send(JSON.stringify({
+				"command": command, "parameters": poisoned}))
+			for record in records:
+				said += _spelling_in(record, leaking)
+			# CLEAR_WORLD and a poisoned dungeon both take the standing world
+			# away, and the three doors that need one are driven after them.
+			if command in ["CLEAR_WORLD", "CREATE_DUNGEON", "PLAN"]:
+				await _send(DUNGEON)
+		_check(said > before_command,
+			"driving %s through main.gd with a null in it said something" % command)
+	_check(driven == CommandParser.allowed_commands().size(),
+		"every command the whitelist admits was driven (%d of %d)" % [
+			driven, CommandParser.allowed_commands().size()])
+	_check(said >= SPELLING_FLOOR,
+		"the sweep produced sentences to examine (%d)" % said)
+	_check(leaking.is_empty(),
+		"nothing these doors said contains the engine's spelling of nothing (%d sentences)" % said if leaking.is_empty() else
+		"a sentence a player reads contains the engine's spelling of nothing: " + str(leaking))
+	notes.append("097: %d sentences driven through main.gd with one null each, %d leaking" % [
+		said, leaking.size()])
+
+
+# Every string anywhere in a record, counted, and the leaking ones kept. The
+# whole record and not a chosen key: "reasons" is where a refusal's sentence
+# is, "readback" is where the interpretation line is, and choosing between
+# them is how 096's own screen came to miss one (TRAPS 78).
+func _spelling_in(value: Variant, leaking: Array[String]) -> int:
+	match typeof(value):
+		TYPE_STRING:
+			if (value as String).to_lower().contains(Readback.ENGINE_NOTHING.to_lower()):
+				leaking.append(value)
+			return 1
+		TYPE_ARRAY:
+			var n := 0
+			for item in (value as Array):
+				n += _spelling_in(item, leaking)
+			return n
+		TYPE_DICTIONARY:
+			var n := 0
+			for key in (value as Dictionary):
+				n += _spelling_in((value as Dictionary)[key], leaking)
+			return n
+	return 0
+
+
+# The sound request, and then one copy per LEAF of it with that leaf set to
+# null - nested fields included, because a plan step's command and a zone's
+# type are leaves two levels down and are exactly where this was found. The
+# same shape as says_nothing_test's, deliberately: one poisoner, one meaning.
+func _one_null_each(base: Dictionary) -> Array:
+	var out: Array = [base.duplicate(true)]
+	var paths: Array = []
+	_leaves(base, "", paths)
+	for path in paths:
+		var copy: Dictionary = base.duplicate(true)
+		_plant(copy, (str(path).substr(1)).split("/"), 0)
+		out.append(copy)
+	return out
+
+
+func _leaves(value: Variant, prefix: String, out: Array) -> void:
+	match typeof(value):
+		TYPE_DICTIONARY:
+			for key in (value as Dictionary):
+				_leaves((value as Dictionary)[key], prefix + "/" + str(key), out)
+		TYPE_ARRAY:
+			for i in (value as Array).size():
+				_leaves((value as Array)[i], prefix + "/" + str(i), out)
+		_:
+			out.append(prefix)
+
+
+func _plant(into: Variant, path: PackedStringArray, at: int) -> void:
+	var step := path[at]
+	var last := at == path.size() - 1
+	if typeof(into) == TYPE_DICTIONARY:
+		if last:
+			(into as Dictionary)[step] = null
+		else:
+			_plant((into as Dictionary)[step], path, at + 1)
+	elif typeof(into) == TYPE_ARRAY:
+		if last:
+			(into as Array)[int(step)] = null
+		else:
+			_plant((into as Array)[int(step)], path, at + 1)

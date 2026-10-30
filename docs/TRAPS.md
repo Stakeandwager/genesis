@@ -7260,3 +7260,84 @@ denominator is a floor over the whole collection and not one per group.
 
 > The commit that fixes five sites can say five. Only a check that drives the
 > class can say the class.
+
+## 94. The wall one commit went through, named as a wall two years of commits later
+
+**Signature:** a document says a sweep cannot be built, names a code reading to
+do instead, and a suite in the same repository has been doing exactly that
+sweep's hard part for forty commits.
+
+**Cause.** 096's second live "Next action" said that
+`says_nothing_test`'s execution sweep drives **nothing** in `main.gd` or
+`game_controller.gd`, and gave the reason:
+
+> because neither can be instantiated by a suite — `GameController` is a
+> `Node3D`, which is the wall 043 and 044 both hit
+
+It then prescribed, in place of a sweep, *"asking which of their sentences any
+existing suite can already reach"* — a reading — and added that it *"may come
+back 'nothing a player meets', and that is a reason to read rather than to
+build"*.
+
+**`tests/controller_reach_test.gd` has stood `main.gd` up and driven real JSON
+requests through it since 054.** Its `_make_main()` loads the scene through
+`ProjectSettings` and adds it to the root; the twelve sections above it send
+requests and read the records back off the ledger. The wall was real when 043
+and 044 hit it and **054 went through it.** The sentence was true when the
+reason behind it was first written down, and nobody rechecked it against the
+file that had disproved it — which is **TRAPS 14's exact shape pointed at this
+project's own harness** rather than at the game's capabilities.
+
+**What it cost, measured.** The sweep that entry said could not be built is
+~160 lines, most of them borrowed: `_make_main()` and `_send()` from the suite
+that already had them, `_one_null_each()` from `says_nothing_test`. Driven,
+with one leaf of every request the whitelist admits set to null at a time, it
+collected **1814 sentences** and found **three distinct ones a player meets
+carrying the engine's own debug spelling**, at doors 096 had closed the
+identical class at eighteen other sites of:
+
+| the sentence a player read, after 096 | where |
+|---|---|
+| *"this game has no tool called '`<null>`' (it has car, boots, look)"* | `game_controller.gd` `_equip` |
+| *"step 1: '`<NULL>`' is not a command this game has"* | `game_controller.gd` `_execute_plan` |
+| *"a `<null>`"* | `world_registry.gd` `_plan_readback`, through `_doing`'s fallback |
+
+The third is a **readback and not a refusal**, which is TRAPS 93's shape a
+third time: 095 said readbacks could no longer say it, 096 found five sites
+that still did, and this is a sixth, one door along, in the one line a player
+reads before anything is validated.
+
+**And the upper-cased one was invisible to a case-sensitive screen, again.**
+Measured: revert that one site and screen for the lower-case spelling only and
+`controller_reach_test` is **330 assertions, failures=0 — SILENT**; screen
+case-insensitively and it is **330, failures=1**, naming the sentence. TRAPS 78
+reproduced at a new door by a check written in the commit that recorded it.
+
+**Do:**
+
+- **A limitation about the TEST HARNESS is a claim about Genesis and gets
+  checked like one.** Before writing *"no suite can reach X"*, grep `tests/`
+  for a suite that already reaches it. One grep for `instantiate()` would have
+  found `_make_main()`.
+- **Name the commit a wall was hit in.** 043 and 044 hit it; 054 went through
+  it. A reason carried forward without its date outlives the fact.
+- **When a driving instrument exists, the reading is not the method.** The
+  sweep answered in one session what the reading would have argued about, and
+  it answers again next session without anybody reading anything.
+
+**Don't:**
+
+- **Don't let the previous entry's reason stand because the previous entry was
+  careful.** 096 was careful, wrote its own limits down, and was wrong about
+  this one. Its warning that the reading *"may come back nothing a player
+  meets"* was the part that made the reading look sufficient.
+
+Found in 097, by taking 096's second live entry and discovering that its
+premise was false. Both widened suites were put through **eleven deliberate
+breakages**, one at a time, each in its own copy with its own `config/name` and
+its own `--headless --import`, against controls of **330** and **108**
+assertions, failures=0. Ten are named by the sentence or the thing they break;
+the eleventh is the narrow screen, correctly silent on its own.
+
+> A wall one commit went through is not a wall. Check which commit you are
+> standing in.
