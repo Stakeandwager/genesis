@@ -212,14 +212,15 @@ func validate(parameters: Dictionary) -> Dictionary:
 	spec["brake"] = _bounded(asked, "brake", BRAKE, DEFAULT_BRAKE, errors)
 
 	if asked.has("colour"):
-		var colour := str(asked["colour"]).to_lower().strip_edges()
+		# 096: spelling only. A colour of null is refused by the same arm.
+		var colour := Readback.spelled(asked["colour"]).to_lower().strip_edges()
 		if not COLOURS.has(colour):
 			errors.append("'%s' is not a colour this game has (%s)" % [colour, ", ".join(COLOURS.keys())])
 		else:
 			spec["colour"] = colour
 	if asked.has("nickname"):
 		# 095: this was str(asked["nickname"]).strip_edges(), which answers ""
-		# and whitespace and NOT null - str(null) is the five characters
+		# and whitespace and NOT null - str(null) is the six characters
 		# "<null>", so a nickname of null was KEPT, ok=true, and the readback
 		# said "called <null>". Found by says_nothing_test on its first run,
 		# against a reading in 095's own notes that had argued this site was

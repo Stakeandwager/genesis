@@ -41,7 +41,11 @@ static func parse(json_text: String) -> Dictionary:
 	if not data.has("command"):
 		result["error"] = "Missing 'command' field."
 		return result
-	var command := str(data["command"]).to_upper()
+	# 096: a command of null read back "Rejected command: <NULL>" - the engine's
+	# spelling, put through to_upper(), which is why a screen looking for the
+	# lower-case form could not see it (TRAPS 78). Spelling only: the command is
+	# rejected either way.
+	var command := Readback.spelled(data["command"]).to_upper()
 	if command == "UNSUPPORTED":
 		result["unsupported"] = true
 		result["command"] = command
@@ -53,7 +57,7 @@ static func parse(json_text: String) -> Dictionary:
 			result["parameters"] = data["parameters"]
 			# 095: "no reason given" answered an ABSENT key and not a present and
 			# empty one, so {"reason": ""} wrote a record whose only sentence was
-			# the empty string and {"reason": null} wrote the five characters
+			# the empty string and {"reason": null} wrote the six characters
 			# "<null>". Measured in 094, driven through main.gd and read off the
 			# ledger. This is the one refusal a player meets when Genesis says it
 			# cannot do the thing at all, so it is the sharpest member of the

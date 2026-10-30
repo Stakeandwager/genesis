@@ -96,14 +96,15 @@ func validate(parameters: Dictionary) -> Dictionary:
 
 	# Detailing: free, unlimited, and it changes nothing you can do.
 	if asked.has("paint"):
-		var paint := str(asked["paint"]).to_lower().strip_edges()
+		# 096: spelling only. A paint of null is refused by the same arm.
+		var paint := Readback.spelled(asked["paint"]).to_lower().strip_edges()
 		if not PAINTS.has(paint):
 			errors.append("'%s' is not a paint this game has (%s)" % [paint, ", ".join(PAINTS.keys())])
 		else:
 			spec["paint"] = paint
 	if asked.has("nickname"):
 		# 095: this was str(asked["nickname"]).strip_edges(), which answers ""
-		# and whitespace and NOT null - str(null) is the five characters
+		# and whitespace and NOT null - str(null) is the six characters
 		# "<null>", so a nickname of null was KEPT, ok=true, and the readback
 		# said "called <null>". Found by says_nothing_test on its first run,
 		# against a reading in 095's own notes that had argued this site was

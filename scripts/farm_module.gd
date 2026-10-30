@@ -144,7 +144,9 @@ func validate(parameters: Dictionary) -> Dictionary:
 			continue
 
 		var zone: Dictionary = zones[i]
-		var type := str(zone.get("type", ""))
+		# 096: a type of null quoted the engine's spelling into "zone 1: unknown
+		# type '<null>'". Spelling only - "" keeps its own arm two lines down.
+		var type := Readback.spelled(zone.get("type", ""))
 		if not type in ZONE_TYPES:
 			if type == "":
 				# The unknown-type refusal beside this one has listed the
@@ -177,7 +179,9 @@ func validate(parameters: Dictionary) -> Dictionary:
 
 		var entry := {"type": type, "width": width, "depth": depth}
 		if type == "crop":
-			var crop := str(zone.get("crop", "")).to_lower()
+			# 096: spelling only. A crop of null is still refused, and "" still
+			# gets the better "missing 'crop'" sentence on the next line.
+			var crop := Readback.spelled(zone.get("crop", "")).to_lower()
 			if crop == "":
 				errors.append("zone %d (crop): missing 'crop', for example corn or wheat" % n)
 				continue
@@ -607,7 +611,14 @@ func readback(parameters: Dictionary) -> String:
 		if typeof(entry) != TYPE_DICTIONARY:
 			continue
 		var zone: Dictionary = entry
-		var type := str(zone.get("type", "")).to_lower()
+		# 096: THIS SITE IS A MEMBER OF 095'S OWN CLASS AND WAS LEFT OUT OF IT.
+		# The shape is the one 095 fixed at the dungeon and the track - a reader
+		# with an EMPTY default and an `== ""` guard - and a null got past it as a
+		# word, so this readback said "a farm with a 40 m <null> and a 20 m barn"
+		# AFTER 095 had written that a readback can no longer say it. Driven, not
+		# read. said() answers all four forms with this site's own policy, which
+		# is to leave a zone whose type says nothing out of the sentence.
+		var type := Readback.said(zone, "type").to_lower()
 		if type == "":
 			continue
 		# Read through the one function that decides what a number is: a
@@ -618,7 +629,8 @@ func readback(parameters: Dictionary) -> String:
 		var depth := Readback.measure(zone, "depth")
 		var name := type
 		if type == "crop":
-			var crop := str(zone.get("crop", "")).to_lower()
+			# 096: the same class, one line along: "a 40 m <null> field".
+			var crop := Readback.said(zone, "crop").to_lower()
 			name = (crop + " field") if crop != "" else "crop field"
 		var key := "%s|%.0f|%.0f" % [name, width, depth]
 		if not groups.has(key):

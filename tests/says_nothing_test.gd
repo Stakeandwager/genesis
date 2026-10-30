@@ -7,7 +7,7 @@ extends SceneTree
 # rule down rather than fixing the instance (TRAPS 11): CommandParser's
 # "no reason given" answered a MISSING reason and not a present and empty one,
 # so an UNSUPPORTED answer could refuse a player with the empty string, or
-# with the five characters "<null>". HANDOVER's first live "Next action" asked
+# with the six characters "<null>". HANDOVER's first live "Next action" asked
 # for the READING to be widened before the count was trusted. It was, and the
 # widening is what this file holds.
 #
@@ -23,7 +23,7 @@ extends SceneTree
 #
 #   AND THE SECOND HALF OF THE RULE, which is the part worth the commit:
 #   A GUARD THAT ANSWERS THE EMPTY STRING DOES NOT ANSWER NULL. str(null) in
-#   GDScript is the five-character string "<null>", which is not empty, so
+#   GDScript is the six-character string "<null>", which is not empty, so
 #   thirteen sites written `if label == ""` let it through as a WORD. Those
 #   sites all have an EMPTY default and were therefore outside the grep's
 #   class entirely.
@@ -75,9 +75,12 @@ extends SceneTree
 
 const CommandParser = preload("res://scripts/command_parser.gd")
 const DungeonModule = preload("res://scripts/dungeon_module.gd")
+const NpcGoals = preload("res://scripts/npc_goals.gd")
 const Readback = preload("res://scripts/readback.gd")
+const SectionValidator = preload("res://scripts/section_validator.gd")
 const ToolRegistry = preload("res://scripts/tool_registry.gd")
 const TrackBuilder = preload("res://scripts/track_builder.gd")
+const WorldRegistry = preload("res://scripts/world_registry.gd")
 
 # The four forms a key can take. ABSENT is the one every default was already
 # written for; the other three are the ones that were not.
@@ -116,10 +119,12 @@ func _record(said: String) -> void:
 
 func _initialize() -> void:
 	_the_reader()
+	_the_speller()
 	_the_tools()
 	_the_dungeon()
 	_the_track()
 	_the_unsupported_reason()
+	_every_door_with_a_null_in_it()
 	_no_engine_null_in_anything_said()
 	print("SAYS NOTHING %d assertions, failures=%d" % [asserted, bad])
 	quit(1 if bad > 0 else 0)
@@ -310,10 +315,213 @@ func _the_unsupported_reason() -> void:
 func _no_engine_null_in_anything_said() -> void:
 	_check(said_in_this_run.size() >= 20,
 		"this run produced sentences to examine (%d)" % said_in_this_run.size())
+	# 096: THE SCREEN ITSELF WAS ONE GREP WIDE (TRAPS 78). It looked for the
+	# lower-case spelling, and CommandParser puts the command through
+	# to_upper() before it is quoted - so "Rejected command: <NULL>" was
+	# reachable, was being produced, and this check could not see it. Measured:
+	# the sweep below found 43 leaking call sites with a case-insensitive
+	# screen and 42 with this one, and the one it could not see was that
+	# sentence. The question is about the ENGINE'S SPELLING reaching a player,
+	# and a sentence that has been upper-cased on the way is the same fault.
 	var leaking: Array[String] = []
 	for said in said_in_this_run:
-		if said.contains("<" + "null>"):
+		if said.to_lower().contains(Readback.ENGINE_NOTHING.to_lower()):
 			leaking.append(said)
 	_check(leaking.is_empty(),
 		"no sentence any of these doors produced contains the engine's spelling of nothing (%d sentences)" % said_in_this_run.size() if leaking.is_empty() else
 		"a sentence a player reads contains the engine's spelling of nothing: " + str(leaking))
+
+
+# --- 096: the speller itself ---
+#
+# Driven directly, for the reason section 1 is: the sweep below rests on it,
+# and a reader wrong in one form would make the sweep agree about nothing.
+func _the_speller() -> void:
+	_check(Readback.spelled(null) == "null",
+		"spelled() says a null in the notation it arrived in (got '%s')" % Readback.spelled(null))
+	_check(not Readback.spelled(null).to_lower().contains(Readback.ENGINE_NOTHING.to_lower()),
+		"spelled() does not hand back the engine's spelling")
+	# THE FIGURE THAT WAS WRONG IN TWELVE PLACES, now measured rather than
+	# counted by eye: str(null) is SIX characters, not five. Asserted so the
+	# comments that say six are tied to something.
+	_check(str(null).length() == 6,
+		"the engine's spelling of nothing is six characters (got %d)" % str(null).length())
+	_check(Readback.ENGINE_NOTHING == str(null),
+		"the reader's own constant is what the engine actually prints ('%s' vs '%s')" % [
+			Readback.ENGINE_NOTHING, str(null)])
+	# A null NESTED in a container is the same fault one level down, which is
+	# why spelled() answers the rendering and not only `value == null`.
+	for nested in [[null], {"a": null}, [[null]]]:
+		_check(not Readback.spelled(nested).to_lower().contains(Readback.ENGINE_NOTHING.to_lower()),
+			"spelled() answers a null inside a container (got '%s')" % Readback.spelled(nested))
+	# And the half that must NOT change: a value that says something is said
+	# exactly as str() says it, edges and all (TRAPS 8).
+	for keeps in ["hall", "  hall  ", "", "   ", 1, 2.5, true, [1, 2]]:
+		_check(Readback.spelled(keeps) == str(keeps),
+			"spelled() leaves a value that says something exactly as it was ('%s' vs '%s')" % [
+				Readback.spelled(keeps), str(keeps)])
+
+
+# --- 096: EVERY DOOR, WITH A NULL IN EVERY FIELD, AND NO LIST OF SITES ---
+#
+# WHY THIS EXISTS AND WHY IT IS NOT A LONGER TABLE. 095 fixed the half of this
+# class where a value that says nothing was KEPT, wrote in its commit message
+# and in HANDOVER that "a readback can no longer say <null>", and left the
+# refusal half for the owner. BOTH halves of that were short:
+#
+#   THE CLAIM WAS FALSE WHEN IT WAS WRITTEN. Three readbacks still said it -
+#   the farm's zone type and crop, the circuit's section type, and the door
+#   readback's room name - every one of them the same `str(x.get(k, ""))` with
+#   an `== ""` guard that 095 fixed at the dungeon and the track. The grep
+#   that found 095's thirteen sites is 81 lines long for that shape today, so
+#   the class was never going to be closed by reading it site by site.
+#
+#   AND THE REFUSAL HALF WAS SIX DOORS IN HANDOVER AND NINE IN THE CODE: the
+#   section type, the zone type and the door's room name were not on the list.
+#
+# So the check is not a list. It is an EXECUTION SWEEP with a denominator,
+# which is the method TRAPS 87 came out of: drive every door that makes a
+# sentence, poison one leaf of the request at a time, collect everything said,
+# and ask one question of all of it. A site that starts leaking is caught
+# whether or not anybody thought of it, and a door added to the game is driven
+# from the moment its module or tool is registered.
+#
+# MEASURED BEFORE THE FIX, over the same 214 sentences this drives: 43 leaking
+# call sites, 26 distinct sentences. After: 0.
+#
+# WHAT IT ASSERTS IS THE PROPERTY AND NEVER THE WORDING (TRAPS 6, TRAPS 14).
+# No sentence is written down here. The only claims are "the engine's spelling
+# of nothing does not appear, in any case" and "this sweep actually drove
+# something", and a site whose wording changes legitimately moves neither.
+#
+# A MODULE WITH NO FIXTURE IS A FAILURE AND NEVER A SKIP, which is the shape
+# built_count_test and ledger_said_test both use: a world nobody drives here
+# is a world whose sentences nobody is checking.
+const SOUND := {
+	"CREATE_FARM": {"intent": {"style": "a farm"}, "zones": [
+		{"type": "crop", "crop": "wheat", "width": 40.0, "depth": 40.0},
+		{"type": "barn", "width": 20.0, "depth": 20.0}]},
+	"CREATE_TRACK": {"intent": {"style": "a street circuit"}, "mode": "circuit", "sections": [
+		{"type": "straight", "length": 200.0},
+		{"type": "corner", "radius": 50.0, "angle": 90.0},
+		{"type": "straight", "length": 200.0},
+		{"type": "corner", "radius": 50.0, "angle": 90.0},
+		{"type": "straight", "length": 200.0},
+		{"type": "corner", "radius": 50.0, "angle": 90.0},
+		{"type": "straight", "length": 200.0},
+		{"type": "corner", "radius": 50.0, "angle": 90.0}]},
+	"CREATE_DUNGEON": {"intent": {"style": "a dungeon"}, "rooms": [
+		{"name": "hall", "width": 10.0, "depth": 10.0},
+		{"name": "vault", "width": 10.0, "depth": 10.0}],
+		"doors": [[1, 2]], "things": [{"name": "red key", "in": 1}]},
+}
+
+
+func _every_door_with_a_null_in_it() -> void:
+	var before := said_in_this_run.size()
+
+	# (a) every registered world module, at its validator and both readbacks.
+	var modules := 0
+	for module in WorldRegistry.modules():
+		var m := module as WorldModule
+		var cmd := m.command()
+		_check(SOUND.has(cmd),
+			"this sweep has a sound request for %s to poison (a module with none is not being driven)" % cmd)
+		if not SOUND.has(cmd):
+			continue
+		modules += 1
+		for poisoned in _one_null_each(SOUND[cmd]):
+			_errors_said(m.validate(poisoned))
+			_record(WorldRegistry.readback(cmd, poisoned))
+			_record(m.readback_short(poisoned))
+	_check(modules >= 3, "the registry declares world modules for this to drive (drove %d)" % modules)
+
+	# (b) the section validator directly, because RacingModule delegates to it
+	# and the delegate is where the sentences are written.
+	for poisoned in _one_null_each(SOUND["CREATE_TRACK"]):
+		_errors_said(SectionValidator.validate(poisoned))
+
+	# (c) every registered tool, at its validator and at the readback a player
+	# meets for a REFUSED spec. Keyed off defaults(), like section 2.
+	var tools := 0
+	for tool in ToolRegistry.tools():
+		var t := tool as ToolModule
+		tools += 1
+		for poisoned in _one_null_each({"tool": t.name(), "spec": t.defaults().duplicate(true)}):
+			_errors_said(t.validate(poisoned))
+			_record(ToolRegistry.readback(poisoned))
+	_check(tools >= 3, "the registry declares tools for this to drive (drove %d)" % tools)
+
+	# (d) the orders and the doors, which are the dungeon's own sentences and
+	# live in NpcGoals rather than in the module.
+	var rooms := [{"name": "hall"}, {"name": "vault"}]
+	var things := [{"name": "red key"}]
+	var layout := {"rooms": rooms, "doors": [Vector2i(0, 1)]}
+	for base in [{"goal": "go_to", "room": 2}, {"goal": "carry", "thing": "red key", "room": 2}]:
+		for poisoned in _one_null_each(base):
+			_errors_said(NpcGoals.validate(poisoned, rooms, things))
+			_record(NpcGoals.readback(poisoned))
+	for poisoned in _one_null_each({"between": ["hall", "vault"]}):
+		_errors_said(NpcGoals.validate_door(poisoned, rooms, layout))
+		_record(NpcGoals.door_readback(poisoned, true))
+		_record(NpcGoals.door_readback(poisoned, false))
+
+	# (e) the parser, whose own field is the command.
+	for body in [
+		'{"command":null,"parameters":{}}',
+		'{"command":"CREATE_FARM","parameters":null}',
+		'{"command":["x"],"parameters":{}}',
+	]:
+		_record(str(CommandParser.parse(body).get("error", "")))
+
+	# The denominator (TRAPS 75). A sweep that drives nothing passes every
+	# absence question ever asked of it, which is half this project's findings.
+	var drove := said_in_this_run.size() - before
+	_check(drove >= 150, "the sweep produced sentences to examine (%d)" % drove)
+
+
+# Every sentence a refusal gave, into the same collection section 6 reads.
+func _errors_said(result: Dictionary) -> void:
+	for e in result.get("errors", []):
+		_record(str(e))
+
+
+# The sound request, and then one copy per LEAF of it with that leaf set to
+# null - nested fields included, because a zone's type and a section's type
+# are leaves two levels down and are exactly where this was found.
+func _one_null_each(base: Dictionary) -> Array:
+	var out: Array = [base.duplicate(true)]
+	var paths: Array = []
+	_leaves(base, "", paths)
+	for path in paths:
+		var copy: Dictionary = base.duplicate(true)
+		_plant(copy, (str(path).substr(1)).split("/"), 0)
+		out.append(copy)
+	return out
+
+
+func _leaves(value: Variant, prefix: String, out: Array) -> void:
+	match typeof(value):
+		TYPE_DICTIONARY:
+			for key in (value as Dictionary):
+				_leaves((value as Dictionary)[key], prefix + "/" + str(key), out)
+		TYPE_ARRAY:
+			for i in (value as Array).size():
+				_leaves((value as Array)[i], prefix + "/" + str(i), out)
+		_:
+			out.append(prefix)
+
+
+func _plant(into: Variant, path: PackedStringArray, at: int) -> void:
+	var step := path[at]
+	var last := at == path.size() - 1
+	if typeof(into) == TYPE_DICTIONARY:
+		if last:
+			(into as Dictionary)[step] = null
+		else:
+			_plant((into as Dictionary)[step], path, at + 1)
+	elif typeof(into) == TYPE_ARRAY:
+		if last:
+			(into as Array)[int(step)] = null
+		else:
+			_plant((into as Array)[int(step)], path, at + 1)

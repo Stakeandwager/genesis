@@ -6986,7 +6986,7 @@ the record read off the ledger:
 **THE CAUSE IS THE DEFAULT, AND IT IS THE WHOLE RULE.**
 `str(data["parameters"].get("reason", reason))` substitutes *"no reason given"*
 when the key is **ABSENT**. It does nothing when the key is **PRESENT AND
-EMPTY**, and `str(null)` in GDScript is the five-character string `<null>`. So
+EMPTY**, and `str(null)` in GDScript is the six-character string `<null>`. So
 the one refusal a player meets when Genesis says it cannot do something at all
 can arrive blank, or can read `<null>`.
 
@@ -7028,7 +7028,7 @@ was missing is anything that would notice if one stopped.
 
 ---
 
-## 92. A guard that answers the empty string, where `str(null)` is five characters
+## 92. A guard that answers the empty string, where `str(null)` is six characters
 
 **Signature:** a world is built, validated and recorded, with something in it
 called `<null>`.
@@ -7061,7 +7061,7 @@ not an empty string at all:
 | `"   "` | `"   "` | caught **only if** the site stripped first |
 | `null` | **`<null>`** | **passes straight through as a WORD** |
 
-`str(null)` in GDScript is the five-character string `<null>`. So **a site
+`str(null)` in GDScript is the six-character string `<null>`. So **a site
 written `if label == ""` lets a null through as a name.** One grep for that
 shape in `scripts/` returns 27 lines; the ones reading an AI-supplied text
 field were read one at a time, and **five let a null through as a word,
@@ -7153,4 +7153,110 @@ own copy with its own `config/name`, against a control of 51 assertions and
 no failures.
 
 > A default answers a key that is not there. Four things can be there and say
-> nothing, and in this language one of them is five characters long.
+> nothing, and in this language one of them is six characters long.
+
+## 93. The claim was written in the same commit as the fix, and six sentences went on saying it
+
+**Signature:** a document says a class is closed. The code says it is closed
+at the sites somebody listed. Nothing had asked the class.
+
+**Cause.** 095 did good work and wrote one sentence too wide. It found the
+says-nothing class, built one reader for it (`Readback.said()`), fixed
+thirteen sites, built a suite that drives the class rather than the sites —
+and then wrote, in its commit message and in HANDOVER:
+
+> a readback can no longer say `<null>` or leave a hole where a word should be
+
+**That was false when it was written.** Five readback sites still said it, in
+six distinct sentences:
+
+| the sentence a player read, after 095 | where |
+|---|---|
+| *"a farm with a 40 m `<null>` and a 20 m barn"* | `farm_module.gd` readback, zone type |
+| *"a farm with a 40 m `<null>` field and a 20 m barn"* | the same function, the crop |
+| *"a farm with a 40 m wheat field and a 20 m `<null>`"* | the same site, second zone |
+| *"...90 deg right and a `<null>`"* | `racing_module.gd` readback, section type |
+| *"to shut the door between the `<null>` and the vault"* | `npc_goals.gd` `_side_said` |
+| *"to have the `<null>` carried to room 2"* | `npc_goals.gd` `readback`, the thing |
+
+Every one is the **same shape 095 fixed four times** — `str(x.get(k, ""))`
+read into an `== ""` guard — at sites that were not on the list. A sixth
+readback site, the carry readback's `room`, was changed by the same rule and
+is **not** separately measured: a bare null is already answered *"somewhere"*
+there, and only a null nested in what was sent reaches the quote. That shape is
+**81 lines** of `scripts/` before 096 and 72 after, grepped both times rather
+than remembered, so the class was never going to be closed by reading it site
+by site; and 095's own entry
+says, correctly, that its thirteen were *"what one grep found rather than the
+class"*. The commit then described the class as closed anyway.
+
+**And the refusal half was undercounted the same way.** HANDOVER named **six**
+rows — eight sites, since one row covered colour, paint and skin. Driving the
+doors found **twelve**: the section type, the zone type and the dungeon's room
+and thing names were not on the list. One of the nine could not be seen by the check 095 had written at
+all — `CommandParser` puts the command through `to_upper()`, so the sentence is
+*"Rejected command: `<NULL>`"*, and a screen looking for the lower-case
+spelling passes it in silence. **Measured: revert that one site and
+`says_nothing_test` is 72 assertions, failures=1 with a case-insensitive
+screen and 72, failures=0 — SILENT — with the one 095 shipped.** TRAPS 78,
+inside the suite written to catch exactly this.
+
+**What closed it: the same sweep, with a denominator, instead of a longer
+list.** `says_nothing_test` section 7 drives every registered module, every
+registered tool, the orders, the doors and the parser; poisons **one leaf of
+the request at a time**, nested fields included; collects every sentence; and
+asks one question of all of them. Measured over the identical sweep, with the
+twenty call sites reverted and the reader left in place: **47 leaking
+occurrences, 30 distinct sentences** before — twenty of them refusals and ten
+readbacks — and **0** after, out of **204** sentences driven, with the
+eighteen call sites reverted and the new reader left in place (the suite
+cannot run against pre-096 `scripts/` at all: `spelled()` did not exist, so it
+is a Parse Error there). A module the registry declares and this file has no fixture
+for is a **failure and not a skip**, so a new world cannot arrive undriven.
+
+**And the figure that had been wrong since 094, in twelve places.**
+`str(null)` is `<null>`, which is **six** characters. Two docs, this file,
+`readback.gd`, two tool comments, `command_parser.gd` and
+`says_nothing_test.gd` all said five. It changed no behaviour and nobody had
+rechecked it for two commits. `str(null).length() == 6` is now an assertion.
+
+**Do:**
+
+- **When a fix closes a class, let the CHECK say so, not the commit message.**
+  095's suite was the right instrument and it was pointed at five sites. If
+  the claim is about the class, the check has to be about the class — a sweep
+  with a denominator, keyed off the registries, that nobody has to extend.
+- **Screen for the fault in every form it can reach a player in.** A spelling
+  that goes through `to_upper()` on the way is the same fault. One grep's
+  worth of screen is TRAPS 78 whether it is in a suite or in a session's
+  notes.
+- **Re-measure the figure the last commit wrote down, and say so when it was
+  wrong.** Six characters, not five, measured with `String.length()`. TRAPS 14
+  does not only apply to capabilities.
+- **Separate the SPELLING of a quoted value from the BRANCH that quotes it.**
+  `Readback.spelled()` changes what six characters say and never which
+  sentence fires, which is why it needed no decision from the owner while
+  routing those doors through `said()` still does.
+
+**Don't:**
+
+- **Don't write "can no longer" about a class you fixed by list.** Write how
+  many you drove, and which reading found them.
+- **Don't take a count out of the last entry.** 095 wrote its thirteen down
+  *with the warning that it was a grep's count and not the class*, and the
+  warning was right both times: the refusal half was six in the document and
+  nine in the code.
+
+Found in 096, by driving the half 095 measured and left, and finding that the
+half 095 had reported closed was not. `tests/says_nothing_test.gd` was put
+through **twenty-one deliberate breakages**, one at a time, each in its own
+copy with its own `config/name` and its own `--headless --import`, against a
+control of **72 assertions, failures=0**. It names **eighteen** of them. The
+three it does not are each written down rather than rounded up: the narrow
+screen on its own (correctly silent — there is nothing left to see once the
+code is fixed, which is why the screen is attributed by reverting a site
+WITH it), and emptying one of the sweep's five door groups, because the
+denominator is a floor over the whole collection and not one per group.
+
+> The commit that fixes five sites can say five. Only a check that drives the
+> class can say the class.

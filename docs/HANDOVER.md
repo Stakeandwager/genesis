@@ -13,7 +13,260 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **095**, which took **HANDOVER's FIRST
+- Last commit at the time of writing: **096**, which took **HANDOVER's FIRST
+  live "Next action"** - *a refusal that quotes `<null>` back at the player* -
+  took the option that entry said to prefer with the owner absent (**the
+  SPELLING, not the branch**), and then found, by driving the class instead of
+  the list, that **the OTHER half of 095's work had been reported closed and
+  was not**. New TRAPS **93**. No new file; `tests/says_nothing_test.gd`
+  51 -> **72** assertions. No new "Human decision needed", and **the owner's
+  question is still open and is still the first live entry** - 096 answered
+  the half that needs no decision and left the half that does.
+
+  **THE BASELINE AGREED WITH THE RECORD BEFORE ANYTHING WAS TOUCHED.** The
+  `--all` run in this container, on a clean tree at `85e4d62` with
+  `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 095
+  recorded**: `e82f4ec23054a4088ebaf549002ac93c`, 75 suites, 0 with something
+  to look at. The container was fresh, so `user://` was empty rather than
+  cleared. `ls tests/*.gd` returned **77** and the run reported **75**,
+  re-counted rather than remembered.
+
+  **WHAT THE ENTRY ASKED FOR, AND WHAT IT GOT.** The entry gave two options
+  and said *"Ask him which, and if he is absent, prefer the spelling fix: it
+  cannot make a sentence worse."* He is absent - the last owner session in
+  this file is still **2026-10-16**, checked by grep before this was started.
+  So the spelling was fixed and **the branch was not touched anywhere**:
+  `Readback.spelled()` is the whole reader, every caller refuses, skips or
+  keeps exactly what it did before, and the only thing that changes is that a
+  null is said as **`null`** - the notation the model actually sent it in,
+  since every one of these values arrives from `JSON.parse` - rather than as
+  the engine's debug spelling. **Routing those doors through `said()`, which
+  WOULD change which sentence fires, is still the owner's and is still
+  written up under "Next action" with the measurement beside it.**
+
+  **AND THEN THE PART NOTHING PREDICTED, WHICH IS THE COMMIT.** 095's own
+  entry and commit message say *"a readback can no longer say `<null>`"*.
+  **That was false when it was written, and 096 found it by driving rather
+  than by reading.** **Six sentences, from FIVE readback sites**, every one of
+  them the SAME `str(x.get(k, ""))` read into an `== ""` guard that 095 fixed
+  at the dungeon and the track, at sites that were not on 095's list:
+
+  | the sentence a player read, AFTER 095 | where |
+  |---|---|
+  | *"a farm with a 40 m `<null>` and a 20 m barn"* | `farm_module.gd` readback, zone type |
+  | *"a farm with a 40 m `<null>` field and a 20 m barn"* | the same function, the crop |
+  | *"a farm with a 40 m wheat field and a 20 m `<null>`"* | the same site, second zone |
+  | *"...90 deg right and a `<null>`"* | `racing_module.gd` readback, section type |
+  | *"to shut the door between the `<null>` and the vault"* | `npc_goals.gd` `_side_said` |
+  | *"to have the `<null>` carried to room 2"* | `npc_goals.gd` `readback`, the thing |
+
+  **A SIXTH READBACK SITE WAS CHANGED BY THE SAME RULE AND IS NOT SEPARATELY
+  MEASURED**, which is said rather than rounded up: the carry readback's
+  `room`, where a bare null is already answered *"somewhere"* five lines above
+  it and only a null NESTED in what was sent can reach the quote. So the table
+  is six sentences from five sites, and the eighteenth call site is that one.
+
+  That shape is **81 lines** of `scripts/` today, grepped rather than
+  remembered, so this class was never going to be closed by reading it site by
+  site - and 095's entry says so itself about its thirteen. **The claim is
+  STRUCK in the 095 entry above rather than deleted**, because the record of
+  the overclaim is the useful part (TRAPS 14).
+
+  **AND THE REFUSAL HALF WAS SIX ROWS IN THIS FILE AND TWELVE DOORS IN THE
+  CODE.** This file's six rows were eight sites (one row covered
+  colour/paint/skin); the code has twelve.
+  Driven, not argued. The three that were on nobody's list: the circuit's
+  **section type** (*"section 1: unknown type '`<null>`'"*), the farm's **zone
+  type** (*"zone 1: unknown type '`<null>`'"*), and the dungeon's **room and
+  thing names** at the order and door doors (*"this dungeon has no room called
+  '`<null>`'"*, *"this dungeon has nothing called '`<null>`'"*). The last one
+  was found by the new suite's own sweep **after the fix was green everywhere
+  else**, because the throwaway sweep that found the first eight had used
+  `"goal": "fetch"` - a goal this game does not have - so the carry path was
+  never driven. Said rather than tidied: the fixture was wrong and the suite
+  caught it.
+
+  **AND ONE OF THE NINE COULD NOT BE SEEN BY THE CHECK 095 HAD WRITTEN AT
+  ALL, WHICH IS TRAPS 78 INSIDE THE SUITE BUILT TO CATCH THIS.**
+  `CommandParser` puts the command through `to_upper()` before quoting it, so
+  the sentence is *"Rejected command: `<NULL>`"*, and `says_nothing_test`'s
+  section 6 screened for the lower-case spelling. **Measured by reverting that
+  one site:** 72 assertions, **failures=1** with a case-insensitive screen,
+  and 72, **failures=0 - SILENT** - with the screen 095 shipped. The screen is
+  now case-insensitive and reads `Readback.ENGINE_NOTHING` rather than a
+  literal of its own.
+
+  **WHAT CHANGED. One new reader, EIGHTEEN call sites, and a screen.**
+  Eighteen, counted off `git diff -U0 -- scripts/` rather than off the list
+  below: **twelve refusals and six readbacks.**
+  `Readback.spelled()` and `Readback.ENGINE_NOTHING` sit next to
+  `Readback.said()`. The split is the one this file already drew:
+  - **the REFUSALS get the spelling only** (TWELVE sites): `section_validator`
+    (mode, section type), `farm_module` (zone type, crop), `npc_goals` (goal,
+    the room name, the thing name), `boots_tool` (colour), `car_tool` (paint),
+    `look_tool` (skin, face), `command_parser` (the command). Every one is
+    refused by the same arm as before; only six characters change.
+  - **the READBACKS get 095's own reader** (`Readback.said()` / `spelled()`,
+    six sites): `farm_module`'s readback type and crop, `racing_module`'s
+    readback type, `npc_goals`' `_side_said`, its carry `thing` and its
+    `room`. At the first four the site's policy for "says nothing" is already
+    written at the site - leave the piece out of the sentence - and `said()`
+    applies it to all four forms, which is exactly what 095 did at the dungeon
+    and the track. `_side_said` and `room` have no fallback word declared at
+    them, so the spelling is the whole fix there.
+
+  **A NULL NESTED IN A CONTAINER IS THE SAME FAULT ONE LEVEL DOWN**, measured
+  rather than assumed: `str([null])` is `[<null>]`, and a quoting site handed
+  an array reaches it. `spelled()` answers the rendering, not only
+  `value == null`. **What that costs is said rather than glossed:** a player
+  who literally sends the six characters `<null>` as a word is quoted back
+  `null`. Every request reaching one of these doors is refused either way, and
+  `<null>` was never distinguishable from nothing in this engine's spelling.
+
+  **AND THE FIGURE THAT HAD BEEN WRONG SINCE 094, IN TWELVE PLACES.**
+  `str(null)` is **SIX** characters, not five. It was said five times in
+  `docs/`, twice in tool comments, once in `command_parser.gd`, once in
+  `readback.gd` and twice in `says_nothing_test.gd`. Measured with
+  `String.length()` rather than counted by eye; `str(null).length() == 6` is
+  now an assertion, and `ENGINE_NOTHING == str(null)` ties the reader's own
+  constant to what the engine actually prints. It changed no behaviour and
+  nobody had rechecked it for two commits - TRAPS 14 in its smallest form.
+
+  **WHAT THE SUITE ASSERTS, AND WHY IT IS NOT A LONGER TABLE (TRAPS 6,
+  TRAPS 14).** Section 7 is an **execution sweep with a denominator**, which
+  is the method TRAPS 87 came out of, and **no sentence is written down in
+  it**. It drives every module `WorldRegistry` declares, every tool
+  `ToolRegistry` declares, the orders, the doors and the parser; poisons **one
+  leaf of the request at a time**, nested fields included; collects
+  everything said; and asks one question of all of it. **A module the registry
+  declares and the suite has no fixture for is a FAILURE and never a skip**,
+  the shape `built_count_test` and `ledger_said_test` both use, so a new world
+  cannot arrive undriven.
+
+  **MEASURED OVER THE IDENTICAL SWEEP, BEFORE AND AFTER.** With all eighteen
+  call sites reverted and the new reader left in place: **47 leaking
+  occurrences, 30 distinct sentences**. After: **0**. Out of **204** sentences
+  the sweep drives and **242** the suite collects in all.
+
+  **MEASURED, EACH FAULT ALONE**, in its own copy with its own `config/name`
+  and its own `--headless --import` (TRAPS 50, 80, 88), `scripts/` and
+  `tests/` taken from the working tree for each. Control **72 assertions,
+  failures=0**. **Twenty-one deliberate breakages, eighteen named:**
+
+  | reverted | after 096 |
+  |---|---|
+  | `spelled()` loses its null branch entirely | 72, failures=**6** |
+  | `spelled()` keeps only the bare-null half | 72, failures=**3** (the three nested forms) |
+  | farm READBACK zone type back to `str()` | 72, failures=**1**, naming the sentence |
+  | farm READBACK crop back to `str()` | 72, failures=**1** |
+  | racing READBACK section type back to `str()` | 72, failures=**1** |
+  | door READBACK side back to `str()` | 72, failures=**1** |
+  | carry READBACK thing back to `str()` | 72, failures=**1** |
+  | farm REFUSAL zone type back to `str()` | 72, failures=**1** |
+  | section REFUSAL type back to `str()` | 72, failures=**1** |
+  | mode REFUSAL back to `str()` | 72, failures=**1** |
+  | command REFUSAL back to `str()` | 72, failures=**1**, naming *"Rejected command: `<NULL>`"* |
+  | goal REFUSAL back to `str()` | 72, failures=**1** |
+  | thing REFUSAL back to `str()` | 72, failures=**1** |
+  | boots colour REFUSAL back to `str()` | 72, failures=**1** |
+  | look face REFUSAL back to `str()` | 72, failures=**1** |
+  | command REFUSAL reverted **and the screen narrowed** | 72, failures=**0 - SILENT** |
+  | the collection made to collect nothing | 72, failures=**2** (both denominators) |
+  | the poison made to plant no null | 72, failures=**1** |
+
+  **THE THREE THAT CAME BACK SILENT ARE SAID RATHER THAN ROUNDED UP.** The
+  narrow screen **on its own** is correctly silent - there is nothing left to
+  see once the code is fixed, which is why the screen is attributed by
+  reverting a site WITH it, the row above. Emptying **one of the sweep's five
+  door groups** (the `SectionValidator` group) is **not** caught: the
+  denominator is a floor over the whole collection and not one per group, and
+  that is a real limit of this check, written here rather than discovered
+  later.
+
+  **THE PREDICTION WAS WRITTEN DOWN BEFORE THE FIRST FULL RUN AND IT HELD
+  EXACTLY (TRAPS 89).** It said **one line moves** - `says_nothing_test`
+  51 -> 72 - and named, with a reason each, why `result_line_test` would not
+  (its class is the suite LIST and 096 adds no file), why `source_scan_test`
+  would not (no `FileAccess`), why `agreement_test` would not (no plural, no
+  `"%d <noun>"`), why `PROMPT_FINGERPRINT` would not, and why
+  `controller_reach_test` and `refusal_reach_test` would not (no new
+  `FAILED_`). The diff against the baseline is **exactly that one line**.
+
+  **THE RUNS.** md5 `1061b65ac016f23c1d03448037dec514`, **75 suites, 0 with
+  something to look at**, `--all`, said in the order taken: the first on the
+  final code tree with `docs/` not yet written; the second and third on the
+  complete tree with `docs/` in place. The md5 is written in after the runs,
+  for the reason 093, 094 and 095 all gave, and no suite in `tests/` reads
+  `docs/` at all.
+  TRAPS 4: the changed suite was run with `--fixed-fps 120`, with
+  `--fixed-fps 30` and without any, **72/0 all three times**, so nothing in it
+  depends on the frame rate. Its name matches **none** of `run_tests.bat`'s
+  three name patterns (lines 34, 38, 42 — not-a-suite, slow, timed), checked by
+  reading them, so both runners treat it as an ordinary untimed suite; and its
+  result line matches `failures=` on the capture line, which is how the `.bat`
+  reads it at all. **Its exit code was checked apart from its line**: 0 on a
+  pass, and 1 when `bad > 0`, measured by forcing `bad = 1` in a throwaway
+  copy rather than by reading the `quit()`.
+
+  **NOT DONE AND NOT VERIFIED.**
+  **THE OWNER'S QUESTION IS UNTOUCHED AND IS STILL THE FIRST LIVE ENTRY.**
+  Whether those nine refusal doors should route through `said()` - which would
+  change *"'`null`' is not a crop"* into *"missing 'crop'"* on nine doors at
+  once - is his, and 096 did not take it. What 096 changed is the spelling at
+  those doors, which cannot make a sentence worse.
+  **THE SWEEP IS AS WIDE AS ITS FIXTURES.** Three world fixtures, three tool
+  fixtures read off `defaults()`, two order shapes, one door shape and three
+  parser bodies. A door reachable only through `main.gd` or
+  `game_controller.gd` is **not** driven by it - neither can be instantiated
+  by a suite - so the 204 sentences are the module-and-tool surface and not
+  every sentence Genesis can say. Named rather than implied.
+  **THE SITES OF THE SHAPE WERE NOT READ ONE AT A TIME.** `str(x.get(k, ""))`
+  is **81** lines of `scripts/` before 096 and **72** after, counted both
+  times. 096 fixed the eighteen the sweep PROVED leak and left the rest to the
+  sweep rather than
+  editing sites it had not driven. That is a deliberate choice against TRAPS
+  11's letter and for its reason: a guard over the class is worth more than
+  twenty more edits nobody measured. If a site in that 81 starts leaking, the
+  sweep says so by sentence.
+  **THE NUMERIC HALF OF 095'S WIDENING IS STILL NOT DONE** - the 40 float and
+  19 int defaults, where `float(null)` THROWS rather than printing. Still the
+  second live "Next action", and still a count before it is a build.
+  **`main.gd`'s `get("name", name)` PAIR IS STILL UNTOUCHED**, third live
+  entry, for the reason 095 gave.
+  **094'S SECOND LIVE ENTRY IS UNTOUCHED** - the seven unmeasured members of
+  the silent-validator class.
+  **NO LIVE PATH WAS DRIVEN.** No model was asked anything, no request left
+  the container, there is no API key here, no browser ran, no web export was
+  made, `interpret.js` was not executed.
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is **2026-10-16**, and 048's *"there is no way to ASK
+  Genesis anything"* was written up in 050 as far as it goes without him.
+  Checked by grep before this was started, not assumed.
+  **064'S FINDING IS CARRIED FORWARD AND NOT RE-VERIFIED**; the live site's
+  commit cannot be read from this container.
+
+  **NOTHING IN `scenes/`, `netlify/`, `.github/`, EITHER RUNNER,
+  `project.godot` OR `export_presets.web.cfg` WAS TOUCHED** - `git status`
+  named nine files in `scripts/`, one in `tests/` and two in `docs/`, read
+  rather than assumed. `ai_interpreter.gd` is **0 lines** of diff, so
+  `PROMPT_FINGERPRINT` and `PROMPT_VERSION` cannot have moved, and
+  `prompt_bounds_test` asserts that as a sha256 rather than as my reading. The
+  diff was grepped for `AIza`, `api key`, `secret`, `token`, `bearer`,
+  `GEMINI`, `netlify` and `export_presets`: one hit, the words *"debug token"*
+  in a comment. Every injection was made in a **throwaway copy** under the
+  scratch directory, never in the repository, and the tree was
+  `git status --porcelain` clean of them throughout.
+
+  **AND WHAT A PLAYER MEETS DID CHANGE, WHICH IS THE POINT AND IS SAID
+  PLAINLY.** Thirty distinct sentences that quoted the engine's own debug
+  spelling at a player - twelve refusal doors and six readbacks, across the farm, the
+  circuit, the dungeon, the orders, the doors, all three tools and the command
+  parser - no longer do. A farm readback no longer describes a zone as
+  `<null>`; an order no longer says it will carry *"the `<null>`"*; and a
+  rejected command no longer answers `<NULL>`. Every value that says something
+  is said exactly as it was before, asserted rather than assumed.
+
+- Before 096: **095**, which took **HANDOVER's FIRST
   live "Next action"** - *`CommandParser.parse`'s UNSUPPORTED reason can arrive
   blank, and nothing holds it* - and did the thing that entry asked for first:
   **WIDEN THE READING BEFORE TRUSTING THE COUNT.** The widening is the commit.
@@ -50,7 +303,7 @@ that the owner has not ruled on.** Do not promote one to the other.
 
   **AND THEN THE SECOND HALF, WHICH NOTHING PREDICTED.** There are **four**
   ways a text field can say nothing, not two, and the fourth is not an empty
-  string: **`str(null)` in GDScript is the five-character string `<null>`**, so
+  string: **`str(null)` in GDScript is the SIX-character string `<null>`**, so
   a site written `if label == ""` lets a null through **as a word**. One grep
   for that shape in `scripts/` returns **27 lines**; the ones reading an
   AI-supplied text field were then read one at a time, and **five let a null
@@ -209,10 +462,18 @@ that the owner has not ruled on.** Do not promote one to the other.
   `git status --porcelain` clean of them throughout.
   **AND WHAT A PLAYER MEETS DID CHANGE, WHICH IS THE POINT AND IS SAID
   PLAINLY**: a room, a thing, a car and a pair of boots can no longer be named
-  `<null>`; a readback can no longer say `<null>` or leave a hole where a word
-  should be; and an UNSUPPORTED refusal can no longer arrive blank. Every
+  `<null>`; ~~a readback can no longer say `<null>` or leave a hole where a word
+  should be~~; and an UNSUPPORTED refusal can no longer arrive blank. Every
   value that says something is said exactly as it was before, asserted rather
   than assumed.
+  **THE STRUCK CLAUSE ABOVE WAS FALSE WHEN IT WAS WRITTEN, AND 096 FOUND IT BY
+  DRIVING RATHER THAN BY READING.** Five readback sites still said `<null>`
+  after 095, in six distinct sentences: the farm's zone type and its crop, the
+  circuit's section type, the door readback's sides and the carry readback's
+  thing - every one of them
+  the SAME `str(x.get(k, ""))` with an `== ""` guard that 095 fixed at the
+  dungeon and the track. It is struck rather than deleted because the record
+  of the overclaim is the useful part (TRAPS 14, TRAPS 93).
 
   **THE RUNS.** md5 `e82f4ec23054a4088ebaf549002ac93c`, **75 suites, 0 with
   something to look at**, `--all`, said in the order they were taken (080's
@@ -357,7 +618,7 @@ that the owner has not ruled on.** Do not promote one to the other.
   **missing** `reason` and not a **present and empty** one, so
   `{"command": "UNSUPPORTED", "parameters": {"reason": ""}}` writes a record
   whose only sentence is the empty string, and `{"reason": null}` writes the
-  five-character string `<null>`. **Driven through `main.gd` and read off the
+  six-character string `<null>`. **Driven through `main.gd` and read off the
   ledger**, not argued: the table is in TRAPS 91 and in the first live "Next
   action". **It is MEASURED AND NOT FIXED**, and the reason is written in both
   places: the general rule is *a default that answers an absent key does not
@@ -4567,6 +4828,29 @@ than suites, leaving **75 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 75
 and are skipped without it.
+**096 ADDED NO FILE** and re-ran the `ls` anyway: **77** and **75**, which is
+what the two numbers above say. Its baseline on the clean tree at `85e4d62`,
+`git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 095
+recorded**: `e82f4ec23054a4088ebaf549002ac93c`, 75 suites, 0 with something to
+look at. The container was fresh, so `user://` was empty rather than cleared.
+After the change, **THREE byte-identical full `--all` runs**, md5
+`1061b65ac016f23c1d03448037dec514`, 0 with something to look at — the first on
+the final code tree with `docs/` not yet written, the second and third on the
+complete tree. **The md5 is written into this file AFTER the runs**, for the
+reason 093, 094 and 095 all gave. No suite in `tests/` reads `docs/` at all.
+The diff against the baseline is the **one line predicted in writing before
+the run, and the prediction held exactly**: `says_nothing_test`
+**51 -> 72**, and nothing else moved. The prediction also named, with a reason
+each, the five suites it said would NOT move — see the 096 entry, and TRAPS 89
+for why it is written down either way.
+**AND THE BEFORE/AFTER WAS TAKEN OVER THE IDENTICAL SWEEP**, which is worth
+knowing before the next measurement of this class: the new section cannot run
+against pre-096 `scripts/` at all (it calls `Readback.spelled()`, which did
+not exist, so the suite is a Parse Error there). The honest way to take the
+before-number is to put the **new `readback.gd` in place and revert only the
+twenty CALL SITES**: 47 leaking occurrences, 30 distinct sentences, against 0
+after, out of 204 sentences driven.
+
 **095 ADDED ONE FILE** — `tests/says_nothing_test.gd`, which is why the two
 numbers above moved from 76 and 74. Its baseline on the clean tree at
 `28a9980`, `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 094
@@ -10875,8 +11159,77 @@ counts, each was measured alone in its own copy, and the property they
 attribute is now `tests/says_nothing_test.gd` rather than a table in a
 document.
 
-**THE FIRST LIVE ENTRY AS OF 095, AND IT IS THE HALF OF 095'S OWN CLASS THAT
-WAS MEASURED AND DELIBERATELY LEFT: A REFUSAL THAT QUOTES `<null>` BACK AT THE
+**NOTHING IS OWED FROM 096 EITHER.** Its baseline was byte-identical to the
+md5 095 recorded, it wrote its predicted diff down before running and **the
+prediction held exactly**, and it took three byte-identical `--all` runs — the
+last two on the complete tree with `docs/` in place — which is why there is no
+096a. **Do not start by re-running on 096's behalf**; take your own baseline so
+you learn the record and the container still agree, and spend the time on the
+work below. **And do not re-take 096's twenty-one injections** — they are in
+the 096 entry with their counts, each was measured alone in its own copy, and
+the property they attribute is `tests/says_nothing_test.gd` section 7 rather
+than a table in a document.
+
+**THE FIRST LIVE ENTRY AS OF 096, AND IT IS THE OWNER'S QUESTION THAT 095
+ASKED AND 096 DELIBERATELY DID NOT ANSWER: SHOULD A REFUSAL THAT MEETS A VALUE
+SAYING NOTHING QUOTE IT, OR SAY WHAT IS MISSING?** 096 took the half that
+needed no decision — the SPELLING, so a null is quoted `null` and not the
+engine's `<null>` — and left the branch alone at all twelve doors. **The
+twelve, counted off the code by driving them rather than off this file, whose
+six rows were eight sites:** `"mode"`, `"goal"`, `"crop"`, the zone `type`, the section `type`, a
+`colour`/`paint`/`skin` off the whitelist, `"face"`, the dungeon's room name
+and thing name, and `"command"`. At every one of them the **empty string
+already gets a better sentence than the quoting one** — *"an order needs a
+goal"*, *"zone 1 (crop): missing 'crop'"*, *"zone 1 has no type"* — so
+routing the null through `Readback.said()` would change what the player is
+told on twelve doors at once. **That is still his call (PROTOCOL 6), and it is
+one question and not a measurement to re-take**: the reading is done, it is in
+TRAPS 92 and 93, and the sweep that would hold the answer either way is
+already written. **Ask him. If he is absent again, LEAVE IT** — the spelling
+fix has already taken the part that cannot make a sentence worse, and the rest
+is a wording change with a better alternative at every site.
+
+**THE SECOND LIVE ENTRY AS OF 096, AND IT IS THE LIMIT OF 096'S OWN CHECK
+RATHER THAN A FAULT IN THE CODE: THE SWEEP IS AS WIDE AS ITS FIXTURES, AND
+TWO FILES ARE OUTSIDE IT ALTOGETHER.** `says_nothing_test` section 7 drives
+every module `WorldRegistry` declares and every tool `ToolRegistry` declares,
+so a new world or tool is driven from the moment it is registered. It drives
+**nothing in `main.gd` or `game_controller.gd`**, because neither can be
+instantiated by a suite — `GameController` is a `Node3D`, which is the wall
+043 and 044 both hit — and between them those two files hold 15 and 5 of the
+81 `str(x.get(k, ""))` sites as they stood before 096. **The reading worth doing first is which of
+those sites reaches a sentence a player meets**, and the method is the one
+that worked here: not a code reading, but asking which of their sentences any
+existing suite can already reach (`NpcGoals.missing_thing_line` is the
+precedent — 043 moved a sentence out of `GameController` for exactly this
+reason, and 096 drove it). **It may come back "nothing a player meets", and
+that is a reason to read rather than to build.**
+
+**THE THIRD LIVE ENTRY AS OF 096, SMALL AND SAID SO IT IS NOT RE-DERIVED:
+EMPTYING ONE OF THE SWEEP'S FIVE DOOR GROUPS IS NOT CAUGHT.** Measured, not
+argued: replace the `SectionValidator` group's loop with an empty one and
+`says_nothing_test` is **72 assertions, failures=0**. The denominator is a
+floor over the WHOLE collection (`drove >= 150` against 204), so losing one
+group of five falls inside it — TRAPS 85's shape, a tally that counts the
+total where the class is the groups. **The fix is a per-group denominator and
+it is four lines**; the reason 096 did not write it is that it is a guard over
+a guard, and the honest first question is whether a per-group count keyed off
+the registries can be had without a list beside the code (TRAPS 82). **Do not
+close it with five hardcoded expected counts.**
+
+**~~THE FIRST LIVE ENTRY AS OF 095: A REFUSAL THAT QUOTES `<null>` BACK AT THE
+PLAYER.~~ HALF DONE IN 096 — THE SPELLING IS FIXED AT ALL TWELVE DOORS AND THE
+BRANCH IS UNTOUCHED, SO THE OWNER'S QUESTION SURVIVES AS THE FIRST LIVE ENTRY
+ABOVE.** The entry was right that the reading was done, right that the
+spelling fix could not make a sentence worse, and **wrong in its count: its
+six rows were eight sites and the code has twelve.** It was also right, in a way it did not
+intend, that *"the assertion is already half-written"* — widening section 5 to
+collect refusals was the whole test, and doing it found that three of 095's
+own readback sites had never been fixed and that the screen could not see
+`<NULL>`. See the 096 entry and TRAPS 93. Struck rather than deleted, with the
+original text below, because the measurement in it is still the measurement.
+
+**095's ENTRY, AS WRITTEN: A REFUSAL THAT QUOTES `<null>` BACK AT THE
 PLAYER. THE REQUEST IS REFUSED IN EVERY CASE, SO THIS IS A WORDING QUESTION
 AND THE WORDING IS THE OWNER'S.** Driven in 095, not argued, each through its
 own validator:
@@ -10967,7 +11320,7 @@ and the record read off the ledger:
 **THE CAUSE IS THE DEFAULT.** `command_parser.gd:54` reads
 `str(data["parameters"].get("reason", reason))`, and the *"no reason given"*
 substitution answers an **absent** key and not a **present and empty** one;
-`str(null)` in GDScript is the five-character string `<null>`. So the one
+`str(null)` in GDScript is the six-character string `<null>`. So the one
 refusal a player meets when Genesis says it cannot do the thing at all can
 arrive blank, or can read `<null>`. **Nothing in `tests/` holds it**: eight
 files name `UNSUPPORTED`, `controller_reach_test` counts the site,

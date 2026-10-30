@@ -344,7 +344,11 @@ func readback(parameters: Dictionary) -> String:
 		if typeof(entry) != TYPE_DICTIONARY:
 			continue
 		var section: Dictionary = entry
-		var type := str(section.get("type", "")).to_lower()
+		# 096: the same member of 095's class as the farm readback. A section
+		# type of null read back "...90 deg right and a <null>". said() applies
+		# this site's own policy - a section whose type says nothing is not
+		# described - to all four forms.
+		var type := Readback.said(section, "type").to_lower()
 		if type == "":
 			continue
 		# Every measurement here comes out of a raw request, so each is read

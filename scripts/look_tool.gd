@@ -68,7 +68,8 @@ func validate(parameters: Dictionary) -> Dictionary:
 			errors.append("a look has no '%s' (it has %s)" % [str(key), ", ".join(spec.keys())])
 
 	if asked.has("skin"):
-		var skin := str(asked["skin"]).to_lower().strip_edges()
+		# 096: spelling only. A skin of null is refused by the same arm.
+		var skin := Readback.spelled(asked["skin"]).to_lower().strip_edges()
 		if not SKINS.has(skin):
 			errors.append("'%s' is not a skin this game has (%s)" % [skin, ", ".join(SKINS.keys())])
 		else:
@@ -78,7 +79,9 @@ func validate(parameters: Dictionary) -> Dictionary:
 	# path that is not there, or is not an image, is refused with the reason -
 	# the same wall every other spec goes through, applied to a file.
 	if asked.has("face"):
-		var path := str(asked["face"]).strip_edges()
+		# 096: spelling only. A face of null said "there is no file at '<null>'";
+		# it still says there is no file, and names what was sent.
+		var path := Readback.spelled(asked["face"]).strip_edges()
 		if path != "":
 			var why := trouble_with(path)
 			if why != "":

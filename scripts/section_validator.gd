@@ -119,7 +119,10 @@ static func validate(parameters: Dictionary) -> Dictionary:
 	var net_turn := 0.0
 	var direction_change := 0.0
 
-	var mode := str(parameters.get("mode", "circuit"))
+	# 096: a mode of null quoted the engine's spelling back - "mode '<null>'
+	# is not available". The request is refused either way; only the six
+	# characters change. See Readback.spelled().
+	var mode := Readback.spelled(parameters.get("mode", "circuit"))
 	if not mode in MODES:
 		errors.append("mode '%s' is not available (only: circuit)" % mode)
 
@@ -146,7 +149,9 @@ static func validate(parameters: Dictionary) -> Dictionary:
 			errors.append(Readback.member_error(list_entry(), n))
 			continue
 		var section: Dictionary = s
-		var t := str(section.get("type", ""))
+		# 096: a type of null fell to the unknown-type arm and quoted "<null>".
+		# Spelling only: "" still has its own arm below and still fires.
+		var t := Readback.spelled(section.get("type", ""))
 
 		match t:
 			"straight":

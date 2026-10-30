@@ -120,7 +120,7 @@ static func measure(source: Dictionary, key: String) -> float:
 #   ""              the empty string
 #   "   "           whitespace, which some readers stripped and some did not
 #   null            and this is the one that got through: str(null) in GDScript
-#                   is the FIVE-CHARACTER STRING "<null>", which is not empty,
+#                   is the SIX-CHARACTER STRING "<null>", which is not empty,
 #                   so a guard written `if label == ""` lets it past as a NAME.
 #
 # Measured in 095 by driving the validators, not by reading them (TRAPS 48):
@@ -158,6 +158,54 @@ static func said_or(source: Dictionary, key: String, fallback: String) -> String
 	if said(source, key) == "":
 		return fallback
 	return str(source[key])
+
+
+# --- 096: the engine's own spelling of nothing, in a sentence a player reads
+#          ---
+#
+# 095 closed the half of the says-nothing class where a value that says
+# nothing was KEPT - as a room's name, a thing's name, a nickname, a
+# difficulty - by answering all four forms in said() above. It MEASURED and
+# deliberately left the other half: a value that is REFUSED either way, where
+# the refusal QUOTES it back at the player. The reason it was left is in
+# HANDOVER and it is a good one: at every one of those doors the empty string
+# already gets a BETTER sentence than the quoting one, so routing them through
+# said() would change WHICH SENTENCE FIRES on several doors at once, and a
+# refusal's wording is the owner's (PROTOCOL 6).
+#
+# This is the other thing a quoting site can do, and it needs no decision at
+# all. It changes the SPELLING and never the branch: every caller refuses,
+# skips or keeps exactly what it refused, skipped or kept before. A null is
+# said as "null" - which is the notation the model actually sent it in, since
+# every one of these values arrives from JSON.parse - rather than as the
+# engine's debug spelling.
+#
+# AND THE FIGURE THAT HAD BEEN WRONG SINCE 094, CORRECTED HERE AND IN ELEVEN
+# OTHER PLACES: str(null) in GDScript is "<null>", which is SIX characters and
+# not five. Measured with String(str(null)).length() rather than counted by
+# eye. It changed no behaviour and it was in this file, in two code comments,
+# in says_nothing_test and in both docs - TRAPS 14 in its smallest form, a
+# figure nobody rechecked.
+#
+# A NULL NESTED INSIDE A CONTAINER IS THE SAME FAULT ONE LEVEL DOWN, which is
+# why this answers the RENDERING and not only `value == null`: str([null]) is
+# "[<null>]", and a quoting site handed an array reaches it. Measured, not
+# assumed.
+#
+# WHAT IT COSTS, SAID RATHER THAN GLOSSED: a player who literally sends the
+# six characters "<null>" as a word is quoted back "null" instead of their own
+# six characters. Every request that reaches one of these doors is refused
+# either way, so no world and no name is wrong; and "<null>" was never
+# distinguishable from nothing in this engine's spelling to begin with. TRAPS 8
+# says a readback does not tidy a player's words, and this is the one place it
+# is knowingly traded against not handing a player a debug token.
+const ENGINE_NOTHING := "<" + "null>"
+
+
+static func spelled(value: Variant) -> String:
+	if value == null:
+		return "null"
+	return str(value).replace(ENGINE_NOTHING, "null")
 
 
 # --- 040: one reading of a reference by its POSITION in a list ---

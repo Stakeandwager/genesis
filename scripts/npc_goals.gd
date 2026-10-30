@@ -46,7 +46,9 @@ An order says where the player wants the character to go. It does not say that t
 # downstream has to think about names again.
 static func validate(parameters: Dictionary, rooms: Array, things: Array = []) -> Dictionary:
 	var errors: Array = []
-	var goal := str(parameters.get("goal", "")).to_lower().strip_edges()
+	# 096: spelling only. A goal of null is refused by the same arm as any
+	# other word this game does not have; "" still gets "an order needs a goal".
+	var goal := Readback.spelled(parameters.get("goal", "")).to_lower().strip_edges()
 	if goal == "":
 		errors.append("an order needs a goal (it has %s)" % ", ".join(GOALS))
 	elif not GOALS.has(goal):
@@ -106,8 +108,11 @@ static func validate(parameters: Dictionary, rooms: Array, things: Array = []) -
 		elif thing_names.is_empty():
 			errors.append("there is nothing to carry in this dungeon")
 		elif not thing_names.has(wanted):
+			# 096: spelling only, at the quote. Found by this commit's own sweep
+			# after the fix was green everywhere else: the thing name is a
+			# member of the class and was on nobody's list of doors.
 			errors.append("this dungeon has nothing called '%s' (it has %s)" % [
-				str(parameters.get("thing", "")), ", ".join(thing_names)])
+				Readback.spelled(parameters.get("thing", "")), ", ".join(thing_names)])
 		else:
 			thing = wanted
 
@@ -125,7 +130,11 @@ static func validate(parameters: Dictionary, rooms: Array, things: Array = []) -
 static func readback(parameters: Dictionary) -> String:
 	var goal := str(parameters.get("goal", "")).to_lower().strip_edges()
 	if goal == "carry":
-		var thing := _thing(str(parameters.get("thing", "")))
+		# 096: this readback said "to have the <null> carried to room 2". The
+		# site's own policy for a thing that says nothing is written four
+		# lines down - "to have something carried to ..." - and said() applies
+		# it to all four forms, which is 095's rule at a site 095 missed.
+		var thing := _thing(Readback.said(parameters, "thing"))
 		var asked_room = parameters.get("room", null)
 		var where := ""
 		if asked_room == null:
@@ -135,7 +144,10 @@ static func readback(parameters: Dictionary) -> String:
 			# This was `"room %d" % int(asked_room)`.
 			where = Readback.position_said(asked_room, "room")
 		else:
-			where = _place(str(asked_room))
+			# 096: a bare null is answered as "somewhere" five lines up; a null
+			# NESTED in what was sent reaches here, and this is a readback, so
+			# the spelling is the fix and the words are the player's.
+			where = _place(Readback.spelled(asked_room))
 		if thing == "":
 			return "to have something carried to %s" % where
 		return "to have %s carried to %s" % [thing, where]
@@ -190,7 +202,9 @@ static func validate_door(parameters: Dictionary, rooms: Array, layout: Dictiona
 					Readback.number_said(side),
 					Readback.whole_number_rule("room", names.size())])
 			else:
-				errors.append("this dungeon has no room called '%s' (it has %s)" % [str(side), ", ".join(names)])
+				# 096: spelling only, at the quote. This arm is the one a NAME that
+				# is not a room reaches, and a null is one of those.
+				errors.append("this dungeon has no room called '%s' (it has %s)" % [Readback.spelled(side), ", ".join(names)])
 		ends.append(found)
 
 	if not errors.is_empty():
@@ -238,7 +252,11 @@ static func door_readback(parameters: Dictionary, closed: bool) -> String:
 static func _side_said(side: Variant) -> String:
 	if typeof(side) == TYPE_INT or typeof(side) == TYPE_FLOAT:
 		return Readback.position_said(side, "room")
-	return _place(str(side))
+	# 096: a side of null read back "to shut the door between the <null> and the
+	# vault". This readback has no fallback word declared at it - its job is to
+	# say what was heard - so the spelling is the whole fix here, and the
+	# validator beside it refuses the request anyway.
+	return _place(Readback.spelled(side))
 
 
 static func door_line(door: Dictionary, closed: bool, changed: bool) -> String:
