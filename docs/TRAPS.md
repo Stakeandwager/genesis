@@ -7604,3 +7604,71 @@ cause was attributed rather than guessed at.
 
 > A ledger is shared, and it outlives the run. An id a test writes by hand is
 > an id a second run writes twice.
+
+---
+
+## 98. The class was closed by a grep over one directory, and the rule was not about a directory
+
+**Signature:** a commit finds a class of unguarded reads, closes it properly
+at every member, and writes *"THE CLASS WAS CLOSED BY GREP"* with the grep
+quoted. The grep is correct and its scope is `scripts/`. The rule it states —
+*a reader of a record that came off a file converts rather than assumes* — has
+nothing to do with which directory the reader is in, and there is a second
+member in `tests/` where the same fault costs a **hang**.
+
+**Cause.** 099 closed `session_report.gd`'s five reads of a ledger record and
+asked the class question carefully, twice: *"`scripts/` has exactly one
+consumer of the ledger — `read_session` and `TrackLog.PATH` over `scripts/`
+name `main.gd:545` and nothing else"*, and then named
+`experiment_runner.gd:114` as carrying the same shape and **deliberately** not
+changed, because its record is a signal payload built in-process. Both
+statements are true and the second is the right call.
+
+**`tests/replay.gd` reads a record file whose path comes from the
+environment.** `REPLAY_LOG` names it, so it is not even the ledger this game
+wrote: it is whatever file the owner pointed the tool at. Three fields go
+straight into conversions that cannot answer a wrong type —
+`controller.current_source` and `controller.current_experiment` are typed
+`Dictionary` **members**, and `attempt` went through `int()`.
+
+**AND THE COST HERE IS NOT THE COST THERE, WHICH IS WHY IT IS WORTH ITS OWN
+TRAP.** In `session_report` the error abandoned `summarise()` and the caller
+read the empty result as an answer (TRAPS 96). Here it abandons
+`_initialize()`, and **a script error in a `SceneTree` aborts `_initialize`
+before `quit()` is ever reached** — so the tool does not fail, it **hangs
+until the harness's 600-second timeout**. That is the fault TRAPS 13 exists
+for, and **the comment thirty lines below the three reads describes it in this
+same file**, about a different field:
+
+> *"`REPLAY_LOG` unset, or naming a file that is not there, used to reach
+> `f.eof_reached()` on a null and throw — and a script error in a `SceneTree`
+> aborts `_initialize` before `quit()`, so this tool hung until the harness's
+> 600 s timeout instead of failing."*
+
+**Measured on `867d89b`**, each field alone in its own throwaway copy with its
+own `config/name`, three fields against six types — **eleven of eighteen runs
+came back `rc=124` with nothing written**:
+
+| field | `null` | a string | an array | a number | a dictionary |
+|---|---|---|---|---|---|
+| `source` | **hung** | **hung** | **hung** | **hung** | ok (right type) |
+| `experiment` | **hung** | **hung** | **hung** | **hung** | ok (right type) |
+| `attempt` | **hung** | `rc=0` — **and replayed every group as attempt 0**, because `int("x")` is 0 | **hung** | ok | **hung** |
+
+All eighteen finish `rc=0` with zero script errors after, and a replay of an
+**undamaged** record is byte-identical before and after once ids and
+timestamps are normalised — checked rather than assumed.
+
+**Do:**
+
+- **When a commit writes "the class was closed by grep", read the grep's
+  scope against the rule's own words.** If the rule says *a file*, the scope
+  is every reader of a file, not every reader in one directory.
+- **`tests/` is not out of scope for a rule about reading files.** It holds
+  tools the owner runs by hand, and this project has already lost a session to
+  one of them hanging.
+- **Ask what a type error abandons at each site, because the answer differs.**
+  Abandoning a `-> Dictionary` gives the caller `{}` to misread; abandoning
+  `_initialize` in a `SceneTree` skips `quit()` and looks exactly like a hang.
+
+> A grep has a scope. A rule does not.

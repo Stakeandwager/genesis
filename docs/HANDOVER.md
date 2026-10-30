@@ -13,7 +13,181 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **099**, which took **HANDOVER's FIRST
+- Last commit at the time of writing: **099a**, which is a **SECOND
+  OVERLAPPING RUN of the same scheduled task**, and the record of what it did
+  with that is the useful part. **It is not a re-run on 099's behalf and it
+  undoes nothing.**
+
+  **TWO RUNS OVERLAPPED AGAIN, AND THIS TIME BOTH DID THE SAME TASK AND
+  REACHED THE SAME FINDINGS INDEPENDENTLY.** 099a started from `3973e41`,
+  took 098's first live entry - the same one - drove it the same way, and
+  arrived at **the same five sites**, **the same abandoned `summarise()`**,
+  **the same four-field `session_summary` record against twenty-three**, and
+  **the same "Results in the history panel." under a blank report**. It had a
+  full commit ready and **the push was rejected**, because 099 had landed
+  first. **It then read 099's diff and stood down on the shared work, which
+  is the right outcome and is written down here rather than hidden in a
+  rebase.** The previous overlap (091/091a, and 2026-10-16 and 2026-10-29) is
+  recorded under "Work that happens unattended"; this is the first time the
+  two runs did the *same* work and the second one had to choose.
+
+  **WHY IT STOOD DOWN RATHER THAN MERGING ITS OWN VERSION, SAID PLAINLY
+  BECAUSE IT IS A JUDGEMENT AND NOT A FACT: 099'S FIX IS BETTER AND 099a'S HAD
+  A HOLE 099 NAMED.** 099a's fix read a damaged field as absent and said
+  nothing to anybody. 099's reads it as absent **and carries the count out of
+  the file** - `"damaged": {records, read, fields}` in the summary, and two
+  lines in `describe()` naming the denominator and the fields. 099's own
+  header says why, and it is the objection 099a had not answered: *"Silently
+  reading damage as absence would trade a loud empty report for a quietly
+  wrong one."* 099's `FIELD_TYPES`/`_field()` table is also the better shape
+  for the numeric half, because it admits `TYPE_INT` and `TYPE_FLOAT` **per
+  field** where 099a had needed a general rule plus an exception. So 099a's
+  `scripts/session_report.gd` and its `Readback.shaped()` were **discarded
+  entirely**, and nothing of them is in this commit.
+
+  **AND 099'S md5 REPRODUCED EXACTLY FROM A SECOND CONTAINER, WHICH IS THE
+  ONE THING AN OVERLAP IS GOOD FOR.** `--all` on a clean `867d89b`,
+  `git status --porcelain` empty, `user://` cleared, in a different container
+  with its own Godot download (`4.7.1.stable.official.a13da4feb`, `--version`
+  read): **`4111d7b7c625e732d4f13f7e5e77ca99`, 77 suites, 0 with something to
+  look at** - byte-identical to the md5 099 recorded. 099a's own earlier
+  baseline on `3973e41` had likewise reproduced 098's
+  `c9cd5640f314d386e0c38d92cd3a60e2` exactly. **Two independent containers now
+  agree on both.**
+
+  **WHAT 099a KEPT IS ONE MEMBER OF THE CLASS THAT 099'S GREP STOPPED ONE
+  DIRECTORY SHORT OF, AND IT IS MEASURED. NEW TRAPS 98.** 099 closed the class
+  and asked the class question twice, correctly: *"`scripts/` has exactly one
+  consumer of the ledger"*, and `experiment_runner.gd:114` named as the same
+  shape and **deliberately** left, because its record is a signal payload
+  built in-process. Both are right. **But the rule it states is not about a
+  directory** - *a reader of a record that came off a FILE converts rather
+  than assumes* - and `tests/replay.gd` is the other member. Its input is
+  named from **outside the process** by `REPLAY_LOG`, so it is not even this
+  game's ledger; it is whatever file the owner pointed the tool at. Three
+  reads: `controller.current_source` and `controller.current_experiment` are
+  typed `Dictionary` **members**, and `attempt` went through `int()`.
+
+  **AND WHAT IT COSTS THERE IS NOT WHAT IT COSTS IN `session_report`, WHICH IS
+  WHY IT EARNED ITS OWN TRAP.** In `summarise()` the error abandoned the
+  function and the caller misread `{}` as an answer (099's TRAPS 96). Here it
+  abandons `_initialize()`, and **a script error in a `SceneTree` aborts
+  `_initialize` before `quit()` is ever reached** - so the tool **does not
+  fail, it hangs until the harness's 600-second timeout**. That is TRAPS 13's
+  fault, and **the comment thirty lines below those three reads describes it,
+  in this same file, about a different field**. TRAPS 11 with the general
+  lesson already written out above the instance.
+
+  **MEASURED ON `867d89b`**, each field alone in its own throwaway copy with
+  its own `config/name` and its own `--headless --import` (TRAPS 50, 80, 88),
+  three fields against six types - **ELEVEN OF EIGHTEEN RUNS CAME BACK
+  `rc=124` WITH NOTHING WRITTEN**:
+
+  | field | what hung | what did not |
+  |---|---|---|
+  | `source` | null, a string, an array, a number | a dictionary (the right type) |
+  | `experiment` | null, a string, an array, a number | a dictionary (the right type) |
+  | `attempt` | null, an array, a dictionary | a number; **and a STRING gave `rc=0` and replayed every group as attempt 0**, because `int("x")` is 0 |
+
+  **All eighteen finish `rc=0` with zero script errors after.** The types come
+  from the **writers**, read off `game_controller.gd` rather than chosen:
+  `record["source"] = current_source` and
+  `record["experiment"] = current_experiment` at `:205`/`:206` are both typed
+  `Dictionary` members, and `record["attempt"] = int(...)` at `:644` is an int
+  when written and a **float** when read back, because JSON has one number
+  type and GDScript has two - the same pair 099's own `player_place` row
+  carries, for the same reason.
+
+  **THE FIX IS 099'S OWN SHAPE, COPIED ON PURPOSE, AND THE REASON IS WRITTEN
+  DOWN SO IT IS NOT READ AS TRAPS 86.** One table, one reader, so the three
+  cannot be held at two of three. It is a **second copy** of that shape rather
+  than a call into `SessionReport._field()`, because (a)
+  `SessionReport.FIELD_TYPES` names the **four fields `summarise()` reads**
+  and `record_type_test` section 1 asserts exactly that correspondence by
+  scanning the source, so adding these three to it would **break 099's own
+  assertion**; and (b) `tests/` has no shared library, which is this project's
+  settled convention and the thing 092 got wrong by citing a TRAPS number at
+  it (TRAPS 89, and `source_scan_test`'s own header).
+
+  **AND `game_controller.gd:644` IS NOW RIGHT BY THE GRACE OF THE DOOR IN
+  FRONT OF IT, SAID OUT LOUD RATHER THAN LEFT (TRAPS 11).**
+  `int(current_attempt.get("attempt", 1))` is the only other reader of a
+  value that came off `REPLAY_LOG`, because `replay.gd` assigns
+  `controller.current_attempt` from the file and then calls `execute()`. With
+  `replay.gd` fixed, nothing can put a non-number there any more -
+  `main.gd`'s own writes are in-process - so `:644` is left alone as defence
+  in depth, exactly as 098 left `main.gd`'s `str()` reads and for the same
+  stated reason. A later session reading TRAPS 11 would otherwise think this
+  missed it.
+
+  **VERIFIED:**
+  099's md5 reproduced byte-identically from a second container, before
+  anything was touched. **Eighteen field/type pairs driven through the real
+  `replay.gd`, before and after**, each alone in its own process with its own
+  `config/name`. **A real replay of an UNDAMAGED record is byte-identical
+  before and after** once record ids and timestamps are normalised - checked
+  rather than assumed, over a 14,642-byte `REPLAY_OUT`. **The prediction was
+  written down before the run** (TRAPS 89) and it was the strongest available
+  one: **NOTHING MOVES AND THE md5 IS UNCHANGED**, because the only changed
+  code file is `tests/replay.gd`, which both runners skip as `NOT_A_SUITE`,
+  which `result_line_test` excludes **by name** at its line 89, and which no
+  other source-scanning suite in `tests/` reads - the seven that read
+  `tests/` source were enumerated mechanically over comment-blanked code and
+  checked one at a time. **THREE byte-identical full `--all` runs on the
+  settled complete tree, code and docs together**, md5
+  **`4111d7b7c625e732d4f13f7e5e77ca99` - THE SAME NUMBER AS THE BASELINE, which
+  is the whole prediction**, 77 suites, 0 with something to look at, `user://`
+  cleared before each.
+
+  **AND TWO OF 099a'S OWN RUNS OVERLAPPED ON ONE `user://` AND BOTH WERE
+  THROWN AWAY, WHICH IS TRAPS 50 COMMITTED BY THE RUN QUOTING TRAPS 50 AT
+  ITSELF.** The second counted run was `md5`-ed at **49 of its 81 lines** -
+  read as finished because the file existed - and a third was started on top
+  of it, so for a few minutes there were **two writers on one
+  `user://track_log.jsonl`**, which is the exact confound TRAPS 50 is about.
+  Both were killed and **both were discarded**: the counted runs 2 and 3 above
+  were taken afresh, one at a time, each after `user://` was cleared, and the
+  check that a run had actually finished is now its **last line** rather than
+  its existence. Recorded because a later session would otherwise read three
+  clean md5s and not know that two earlier ones were binned, and because the
+  cheapest version of this mistake is the one written down (094, 097, 098 and
+  099 each threw a run away for a different reason).
+
+  **NOT DONE AND NOT VERIFIED:**
+  **`replay.gd`'S FIX IS HELD BY NOTHING IN A FULL RUN, AND THAT IS THE FIRST
+  LIVE ENTRY BELOW RATHER THAN A FOOTNOTE.** The tool is on
+  `run_tests.sh`'s `NOT_A_SUITE` list for the reason that list gives, so
+  neither runner drives it at all. The eighteen runs above are **this run's
+  measurement and not a standing check**: a later session can revert all three
+  reads and every suite stays green.
+  **NOTHING OF 099a's OWN session_report WORK SURVIVES**, by choice, and its
+  abandoned commit is not in the history at all.
+  **THE OWNER'S QUESTION IS UNTOUCHED** and is still the first live entry
+  under "Next action".
+  **094'S SECOND LIVE ENTRY, THE NUMERIC HALF OF 095'S WIDENING AND 098'S
+  SECOND LIVE ENTRY ARE ALL UNTOUCHED.** `scripts/` is **0 lines of diff** in
+  this commit.
+  **NO LIVE PATH WAS DRIVEN.** No model was asked anything, no request left
+  the container, there is no API key here, no browser ran, no web export was
+  made, `interpret.js` was not executed.
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is **2026-10-16**, checked by grepping every
+  `2026-1[01]-*` date in `HANDOVER.md` and `TRAPS.md` and reading the context
+  of each of the eight distinct dates. The five later dates are assistant
+  commits and scheduling notes.
+  **064'S FINDING IS CARRIED FORWARD AND NOT RE-VERIFIED.**
+
+  **NOTHING IN `scripts/`, `scenes/`, `netlify/`, `.github/`, EITHER RUNNER,
+  `project.godot` OR `export_presets.web.cfg` WAS TOUCHED, AND NO FILE WAS
+  ADDED** - `git status --porcelain` named `tests/replay.gd` and two files in
+  `docs/`, and nothing else. `ai_interpreter.gd` is 0 lines of diff, so
+  `PROMPT_FINGERPRINT` and `PROMPT_VERSION` cannot have moved.
+  `git diff -- tests/` grepped for `AIza`, `api key`, `secret`, `token`,
+  `bearer`, `GEMINI`, `netlify` and `export_presets` returns **ZERO**. Every
+  probe was in a throwaway copy under the scratch directory, each with its own
+  `config/name`, never in the repository.
+
+- Before 099a: **099**, which took **HANDOVER's FIRST
   live "Next action" as of 098** - *`session_report.gd` assumes the type of
   three ledger fields and would throw* - and did what that entry said to do
   first: **DROVE it rather than read it**. The entry's arithmetic was right,
@@ -5596,6 +5770,33 @@ than suites, leaving **77 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 77
 and are skipped without it.
+
+**099a ADDED NO FILE** and re-ran the `ls` anyway: **79** and **77**, which is
+what the two numbers above say. **It changed one of the two files that is NOT
+a suite** — `tests/replay.gd` — so **no number in a full run moves at all**,
+and that was the prediction written down before the run: *nothing moves and
+the md5 is unchanged*. Its baseline on the clean tree at `867d89b`,
+`git status --porcelain` empty, `user://` cleared, was **BYTE-IDENTICAL to the
+md5 099 recorded, from a second container with its own Godot download**:
+`4111d7b7c625e732d4f13f7e5e77ca99`, 77 suites, 0 with something to look at.
+After the change, **THREE byte-identical full `--all` runs on the settled
+complete tree, code and docs together**, md5
+**`4111d7b7c625e732d4f13f7e5e77ca99` - THE SAME NUMBER AS THE BASELINE**, 77
+suites, 0 with something to look at. **The md5 is written into this file AFTER the
+runs**, for the reason 093 through 099 all gave, and **a fourth run taken
+after the md5 and two paragraphs were written in came back with the SAME md5
+and is not counted** - what a `docs/`-only difference should do, checked
+rather than assumed. **AND TWO EARLIER RUNS OF 099a's WERE BINNED FOR
+OVERLAPPING ON ONE `user://`** - TRAPS 50, committed by this run; see the 099a
+entry, which says what the mistake was and how the finish check changed.
+**AND `tests/replay.gd` IS STILL RUN BY NEITHER RUNNER**, which is exactly why
+099a's fix to it is held by nothing; it is the first live entry under
+"Next action". The eighteen field/type runs behind it were driven by hand, one
+process each, and are a measurement rather than a standing check.
+**NEITHER RUNNER NEEDED A LINE AND NEITHER WAS TOUCHED** (TRAPS 4):
+`replay.gd` is already named on `run_tests.sh`'s `NOT_A_SUITE` and matched by
+`run_tests.bat`'s `findstr /c:"replay"` at line 34, read rather than assumed,
+and `result_line_test` excludes it **by name** at its line 89.
 
 **099 ADDED ONE FILE** — `tests/record_type_test.gd`, which is why the two
 numbers above moved from 78 and 76. Its baseline on the clean tree at
@@ -12104,13 +12305,67 @@ assumed.
 **NOTHING IS OWED FROM 099 EITHER.** Its baseline was byte-identical to the
 md5 098 recorded, it wrote its predicted diff down before running and **the
 prediction held exactly**, and it took three byte-identical `--all` runs on the
-complete tree with `docs/` in place, which is why there is no 099a. **Do not
+complete tree with `docs/` in place. ~~which is why there is no 099a.~~
+**THERE IS A 099a, AND IT IS NOT A RE-RUN ON 099'S BEHALF** - a second run of
+the scheduled task overlapped 099, did the same task, reached the same
+findings, had its push rejected, stood down on the shared work and kept one
+member of the class 099's grep stopped a directory short of. The struck clause
+is 099's own and is left struck rather than deleted, because it was true when
+it was written and the overlap is the thing a later session needs to know
+about. See the 099a entry. **Do not
 start by re-running on 099's behalf**; take your own baseline so you learn the
 record and the container still agree, and spend the time on the work below.
 **And do not re-take 099's sixteen injections** — they are in the 099 entry
 with their counts, each was measured alone in its own copy with its own
 cleared `user://`, and the property they attribute is
 `tests/record_type_test.gd` rather than a table in a document.
+
+**NOTHING IS OWED FROM 099a EITHER, AND ITS ONE USEFUL BY-PRODUCT IS ALREADY
+BANKED.** Its baseline **reproduced 099's md5 byte-for-byte from a second
+container with its own Godot download** -
+`4111d7b7c625e732d4f13f7e5e77ca99`, 77 suites, 0 with something to look at -
+and its own earlier baseline on `3973e41` had reproduced 098's
+`c9cd5640f314d386e0c38d92cd3a60e2` the same way. **Two independent containers
+now agree on both.** It wrote its prediction down before running - *nothing
+moves and the md5 is unchanged*, because the one changed code file is run by
+neither runner - and it held. **Do not re-take 099a's eighteen `replay.gd`
+runs**; they are in the 099a entry with their results, each alone in its own
+process with its own `config/name`.
+
+**THE FIRST LIVE ENTRY AS OF 099a, AND IT IS 099a'S OWN UNHELD HALF:
+`tests/replay.gd`'S THREE READS ARE DRIVEN BY NOTHING IN A FULL RUN.** 099a
+fixed them and measured them eighteen ways, and **that measurement is not a
+standing check**: `replay.gd` is on `run_tests.sh`'s `NOT_A_SUITE` list and
+matched by `run_tests.bat`'s `findstr /c:"replay"`, for the reason those lists
+give - it needs `REPLAY_LOG` and `REPLAY_OUT` and has no verdict to give - so
+neither runner drives it at all. A later session can revert all three and
+every suite stays green. **The question worth asking first is which is
+cheaper**, and it is a real question rather than a rhetorical one: a suite
+that writes a two-line record file and runs `replay.gd` as a subprocess, which
+is an idiom `tests/` does not have anywhere (grep `OS.execute` over `tests/` -
+**zero** hits), or accepting that a hand-run tool is held by the person running
+it and writing that down as the policy for all of `NOT_A_SUITE`. **Do NOT
+simply add `replay.gd` to the suite list**: it exits 1 naming a missing
+variable, so it would be a red suite on every run for no finding at all, which
+is what `NOT_A_SUITE` exists to prevent. **And the same question is open for
+`prompt_test`**, the other member of that list, which nothing checks either.
+
+**THE SECOND LIVE ENTRY AS OF 099a, SMALL, AND IT IS A COUNTING QUESTION
+RATHER THAN A FAULT: WHAT SHOULD A REPORT SAY FOR A VALUE IT COULD NOT READ?**
+099 answered the important half - the owner is now TOLD the ledger carried a
+damaged field, with a denominator and the field names. **The half neither run
+decided is what the FALLBACK VALUE means in a number the owner reads.** Two
+measured examples: an unreadable `player_place` falls back to `0`, and **a
+place of 0 is not a finishing position any race produces**, so `race_places`
+can carry a number that is not evidence; and an unreadable `steps` makes a
+PLAN count as **not a world**, which is an answer and not a "cannot tell".
+Both are defensible and both are **changes to a number in the owner's own
+report**, which is his call (PROTOCOL 6). The shape of the better answer is
+already in this repository: **012 made silence its own axis rather than
+folding it into a score**, and *"cannot tell"* is the same kind of thing. The
+reading is done and is in the 099 and 099a entries, so **this is one question
+to the owner and not a measurement to re-take**. If he is absent, LEAVE IT -
+099's damage line already takes the part that cannot make a number wrong.
 
 **~~THE FIRST LIVE ENTRY AS OF 098: `session_report.gd` ASSUMES THE TYPE OF
 THREE LEDGER FIELDS AND WOULD THROW.~~ DONE IN 099, AND THE ENTRY HAD THREE
