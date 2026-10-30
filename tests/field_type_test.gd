@@ -45,8 +45,14 @@ extends SceneTree
 # function of its inputs - the loop drives a live GameController through a
 # SceneTree and reads the ledger back between groups, and the write is the
 # side effect itself - and what a suite could still say about them has not
-# been worked out. `prompt_test`, the other member of NOT_A_SUITE, is checked
-# by nothing at all. Both are live entries in docs/HANDOVER.md.
+# been worked out, and that is still the live entry in docs/HANDOVER.md.
+# HELD, section 8 (102): `prompt_test`, the other member of NOT_A_SUITE. THIS
+# SENTENCE IS REWRITTEN BY 102 BECAUSE THE VERSION 101 WROTE - "prompt_test,
+# the other member of NOT_A_SUITE, is checked by nothing at all" - IS MADE
+# FALSE BY THIS COMMIT, and leaving it would be TRAPS 14 in its smallest form
+# with nothing in tests/ able to fail on it. What section 8 holds is which part
+# of the AI's prompt that tool prints, counted off both sources; what it does
+# NOT hold is the tool's output, which is still printed for a human.
 #
 # HOW A BREAK LOOKS HERE, MEASURED IN 100 RATHER THAN ASSUMED, because the
 # first draft of this comment got it wrong and that is TRAPS 14's shape.
@@ -530,6 +536,129 @@ func _nothing_is_destroyed_before_the_gate() -> void:
 			"%s is defined AND called in the body, so this suite drives live code" % str(called))
 
 
+# --- section 8: what prompt_test prints, which is the OTHER member of
+#     NOT_A_SUITE (102) ---
+#
+# WHERE THIS CAME FROM. 101 left as its first live entry that `prompt_test` -
+# the other file on run_tests.sh's NOT_A_SUITE list - is checked by nothing at
+# all, and said that before writing "it cannot be checked" anywhere, grep for
+# what that denies (TRAPS 14). The grep found THREE DESCRIPTIONS OF IT AND
+# TWO OF THEM WERE FALSE:
+#
+#   run_tests.sh:31            "prompt_test prints the AI's prompt for a
+#                              human to read"
+#   result_line_test.gd:88     the same sentence, as a ROW of NO_RESULT_LINE
+#   docs/harness/README.md:43  "The AI's prompt is built from the registry
+#                              and names every world"
+#
+# MEASURED by running it: it prints `ToolRegistry.prompt_sections()` - the
+# TOOLS section, ONE OF THE THREE REGISTRY SECTIONS
+# AIInterpreter.assembled_prompt() concatenates onto SYSTEM_PROMPT - and four
+# EQUIP readbacks. It prints no world, no order and
+# not SYSTEM_PROMPT, so the third sentence was false twice over: it names
+# every TOOL and no world at all. Unchanged since the file was written at 006,
+# and the row in result_line_test carries its own instruction that a row which
+# has stopped being true "should never go unremarked (TRAPS 14)".
+#
+# AND ITS FOURTH PROBE PRINTED A BLANK LINE, which is the finding the entry's
+# own question produced: "a file that only prints could still build what it
+# prints wrongly". The probe is `{"tool":"hovercraft","spec":{}}` - a tool
+# Genesis has not got, deliberately - and under a heading that says "EQUIP
+# readbacks as the player would see them" it printed two spaces and nothing
+# else. That was WorldRegistry.readback returning the empty string, and the
+# player saw the same silence. Fixed in world_registry.gd and held by
+# says_nothing_test section 7; this section holds what prompt_test IS.
+#
+# WHAT IS ASSERTED, AND IT IS A COUNT DERIVED BOTH WAYS RATHER THAN A SENTENCE
+# (TRAPS 6, TRAPS 82). The registry sections of the prompt are read off
+# assembled_prompt()'s own body - THREE of them, and SYSTEM_PROMPT is a
+# constant rather than a call and is counted by neither side - and which of
+# them prompt_test prints is read off prompt_test's body: it prints AT LEAST
+# ONE and NOT ALL of them. A
+# description saying "the AI's prompt" is then provably wrong, and a later
+# session that widens prompt_test to print the whole prompt fails here and is
+# told the three descriptions need rewriting. The runtime half is the
+# relationship no source scan can see: what prompt_test prints is a non-empty
+# substring of what the model is actually sent.
+const PROMPT_TOOL := "res://tests/prompt_test.gd"
+const INTERPRETER_SOURCE := "res://scripts/ai_interpreter.gd"
+
+
+# Every registry call assembled_prompt() concatenates, read off its own body
+# so a fifth part joins this class from the moment it is added.
+func _prompt_parts(code: String) -> Array:
+	var body := code.split("static func assembled_prompt() -> String:")
+	if body.size() < 2:
+		_check(false, "assembled_prompt() is defined in ai_interpreter.gd")
+		return []
+	var after := str(body[1])
+	var ends := after.find("\nfunc ")
+	if ends > 0:
+		after = after.substr(0, ends)
+	var call := RegEx.new()
+	call.compile("([A-Za-z_]+)\\.(prompt_sections|prompt_section)\\(\\)")
+	var out: Array = []
+	for hit in call.search_all(after):
+		var named := "%s.%s()" % [hit.get_string(1), hit.get_string(2)]
+		if not named in out:
+			out.append(named)
+	return out
+
+
+# Built from pieces so this file's own source cannot satisfy the scan, which
+# is result_line_test's trick for the same reason.
+func _verdict_words() -> Array:
+	return ["fail" + "ures=", "ba" + "d="]
+
+
+func _what_prompt_test_prints() -> void:
+	var interpreter := _source_of(INTERPRETER_SOURCE)
+	var tool_code := _source_of(PROMPT_TOOL)
+	if interpreter == "" or tool_code == "":
+		return
+
+	var parts := _prompt_parts(interpreter)
+	_check(parts.size() >= 3,
+		"assembled_prompt() concatenates registry sections for this to count (found %s)" % str(parts))
+	# SYSTEM_PROMPT is a constant and not a call, so it is in neither count, and
+	# the check below is about the registry sections only. The runtime half two
+	# dozen lines down is what holds that the whole prompt is bigger than them.
+
+	var printed: Array = []
+	for part in parts:
+		if tool_code.contains(str(part)):
+			printed.append(str(part))
+	_check(printed.size() >= 1,
+		"prompt_test prints at least one registry section of the AI's prompt (prints %s)" % str(printed))
+	# The half that makes "the AI's prompt" false: it prints a PART.
+	_check(printed.size() < parts.size(),
+		"prompt_test prints SOME and not ALL of the prompt's %d registry sections (prints %d: %s) - if this fails, run_tests.sh, result_line_test's NO_RESULT_LINE row and docs/harness/README.md all need rewriting" % [
+			parts.size(), printed.size(), str(printed)])
+	# And it does not assemble the whole prompt by the one call that would.
+	_check(not tool_code.contains("assembled_prompt("),
+		"prompt_test does not call assembled_prompt(), so it cannot be printing the whole prompt")
+
+	# The runtime half: what it prints really is part of what the model is
+	# sent. No wording is written down - both sides are taken from the same
+	# code in the same run.
+	var whole := AIInterpreter.assembled_prompt()
+	var shown := ToolRegistry.prompt_sections()
+	_check("ToolRegistry.prompt_sections()" in printed,
+		"the section prompt_test prints is ToolRegistry's, which is what the runtime half below reads")
+	_check(shown.strip_edges() != "", "the section prompt_test prints says something (%d characters)" % shown.length())
+	_check(whole.contains(shown),
+		"what prompt_test prints is part of the prompt the model is actually sent")
+	_check(whole.length() > shown.length(),
+		"the prompt the model is sent is LONGER than what prompt_test prints (%d against %d characters)" % [
+			whole.length(), shown.length()])
+
+	# And "has no verdict to give", which is the other half of the row in
+	# result_line_test and the reason both runners skip this file.
+	for word in _verdict_words():
+		_check(not tool_code.contains(str(word)),
+			"prompt_test prints no verdict word, so neither runner can read a result off it")
+
+
 func _run() -> void:
 	_the_class_is_closed_by_the_code()
 	_every_field_against_every_type()
@@ -539,6 +668,7 @@ func _run() -> void:
 	_every_line_is_accounted_for()
 	_a_record_is_in_exactly_one_group()
 	_nothing_is_destroyed_before_the_gate()
+	_what_prompt_test_prints()
 
 	print("FIELD TYPE %d assertions, failures=%d" % [asserted, bad])
 	quit(1 if bad > 0 else 0)

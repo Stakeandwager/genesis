@@ -158,6 +158,83 @@ static func _has_around(step: Dictionary) -> bool:
 # This lives here rather than in Readback because composing it needs the
 # modules, and the modules need Readback's wording helpers. Readback stays a
 # leaf and nothing references in a circle.
+#
+# --- 102: the three commands whose readback could say NOTHING AT ALL ---
+#
+# 032 found that SPAWN_OPPONENTS and MODIFY_TRACK had "no readback AT ALL as a
+# single command - WorldRegistry.readback returned the empty string" and gave
+# both a sentence. That was a command whose readback was empty for EVERY
+# request. THIS IS THE SAME FAULT ONE CONDITION IN: a command whose readback
+# is there for a request it can read and ABSENT for one it cannot, which is
+# why every suite built around 032's class walked past it - they all drive
+# requests Genesis can read.
+#
+# MEASURED, by driving main.gd and reading the history panel the player sees:
+#
+#   EQUIP car                         "I understand: you want a red car ..."
+#   EQUIP hovercraft                  NOTHING
+#   EQUIP with no tool, or tool null  NOTHING
+#   ORDER go_to room 1                "I understand: you want to send ..."
+#   ORDER dance, or no goal           NOTHING
+#   PLAN with no steps                NOTHING
+#   THE SAME EQUIP, one step inside a PLAN   "I understand: you want a tool."
+#   THE SAME ORDER, one step inside a PLAN   "I understand: you want an order."
+#
+# So the identical step read back as a word inside a plan and as silence on
+# its own, because _doing() below had the fallback and this door had not.
+# main.gd's _show_readback() RETURNS on an empty line, so the player is not
+# told what Genesis understood and `awaiting_readback` is never set - the
+# refusal that follows is the only thing said. A readback exists to make a
+# dropped clause visible (TRAPS 8); it cannot do that by saying nothing.
+#
+# THE RULE, AND IT IS THE RULE AND NOT THE THREE INSTANCES (TRAPS 11): a
+# readback says something about every request the parser admits, and a part it
+# could not read gets a WORD rather than silence. Every other door in Genesis
+# already keeps it - "to shut a door" for a door with no sides,
+# "to make a corner hard" for a corner that was not named,
+# "to put opponents on the track" for a count that was not given,
+# "to send someone somewhere" for a room that was not given. Driven over all
+# eleven commands the whitelist admits, 171 rows, the only three that could
+# say nothing were EQUIP, ORDER and PLAN, nine rows each, and every one of
+# those nine was the single key that says WHAT was asked for.
+#
+# AND THE WORDS ARE NOT NEW, which is the reason this is a fix and not a
+# wording decision. "a tool" and "an order" are what _doing() has said for
+# exactly these inputs since 022, so they are the owner's words at the door
+# he has already seen. "a plan" is Readback.article("plan"), which is the same
+# mechanism _doing() uses for a step command it does not recognise - measured:
+# a plan step whose command is PLAN already reads back as "a plan" today. The
+# words are his to change; what cannot stand is the silence.
+#
+# AND THIS TABLE IS NOT DERIVED FROM THE COMMAND NAME, WHICH WAS TRIED AND
+# MEASURED BEFORE IT WAS TYPED (TRAPS 82 points the other way here and the
+# reason is worth keeping). Readback.article() over the three command names
+# gives "a plan" and "an order" correctly and "AN EQUIP" for EQUIP, because
+# EQUIP's subject is a TOOL and its command name is a verb. The nouns are not
+# the commands, so there is nothing to derive from; a twelfth command whose
+# readback can come back empty therefore needs a row here, and
+# says_nothing_test section 7 is what says so - it drives every command the
+# whitelist admits and fails by name on one that says nothing.
+const UNREAD_SAID := {
+	"EQUIP": "a tool",
+	"ORDER": "an order",
+	"PLAN": "a plan",
+}
+
+
+# The word for a command whose subject could not be read at all.
+static func _unread_said(command: String) -> String:
+	return str(UNREAD_SAID.get(command, ""))
+
+
+# What this door said, or the command's own word if it said nothing. The test
+# is strip_edges() and not == "", because a value that says nothing includes
+# the blank one - 095's rule, and the half the two guards in _doing() were
+# missing: `if kit != ""` let three spaces through as a sentence.
+static func _said_or_unread(command: String, said: String) -> String:
+	return said if said.strip_edges() != "" else _unread_said(command)
+
+
 static func readback(command: String, parameters: Dictionary) -> String:
 	match command:
 		"UNSUPPORTED":
@@ -179,15 +256,21 @@ static func readback(command: String, parameters: Dictionary) -> String:
 		"SPAWN_OPPONENTS":
 			return OpponentBuilder.readback(parameters)
 		"EQUIP":
-			return ToolRegistry.readback(parameters)
+			# 102: the word, not the silence. See UNREAD_SAID above.
+			return _said_or_unread("EQUIP", ToolRegistry.readback(parameters))
 		"ORDER":
-			return NpcGoals.readback(parameters)
+			return _said_or_unread("ORDER", NpcGoals.readback(parameters))
 		"SHUT":
 			return NpcGoals.door_readback(parameters, true)
 		"OPEN":
 			return NpcGoals.door_readback(parameters, false)
 		"PLAN":
-			return _plan_readback(parameters)
+			# 102: the guard is at the CALLER and not inside _plan_readback,
+			# because that function has two ways to come back empty - steps
+			# that are not a non-empty array, and steps whose every entry was
+			# skipped for not being a dictionary - and one guard here covers
+			# both.
+			return _said_or_unread("PLAN", _plan_readback(parameters))
 	var module := find(command)
 	return module.readback(parameters) if module else ""
 
@@ -287,11 +370,13 @@ static func _plan_readback(parameters: Dictionary) -> String:
 static func _doing(command: String, parameters: Dictionary) -> String:
 	match command:
 		"ORDER":
+			# 102: the fallback word is read off UNREAD_SAID rather than
+			# written here, so this door and the single-command door above
+			# cannot say different things about the same step again.
 			var asked := NpcGoals.readback(parameters)
-			return "an order %s" % asked if asked != "" else "an order"
+			return "an order %s" % asked if asked.strip_edges() != "" else _unread_said("ORDER")
 		"EQUIP":
-			var kit := ToolRegistry.readback(parameters)
-			return kit if kit != "" else "a tool"
+			return _said_or_unread("EQUIP", ToolRegistry.readback(parameters))
 		"SHUT":
 			return NpcGoals.door_readback(parameters, true)
 		"OPEN":

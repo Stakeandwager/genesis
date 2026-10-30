@@ -40,7 +40,7 @@ from the project.
 | compare.py | Compares a replay with the logged results, and two replays with each other (every field, field order, log messages, closure feedback, the AI prompt) | `python3 compare.py new.json [old.json]` |
 | drive_test.gd | Builds main.gd with a stand-in UI and plays the game: worlds, plans, /drive, edits, save/load, races on six tracks | `--fixed-fps 120 -s res://tests/drive_test.gd`; `PARK=1` leaves the player's car on the grid; `ONLY_PLAN=4` repeats the farm-surround race |
 | session_test.gd | A scripted tester; checks every number in the /session report and the tagging | `--fixed-fps 120 -s res://tests/session_test.gd` |
-| prompt_test.gd | The AI's prompt is built from the registry and names every world | `-s res://tests/prompt_test.gd` |
+| prompt_test.gd | The TOOLS section of the AI's prompt is built from the registry and names every tool, and the four EQUIP readbacks a player would see (102: this said "names every world"; it names no world — that section is `WorldRegistry.prompt_sections()` and this tool prints `ToolRegistry`'s) | `-s res://tests/prompt_test.gd` |
 | report_test.gd | The /session report's arithmetic | `-s res://tests/report_test.gd` |
 | judge_test.gd | Every understanding verdict: confirmed, corrected, disputed, revised, accepted by use, accepted by silence (003) | `-s res://tests/judge_test.gd` |
 | range_test.gd | The reported understanding **range** rather than a single rate, including the unattributable bare "no" (003) | `-s res://tests/range_test.gd` |

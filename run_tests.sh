@@ -28,9 +28,14 @@ SLOW="drive_test session_test"
 # sits here unread goes stale against the code it is supposed to measure.
 BROKEN=""
 # Not suites. replay.gd is a tool that needs REPLAY_LOG and REPLAY_OUT set and
-# exits 1 naming the missing one; prompt_test prints the AI's prompt for a
-# human to read and has no verdict to give. Neither failing here would mean
-# anything.
+# exits 1 naming the missing one; prompt_test prints the TOOLS section of the
+# AI's prompt, and four EQUIP readbacks, for a human to read, and has no
+# verdict to give. Neither failing here would mean anything.
+# 102: that said "prints the AI's prompt", here and in two other places, from
+# 006 to 101. It prints ToolRegistry.prompt_sections() - ONE of the three
+# registry sections AIInterpreter.assembled_prompt() concatenates onto
+# SYSTEM_PROMPT - and no world at all. Held by field_type_test section 8,
+# which counts the sections off both sources.
 NOT_A_SUITE="replay prompt_test"
 
 "$GODOT" --headless --import >/dev/null 2>&1

@@ -85,7 +85,19 @@ var bad := 0
 # has stopped being true is a row to strike, and it should never go unremarked
 # (TRAPS 14).
 const NO_RESULT_LINE := {
-	"prompt_test.gd": "prints the AI's prompt for a human to read and has no verdict to give",
+	# 102: this row said "prints the AI's prompt for a human to read" from 006
+	# to 101, and it prints ToolRegistry.prompt_sections() - the TOOLS section,
+	# one of the three registry sections AIInterpreter.assembled_prompt()
+	# concatenates onto SYSTEM_PROMPT - and four EQUIP readbacks. No world, no
+	# order, and not SYSTEM_PROMPT. The row's
+	# instruction above is that a row which has stopped being true should never
+	# go unremarked (TRAPS 14); nothing held the PROSE of these rows, only the
+	# no-result-line half, so it stood for 94 commits - counted with git
+	# rev-list, not remembered. Both halves of this one are
+	# held now by field_type_test section 8, which counts the prompt's parts off
+	# assembled_prompt()'s body and prompt_test's body and asserts it prints
+	# SOME and not ALL of them.
+	"prompt_test.gd": "prints the TOOLS section of the AI's prompt, and four EQUIP readbacks, for a human to read, and has no verdict to give",
 	"replay.gd": "a tool that needs REPLAY_LOG and REPLAY_OUT set, not a suite",
 	"sweep_test.gd": "prints a VERDICT by design, because what it reports is a finding",
 }

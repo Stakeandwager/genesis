@@ -13,7 +13,242 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **101**, which took **the first live
+- Last commit at the time of writing: **102**, which took **the first live
+  entry as of 101** - *`prompt_test` is checked by nothing* - and did the thing
+  that entry said to do before anything else: **grepped for what the
+  description denies, rather than writing down that it cannot be checked**.
+  **THE GREP FOUND TWO FALSE DESCRIPTIONS, AND RUNNING THE FILE FOUND A LIVE
+  FAULT A PLAYER MEETS.** New TRAPS **102**. **`scripts/` IS NOT 0 LINES OF
+  DIFF THIS TIME**: `scripts/world_registry.gd` is changed and **what a player
+  sees changes with it**. The last commit to touch `scripts/` at all was
+  **099** - 100, 099a and 101 were all 0 lines there - counted with
+  `git show --stat -- scripts/` over the last eight commits rather than
+  remembered, because the first draft of this sentence said "since 097" and
+  was wrong. No new
+  file. One new "Human decision needed", **35**.
+
+  **THE FAULT: A READBACK THAT SAID NOTHING AT ALL, AND THE SAME STEP SAID A
+  WORD INSIDE A PLAN.** `WorldRegistry.readback()` returned the empty string
+  for **three of the eleven commands the whitelist admits** whenever the one
+  key that says WHAT was asked for could not be read - `EQUIP`'s `tool`,
+  `ORDER`'s `goal`, `PLAN`'s `steps`. `main.gd`'s `_show_readback()` **returns
+  on an empty line**, so the player was told nothing about what Genesis
+  understood and `awaiting_readback` was never set. The sibling door one
+  function below - `_doing()`, which describes a step inside a plan -
+  **already had the fallback**, `"a tool"` and `"an order"`, since 022.
+
+  **MEASURED BY DRIVING `main.gd` AND READING THE HISTORY PANEL THE PLAYER
+  ACTUALLY SEES**, in a throwaway copy with its own `config/name` (TRAPS 50,
+  80, 88):
+
+  | request | the *"I understand"* line, BEFORE | AFTER |
+  |---|---|---|
+  | `EQUIP` car (control) | *"a red car that stops hard"* | unchanged |
+  | `EQUIP` hovercraft | **NOTHING** | *"a tool"* |
+  | `EQUIP`, `tool` absent or null | **NOTHING** | *"a tool"* |
+  | `ORDER` go_to room 1 (control) | *"to send someone to room 1"* | unchanged |
+  | `ORDER` dance, or no goal | **NOTHING** | *"an order"* |
+  | `PLAN` with no steps | **NOTHING** | *"a plan"* |
+  | **THE SAME `EQUIP`, one step inside a `PLAN`** | ***"a tool"*** | unchanged |
+  | **THE SAME `ORDER`, one step inside a `PLAN`** | ***"an order"*** | unchanged |
+
+  **IT IS 032'S FAULT ONE CONDITION IN, WHICH IS WHY SEVENTY COMMITS OF
+  SUITES WALKED PAST IT.** 032 found `SPAWN_OPPONENTS` and `MODIFY_TRACK` with
+  *"no readback AT ALL as a single command - WorldRegistry.readback returned
+  the empty string"* and gave both a sentence. That was a command whose
+  readback was empty for **every** request. These three were empty only for a
+  request Genesis **cannot read**, and every suite built around 032's class
+  drives requests it can - `plan_said_test` drives **two well-formed requests
+  per command** and asks whether their sentences differ.
+
+  **AND THE SUITE NAMED FOR THIS COULD NOT SEE IT, WHICH IS THE HALF WORTH THE
+  COMMIT.** `tests/says_nothing_test.gd` group (f) **drove these very inputs**
+  - every command the whitelist admits, one leaf nulled at a time - and asked
+  `said_in_this_run.size() > before_command`. `_record()` appends the empty
+  string like any other, so **a door that said nothing satisfied "said
+  something"**. Six groups were written that way, and section 5's screen -
+  *no sentence contains `"<null>"`* - passes on an empty string too.
+  **MEASURED, THE DECISIVE PAIR:** with the fault present and that floor in
+  place, **108 assertions, failures=0 - SILENT**, which is exactly the number
+  the baseline printed; with the floor replaced by a per-row question about the
+  CONTENT, **177 assertions, failures=1**, naming
+  `{"spec":{"colour":"brown"},"tool":null}`.
+
+  **HOW IT WAS REACHED, BECAUSE THE ROUTE IS THE ENTRY'S OWN INSTRUCTION
+  PAYING OFF A SECOND TIME.** 101 wrote *"before writing 'it cannot be
+  checked' anywhere, grep for what that denies"*. The grep found **three
+  descriptions of `prompt_test` and two of them false**:
+
+  | where | said | is |
+  |---|---|---|
+  | `run_tests.sh:31` | *"prints the AI's prompt for a human to read"* | prints **one of the three registry sections** `assembled_prompt()` concatenates onto `SYSTEM_PROMPT` |
+  | `tests/result_line_test.gd:88` | the same sentence, **as a ROW of `NO_RESULT_LINE`** | the same |
+  | `docs/harness/README.md:43` | *"the AI's prompt ... names every world"* | **names no world at all** - that section is `WorldRegistry.prompt_sections()` and this tool prints `ToolRegistry`'s |
+
+  **Unchanged since the file was written at 006** and not touched since it
+  moved into `tests/` at `8f97f5c` on 13 October - **94 commits**, counted with
+  `git rev-list --count` rather than remembered - and the row in
+  `result_line_test` carries its own instruction that a row which has stopped
+  being true *"should never go unremarked (TRAPS 14)"*. **Nothing held the
+  PROSE of those rows, only the no-result-line half**, which is why it
+  lasted.
+  **AND THEN RUNNING THE FILE PRINTED A BLANK LINE.** Its fourth probe is
+  `{"tool":"hovercraft","spec":{}}` - a tool Genesis has not got, deliberately
+  - and under a heading reading *"EQUIP readbacks as the player would see
+  them"* it printed two spaces and nothing else. That blank **was this fault**,
+  displayed in the one place in the repository that displays it, with
+  **four inputs listed in the source and three lines of output** and nothing
+  to say which one had vanished.
+
+  **THE CLASS WAS SWEPT AND IT IS THREE OF ELEVEN, SAID WITH THE SWEEP THAT
+  ESTABLISHES IT (TRAPS 11).** Every command `CommandParser.allowed_commands()`
+  admits, driven through `WorldRegistry.readback()` with each top-level key of
+  a sound request spoiled in **eight forms** - absent, `""`, `"   "`, `null`,
+  a word, a number, `[]`, `{}` - plus the request with no parameters at all:
+  **171 rows, 27 said nothing**, and they are `EQUIP`, `ORDER` and `PLAN` at
+  **nine rows apiece**, every one of the nine driven by that command's one
+  subject key. **The other eight commands: 0 of their rows, in every form** -
+  they already kept the rule, with *"to shut a door"*, *"to make a corner
+  hard"*, *"to put opponents on the track"*, *"to send someone somewhere"*.
+  After the fix: **171 rows, 0 said nothing**, and the three controls are
+  **byte-identical** (*"a red car that stops hard"*, *"to send someone to
+  room 1"*, *"a farm of a zone"*).
+
+  **AND `null` IS ONE NINTH OF THE CLASS, WHICH IS MEASURED RATHER THAN
+  ARGUED.** The guard narrowed to null alone - the shape 095's and 096's
+  sweeps are built on - leaves **29 of this suite's assertions failing**. A fix
+  guarded against null would have left eight ninths of it standing.
+
+  **THE WORDS ARE NOT NEW, AND THAT IS THE REASON THIS IS A FIX AND NOT A
+  WORDING DECISION (PROTOCOL 6).** `"a tool"` and `"an order"` are what
+  `_doing()` has said for exactly these inputs since 022, so they are the
+  owner's words at the door he has already seen; `"a plan"` is
+  `Readback.article()` applied to the command, the same mechanism `_doing()`
+  uses for a step command it does not recognise. They live in **one table**,
+  `WorldRegistry.UNREAD_SAID`, read by both doors and by the suite, so the two
+  doors can never say different things about one step again. **The words are
+  his to change; what could not stand is the silence.**
+
+  **AND THE TWO GUARDS IN `_doing()` WERE WIDENED FROM `!= ""` TO
+  `strip_edges() != ""`**, which is 095's own rule at a site 095 did not
+  reach: three spaces passed the old guard as a sentence.
+
+  **VERIFIED:**
+  **BASELINE REPRODUCED 101's md5 BYTE-FOR-BYTE FROM A FIFTH INDEPENDENT
+  CONTAINER** with its own Godot download (`4.7.1.stable.official.a13da4feb`,
+  `--version` read): `--all` on a clean `65017f8`, `git status --porcelain`
+  empty, `user://` empty because the container was fresh -
+  **`6f506342e2826219876806a48289d77e`, 78 suites, 0 with something to look
+  at**. `ls tests/*.gd` **80**, run reported **78**.
+  **THE PREDICTION WAS WRITTEN DOWN BEFORE ANY CODE WAS CHANGED AND THE PART
+  IT NAMED AS UNCERTAIN CAME BACK "NOTHING MOVED" (TRAPS 89).** It named two
+  lines that would move - `says_nothing_test` and `field_type_test`, both
+  upward with `failures=0` - and then said plainly that it **could not predict
+  what would happen to five more**, because the fix sets `awaiting_readback`
+  where nothing was set before, which makes the next request write an extra
+  `understanding` record: `controller_reach_test` 330,
+  `command_schema_test` 186, `ledger_audit_test` 19, `session_test` 18,
+  `report_test` 28. **`diff` against the baseline is TWO LINES** -
+  `field_type_test` **267 -> 279** and `says_nothing_test` **108 -> 380** -
+  and **all five of the uncertain ones are unchanged**. It also named eight
+  suites with a reason each that would not move - `result_line_test` 342 (the
+  prose of a `NO_RESULT_LINE` row is not asserted and no file is added),
+  `source_scan_test` 33, `plan_said_test` 50, `loadcheck` 39,
+  `record_type_test` 388, `check_wiring_test` 217, `log_022_test` 61,
+  `silence_test` 10 - and none of them did.
+  **FIVE FAULTS INJECTED INTO THE FIX, each alone in its own throwaway copy
+  with its own `config/name`, against the clean suite at 380/0 - ALL FIVE
+  CAUGHT:** the `EQUIP` guard reverted **380/10**; the `ORDER` guard reverted
+  **380/10**; the `PLAN` guard reverted **380/9**; the guard narrowed to null
+  only **380/29**; `UNREAD_SAID["EQUIP"]` set to three spaces **380/11**.
+  **FOUR MORE INTO `field_type_test` SECTION 8, against 279/0:** `prompt_test`
+  made to print the whole prompt **279/3**; made to print all three registry
+  sections **279/1, and the failure names the three places that would need
+  rewriting**; made to print a verdict word **279/1**; and - the negative
+  control that matters - **a fifth part added to `assembled_prompt()` while
+  `prompt_test` still prints one: 279/0**, so the check does not fire on a
+  change it has no business failing on.
+  **AND THE PER-ROW CHECK IS LOAD-BEARING, MEASURED BOTH WAYS.** With the
+  `EQUIP` guard reverted and section 7 removed, group (f)'s new per-row
+  question alone gives **177/1**; put the old per-group floor back as well and
+  it is **108/0**.
+  **FOUR FULL `--all` RUNS, ALL FOUR md5 `34ee308c632eac4e034d60215489f971`**, **78 suites,
+  0 with something to look at**, `user://` cleared before each and taken one at
+  a time (TRAPS 50), each md5-ed only after
+  `suites with something to look at:` had printed (099a's finish check).
+  **AND THE TREES ARE NAMED RATHER THAN BLURRED, INCLUDING THE UNTIDY PART.**
+  Run 1 was on the finished code with `docs/TRAPS.md`'s new entry appended
+  **while that run was in flight**. **RUN 2 IS RECORDED AND DISCARDED, AND THE
+  REASON IS THIS RUN'S OWN MISTAKE**: a comment in
+  `scripts/world_registry.gd` was corrected **while run 2 was running**, and a
+  run on a tree that moved under it is a measurement of a tree that no longer
+  exists. It returned the same number; it is not counted among the settled
+  ones. **Runs 3 and 4 were on the settled tree**, with every file's md5
+  recorded before run 3 and `md5sum -c` after run 4 reporting **nothing moved
+  except Godot's own gitignored `.godot/` cache**. Same number all four times.
+  **The md5 is written into this file AFTER the runs**, for the reason 093
+  through 101 all gave, and the circularity is the same one none of them
+  escaped.
+
+  **NOT DONE AND NOT VERIFIED:**
+  **WHAT THE LEDGER GAINS IS MEASURED AND IS A CHANGE TO THE OWNER'S OWN
+  REPORT.** Over one fixed six-request sequence, driven through `main.gd`
+  before and after: **8 records -> 11**, the three extra being `understanding`
+  verdicts on readbacks that did not exist before; and **records carrying a
+  readback 5 -> 11**. No number in `/session` was *redefined* and no record
+  was removed - the report gains rows the interpretation layer was always
+  meant to write - but **whether his understanding rates should now include
+  requests Genesis refused to build is his judgement**, written up as "Human
+  decision needed" **35** and not decided here.
+  **NO SUITE DRIVES `prompt_test` ITSELF.** Section 8 reads its source and
+  drives the function it calls; the file is still on `NOT_A_SUITE` and still
+  run by neither runner, and the reason is unchanged - it prints for a human
+  and has no verdict to give, which is now asserted rather than asserted of it.
+  **`replay.gd`'s REPLAY LOOP AND OUTPUT WRITE ARE STILL HELD BY NOTHING** and
+  nothing here looked at them. 101's bounded exclusion stands as written.
+  **`README.md`'s COUNT CLASS IS UNTOUCHED** - 100's second live entry, with
+  its named smallest step, is exactly as it was; this commit added no file, so
+  the number it carries is still right.
+  **THE SAME SWEEP OVER `docs/GENESIS_BRIEF.md`, `docs/003-container-fitting.md`
+  AND `docs/006-the-foundry.md` WAS NOT DONE.** `docs/harness/README.md` was
+  read for this one row and **not** re-read for its counts.
+  **NO LIVE PATH TO A MODEL WAS DRIVEN.** No model was asked anything, no
+  request left the container, there is no API key here, no browser ran, no web
+  export was made, `interpret.js` was not executed. `main.gd` was driven, which
+  is a live path *inside* the container and is where the finding came from.
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is **2026-10-16**, checked by grepping every
+  `2026-1[01]-*` date in `HANDOVER.md` and `TRAPS.md` and reading the context
+  of each of the **nine** distinct dates rather than taken from 101's
+  paragraph saying the same thing - the five later ones are assistant commits,
+  scheduling notes and overlap records.
+  **064'S FINDING IS CARRIED FORWARD AND NOT RE-VERIFIED**; the live site's
+  commit cannot be read from this container.
+
+  **NOTHING IN `scenes/`, `netlify/`, `.github/`, `project.godot` OR
+  `export_presets.web.cfg` WAS TOUCHED**, and **both runners WERE** - a
+  comment each, no list changed, which is said rather than filed under TRAPS 4
+  because the lists are what that trap is about and neither moved.
+  `git status --porcelain` names eight files and nothing else. **No file was
+  added or removed**, so `tests/` keeps **80** `.gd` and **80** `.uid`, and
+  `README.md`'s suite count cannot have moved. `ai_interpreter.gd` is **0 lines
+  of diff**, so `PROMPT_FINGERPRINT` and `PROMPT_VERSION` cannot have moved.
+  `git diff -- scripts/ tests/ run_tests.sh run_tests.bat` grepped for `AIza`,
+  `api key`, `secret`, `token`, `bearer`, `GEMINI`, `netlify` and
+  `export_presets` returns **ZERO**; the same grep over the whole diff returns
+  **six**, all of them in these `docs/` sentences about the grep itself -
+  counted after this paragraph was written, which is why it is six and not the
+  five the first draft said.
+  Every probe and every injection was in a throwaway copy under the scratch
+  directory, each with its own `config/name`, never in the repository.
+
+  **AND WHAT CHANGED FOR ANYONE USING GENESIS: ONE LINE THEY WERE NOT GETTING.**
+  Ask Genesis for a tool it has not got, or an errand it cannot give, or a plan
+  with nothing in it, and it now says what it heard before it says what it
+  cannot do. The refusal underneath is **unchanged, word for word**, and every
+  request Genesis can read reads back exactly as it did.
+
+- Before 102: **101**, which took **the first live
   entry as of 100** - *the rest of `tests/replay.gd` is held by nothing* - and
   did the thing that entry said to do: **asked of each remaining part whether
   it can be made a function of its inputs, took the ones that can, and wrote
@@ -6257,6 +6492,39 @@ than suites, leaving **78 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 78
 and are skipped without it.
+
+**102 ADDED NO FILE EITHER**, which is why the two numbers above did not
+move, and that was deliberate for the same reason 101 gave: a new suite would
+falsify `README.md`'s count, which is the open class 100 left and which 102
+does not close. The new sections went into `tests/says_nothing_test.gd`
+(section 7, the readback that says nothing) and `tests/field_type_test.gd`
+(section 8, what `prompt_test` prints) - **both files already the standing
+check for what they were given**, which is why neither runner needed a line.
+Its baseline on the clean tree at `65017f8`, `git status --porcelain` empty,
+was **BYTE-IDENTICAL to the md5 101 recorded, from a FIFTH independent
+container with its own Godot download**:
+`6f506342e2826219876806a48289d77e`, 78 suites, 0 with something to look at.
+The container was fresh, so `user://` was empty rather than cleared.
+After the change, **FOUR full `--all` runs, all four md5
+`34ee308c632eac4e034d60215489f971`**, **78 suites, 0 with something to look at**,
+`user://` cleared before each. **Run 2 is recorded and discarded** - a comment
+in `scripts/world_registry.gd` was edited while it was running - and runs 3 and
+4 were on the settled tree with `md5sum -c` confirming nothing moved under
+them. Same number all four times.
+**THE PREDICTION NAMED TWO LINES AND NAMED FIVE MORE AS UNPREDICTABLE, AND
+THE FIVE DID NOT MOVE** (TRAPS 89). `diff` against the baseline is
+`field_type_test` **267 -> 279** and `says_nothing_test` **108 -> 380**, and
+nothing else. The five it could not predict - `controller_reach_test` 330,
+`command_schema_test` 186, `ledger_audit_test` 19, `session_test` 18,
+`report_test` 28 - are unchanged, which is written down as a result and not as
+a prediction that held, because it was not predicted.
+**NEITHER RUNNER NEEDED A LINE AND BOTH WERE EDITED ANYWAY** - a comment each,
+correcting a false description of `prompt_test`; no entry in `TIMED`, `SLOW`,
+`BROKEN` or `NOT_A_SUITE` moved, and no file was added, so no list in either
+runner can be short one (TRAPS 4).
+**AND `scripts/` IS NOT 0 LINES OF DIFF, which is the first time since 097**:
+`scripts/world_registry.gd` changed and a player gets one line they were not
+getting. The refusal underneath it is unchanged word for word, measured.
 
 **101 ADDED NO FILE**, which is why the two numbers above did not move, and
 that was deliberate: a new suite would have falsified `README.md`'s count,
@@ -12940,6 +13208,23 @@ entry with their results, each alone in its own throwaway copy with its own
 `config/name`, and the property they attribute is now
 `tests/field_type_test.gd` sections 5 to 7 rather than a table in a document.
 
+**NOTHING IS OWED FROM 102 EITHER.** Its baseline was byte-identical to the
+md5 101 recorded - from a **fifth** independent container with its own Godot
+download - it wrote its predicted diff down **before any code was changed**,
+naming two lines that would move and **five it could not predict**, and the
+five did not move; and it took three byte-identical `--all` runs, the last two
+on the complete tree with `docs/` in place, which is why there is no 102a.
+**Do not start by re-running on 102's behalf**; take your own baseline so you
+learn the record and the container still agree, and spend the time on the work
+below. **And do not re-take 102's measurements** - the 171-row sweep before and
+after, the panel readings through `main.gd`, the ledger before/after count, the
+five injections into the fix, the four into `field_type_test` section 8 and the
+pair that proves the per-row check is load-bearing (177/1 against 108/0) are
+all in the 102 entry with their results, each alone in its own throwaway copy
+with its own `config/name`, and the property they attribute is now
+`says_nothing_test` section 7 and `field_type_test` section 8 rather than a
+table in a document.
+
 **~~THE FIRST LIVE ENTRY AS OF 099a: `tests/replay.gd`'S THREE READS ARE
 DRIVEN BY NOTHING IN A FULL RUN.~~ HALF DONE IN 100, AND THE READS WERE
 FOUR.** They are now held by `tests/field_type_test.gd`, which drives
@@ -12994,8 +13279,25 @@ exclusion into a bounded one rather than leaving it standing (TRAPS 90).
 **The `prompt_test` half of the question is completely untouched**; nothing in
 100 looked at it.
 
-**THE FIRST LIVE ENTRY AS OF 101: `prompt_test` IS CHECKED BY NOTHING, AND
-WHAT IS LEFT OF `replay.gd` IS THE TWO PARTS THAT CANNOT BE MADE PURE.**
+**~~THE FIRST LIVE ENTRY AS OF 101: `prompt_test` IS CHECKED BY NOTHING, AND
+WHAT IS LEFT OF `replay.gd` IS THE TWO PARTS THAT CANNOT BE MADE PURE.~~
+THE `prompt_test` HALF IS DONE IN 102, AND ASKING THE ENTRY'S OWN QUESTION OF
+IT FOUND A LIVE FAULT A PLAYER MEETS.** The entry's instruction is the part
+that paid, for the second commit running: *before writing "it cannot be
+checked" anywhere, grep for what that denies.* The grep found **three
+descriptions of `prompt_test` and two of them false** - it prints one of the
+three registry sections of the AI's prompt and **no world at all**, where
+`docs/harness/README.md` said it *"names every world"* - and then **running
+the file printed a blank line**, which turned out to be
+`WorldRegistry.readback()` saying nothing for an `EQUIP` whose tool Genesis has
+not got. Three commands of eleven, nine forms each, the same silence in the
+panel a player reads, and the identical step said *"a tool"* inside a `PLAN`.
+New TRAPS **102**. **The `replay.gd` half is UNTOUCHED and is the live entry
+below.** Struck rather than deleted, because the record of an instruction whose
+value was again in a place it did not predict is the useful part. The original
+reading follows:
+
+**AS 101 WROTE IT:**
 101 closed the `replay.gd` half of 100's entry and bounded what remains, so
 this entry is deliberately smaller than the one it replaces.
 
@@ -13023,6 +13325,48 @@ numbers and may well be separable; nothing has tried.
 FOR A NARROWER REASON.** It still deletes `user://track_log.jsonl` on the path
 that works, which is the shared ledger four other suites read (TRAPS 50,
 TRAPS 97). What changed in 101 is only that a **refused** run no longer does.
+
+**THE FIRST LIVE ENTRY AS OF 102: THE FIVE REMAINING GROUPS OF
+`says_nothing_test`'s SWEEP STILL ASK THE PER-GROUP QUESTION, AND THE RULE
+102 FOUND MAY HAVE MEMBERS OUTSIDE THE READBACK.**
+102 fixed the counting idiom at all eight sites - the question is asked of the
+CONTENT now rather than of the collection - and made group (f), the readback,
+ask it **per row**. **The five validator groups still ask it per GROUP, and
+that is deliberate and defensible**: a refusal is owed once per request, not
+once per field, so a floor is the right shape there. **What has not been asked
+is whether it is the right shape for all five.** Group (c) drives
+`ToolRegistry.readback()` directly, which is a READBACK and not a validator,
+and it legitimately answers `""` for a tool it cannot find - the word is added
+one layer out, in `WorldRegistry` - so a per-row question there would fail
+today and the right answer may be to move the word rather than the question.
+**That is a reading of five groups and one call site, not a suite to write**,
+and it may come back "the floor is right in all five", which is a reason to
+read rather than to build (096's own words).
+
+**AND THE WIDER CLASS IS NAMED RATHER THAN LEFT STANDING (TRAPS 90): where
+else in `scripts/` does a function answer the empty string and a caller treat
+it as an answer?** 102 swept the eleven commands of **one** function,
+`WorldRegistry.readback()`. It did **not** sweep the other direction: every
+`-> String` in `scripts/` that can return `""`, against what its callers do
+with it. `main.gd:290`'s `UNSUPPORTED` readback is one that is **measured and
+deliberately not changed** - `str(parameters.get("understood", ""))` is empty
+when the model names nothing it understood, and there a readback has nothing
+heard to say back, which is a different thing from a subject it could not read.
+**It is named here so the exclusion is bounded**, and the honest next step on
+the class is the enumeration, which nothing has done.
+
+**THE SECOND LIVE ENTRY AS OF 102, AND IT IS WHAT IS LEFT OF 101's:
+`replay.gd`'s REPLAY LOOP AND OUTPUT WRITE ARE STILL HELD BY NOTHING.**
+Unchanged from 101, which named them with the reason each cannot be made a
+function of its inputs: the loop drives a live `GameController` through a
+`SceneTree` and reads the ledger back between groups, and the write is the side
+effect itself. **Neither should be forced to be pure.** What a suite could
+still hold about them has not been worked out and is the honest next question -
+the loop's one accounting rule, `lines_before`, is arithmetic over numbers and
+may well be separable; nothing has tried. **And do NOT run `replay.gd` from a
+suite**: it still deletes `user://track_log.jsonl` on the path that works,
+which is the shared ledger four other suites read (TRAPS 50, TRAPS 97). What
+101 changed is only that a **refused** run no longer does.
 
 **THE SECOND LIVE ENTRY AS OF 100, FOUND WHILE CHECKING THIS RUN'S OWN
 COUNTS: `README.md` SAID "67 SUITES" FOR 43 COMMITS, AND NOTHING IN THIS
@@ -23027,3 +23371,51 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     is a thing he actually has**, which the assistant cannot know from here.
     No record in this container is one, so the case is reasoned from the code
     and not from an example. Nothing was changed.
+
+35. **Genesis now judges its own understanding of requests it refuses to
+    build, which adds rows to the `/session` report — and whether those rows
+    belong in his understanding rates is his call, not the assistant's.**
+    Raised by 102. The fault 102 fixed is not in doubt: a readback that says
+    nothing cannot catch a dropped clause, and the sibling door inside a `PLAN`
+    had been saying the word since 022. **This entry is about the knock-on,
+    which is measured rather than guessed.**
+
+    `main.gd`'s `_show_readback()` returns on an empty line, so a request whose
+    readback was empty never set `awaiting_readback` — and `awaiting_readback`
+    is what makes the NEXT input judge the readback before it and write an
+    `understanding` record. So three commands' worth of refused requests were
+    **invisible to the understanding layer entirely**. With the readback
+    present they are judged like any other.
+
+    **MEASURED**, one fixed six-request sequence driven through `main.gd`
+    before and after, each in its own throwaway copy:
+
+    | | before | after |
+    |---|---|---|
+    | ledger records | **8** | **11** |
+    | records carrying a readback | **5** | **11** |
+
+    The three extra are `understanding` verdicts on readbacks that did not
+    exist before. **No number in `/session` was redefined, no record was
+    removed, and the full suite is unchanged on all five of the suites that
+    read the ledger** — `controller_reach_test`, `command_schema_test`,
+    `ledger_audit_test`, `session_test`, `report_test` — which was the part of
+    102's prediction written down as unpredictable.
+
+    **THE QUESTION.** A request Genesis **cannot build** now contributes an
+    understanding verdict, and most of those will be `ACCEPTED_BY_SILENCE`,
+    because a player who is told *"you want a tool"* and then *"this game has
+    no tool called 'hovercraft'"* usually just asks for something else. That is
+    a verdict about whether Genesis **heard** the request, which is exactly
+    what the layer is for — but it lands in the same rates as verdicts about
+    requests it built, and it will move them. The shape of the better answer
+    may already be in this repository: **012 made silence its own axis rather
+    than folding it into a score**, and *"heard but could not build"* is the
+    same kind of thing. The options are to leave it (the rates widen and mean
+    something slightly different), to split the report's rates by whether the
+    request was buildable, or to keep these readbacks out of the judging
+    entirely — and the last of those would reintroduce half the fault, so it is
+    named for completeness rather than recommended.
+
+    **If he is absent, LEAVE IT.** The player is told what Genesis heard, which
+    is the part that was broken; nothing in the report is wrong, only wider.

@@ -65,6 +65,26 @@ extends SceneTree
 # AND THE TOOL ROWS ARE KEYED OFF defaults() AND NOT LISTED HERE (TRAPS 82),
 # so a tool that gains a text field is driven from the moment it gains it.
 #
+# --- 102: AND THE HEADER ABOVE IS AMENDED RATHER THAN LEFT, because this
+#          commit makes part of it incomplete ---
+#
+# Everything above is about a value that is PRESENT and says nothing - null,
+# empty, blank - reaching a sentence. 102 found the other half at the same
+# doors: a readback that produces NO SENTENCE AT ALL. Three of the eleven
+# commands the whitelist admits returned the empty string from
+# WorldRegistry.readback() whenever the one key that says WHAT was asked for
+# could not be read, and main.gd's _show_readback() returns on an empty line,
+# so the player was told nothing. See section 7 and TRAPS 102.
+#
+# AND THE CHECKS IN THIS FILE COULD NOT SEE IT, which is why the amendment is
+# here and not only in section 7. Six groups asked
+# `said_in_this_run.size() > before_X`; _record() appends the empty string like
+# any other, so a door that said nothing satisfied "said something". Measured:
+# with the fault present and that floor in place, 108 assertions, failures=0.
+# Every one of those sites asks about the CONTENT now (_said_something_since),
+# and section 5's screen is unchanged - it never could have seen this, because
+# the empty string contains no "<null>".
+#
 # WHAT IT IS NOT. It is a fault-finder for the five sites above and a guard
 # against drift afterwards. It says nothing about whether the default WORD is
 # the right word - "a room" for a nameless room is the owner's wording, not
@@ -117,6 +137,38 @@ func _record(said: String) -> void:
 	said_in_this_run.append(said)
 
 
+# --- 102: "it said something" counted COLLECTED sentences, not sentences that
+#          say anything ---
+#
+# Every group below used to ask `said_in_this_run.size() > before_X`. _record()
+# appends the empty string like any other, so a door that said NOTHING AT ALL
+# satisfied "driving %s's readback with a null in it said something" - and
+# three of them did. EQUIP, ORDER and PLAN returned "" from
+# WorldRegistry.readback for every form of the one key that says WHAT was
+# asked for: nine rows apiece out of 171 driven, found by driving main.gd and
+# reading the panel, not by this suite. Section 5's screen could not see it
+# either - the empty string contains no "<null>".
+#
+# So the suite written to find a readback that says nothing could not see a
+# readback that says nothing, because it counted the collection and not the
+# content (TRAPS 75's shape, at the door this file is named for). The question
+# is asked of the CONTENT now, at all eight sites and in one function, and
+# section 7 asks it per ROW at the door a player meets.
+func _said_something_since(before: int) -> bool:
+	for i in range(before, said_in_this_run.size()):
+		if str(said_in_this_run[i]).strip_edges() != "":
+			return true
+	return false
+
+
+func _how_many_said_something(before: int) -> int:
+	var n := 0
+	for i in range(before, said_in_this_run.size()):
+		if str(said_in_this_run[i]).strip_edges() != "":
+			n += 1
+	return n
+
+
 func _initialize() -> void:
 	_the_reader()
 	_the_speller()
@@ -125,6 +177,7 @@ func _initialize() -> void:
 	_the_track()
 	_the_unsupported_reason()
 	_every_door_with_a_null_in_it()
+	_no_readback_says_nothing()
 	_no_engine_null_in_anything_said()
 	print("SAYS NOTHING %d assertions, failures=%d" % [asserted, bad])
 	quit(1 if bad > 0 else 0)
@@ -313,8 +366,11 @@ func _the_unsupported_reason() -> void:
 # The denominator is asserted, because an empty collection would pass this in
 # silence - TRAPS 75, which is the shape half this project's findings have.
 func _no_engine_null_in_anything_said() -> void:
-	_check(said_in_this_run.size() >= 20,
-		"this run produced sentences to examine (%d)" % said_in_this_run.size())
+	# 102: the denominator counts sentences that SAY something, for the reason
+	# written beside _said_something_since().
+	_check(_how_many_said_something(0) >= 20,
+		"this run produced sentences to examine (%d of %d collected)" % [
+			_how_many_said_something(0), said_in_this_run.size()])
 	# 096: THE SCREEN ITSELF WAS ONE GREP WIDE (TRAPS 78). It looked for the
 	# lower-case spelling, and CommandParser puts the command through
 	# to_upper() before it is quoted - so "Rejected command: <NULL>" was
@@ -471,7 +527,7 @@ func _every_door_with_a_null_in_it() -> void:
 			_errors_said(m.validate(poisoned))
 			_record(WorldRegistry.readback(cmd, poisoned))
 			_record(m.readback_short(poisoned))
-		_check(said_in_this_run.size() > before_module,
+		_check(_said_something_since(before_module),
 			"driving %s with a null in it said something" % cmd)
 	_check(modules >= 3, "the registry declares world modules for this to drive (drove %d)" % modules)
 
@@ -480,7 +536,7 @@ func _every_door_with_a_null_in_it() -> void:
 	var before_sections := said_in_this_run.size()
 	for poisoned in _one_null_each(SOUND["CREATE_TRACK"]):
 		_errors_said(SectionValidator.validate(poisoned))
-	_check(said_in_this_run.size() > before_sections,
+	_check(_said_something_since(before_sections),
 		"driving the section validator with a null in it said something")
 
 	# (c) every registered tool, at its validator and at the readback a player
@@ -493,7 +549,7 @@ func _every_door_with_a_null_in_it() -> void:
 		for poisoned in _one_null_each({"tool": t.name(), "spec": t.defaults().duplicate(true)}):
 			_errors_said(t.validate(poisoned))
 			_record(ToolRegistry.readback(poisoned))
-		_check(said_in_this_run.size() > before_tool,
+		_check(_said_something_since(before_tool),
 			"driving the %s with a null in it said something" % t.name())
 	_check(tools >= 3, "the registry declares tools for this to drive (drove %d)" % tools)
 
@@ -507,14 +563,14 @@ func _every_door_with_a_null_in_it() -> void:
 		for poisoned in _one_null_each(base):
 			_errors_said(NpcGoals.validate(poisoned, rooms, things))
 			_record(NpcGoals.readback(poisoned))
-		_check(said_in_this_run.size() > before_goal,
+		_check(_said_something_since(before_goal),
 			"driving a %s order with a null in it said something" % str(base["goal"]))
 	var before_door := said_in_this_run.size()
 	for poisoned in _one_null_each({"between": ["hall", "vault"]}):
 		_errors_said(NpcGoals.validate_door(poisoned, rooms, layout))
 		_record(NpcGoals.door_readback(poisoned, true))
 		_record(NpcGoals.door_readback(poisoned, false))
-	_check(said_in_this_run.size() > before_door,
+	_check(_said_something_since(before_door),
 		"driving a door with a null in it said something")
 
 	# (f) 097: EVERY COMMAND THE WHITELIST ADMITS, through the one readback a
@@ -538,29 +594,172 @@ func _every_door_with_a_null_in_it() -> void:
 			continue
 		commands += 1
 		var before_command := said_in_this_run.size()
+		# 102: PER ROW AND NOT PER GROUP, at this door only. The floor below
+		# is right for the groups that drive VALIDATORS - a refusal is owed
+		# once per request, not once per field - but this group drives the one
+		# READBACK a player meets before anything is validated, and that line
+		# is owed for every request the parser admits. A floor here passed
+		# while three of the eleven commands said nothing for every form of
+		# their subject, because the other leaves of the same request still
+		# produced sentences.
 		for poisoned in _one_null_each(SHAPES[command]):
-			_record(WorldRegistry.readback(command, poisoned))
-		_check(said_in_this_run.size() > before_command,
+			var said := WorldRegistry.readback(command, poisoned)
+			_record(said)
+			_check(said.strip_edges() != "",
+				"%s's readback says something for %s" % [command, JSON.stringify(poisoned)])
+		_check(_said_something_since(before_command),
 			"driving %s's readback with a null in it said something" % command)
 	_check(commands == CommandParser.allowed_commands().size(),
 		"every command the whitelist admits was driven (%d of %d)" % [
 			commands, CommandParser.allowed_commands().size()])
 
 	# (e) the parser, whose own field is the command.
+	#
+	# 102: THIS GROUP'S OWN FIXTURE WAS WRONG ABOUT ONE OF ITS THREE BODIES,
+	# and the floor that counted collected sentences is what hid it. The row
+	# `{"command":"CREATE_FARM","parameters":null}` was listed here as a body
+	# the parser refuses; it does not. `parameters` of the wrong type is
+	# SILENTLY DROPPED to `{}` by parse() - read off command_parser.gd, the
+	# branch is `if data.has("parameters") and typeof(...) == TYPE_DICTIONARY`
+	# with no else - so the parse comes back ok=true with error "", and
+	# _record("") satisfied "parsing ... said something" because the empty
+	# string was still a collected entry.
+	#
+	# The question is asked of the parse RESULT now rather than of a belief
+	# about it: a body the parser REFUSES must say why, and a body it ACCEPTS
+	# must be answered by the readback a player meets, which is the line shown
+	# before anything is validated. Either way the player is told something.
+	# The third row is therefore still driven and is still load-bearing - it
+	# is the one that proves the drop is quiet.
 	for body in [
 		'{"command":null,"parameters":{}}',
 		'{"command":"CREATE_FARM","parameters":null}',
 		'{"command":["x"],"parameters":{}}',
 	]:
 		var before_body := said_in_this_run.size()
-		_record(str(CommandParser.parse(body).get("error", "")))
-		_check(said_in_this_run.size() > before_body,
-			"parsing %s said something" % body)
+		var parsed := CommandParser.parse(body)
+		var refused := not bool(parsed.get("ok", false))
+		if refused:
+			_record(str(parsed.get("error", "")))
+			_check(_said_something_since(before_body),
+				"the parser refusing %s said why" % body)
+		else:
+			_record(WorldRegistry.readback(str(parsed.get("command", "")),
+				parsed.get("parameters", {})))
+			_check(_said_something_since(before_body),
+				"%s is ACCEPTED by the parser and the readback says something" % body)
 
 	# The denominator (TRAPS 75). A sweep that drives nothing passes every
 	# absence question ever asked of it, which is half this project's findings.
-	var drove := said_in_this_run.size() - before
-	_check(drove >= 150, "the sweep produced sentences to examine (%d)" % drove)
+	var drove := _how_many_said_something(before)
+	_check(drove >= 150, "the sweep produced sentences that say something (%d of %d collected)" % [
+		drove, said_in_this_run.size() - before])
+
+
+# --- 7. 102: THE SUBJECT IN EVERY FORM, NOT ONLY NULL ---
+#
+# Group (f) above poisons LEAVES WITH NULL, which is 095's class. The fault
+# 102 found is wider than null and narrower than the whole request: it is the
+# one key of each command that says WHAT was asked for - `tool`, `goal`,
+# `steps` - and it emptied the readback in EVERY form, not just as null.
+# Measured on the code before the fix, over the same shapes group (f) uses:
+#
+#   171 rows driven, 27 said NOTHING AT ALL
+#   EQUIP   9 of 9: tool absent, "", "   ", null, a word, a number, [], {},
+#           and no parameters at all
+#   ORDER   9 of 9, the same nine, driven by `goal`
+#   PLAN    9 of 9, the same nine, driven by `steps`
+#   the other EIGHT commands: 0 of their rows, every form
+#
+# So a fix that guarded null alone would have left eight ninths of it
+# standing, and a check that drove null alone would have said so. This drives
+# every top-level key of every command's own shape in all eight forms, plus
+# the request with no parameters at all - and the forms are what a hand-edited
+# model answer can actually contain.
+#
+# WHAT IT ASSERTS AND WHY IT IS NOT A WORDING CHECK (TRAPS 6, TRAPS 14). Not
+# that any door says any sentence: that every door says SOMETHING, and that a
+# request Genesis CAN read is not answered with the fallback word. The words
+# themselves are read off WorldRegistry.UNREAD_SAID rather than typed here
+# (TRAPS 82), so the owner can change any of them without touching this file,
+# and a word removed from that table fails by its command's name.
+const SPOIL := ["ABSENT", "EMPTY", "BLANK", "NULL", "WORD", "NUMBER", "LIST", "DICT"]
+
+
+func _spoil(form: String) -> Variant:
+	match form:
+		"EMPTY": return ""
+		"BLANK": return "   "
+		"NULL": return null
+		"WORD": return "hovercraft"
+		"NUMBER": return 7
+		"LIST": return []
+		"DICT": return {}
+	return null
+
+
+func _no_readback_says_nothing() -> void:
+	var SHAPES := _shapes()
+	var rows := 0
+	for command in CommandParser.allowed_commands():
+		# The same rule group (f) uses: a command with no shape here is a
+		# FAILURE and never a skip, so a twelfth command joins this sweep from
+		# the moment the whitelist admits it.
+		_check(SHAPES.has(command),
+			"this sweep has a request for %s to spoil (a command with none is not being driven)" % command)
+		if not SHAPES.has(command):
+			continue
+		var sound: Dictionary = SHAPES[command]
+
+		# a) the request Genesis CAN read says something, and says something
+		#    other than the word kept for a request it cannot.
+		var said_sound := WorldRegistry.readback(command, sound)
+		rows += 1
+		_check(said_sound.strip_edges() != "",
+			"%s's readback says something for a request it can read" % command)
+		var word := str(WorldRegistry.UNREAD_SAID.get(command, ""))
+		if word != "":
+			_check(said_sound != word,
+				"%s's fallback word has not swallowed a request it can read (said '%s')" % [
+					command, said_sound])
+
+		# b) no parameters at all.
+		rows += 1
+		var said_bare := WorldRegistry.readback(command, {})
+		_record(said_bare)
+		_check(said_bare.strip_edges() != "",
+			"%s's readback says something with no parameters at all" % command)
+
+		# c) every top-level key of its own shape, in every form. The keys are
+		#    the shape's rather than a list here, so a command whose request
+		#    gains a field is driven on that field from the moment it has it.
+		for key in sound.keys():
+			for form in SPOIL:
+				rows += 1
+				var spoiled: Dictionary = sound.duplicate(true)
+				if form == "ABSENT":
+					spoiled.erase(key)
+				else:
+					spoiled[str(key)] = _spoil(form)
+				var said := WorldRegistry.readback(command, spoiled)
+				_record(said)
+				_check(said.strip_edges() != "",
+					"%s's readback says something with '%s' %s" % [command, str(key), form])
+
+	# The words themselves are a class and are asked about here rather than
+	# left to the three call sites: a word for a command the whitelist does
+	# not admit is dead, and a word that says nothing is not a word.
+	for command in WorldRegistry.UNREAD_SAID:
+		_check(command in CommandParser.allowed_commands(),
+			"%s, which has a fallback word, is a command the whitelist admits" % str(command))
+		_check(str(WorldRegistry.UNREAD_SAID[command]).strip_edges() != "",
+			"%s's fallback word says something" % str(command))
+
+	# The denominator (TRAPS 75), derived from the whitelist rather than
+	# remembered: at least the bare request and the sound one per command.
+	_check(rows >= CommandParser.allowed_commands().size() * 2,
+		"the sweep drove rows for every command (%d rows, %d commands)" % [
+			rows, CommandParser.allowed_commands().size()])
 
 
 # Every sentence a refusal gave, into the same collection section 6 reads.

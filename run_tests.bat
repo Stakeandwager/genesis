@@ -30,7 +30,10 @@ for %%f in (tests\*.gd) do (
   REM before quit(), so it ran on until it was killed. See TRAPS 13.
 
   REM Not suites: replay needs REPLAY_LOG and REPLAY_OUT set, and prompt_test
-  REM prints the AI's prompt for a human to read rather than a verdict.
+  REM prints the TOOLS section of the AI's prompt, and four EQUIP readbacks,
+  REM for a human to read rather than a verdict. 102: this said "the AI's
+  REM prompt"; it prints one of its three registry sections. See
+  REM field_type_test section 8.
   echo !NAME! | findstr /c:"replay" /c:"prompt_test" >nul && set SKIP=not a suite
 
   REM Minutes rather than seconds: several full races apiece.

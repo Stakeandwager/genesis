@@ -7874,3 +7874,91 @@ member**, which is said with the sweep that establishes it.
   missing" is not the whole of what a refused run does.
 
 > It said exactly what was wrong, and the file was already gone.
+
+---
+
+## 102. The readback that said nothing, and the suite named for it that counted the sentences it collected
+
+**Signature:** a request Genesis cannot read is refused with a clear sentence
+and the line above it — *"I understand: you want ..."* — is simply absent. The
+**same step wrapped in a PLAN** gets that line. Every suite is green,
+including the one whose whole subject is a readback that says nothing.
+
+**Cause, two halves, and the second is the expensive one.**
+
+**The code.** `WorldRegistry.readback()` returned the empty string for three
+of the eleven commands the whitelist admits whenever the one key that says
+WHAT was asked for could not be read — `EQUIP`'s `tool`, `ORDER`'s `goal`,
+`PLAN`'s `steps`. `main.gd`'s `_show_readback()` **returns on an empty line**,
+so nothing was printed, nothing was recorded in the history panel, and
+`awaiting_readback` was never set, which also means the understanding layer
+never judged the request. The sibling door one function below —
+`_doing()`, which describes a step inside a plan — **already had the
+fallback**, `"a tool"` and `"an order"`, since 022. So the identical EQUIP read
+back as *"a tool"* inside a plan and as silence on its own.
+
+This is 032's fault one condition in. 032 found `SPAWN_OPPONENTS` and
+`MODIFY_TRACK` with *"no readback AT ALL as a single command —
+WorldRegistry.readback returned the empty string"* and gave both a sentence.
+That was a command whose readback was empty for **every** request. These three
+were empty only for a request Genesis **cannot read** — and every suite built
+around 032's class, `plan_said_test` included, drives requests it can.
+
+**The check.** `tests/says_nothing_test.gd` exists for exactly this. Its group
+(f) **drove these very inputs** — every command the whitelist admits, one leaf
+nulled at a time — and asked:
+
+```gdscript
+_check(said_in_this_run.size() > before_command,
+    "driving %s's readback with a null in it said something" % command)
+```
+
+`_record()` appends the empty string like any other, so **a door that said
+nothing at all satisfied "said something"**. Six groups were written that way,
+and section 5's screen — *no sentence contains `"<null>"`* — passes on an empty
+string too. **Measured: with the fault present and that floor in place, 108
+assertions, failures=0, silent.** With the floor replaced by a per-row question
+about the CONTENT, 177 assertions, failures=1, naming
+`{"spec":{"colour":"brown"},"tool":null}`.
+
+So the suite written to find a readback that says nothing could not see one,
+because it counted the collection and not the content. Found by driving
+`main.gd` and reading the history panel, not by any suite.
+
+**And it was reached through a tool nothing checked.** 101's live entry said
+`prompt_test` is checked by nothing and that before writing *"it cannot be
+checked"* anywhere, grep for what that denies. The grep found three
+descriptions of it and two were false — it prints one of the three registry
+sections of the AI's prompt and no world — and **running it printed a blank
+line**: its fourth probe is `{"tool":"hovercraft","spec":{}}`, under a heading
+reading *"EQUIP readbacks as the player would see them"*. The blank was this
+fault, in the one place in the repository that displays it.
+
+**Do:**
+
+- **A readback says something about every request the parser admits.** A part
+  it could not read gets a WORD, never silence. Driven over all eleven
+  commands, 171 rows, the only three that could say nothing were these three;
+  the other eight already kept the rule — *"to shut a door"*, *"to make a
+  corner hard"*, *"to put opponents on the track"*, *"to send someone
+  somewhere"*.
+- **Count what was SAID, not what was collected.** Any check of the form
+  `collected.size() > before` is satisfied by an empty entry. If the question
+  is "did this say anything", ask it of the strings.
+- **A per-group floor is the wrong shape for a door that owes a line per
+  request.** It is right for a validator — a refusal is owed once per request,
+  not once per field — and wrong for the readback, because the other leaves of
+  the same request keep producing sentences and hold the floor up. Group (f)
+  asks per row now; the five validator groups keep the floor, with the reason
+  written beside it.
+- **Spoil the subject in every form, not only as null.** Guarded against null
+  alone, 29 of this suite's assertions still fail: absent, `""`, `"   "`, a
+  word, a number, `[]` and `{}` all emptied the same readback. `null` is one
+  ninth of the class.
+- **Take the fallback word from the door that already says it.** `"a tool"`
+  and `"an order"` are what `_doing()` has said since 022, so correcting the
+  silence invented no wording. They live in one table now, read by both doors
+  and by the suite, so the two can never say different things about one step
+  again.
+
+> It refused the request in a full sentence, and never said what it had heard.
