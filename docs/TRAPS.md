@@ -7341,3 +7341,125 @@ the eleventh is the narrow screen, correctly silent on its own.
 
 > A wall one commit went through is not a wall. Check which commit you are
 > standing in.
+
+---
+
+## 95. The door that validated three things over six fields
+
+**Signature:** a function whose whole job is to decide whether a file is
+damaged checks the type of some of its fields, and every reader downstream
+assumes the type of all of them.
+
+**Cause.** `WorldStore.load_world()` is the only door between a save file a
+player can edit by hand and every reader of that file. It checked three
+things:
+
+> `typeof(data) != TYPE_DICTIONARY or not data.has("command") or typeof(data.get("parameters")) != TYPE_DICTIONARY`
+
+The file has **six** fields. `name`, `saved` and `request` were not type
+checked at all, `metrics` was not type checked at the door, and `command` was
+checked for **presence and not for type** — which is TRAPS 92's distinction
+(*a guard that answers the absent key does not answer the present wrong one*)
+moved from a default to a damage check.
+
+**What that let through, driven through the real `main.gd` in 098 before
+anything was changed:**
+
+| the hand-edited field | what Genesis did with it |
+|---|---|
+| `"command": null` | *"'`<NULL>`' is not a command this game has. The saved world cannot be built."* |
+| `"command": 7` | *"'`7.0`' is not a command this game has."* — a JSON integer read back to the player in GDScript's float spelling |
+| `"command": []` | *"'`[]`' is not a command this game has."* |
+| `"name": null` | ledger record `request` **`"load <null>"`**, and the next prompt the model is sent: *The player asked for: "load `<null>`"* |
+| `"name": 12` | *"load 12.0"*, and the same prompt line |
+| `"saved": null` | the record's own `source` field carried `"saved": null` |
+| `"metrics": null` | **the load check was skipped in silence** |
+
+**The last two rows are the ones a spelling fix would not have reached.** The
+`name` row leaves the engine altogether: a null spelled the engine's way is
+put into the request line of a record and then into the **prompt**, so a
+hand-edited file writes six characters of GDScript debug output into what
+Genesis tells the model the player asked for. And the `metrics` row is not a
+wording fault at all — loading is the only build whose right answer was
+written down in advance, and a `metrics` of the wrong type made
+`main.gd`'s `typeof(recorded) == TYPE_DICTIONARY` guard skip the comparison
+**and say nothing about having skipped it**, which is PROTOCOL section 2's
+*missing evidence must not become success* at the one door built to prevent it.
+
+**Do:**
+
+- **Count the fields the door hands on, then count the fields it checks.** The
+  fault is visible as two numbers and needed no reading of the readers.
+- **Check the type when the field is PRESENT, and let an absent one through.**
+  Every field but `command` has a working default at its reader, and an older
+  file that lacks one must still load. Section 3 of `world_file_test` removes
+  each field in turn and requires the file to still load, so a later
+  tightening into *"all six are required"* fails by the name of the field it
+  would have broken.
+- **Derive the field list from the function, not from a test.** Section 1
+  calls `save_world()` for real, reads the file back off disk, and asserts that
+  the declared types are exactly the keys and types it wrote — so a seventh
+  field added to `save_world()` fails **by its own name** (TRAPS 82). Measured:
+  adding `"engine": "4.7.1"` to `save_world()` gave 174 assertions,
+  **failures=9**, the first of them *"save_world writes 'engine', so load_world
+  declares a type for it"*.
+
+**Don't:**
+
+- **Don't fix the spelling at the reader when the door is one line away.** The
+  reader was `str(world["command"]).to_upper()` in `main.gd`, and 098's first
+  instinct — the one HANDOVER's entry had already argued out of — was to fix
+  that `str()`. It would have left `name`, `saved` and `metrics` untouched, and
+  the prompt would still have been fed `<null>`.
+- **Don't replace a check without counting the questions it answered.** The
+  check 098 replaced was `typeof(data.get("parameters")) != TYPE_DICTIONARY`,
+  which answers **two** questions at once: is `parameters` there, and is it a
+  dictionary. `data.get()` on a missing key returns `null`, so absence failed
+  it too. 098's first draft replaced it with a type check that fired only on a
+  field that was **present**, and a save file with no `parameters` key began to
+  load — into `main.gd:599`'s `world["parameters"]`, which reads **by index**.
+  Driven: `SCRIPT ERROR: Invalid access to property or key 'parameters' on a
+  base object of type 'Dictionary'`, `_load_world` abandoned mid-function, and
+  the status label left reading *"Status: No API key. Raw JSON only."* — the
+  class 030 and 036 closed, reintroduced by the commit about damage checking.
+  **A `.get()` with a default inside a condition is a presence check wearing a
+  type check's clothes.** Split them: `REQUIRED` for the fields a reader
+  indexes by name, `FIELD_TYPES` for every field's type when present.
+- **Don't let a new suite's section decide for itself which answer is right.**
+  Section 3 of `world_file_test` **passed on that regression**, because its
+  first version treated every field but `command` as optional — it guarded the
+  assumption that only `command` is indexed instead of checking which fields
+  are. It now takes the answer from `WorldStore.REQUIRED` and asserts both
+  directions and the split, measured: the presence check removed is
+  **212 assertions, failures=2**, naming `command` and `parameters`.
+- **Don't trust a new suite's own green.** Both silence-floors in
+  `world_file_test` were **measured silent before they were written**: the
+  collection in section 4 made to collect nothing gave 88 assertions,
+  **failures=0 — SILENT**, and the poison list emptied gave 28,
+  **failures=0 — SILENT**. That is 096's hole and 097's fix, found a third time
+  in the suite written to close a different fault. Both now fail by field name:
+  18 and 12 failures.
+- **Don't screen for a leaked value case-sensitively.** TRAPS 78 a fourth
+  time, attributed rather than assumed: with the old check restored, the
+  case-insensitive screen is **186 assertions, failures=42** and the
+  case-sensitive one is **186, failures=41**. The single assertion only the
+  case-insensitive screen catches is `'command'` as null — *"'`<NULL>`' is not
+  a command this game has"*, upper-cased on the way by `to_upper()`.
+
+**Nine deliberate breakages** against a control of **212** assertions,
+failures=0, each alone in its own copy with its own `config/name` and its own
+`--headless --import` (TRAPS 50, 80, 88). Seven fail by the name of the field
+or the thing they break; the weakest is `REQUIRED` made to be every field,
+which gives **216, failures=1** - the split assertion and not a field name,
+because when every field is required every removal is correctly refused and
+only the shape of the split is wrong. That asymmetry is recorded rather than
+rounded up: over-tightening is caught by one assertion, under-tightening by
+four.
+
+Found in 098, by taking HANDOVER's second live entry as of 097 and doing what
+it said to do first: **driving it** rather than reading it. The entry had the
+`command` row right and had done the reading behind it; driving it found the
+`name` row reaching the prompt, the `saved` row, and the `metrics` row, none
+of which a reading of `main.gd:584` would have reached.
+
+> Count the fields the door hands on. Then count the fields it checks.

@@ -13,7 +13,301 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **097**, which took **HANDOVER's SECOND
+- Last commit at the time of writing: **098**, which took **HANDOVER's SECOND
+  live "Next action" as of 097** - *`main.gd:584` reads a saved file's
+  `command` and quotes it* - did what that entry said to do first and
+  **DROVE it instead of reading it**, and found that the entry had **one of the
+  four fields the fault reaches**. New TRAPS **95**. One new file,
+  `tests/world_file_test.gd` (**212** assertions), and
+  `scripts/world_store.gd` is the only `scripts/` change. No new "Human
+  decision needed". **The owner's question is STILL the first live entry and
+  098 did not touch it either**, for the reason that entry gives: he is
+  absent, and it says LEAVE IT.
+
+  **THE BASELINE AGREED WITH THE RECORD BEFORE ANYTHING WAS TOUCHED.** The
+  `--all` run in this container, on a clean tree at `6198a2e` with
+  `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 097
+  recorded**: `bd55be050366e233831b48cb281eaa4c`, 75 suites, 0 with something
+  to look at. The container was fresh, so `user://` was empty rather than
+  cleared. `ls tests/*.gd` returned **77** and the run reported **75**,
+  re-counted rather than remembered.
+
+  **WHAT THE ENTRY SAID, AND WHAT DRIVING IT FOUND.** The entry had the
+  reading right and said so: `save_world()` cannot write a bad `command`
+  because its parameter is typed `String`, `load_world()` checks only
+  `data.has("command")` and not its type, so a hand-edited file reaches
+  `main.gd:584`. It then said *"the honest fix is in `load_world`'s damage
+  check and not in `main.gd`'s spelling"*, and *"Drive it first"*. **Driven,
+  through the real `main.gd`, with files hand-written into `user://`:**
+
+  | the hand-edited field | what Genesis did with it |
+  |---|---|
+  | `"command": null` | *"'`<NULL>`' is not a command this game has. The saved world cannot be built."* — the row the entry had |
+  | `"command": 7` | *"'`7.0`' is not a command this game has."* — a JSON integer in GDScript's float spelling |
+  | `"command": []` | *"'`[]`' is not a command this game has."* |
+  | `"name": null` | ledger record `request` **`"load <null>"`**, and then *The player asked for: "load `<null>`"* **IN THE PROMPT** |
+  | `"name": 12` | *"load 12.0"*, and the same prompt line |
+  | `"saved": null` | the record's own `source` carried `"saved": null` |
+  | `"metrics": null` | **the load check was SKIPPED IN SILENCE** |
+
+  **THE TWO ROWS THAT MATTER MOST ARE THE TWO A READING OF `main.gd:584`
+  COULD NOT HAVE REACHED.** The `name` row **leaves the engine**:
+  `pending_request` becomes `"load <null>"`, that becomes
+  `controller.last_build["request"]`, and `main.gd:201` hands `last_build` to
+  `interpreter.interpret()` on the player's next sentence, so
+  `ai_interpreter.gd:303` puts six characters of GDScript debug output into
+  what Genesis tells the model the player asked for. **Driven and printed,
+  not traced on paper.** And the `metrics` row is not a wording fault at all:
+  loading is the only build whose right answer was written down in advance,
+  and a `metrics` of the wrong type made `main.gd:614`'s
+  `typeof(recorded) == TYPE_DICTIONARY` guard skip the comparison **and say
+  nothing about having skipped it**. Side by side, driven: with
+  `"metrics": {}` the player reads *"Built it, but cannot tell whether it came
+  back the same: nothing was measured when this was saved"*; with
+  `"metrics": null` the player reads the ordinary built sentence and the load
+  check never happened. That is PROTOCOL section 2's *missing evidence must
+  not become success* at the one door built to prevent it.
+
+  **WHAT CHANGED. ONE DOOR, IN ONE FILE.** `load_world()` validated **three
+  things over six fields**. It now asks **two** questions, which the check it
+  replaced had rolled into one and which 098 then got wrong in its first
+  draft (see below):
+  `WorldStore.missing_fields()` names any field in `REQUIRED` the file has not
+  got - `command` and `parameters`, the two a reader indexes by name - and
+  `WorldStore.damaged_fields()` names any field which is **PRESENT** and not
+  the type `save_world()` writes. Both return **names** rather than a bool, so
+  a suite can say which field it is. The sentence a player reads is **the one
+  that already existed** - *"The file for '%s' is damaged."* - unchanged,
+  because a non-string `command` is the same fault as an absent one and that
+  is the sentence for it. Nothing in `scripts/` was touched but that one file:
+  `git diff --stat` names `scripts/world_store.gd` and two files in `docs/`,
+  and nothing else.
+
+  **AND `main.gd` WAS DELIBERATELY NOT CHANGED, WHICH IS THE OPPOSITE OF
+  WHAT 095 AND 097 DID AT THEIR SITES, SO THE REASON IS WRITTEN DOWN.** Those
+  commits changed readers that were *"right only by the grace of the door in
+  front of them"* (TRAPS 11). `main.gd`'s `str(world["command"])` and
+  `str(world.get("name", name))` are now in exactly that position, and
+  removing the `str()` would turn a quiet bad sentence into a **type error
+  mid-function**, which abandons `_load_world` and is the class 030 and 036
+  closed at five doors. So they stay as defence in depth. `main.gd` is **0
+  lines of diff**, and this is said plainly because a later session reading
+  TRAPS 11 would otherwise think 098 missed them.
+
+  **AND IT CLOSES THE REMAINING HALF OF 095'S THIRD LIVE ENTRY**, which 097
+  struck half of and said should be done together with this one, in the same
+  function: `main.gd`'s two `get("name", name)` reads. A `name` that is
+  present and null no longer reaches them, because the file is refused at the
+  door; an **absent** `name` still falls back to the typed `name` argument as
+  before. Both halves are now answered.
+
+  **THE TEST ASSERTS THE CAPABILITY AND NOT THE WORDING (TRAPS 6, TRAPS 14).**
+  `tests/world_file_test.gd` nowhere asserts that a sentence reads a
+  particular way. Section 2 asks only whether the refusal **says the file is
+  damaged**, lower-cased, so rewording it is not a failure. Section 4 drives
+  the real `/load` path and asks of every sentence a player meets and every
+  field of the record written: **does any of it carry the engine's spelling of
+  a value**, screened through `Readback.ENGINE_NOTHING`
+  **case-insensitively**. And **no expected count appears in the file**: the
+  fields under test are read back off a file `save_world()` really wrote, so a
+  seventh field arrives in the class by being written and fails by its own
+  name (TRAPS 82).
+
+  **TWO SILENCE-FLOORS IN 098'S OWN SUITE WERE MEASURED SILENT BEFORE THEY
+  WERE WRITTEN.** This is 096's hole and 097's fix, found a third time in the
+  suite written to close a different fault:
+
+  | the suite's own machinery, broken | before the floor | after it |
+  |---|---|---|
+  | section 4's collection made to collect nothing | **88 assertions, failures=0 - SILENT** | **152, failures=18**, by field |
+  | the poison list emptied, so only good files are driven | **28 assertions, failures=0 - SILENT** | **56, failures=12**, by field |
+
+  **The two columns are not the same suite and that is said rather than
+  glossed:** the SILENT readings were taken on the suite as it stood when the
+  floors did not exist (control **148**), and the right-hand column on the
+  settled one (control **212**). What is being compared is **failures**, 0 against 18 and
+  0 against 12, and the assertion counts are given so nobody reads them as one
+  run.
+
+  Neither floor is a count of the collection, which is the shape a lost field
+  falls inside (TRAPS 85). Each asks, **of each field**, whether that field
+  was driven and whether anything was screened for it, so a field that stops
+  being driven fails by its own name.
+
+  **AND 098 BROKE SOMETHING ITSELF, WHICH ITS OWN SUITE THEN BLESSED. THIS IS
+  THE MOST USEFUL THING IN THE COMMIT AND IS NOT TIDIED AWAY.** The check
+  098 replaced was
+  `typeof(data.get("parameters")) != TYPE_DICTIONARY`, which refuses an
+  **ABSENT** `parameters` as well as a wrong-typed one, because
+  `data.get("parameters")` on a missing key is `null`. 098's first draft
+  replaced it with a type check that fired **only on a field that was
+  PRESENT**. So a save file with no `parameters` key began to **load**, and
+  `main.gd:599` reads `world["parameters"]` **by index**. Driven, in a copy
+  with the first draft in place:
+
+  > `SCRIPT ERROR: Invalid access to property or key 'parameters' on a base
+  > object of type 'Dictionary'.`
+
+  — and `_load_world` was abandoned mid-function, leaving the status label
+  reading *"Status: No API key. Raw JSON only."*, which says nothing about
+  the load at all. **That is the class 030 and 036 closed at five doors**,
+  reintroduced by the commit whose subject is damage checking. The same probe
+  against the settled code prints
+  *"The file for 'crashprobe' is damaged."* and survives.
+
+  **AND SECTION 3 OF `world_file_test` PASSED ON IT**, because its first
+  version treated every field but `command` as optional — it guarded the
+  assumption that only `command` is indexed rather than checking which fields
+  are. **TRAPS 6 in the suite written in the same hour as the fault.**
+  No count is put on how often this repository has done that, because the
+  first draft of this sentence said *"the eighth time"* and there is no
+  reading behind that number. The fix is `WorldStore.REQUIRED`, derived from the two reads that
+  index by name (`main.gd:585` `world["command"]`, `:599` and `:608`
+  `world["parameters"]`) rather than from a name typed into a test, and
+  section 3 now asserts **both** directions and the split itself.
+
+  **MEASURED, EACH FAULT ALONE**, in its own copy with its own `config/name`
+  and its own `--headless --import` (TRAPS 50, 80, 88), `scripts/` and
+  `tests/` taken from the working tree for each. Control **212** assertions,
+  failures=0. **NINE deliberate breakages:**
+
+  | broken | result |
+  |---|---|
+  | the old three-thing damage check restored | **226, failures=41** |
+  | **the presence check removed — 098's own regression** | **212, failures=2**, naming `command` and `parameters` |
+  | `REQUIRED` made to be every field | **216, failures=1** |
+  | `"name"` dropped from `FIELD_TYPES` | **214, failures=15**, the first naming `name` |
+  | `save_world()` given a seventh field, `"engine"` | **248, failures=10**, the first naming `engine` |
+  | `damaged_fields()` made to treat ABSENCE as damage | **212, failures=4**, naming each optional field |
+  | the old check restored **and the screen narrowed** to case-sensitive | **226, failures=40** |
+  | section 4's collection made to collect nothing | **152, failures=18**, by field |
+  | the poison list emptied | **56, failures=12**, by field |
+
+  **THE WEAKEST ROW IS SAID RATHER THAN ROUNDED UP.** `REQUIRED` made to be
+  every field gives **one** failure, and it is the split assertion
+  (*"at least one field is optional"*) rather than a failure naming a field —
+  because when every field is required, every removal is correctly refused and
+  only the shape of the split is wrong. The opposite direction, the row above
+  it, fails by name. So over-tightening is caught by one assertion and
+  under-tightening by four; that asymmetry is real and is not claimed away.
+
+  **AND THE CASE-SENSITIVE SCREEN IS ATTRIBUTED RATHER THAN ASSUMED.** 41
+  against 40 is **one** assertion, and the FAIL lines of both runs were
+  diffed - with the record ids normalised, because they differ per run and
+  would otherwise fake a difference - to name it rather than infer it from the
+  subtraction: it is `'command'` as null,
+  *"'`<NULL>`' is not a command this game has"*, **upper-cased on the way by
+  `to_upper()`**. TRAPS 78 a fourth time.
+
+  **TWO PREDICTIONS WERE WRITTEN DOWN BEFORE THE TWO FULL RUNS AND BOTH HELD
+  EXACTLY (TRAPS 89).** The first said **two lines move and nothing else** -
+  `world_file_test` **(new) 202, failures=0** and `result_line_test`
+  **330 -> 334** - and named **eighteen** suites, with a reason each, that
+  would not move (nineteen rows, one of which is not a suite name); the diff against the baseline was those two lines, and the one
+  thing it flagged as least certain, `result_line_test`'s **+4** taken from
+  095's record rather than re-derived, held. **THAT RUN IS RECORDED AND NOT
+  COUNTED**, because the regression above was found after it and the tree
+  moved: md5 `b15629ef37e9d1561cc763ba9f9d60db`, 76 suites, 0 with something
+  to look at. A run on a tree that is not the committed one is a measurement
+  of something else (094 and 097 each threw one away). The second prediction
+  was written before the counted runs and said **one line moves**:
+  `world_file_test` **202 -> 212**, `result_line_test` unchanged at 334, and
+  nothing else. It held.
+
+  **TRAPS 4: THE NEW SUITE RUNS UNDER NEITHER RUNNER'S TIMED LIST, SO IT WAS
+  RUN AT THREE FRAME RATES.** `world_file_test` matches **none** of
+  `run_tests.bat`'s patterns (lines 34, 38, 42), read rather than assumed, and
+  it was deliberately **not** added to `run_tests.sh`'s `TIMED` list: with no
+  `--fixed-fps`, with `--fixed-fps 120` and with `--fixed-fps 30` it is
+  **212, failures=0** all three times. **So neither runner needed changing and
+  neither was touched.** The check was taken twice - once at 202, before
+  section 3 was corrected, and again on the settled tree - rather than carried
+  forward from the first reading.
+
+  **AND IT SORTS LAST IN `tests/`, WHICH WAS CHECKED RATHER THAN HOPED FOR.**
+  It appends records to the shared `user://` ledger through the real
+  `_record`, exactly as `drive_test`'s `/load` already does. `ls tests/*.gd |
+  sort` puts `world_file_test` **last**, and **no suite that runs after it
+  reads the ledger** - grepped for `TrackLog.PATH`, which returned nothing for
+  every name after it.
+
+  **VERIFIED:**
+  The baseline agreed byte-for-byte with 097's recorded md5 before anything
+  was touched. The **nine** injections above, each alone in its own copy.
+  **Both** predictions, each written before its run, and both held exactly. **THREE byte-identical
+  full `--all` runs on the settled complete tree, code and docs together**,
+  md5 `c9cd5640f314d386e0c38d92cd3a60e2`, 76 suites, 0 with something to look
+  at, `user://` cleared before each. The md5 is written into this file
+  **after** the runs it describes, for the reason 093 through 097 all gave.
+  **No suite in `tests/` reads `docs/` at all** - eight mentions, every one a
+  comment line, and nothing names `res://docs`, grepped this session rather
+  than taken from a commit message. **AND A FOURTH RUN WAS TAKEN AFTER THE
+  DOCS WERE CORRECTED, AND IS NOT COUNTED**: it came back with the SAME md5,
+  which is what a docs-only difference should do, and is recorded because it
+  was checked rather than assumed.
+
+  **NOT DONE AND NOT VERIFIED:**
+  **THE OWNER'S QUESTION IS UNTOUCHED AND IS STILL THE FIRST LIVE ENTRY.**
+  098 added no door to it: the damaged-file sentence names neither the value
+  nor the field.
+  **THE SAME CLASS IS LIVE IN THE LEDGER'S READERS AND WAS NOT FIXED.** Read,
+  not guessed: `scripts/` has **two** doors that read a file this game wrote
+  and hand its contents on - `WorldStore.load_world()` and
+  `TrackLog.read_session()`, which is the whole class by grep of
+  `JSON.parse_string` and `FileAccess.open(..., READ)`. The second **does**
+  type-check both things it reads at the door. But `session_report.gd`, which
+  consumes those records, has **unguarded type assumptions over them**:
+  `var reasons: Array = r.get("reasons", [])` at `:120` and `:123` and
+  `(r.get("steps", []) as Array)` at `:328` would **throw** on a record whose
+  field is a string, and a throw mid-function is the class 030 and 036 closed.
+  Reachable only by hand-editing the ledger, which is the same reachability as
+  this commit's fault. **Counted and not fixed**, under "Next action".
+  **THE `metrics` ROW'S SECOND HALF IS NOT DONE.** 098 made a wrong-typed
+  `metrics` refuse the file. It did **not** ask whether the load check can be
+  skipped silently for any OTHER reason - `main.gd:614` also requires
+  `not built.is_empty()` and a matching command, and neither has a sentence
+  when it fails. Under "Next action".
+  **NO LIVE PATH WAS DRIVEN.** No model was asked anything, no request left
+  the container, there is no API key here, no browser ran, no web export was
+  made, `interpret.js` was not executed. The prompt line above was produced by
+  calling `_with_world()` directly on the dictionary `main.gd` had just built.
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is **2026-10-16**, checked by grep over every
+  `2026-10-*` date in it before this was started, not assumed.
+  **064'S FINDING IS CARRIED FORWARD AND NOT RE-VERIFIED**; the live site's
+  commit cannot be read from this container.
+
+  **NOTHING IN `scenes/`, `netlify/`, `.github/`, EITHER RUNNER,
+  `project.godot` OR `export_presets.web.cfg` WAS TOUCHED** -
+  `git status --porcelain` named `scripts/world_store.gd`,
+  `tests/world_file_test.gd` (with its `.uid`) and two files in `docs/`, and
+  nothing else. `ai_interpreter.gd` is **0 lines** of diff, so
+  `PROMPT_FINGERPRINT` and `PROMPT_VERSION` cannot have moved, and
+  `prompt_bounds_test` asserts that as a sha256 rather than as my reading.
+  Everything being committed was grepped for `AIza`, `api key`, `secret`,
+  `token`, `bearer`, `GEMINI`, `netlify` and `export_presets`. **The number
+  that carries weight is the one over `scripts/` and `tests/`, and it is
+  ZERO** - `git diff -- scripts/` and the whole of
+  `tests/world_file_test.gd`, grepped together. The hits in `docs/` are these
+  two documents' own prose: the paragraphs that describe this grep and the
+  "no live path was driven" one, plus three places where they quote Genesis's
+  own status label, *"Status: No API key. Raw JSON only."*, which is the
+  sentence the regression probe left on screen. **No total over the whole
+  diff is given, because this sentence is inside the thing being grepped and
+  any total it stated would be wrong the moment it was written** - which is a
+  smaller version of what 097 recorded its own first draft getting wrong. Every injection was
+  made in a throwaway copy under the scratch directory, never in the
+  repository.
+
+  **AND WHAT A PLAYER MEETS DID CHANGE, WHICH IS THE POINT AND IS SAID
+  PLAINLY.** A hand-edited save file whose `command`, `name`, `saved`,
+  `request`, `parameters` or `metrics` is not the type Genesis writes is now
+  refused with *"The file for 'x' is damaged."* instead of being built from.
+  A player who has never edited a save file sees **no change at all**: every
+  file `save_world()` writes still loads, and a file that merely LACKS one of
+  the five optional fields still loads, both asserted rather than assumed.
+
+- Before 098: **097**, which took **HANDOVER's SECOND
   live "Next action"** - *the sweep is as wide as its fixtures, and two files
   are outside it altogether* - and found that **the reason that entry gave for
   why they are outside it was false, and a suite in this repository had been
@@ -5080,11 +5374,44 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-**77** files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **75 suites**, counted with `ls tests/*.gd` rather than
+**78** files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **76 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
-broken. `--all` adds the two slow racing suites, which are counted in the 75
+broken. `--all` adds the two slow racing suites, which are counted in the 76
 and are skipped without it.
+**098 ADDED ONE FILE** — `tests/world_file_test.gd`, which is why the two
+numbers above moved from 77 and 75. Its baseline on the clean tree at
+`6198a2e`, `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 097
+recorded**: `bd55be050366e233831b48cb281eaa4c`, 75 suites, 0 with something to
+look at. The container was fresh, so `user://` was empty rather than cleared.
+After the change, **THREE byte-identical full `--all` runs on the settled
+complete tree, code and docs together**, md5
+`c9cd5640f314d386e0c38d92cd3a60e2`, 76 suites, 0 with something to look at,
+`user://` cleared before each, plus an uncounted fourth after the docs were
+corrected which came back with the same md5. **The md5 is written into this file AFTER the runs**,
+for the reason 093 through 097 all gave. No suite in `tests/` reads `docs/` at
+all. The diff against the baseline is the **two lines predicted in writing
+before the run, and the prediction held exactly**: `world_file_test`
+**(new) 212 assertions, failures=0** and `result_line_test` **330 -> 334**,
+and nothing else moved. **Two predictions were written and both held**: the
+first before a run taken at 202 assertions, which is recorded and NOT counted
+because 098 found a regression of its own afterwards and the tree moved
+(md5 `b15629ef37e9d1561cc763ba9f9d60db`); the second before the counted runs,
+saying one line moves, `world_file_test` **202 -> 212**. The first prediction
+also named **eighteen** suites, with a reason each, that it said would NOT
+move.
+**AND THE NEW SUITE IS IN NEITHER RUNNER'S FIXED-FPS LIST, ON PURPOSE.**
+`world_file_test` matches **none** of `run_tests.bat`'s three name patterns
+(lines 34, 38, 42), read rather than assumed, and it was not added to
+`run_tests.sh`'s `TIMED`. Run alone with no `--fixed-fps`, with
+`--fixed-fps 120` and with `--fixed-fps 30` it is **212, failures=0** all
+three times on the settled tree, re-taken at 212 rather than left at the 202
+the first check was taken at (TRAPS 4). **So neither runner needed changing and neither was
+touched.** It sorts **last** in `tests/`, and no suite that runs after it
+reads the ledger it appends to — grepped for `TrackLog.PATH` over every name
+after it, which returned nothing. It costs **1-2 s**, timed with `date` either
+side across two runs (2 s and 1 s), which is well inside `run_tests.sh`'s
+600-second per-suite `timeout`.
 **097 ADDED NO FILE** and re-ran the `ls` anyway: **77** and **75**, which is
 what the two numbers above say. Its baseline on the clean tree at `9234c43`,
 `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 096
@@ -11473,6 +11800,94 @@ work below. **And do not re-take 097's eleven injections** — they are in the
 097 entry with their counts, each was measured alone in its own copy, and the
 property they attribute is `controller_reach_test`'s sweep and
 `says_nothing_test` group (f) rather than a table in a document.
+
+**NOTHING IS OWED FROM 098 EITHER.** Its baseline was byte-identical to the
+md5 097 recorded, it wrote its predicted diff down before running and **the
+prediction held exactly**, and it took three byte-identical `--all` runs — the
+last two on the complete tree with `docs/` in place — which is why there is no
+098a. **Do not start by re-running on 098's behalf**; take your own baseline so
+you learn the record and the container still agree, and spend the time on the
+work below. **And do not re-take 098's seven injections** — they are in the
+098 entry with their counts, each was measured alone in its own copy, and the
+property they attribute is `tests/world_file_test.gd` rather than a table in a
+document.
+
+**~~THE SECOND LIVE ENTRY AS OF 097: `main.gd:584` READS A SAVED FILE'S
+`command` AND QUOTES IT.~~ DONE IN 098, AND THE ENTRY HAD ONE OF FOUR ROWS.**
+The entry's reading was right and its prescription — *the fix is in
+`load_world`'s damage check* — was right, and its instruction *"Drive it
+first"* was the part that paid: driving it found that `load_world` validated
+**three things over six fields**, so `name` reached the LEDGER AND THE PROMPT
+as `"load <null>"`, `saved` reached the record, and a wrong-typed `metrics`
+**skipped the load check in silence**. See the 098 entry and TRAPS 95. Struck
+rather than deleted, because the record of a reading that was right and
+incomplete is the useful part.
+
+**~~095'S THIRD LIVE ENTRY: `main.gd`'s TWO `get("name", name)` READS.~~ ALSO
+DONE IN 098**, which is what 097 said should happen — *"the same reachability
+as 097's second live entry above, in the same function, and the two should be
+done together"*. A present-and-null `name` no longer reaches either read,
+because the file is refused at the door; an **absent** `name` still falls back
+to the typed argument, asserted in `world_file_test` section 3 rather than
+assumed.
+
+**THE FIRST LIVE ENTRY AS OF 098, SMALL, READ RATHER THAN GUESSED AT, AND NOT
+FIXED: `session_report.gd` ASSUMES THE TYPE OF THREE LEDGER FIELDS AND WOULD
+THROW.** This is 098's own class asked one layer out, and the reading is done.
+`scripts/` has exactly **two** doors that read a file this game wrote and hand
+its contents on, which is the whole class by grep of `JSON.parse_string` and
+`FileAccess.open(..., READ)`: `WorldStore.load_world()`, which 098 fixed, and
+`TrackLog.read_session()`, which **already type-checks both things it reads**
+(`typeof(record) != TYPE_DICTIONARY` skips the line, `typeof(tag) ==
+TYPE_DICTIONARY` guards the session tag). So the door is sound and the
+**consumer** is not. `session_report.gd` reads those records **24** times
+through `.get()` with a default - of **29** `.get()` calls in the file, the
+other five being on its own summary dictionary and not on a record - and
+**three of the 24 assign the result to a typed `Array` without checking its
+type**:
+
+  | site | read | what a wrong type does |
+  |---|---|---|
+  | `session_report.gd:120` | `var reasons: Array = r.get("reasons", [])` | **throws** on a string |
+  | `session_report.gd:123` | `var why: Array = r.get("reasons", [])` | **throws** on a string |
+  | `session_report.gd:328` | `(r.get("steps", []) as Array)` | **throws** on a string |
+
+**A throw mid-function is the class 030 and 036 closed at five doors**, each
+time after it had cost a record that existed and said nothing — so the
+question per site is not *"does a player read a hole"* but *"what is abandoned
+when it throws"*. **The reachability is the same as 098's fault and should be
+said plainly: only a hand-edited ledger.** Genesis writes every one of those
+fields itself. That is why 098 named these and did not change them — it is a
+second commit's worth of work with its own measurement.
+**Six suites name `SessionReport`** - `agreement_test`, `counted_said_test`,
+`range_test`, `report_test`, `session_test`, `silence_test` - and **none of
+them writes a ledger record whose `reasons` or `steps` is a string**, grepped
+rather than assumed. (`controller_reach_test:729` sends `"steps": "x"` as a
+REQUEST parameter, which the schema refuses; that is a different field in a
+different dictionary and is **not** cover for `session_report:328`.) So the
+three sites are unheld, which is a statement about the suites and not about
+how hard they would be to hold. **The honest first step is the one 098 took here**: drive it. Write a
+ledger line by hand with `"reasons": "a string"` and ask what the session
+report does, before deciding whether the fix belongs at the three sites or at
+`read_session()`'s door.
+
+**THE SECOND LIVE ENTRY AS OF 098, AND IT IS THE HALF OF 098'S OWN `metrics`
+ROW IT DID NOT FINISH: THE LOAD CHECK HAS THREE WAYS TO BE SKIPPED AND 098
+CLOSED ONE.** `main.gd:614` runs the comparison only if
+`typeof(recorded) == TYPE_DICTIONARY` **and** `not built.is_empty()` **and**
+`str(built.get("command", "")).to_upper() == command`. 098 made the first
+condition unreachable by refusing the file at the door. **The other two have
+no sentence when they fail**, and loading is the only build whose right answer
+was written down in advance — so a load that built something and compared
+nothing tells the player the ordinary built sentence, which is the exact shape
+098 found for `metrics` and called *missing evidence becoming success*.
+**Not measured and this entry does not guess:** whether either condition is
+reachable by a legal `/load` at all is unread. `built.is_empty()` after a
+successful `execute()` and a command mismatch between the file and what was
+just built are both **plausible and unproven**, and the first question is
+which of the two a real `/load` can produce. `world_file_test` stands
+`main.gd` up and already drives `/load`, so this is an addition to a suite
+that exists and not a new file.
 
 **THE FIRST LIVE ENTRY AS OF 097, AND IT IS STILL THE OWNER'S QUESTION, NOW
 WITH A THIRTEENTH DOOR ON IT. 097 DID NOT TOUCH IT EITHER, FOR THE REASON THE
