@@ -13,7 +13,224 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **098**, which took **HANDOVER's SECOND
+- Last commit at the time of writing: **099**, which took **HANDOVER's FIRST
+  live "Next action" as of 098** - *`session_report.gd` assumes the type of
+  three ledger fields and would throw* - and did what that entry said to do
+  first: **DROVE it rather than read it**. The entry's arithmetic was right,
+  **its class was three of five, and the consequence it predicted was not the
+  one that happens**. New TRAPS **96** and **97**. One new file,
+  `tests/record_type_test.gd` (**388** assertions), and
+  `scripts/session_report.gd` is the only `scripts/` change. No new "Human
+  decision needed". **The owner's question is STILL the first live entry and
+  099 did not touch it either**, for the reason that entry gives: he is
+  absent, and it says LEAVE IT.
+
+  **THE BASELINE AGREED WITH THE RECORD BEFORE ANYTHING WAS TOUCHED.** The
+  `--all` run in this container, on a clean tree at `3973e41` with
+  `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 098
+  recorded**: `c9cd5640f314d386e0c38d92cd3a60e2`, 76 suites, 0 with something
+  to look at. The container was fresh, so `user://` was empty rather than
+  cleared. `ls tests/*.gd` returned **78** and the run reported **76**,
+  re-counted rather than remembered.
+
+  **WHAT THE ENTRY SAID, AND WHAT DRIVING IT FOUND.** The entry said
+  `TrackLog.read_session()` is sound - it type-checks both things it reads -
+  and that the **consumer** is not: `session_report.gd` reads ledger records
+  **24** times, and **three** of those assign the result to a typed `Array`
+  without checking its type (`:120`, `:123`, `:328`). That count is **true**.
+  It is also **the boundary of one GDScript construct rather than of the
+  fault**. Driven, through the real door, one field forced to a wrong type at
+  a time:
+
+  | the read | the types that broke it |
+  |---|---|
+  | `int(r.get("player_place", 0))` | Array, Dictionary, null - **not** String |
+  | `bool(r.get("revision_pending", false))` | String, Array, Dictionary, null - **every** non-numeric type |
+  | `var reasons: Array = r.get("reasons", [])` | String, Dictionary, number, null |
+  | `var why: Array = r.get("reasons", [])` | the same four |
+  | `(r.get("steps", []) as Array)` | the same four |
+
+  **FIVE, NOT THREE.** The two the entry missed are the two that are not a
+  typed assignment, and `bool()` has no constructor for a `String` - which is
+  the commonest thing a hand edit leaves behind.
+
+  **AND THE ENTRY'S TWO COUNTS DID NOT SURVIVE A RE-COUNT EITHER.** It said
+  **24** record reads of **29** `.get()` calls, *"the other five being on its
+  own summary dictionary"*. Counted on `3973e41` over the code with comments
+  blanked: **33** `.get()` calls — **28** `r.get(`, **2** `evidence.get(` on
+  an `understanding` record, **1** `raw.get(` on the JSON parsed out of a
+  record's `raw_command`, and **2**, not five, on its own summary. So it is
+  **31 reads of ledger data of 33**, not 24 of 29. Those three extra ledger
+  reads are all `str()`-wrapped, which is why the class is still five and not
+  eight — the figures were simply never re-counted. TRAPS 14 in its smallest
+  form, and this file has carried two others.
+
+  **AND THE CONSEQUENCE IS NOT A THROW. IT IS WORSE, BECAUSE A THROW IS
+  VISIBLE.** A GDScript error of this kind does not kill the process: it
+  **abandons the function**. Driven through the real `/session end`, through
+  the scene the game launches, with `"reasons": "a string"` in one record:
+
+  - `summarise()` abandoned and returned `{}`.
+  - `main.gd` merged that `{}` into the `session_summary` record and wrote it:
+    **four keys and no numbers at all**, against **twenty-three** for the same
+    session undamaged.
+  - `describe()` was handed the `{}` and abandoned on its **own first line**,
+    returning `""`.
+  - the history panel got the request line and **a blank**. The status label
+    read *"Session 'probe' ended. Results in the history panel."* The request
+    was recorded as **`"ok"`**.
+
+  One wrong byte turned a whole testing session into an empty report that said
+  it had succeeded - PROTOCOL section 2's *missing evidence must not become
+  success*, at the one artefact a testing session exists to produce. New
+  TRAPS **96**.
+
+  **WHAT CHANGED. ONE TABLE AND ONE READER, IN ONE FILE.** Every one of those
+  five reads already names what to do with an **absent** field. A field of a
+  type this game does not write is the same thing to a reader that cannot use
+  it, so it is read as that default. `FIELD_TYPES` names the types
+  `save`/`append` writes for the four fields, `SessionReport._field()` is the
+  one reader all five reads now go through, and `damaged_fields()` names any
+  field of a record which is **PRESENT** and not one of those types. Both ask
+  **the same table**, so a field the report falls back on is exactly a field
+  the report counts - and the five reads cannot be held at four of five
+  (TRAPS 11).
+
+  **AND THE FALLBACK IS NOT THE WHOLE FIX, WHICH IS THE PART WORTH ARGUING
+  WITH.** Reading damage as absence *silently* would trade a loud empty report
+  for a quietly wrong one: a damaged `revision_pending` makes a correction
+  count as a request, and a damaged `steps` loses a world a PLAN built. So the
+  summary carries `"damaged": {records, read, fields}` and `describe()` says
+  it, naming the fields, with the denominator. **A session whose ledger nobody
+  edited reads EXACTLY as it did before** - the line is written only when the
+  count is not zero, which is why not one of the six suites that name
+  `SessionReport` moved.
+
+  **AND THE QUIETEST OF THE FIVE IS NAMED, BECAUSE A SOURCE SCAN IS THE ONLY
+  BEHAVIOURAL READER IT HAS.** `(r.get("steps", []) as Array)` is inside
+  `_builds_a_world()`, so the error abandons **that helper**, which returns
+  `false`. The summary survives whole and a PLAN that built a world simply
+  stops counting as one. Driven on a copy with that one read reverted:
+  *Worlds built: 1* where the control says 2, no empty report, and **8
+  `SCRIPT ERROR` lines** where the control has **0**. `run_tests.sh` greps for
+  that and reports it **instead of** the result line, so the floor for this
+  row is section 1's two source assertions **plus the runner's own error
+  channel**, and that is said rather than rounded up.
+
+  **THE CLASS WAS CLOSED BY GREP AND NOT BY READING.** `scripts/` has exactly
+  **one** consumer of the ledger - `grep` for `read_session` and `TrackLog.PATH`
+  over `scripts/` names `main.gd:545` and nothing else - so the class is this
+  one file. And `experiment_runner.gd:114` carries the **same broken shape**,
+  `bool(record.get("revision_pending", false))`, and is **deliberately not
+  changed**: its `record` is a `track_measured` signal payload built in-process
+  by `game_controller.gd:1207`, which writes the field as a literal `true`.
+  A type guaranteed by its writer in the same process is not a file a player
+  can edit. Said plainly because a later session reading TRAPS 11 would
+  otherwise think 099 missed it.
+
+  **THE TEST ASSERTS THE CAPABILITY AND NOT THE WORDING (TRAPS 6, TRAPS 14).**
+  `tests/record_type_test.gd` nowhere asserts that a line reads a particular
+  way. The assertion that fails on every row of the table before 099 is **the
+  summary still carries the same key set it carries for an undamaged
+  session** - a crash assertion would have passed, because nothing crashed.
+  Section 2 derives which types are wrong for which field **from the table
+  itself**, both directions, over every value a JSON file can hold; section 3
+  asserts that a type the table **admits** is still USED, which is the half a
+  "did it survive" assertion cannot see; and section 1 reads the source and
+  asserts the set of fields read through `_field()` is **exactly** the keys of
+  `FIELD_TYPES`, so a sixth read fails **by its own name** (TRAPS 82).
+
+  **SIXTEEN DELIBERATE BREAKAGES, each alone in its own copy with its own
+  `config/name`, its own cleared `user://` and its own `--headless --import`
+  (TRAPS 50, 80, 88). Control 388, failures=0, and 0 `SCRIPT ERROR` lines:**
+
+  | the fault injected | assertions | failures |
+  |---|---|---|
+  | `player_place` read reverted | 353 | 9 |
+  | `revision_pending` read reverted | 346 | 11 |
+  | `reasons` read at `:120` reverted | 331 | 15 |
+  | `reasons` read at `:123` reverted | 387 | 7 |
+  | `steps` read reverted | 388 | **2** (+ 8 `SCRIPT ERROR`) |
+  | all five reverted | 254 | 35 |
+  | `"reasons"` row dropped from the table | 21 | 6 (+ 9 `SCRIPT ERROR`) |
+  | a row added that nothing reads | 390 | **2** |
+  | `_field()` made to always fall back | 388 | 5 |
+  | `_field()` made to never fall back | 254 | 27 |
+  | `damaged_fields()` made to return `[]` | 388 | 137 |
+  | the two `describe()` lines deleted | 388 | 40 |
+  | `SAMPLES` emptied (the suite's own) | 44 | 11 |
+  | `_session()` emptied (the suite's own) | 40 | 11 |
+  | `_carrier()` blinded (the suite's own) | 40 | 9 |
+  | the suite's hand-written ids put back | 388 | **0 on a fresh `user://`**, 1 on the second run |
+
+  **THE WEAKEST ROWS ARE SAID RATHER THAN ROUNDED UP.** Two rows give **two**
+  failures, both from section 1's source scan: the `steps` read, for the reason
+  above, and a table row nothing reads. And **the last row is the weakest
+  floor in the suite and is the one worth distrusting**: it is **silent** on a
+  fresh `user://`, because the duplicate it guards does not exist until the
+  second run in one container.
+
+  **AND 099 BROKE SOMETHING IN THE SHARED LEDGER AND ANOTHER SUITE CAUGHT IT,
+  WHICH IS THE SECOND MOST USEFUL THING IN THE COMMIT.** The first draft of
+  `record_type_test` appended its hand-written session with the ids it names
+  its own records by, `"r1".."r4"`. `TrackLog.append()` mints an id **only for
+  a record that has not got one**, so those went into `user://` verbatim. The
+  first full run was clean; the **SECOND full run in the same container, with
+  `user://` not cleared, gave `record_id_test` failures=0 -> failures=2** -
+  duplicate ids, and ids naming no writer, both invariants TRAPS 059 exists
+  for. **The cause was attributed rather than guessed at:** the same two runs
+  of the tree *without* this suite stayed at failures=0 both times. The suite
+  now erases the id and lets `TrackLog` mint it, remaps `about` to the id
+  actually minted, builds its session id from `TrackLog.next_id()` rather than
+  from a clock - a second draft fault, two runs inside one second sharing a
+  session id - and asserts that every id it wrote appears exactly once. New
+  TRAPS **97**.
+
+  **NOT DONE AND NOT VERIFIED, SAID BEFORE THE GOOD NEWS.**
+  **THE OWNER'S QUESTION IS UNTOUCHED AND IS STILL THE FIRST LIVE ENTRY.**
+  **098'S SECOND LIVE ENTRY IS UNTOUCHED** - `main.gd:614`'s load check has
+  three ways to be skipped, 098 closed one, and whether a legal `/load` can
+  reach the other two is still **UNREAD**. 099 did not guess at it either.
+  **094'S SECOND LIVE ENTRY AND THE NUMERIC HALF OF 095'S WIDENING ARE
+  UNTOUCHED.**
+  **NO LIVE PATH LEFT THE CONTAINER.** No model was asked anything, there is
+  no API key here, no browser ran, no web export was made, `interpret.js` was
+  not executed. The `/session end` rows above were driven through the real
+  scene with `main._run_local_command("/session end")`, in a throwaway copy,
+  and the AI interpreter logged *"api_key.txt not found"* as it always does
+  here.
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is **2026-10-16**, checked by grep over every
+  `2026-10-*` date in it before this was started, not assumed.
+  **064'S FINDING IS CARRIED FORWARD AND NOT RE-VERIFIED**; the live site's
+  commit cannot be read from this container.
+
+  **NOTHING IN `scenes/`, `netlify/`, `.github/`, EITHER RUNNER,
+  `project.godot` OR `export_presets.web.cfg` WAS TOUCHED** -
+  `git status --porcelain` named `scripts/session_report.gd`,
+  `tests/record_type_test.gd` (with its `.uid`) and two files in `docs/`, and
+  nothing else, counted rather than remembered. `ai_interpreter.gd` is
+  **0 lines** of diff, so `PROMPT_FINGERPRINT` and `PROMPT_VERSION` cannot
+  have moved, and `prompt_bounds_test` asserts that as a sha256 rather than as
+  my reading. **THE GREP THAT CARRIES WEIGHT IS THE ONE OVER `scripts/` AND
+  THE NEW TEST, AND IT IS ZERO**: `git diff -- scripts/` and the whole of
+  `tests/record_type_test.gd` together, for `AIza`, `api key`, `secret`,
+  `token`, `bearer`, `GEMINI`, `netlify` and `export_presets`, returns **0**.
+  No total over the whole diff is given, for the reason 098 gave: this
+  sentence is inside the thing being grepped. Every injection was made in a
+  throwaway copy under the scratch directory, never in the repository.
+
+  **AND WHAT A PLAYER MEETS DID CHANGE, SAID PLAINLY.** Nothing changes for a
+  player who has never edited `user://track_log.jsonl`: every report reads
+  exactly as it did, asserted rather than assumed - not one of the six suites
+  that name `SessionReport` moved by a single assertion. For a ledger that
+  **has** been edited, `/session end` now produces the report it always
+  produced of every undamaged record, plus two lines naming how many records
+  carried a field of a type Genesis does not write, out of how many were read,
+  and which fields - where before it produced **a blank** and said
+  *"Results in the history panel."*
+
+- Before 099: **098**, which took **HANDOVER's SECOND
   live "Next action" as of 097** - *`main.gd:584` reads a saved file's
   `command` and quotes it* - did what that entry said to do first and
   **DROVE it instead of reading it**, and found that the entry had **one of the
@@ -5374,11 +5591,64 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-**78** files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **76 suites**, counted with `ls tests/*.gd` rather than
+**79** files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **77 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
-broken. `--all` adds the two slow racing suites, which are counted in the 76
+broken. `--all` adds the two slow racing suites, which are counted in the 77
 and are skipped without it.
+
+**099 ADDED ONE FILE** — `tests/record_type_test.gd`, which is why the two
+numbers above moved from 78 and 76. Its baseline on the clean tree at
+`3973e41`, `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 098
+recorded**: `c9cd5640f314d386e0c38d92cd3a60e2`, 76 suites, 0 with something to
+look at. The container was fresh, so `user://` was empty rather than cleared.
+After the change, **THREE byte-identical full `--all` runs on the settled
+complete tree, code and docs together**, md5 `4111d7b7c625e732d4f13f7e5e77ca99`, 77 suites, 0
+with something to look at, `user://` cleared before each. **The md5 is written
+into this file AFTER the runs**, for the reason 093 through 098 all gave, and
+**no suite in `tests/` reads `docs/` at all** — grepped this session, which
+returned nothing.
+**THREE UNCOUNTED RUNS WERE TAKEN AFTERWARDS AND ALL THREE CAME BACK WITH
+THE SAME md5** — one after the md5 was written in, one after the last `docs/`
+paragraph was added, and one on the **committed** tree at `ca62df9` with
+`git status --porcelain` empty. That is what a `docs/`-only difference should
+do, and all three are recorded because each was checked rather than assumed.
+**THE PREDICTION WAS WRITTEN DOWN BEFORE THE RUN AND HELD EXACTLY**, naming
+two lines: `record_type_test` **(new) 388 assertions, failures=0** and
+`result_line_test` **334 -> 338**, that second because its class is the suites
+themselves and the 095 entry records +4 per new file in `tests/`. It also
+named, with a reason each, the suites it said would **not** move — the six
+that call `SessionReport`, `prompt_bounds_test`, `says_nothing_test` and the
+four ledger scanners — and none of them did.
+**ONE EARLIER FULL RUN IS RECORDED AND NOT COUNTED.** It was taken at **386**
+assertions, before the ledger-id fault below was found and fixed, and its
+prediction held exactly against the baseline at that point
+(md5 `90627f356ebf8189a50a27cbadc44e31`). The tree then moved, and a run on a
+tree that is not the committed one is a measurement of something else.
+**AND THE SECOND RUN OF THAT TREE IS THE ONE THAT PAID.** Run again in the
+same container with `user://` **not** cleared, it gave `record_id_test`
+failures=0 -> **failures=2**. The same two runs of the tree *without* the new
+suite, in a throwaway copy with its own `config/name`, stayed at failures=0
+both times — which is how the cause was attributed to the suite rather than to
+the container. See TRAPS **97**. After the fix, three consecutive runs of the
+suite in one uncleared `user://` are **388, failures=0** each time and
+`record_id_test` on the ledger they leave is **23, failures=0**.
+**AND THE NEW SUITE IS IN NEITHER RUNNER'S FIXED-FPS LIST, ON PURPOSE AND BY
+READING THEM (TRAPS 4).** `record_type_test` matches **none** of
+`run_tests.bat`'s `findstr` patterns — checked by extracting every `/c:"..."`
+pattern from the file and testing the name against each, not by eye — and it
+is in none of `run_tests.sh`'s `TIMED`, `SLOW`, `BROKEN` or `NOT_A_SUITE`
+lists. **The name was chosen for that**: anything containing `ledger` would
+have been given `--fixed-fps 120` by the `.bat` and not by the `.sh`, which is
+the divergence TRAPS 4 is about. Run alone with no `--fixed-fps`, with
+`--fixed-fps 120` and with `--fixed-fps 30` it is **388, failures=0** all
+three times on the settled tree. **So neither runner needed changing and
+neither was touched.** It costs **0-1 s**, timed with `date` either side, well
+inside `run_tests.sh`'s 600-second per-suite `timeout`. It sorts between
+`record_proposal_test` and `refusal_reach_test`; of the suites that read the
+ledger, only `session_test` and `world_file_test` run after it, and both
+select by their own session id or their own save file — read rather than
+assumed. It **appends** to the shared ledger and never truncates it.
 **098 ADDED ONE FILE** — `tests/world_file_test.gd`, which is why the two
 numbers above moved from 77 and 75. Its baseline on the clean tree at
 `6198a2e`, `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 097
@@ -11831,49 +12101,89 @@ because the file is refused at the door; an **absent** `name` still falls back
 to the typed argument, asserted in `world_file_test` section 3 rather than
 assumed.
 
-**THE FIRST LIVE ENTRY AS OF 098, SMALL, READ RATHER THAN GUESSED AT, AND NOT
-FIXED: `session_report.gd` ASSUMES THE TYPE OF THREE LEDGER FIELDS AND WOULD
-THROW.** This is 098's own class asked one layer out, and the reading is done.
-`scripts/` has exactly **two** doors that read a file this game wrote and hand
-its contents on, which is the whole class by grep of `JSON.parse_string` and
-`FileAccess.open(..., READ)`: `WorldStore.load_world()`, which 098 fixed, and
-`TrackLog.read_session()`, which **already type-checks both things it reads**
-(`typeof(record) != TYPE_DICTIONARY` skips the line, `typeof(tag) ==
-TYPE_DICTIONARY` guards the session tag). So the door is sound and the
-**consumer** is not. `session_report.gd` reads those records **24** times
-through `.get()` with a default - of **29** `.get()` calls in the file, the
-other five being on its own summary dictionary and not on a record - and
-**three of the 24 assign the result to a typed `Array` without checking its
-type**:
+**NOTHING IS OWED FROM 099 EITHER.** Its baseline was byte-identical to the
+md5 098 recorded, it wrote its predicted diff down before running and **the
+prediction held exactly**, and it took three byte-identical `--all` runs on the
+complete tree with `docs/` in place, which is why there is no 099a. **Do not
+start by re-running on 099's behalf**; take your own baseline so you learn the
+record and the container still agree, and spend the time on the work below.
+**And do not re-take 099's sixteen injections** — they are in the 099 entry
+with their counts, each was measured alone in its own copy with its own
+cleared `user://`, and the property they attribute is
+`tests/record_type_test.gd` rather than a table in a document.
 
-  | site | read | what a wrong type does |
-  |---|---|---|
-  | `session_report.gd:120` | `var reasons: Array = r.get("reasons", [])` | **throws** on a string |
-  | `session_report.gd:123` | `var why: Array = r.get("reasons", [])` | **throws** on a string |
-  | `session_report.gd:328` | `(r.get("steps", []) as Array)` | **throws** on a string |
+**~~THE FIRST LIVE ENTRY AS OF 098: `session_report.gd` ASSUMES THE TYPE OF
+THREE LEDGER FIELDS AND WOULD THROW.~~ DONE IN 099, AND THE ENTRY HAD THREE
+OF FIVE AND THE WRONG CONSEQUENCE.** The entry's count — *three of the 24
+reads assign to a typed `Array`* — was **true**, and it was the boundary of one
+GDScript construct rather than of the fault; driven, the class was **five**,
+the two extra being `int(r.get("player_place", 0))` and
+`bool(r.get("revision_pending", false))`. And the consequence it predicted, a
+throw, is not what happens: a GDScript error of this kind **abandons the
+function**, so `summarise()` returned `{}`, `describe()` was handed it and
+returned `""`, and the real `/session end` wrote a `session_summary` of **four
+keys and no numbers**, printed **a blank** into the history panel, and
+recorded the request as **`"ok"`**. Its instruction — *"The honest first step
+is the one 098 took here: drive it"* — is the part that paid. See the 099
+entry and TRAPS **96**. Struck rather than deleted, because the record of a
+reading that was right and incompletely bounded is the useful part.
 
-**A throw mid-function is the class 030 and 036 closed at five doors**, each
-time after it had cost a record that existed and said nothing — so the
-question per site is not *"does a player read a hole"* but *"what is abandoned
-when it throws"*. **The reachability is the same as 098's fault and should be
-said plainly: only a hand-edited ledger.** Genesis writes every one of those
-fields itself. That is why 098 named these and did not change them — it is a
-second commit's worth of work with its own measurement.
-**Six suites name `SessionReport`** - `agreement_test`, `counted_said_test`,
-`range_test`, `report_test`, `session_test`, `silence_test` - and **none of
-them writes a ledger record whose `reasons` or `steps` is a string**, grepped
-rather than assumed. (`controller_reach_test:729` sends `"steps": "x"` as a
-REQUEST parameter, which the schema refuses; that is a different field in a
-different dictionary and is **not** cover for `session_report:328`.) So the
-three sites are unheld, which is a statement about the suites and not about
-how hard they would be to hold. **The honest first step is the one 098 took here**: drive it. Write a
-ledger line by hand with `"reasons": "a string"` and ask what the session
-report does, before deciding whether the fix belongs at the three sites or at
-`read_session()`'s door.
+**AND 099'S OWN NEXT STEP, WHICH IT DID NOT TAKE: THE SAME QUESTION ASKED OF
+`describe()`'s READS OF THE SUMMARY, AND IT IS PROBABLY UNREACHABLE.**
+`describe()` reads `s["minutes"]`, `s["race_places"]`, `s["failed"]`,
+`s["cannot_do"]` and twelve more **by index and with a type**, and that is what
+failed on the `{}` above. Now that `summarise()` cannot be abandoned by a
+wrong-typed field, `main.gd` cannot hand `describe()` anything but a complete
+summary — so these are in exactly the position 098 left `main.gd`'s `str()`
+calls in: **right by the grace of the door in front of them**, and kept as
+defence in depth rather than changed (TRAPS 11, said out loud so a later
+session does not think 099 missed them). **What is NOT read:** whether
+`summarise()` can still be abandoned by anything other than a field type — a
+`records` array containing a non-Dictionary cannot reach it, because
+`read_session()` refuses those, but that is the door's guarantee and not a
+property of `summarise()`. A suite standing `describe()` up on a hand-built
+partial summary would say.
 
-**THE SECOND LIVE ENTRY AS OF 098, AND IT IS THE HALF OF 098'S OWN `metrics`
-ROW IT DID NOT FINISH: THE LOAD CHECK HAS THREE WAYS TO BE SKIPPED AND 098
-CLOSED ONE.** `main.gd:614` runs the comparison only if
+**~~`scripts/` HAS TWO DOORS THAT READ A FILE THIS GAME WROTE, AND THE
+CONSUMER OF THE SECOND WAS UNHELD.~~ THE READING THAT ENTRY DID IS KEPT,
+BECAUSE IT WAS RIGHT AND IS WHAT 099 STARTED FROM**, and is re-stated here
+once: `WorldStore.load_world()` (098) and `TrackLog.read_session()` are the
+whole class by grep of `JSON.parse_string` and `FileAccess.open(..., READ)`,
+the second **already type-checks both things it reads**, and `session_report.gd`
+is the only consumer of it in `scripts/` — re-grepped in 099 for `read_session`
+and `TrackLog.PATH`, which names `main.gd:545` and nothing else. **THE ENTRY'S TWO
+NUMBERS DID NOT SURVIVE A RE-COUNT, AND THAT IS WORTH MORE THAN TIDYING
+AWAY.** It said *"**24** times through `.get()` with a default - of **29**
+`.get()` calls in the file, the other **five** being on its own summary
+dictionary"*. Counted on `3973e41` over the code with comments blanked:
+**33** `.get()` calls, of which **28** are `r.get(` on a record, **2**
+`evidence.get(` on an `understanding` record, **1** `raw.get(` on the JSON
+parsed out of a record's `raw_command`, and **2** - not five - on its own
+summary. So it is **31 reads of ledger data, not 24, of 33, not 29**. The
+three extra ledger reads are all `str()`-wrapped and are therefore not in the
+class, which is why the class is still five and not eight; the figures were
+simply never re-counted. TRAPS 14 in its smallest form, and this file has
+carried two others. What also did not hold was the **boundary** the entry drew
+round the class and the **consequence** it predicted; both are in the 099
+entry and in TRAPS 96.
+
+**AND THE REST OF THAT ENTRY'S READING IS KEPT HERE VERBATIM, BECAUSE IT IS
+STILL TRUE AND A LATER SESSION WOULD OTHERWISE RE-DO IT.** Six suites name
+`SessionReport` — `agreement_test`, `counted_said_test`, `range_test`,
+`report_test`, `session_test`, `silence_test` — and **none of them writes a
+ledger record whose `reasons` or `steps` is a string**, grepped rather than
+assumed, which is why not one of them moved in 099.
+(`controller_reach_test:729` sends `"steps": "x"` as a REQUEST parameter,
+which the schema refuses; that is a different field in a different dictionary
+and was never cover for `session_report`'s read of it.) And the reachability
+is unchanged and still worth saying plainly: **only a hand-edited ledger.**
+Genesis writes every one of those four fields itself.
+
+**THE FIRST LIVE ENTRY AS OF 099 THAT IS NOT THE OWNER'S QUESTION, CARRIED
+FORWARD UNCHANGED FROM 098 AND STILL NOT MEASURED: THE LOAD CHECK HAS THREE
+WAYS TO BE SKIPPED AND 098 CLOSED ONE.** 099 did not touch it either — it
+spent itself on the entry above, which is the one that entry said to do
+first. `main.gd:614` runs the comparison only if
 `typeof(recorded) == TYPE_DICTIONARY` **and** `not built.is_empty()` **and**
 `str(built.get("command", "")).to_upper() == command`. 098 made the first
 condition unreachable by refusing the file at the door. **The other two have

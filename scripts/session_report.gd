@@ -20,6 +20,89 @@ class_name SessionReport
 #   as the first one. Which commands are worlds is read off
 #   WorldRegistry.commands() and never written out here.
 
+# --- 099: the ledger is a FILE, and the reads of it assumed five types ---
+#
+# `user://track_log.jsonl` is one line of JSON per record, written by this
+# game and readable - and editable - with any text editor. `TrackLog.read_session()`
+# is the door, and it guarantees exactly two things: every record it returns
+# is a Dictionary, and its `session` tag is a Dictionary whose id matches. It
+# says nothing about any other field, because records have many shapes and a
+# door that refused one would drop a real result, which is the opposite of
+# what a ledger is for.
+#
+# So the type of every field is this file's question, and it was not asked at
+# five reads. DRIVEN, not read: a hand-written session of ten records, one
+# field forced to a wrong type at a time, through the real door into
+# summarise() and describe():
+#
+#   | read | the types that broke it |
+#   |---|---|
+#   | int(r.get("player_place", 0))    | Array, Dictionary, null - not String |
+#   | bool(r.get("revision_pending"))  | String, Array, Dictionary, null |
+#   | var reasons: Array = r.get(...)  | String, Dictionary, number, null |
+#   | var why: Array = r.get(...)      | the same four |
+#   | (r.get("steps", []) as Array)    | the same four |
+#
+# AND THE CONSEQUENCE IS NOT THE ONE THE ENTRY THAT ASKED FOR THIS PREDICTED.
+# It predicted a throw. A GDScript runtime error of this kind does not kill
+# the process: it ABANDONS THE FUNCTION, so summarise() returns an EMPTY
+# Dictionary, describe() is then called with it and fails on its own first
+# line, and `/session end` prints NOTHING, writes a `session_summary` record
+# carrying no numbers at all, sets the status label to "Results in the
+# history panel", and records the request as "ok". One wrong byte in a file
+# turns a whole testing session into an empty report that says it succeeded -
+# PROTOCOL section 2's *missing evidence must not become success*, at the one
+# artefact a testing session exists to produce.
+#
+# THE RULE, AND IT IS ONE TABLE SO IT CANNOT BE HELD AT FOUR READS OF FIVE
+# (TRAPS 11). Every one of those five reads already carries its own default
+# for a field that is ABSENT. A field of the wrong type is the same thing as
+# an absent one to a reader that cannot use it, so it is read as the default
+# the site already names - and `damaged_fields()` and `_field()` ask the SAME
+# table, so a field the report falls back on is exactly a field the report
+# counts.
+#
+# AND FALLING BACK IS NOT ENOUGH ON ITS OWN, which is why the count leaves
+# this file. Silently reading damage as absence would trade a loud empty
+# report for a quietly wrong one: a damaged `revision_pending` makes a
+# correction count as a request, and a damaged `steps` loses a world a PLAN
+# built. So the summary carries the damage and `describe()` says it. A session
+# whose ledger nobody edited reads EXACTLY as it did before - the line is
+# written only when the count is not zero.
+const FIELD_TYPES := {
+	"player_place": [TYPE_INT, TYPE_FLOAT],
+	"revision_pending": [TYPE_BOOL],
+	"reasons": [TYPE_ARRAY],
+	"steps": [TYPE_ARRAY],
+}
+
+
+# Names every field of one record which is PRESENT and not a type this game
+# writes. Returns NAMES rather than a bool, so a suite can say which field it
+# is and a report can name it to the owner who has to go and look.
+static func damaged_fields(r: Dictionary) -> Array:
+	var out: Array = []
+	for field in FIELD_TYPES:
+		if not r.has(field):
+			continue
+		if not (FIELD_TYPES[field] as Array).has(typeof(r[field])):
+			out.append(field)
+	return out
+
+
+# One field of one record, read as the default the call site names unless its
+# type is one FIELD_TYPES admits. The one reader every typed read below goes
+# through: a sixth read added without a row in the table fails loudly here
+# rather than quietly somewhere else.
+static func _field(r: Dictionary, field: String, fallback: Variant) -> Variant:
+	if not r.has(field):
+		return fallback
+	var value: Variant = r[field]
+	if not (FIELD_TYPES[field] as Array).has(typeof(value)):
+		return fallback
+	return value
+
+
 static func summarise(records: Array) -> Dictionary:
 	var started := ""
 	var ended := ""
@@ -39,8 +122,18 @@ static func summarise(records: Array) -> Dictionary:
 	var ai_down := 0
 	var judged := {}                # record id -> the evidence about it
 	var readbacks: Array = []       # every record that showed the player a readback
+	var damaged := 0                # records carrying a field of a type this game does not write
+	var damaged_names := {}         # which fields, used as a set
 
 	for r in records:
+		# First, because every branch below has a `continue` and the scan has to
+		# see every record, not the ones that reach the bottom.
+		var bad := damaged_fields(r)
+		if not bad.is_empty():
+			damaged += 1
+			for field in bad:
+				damaged_names[field] = true
+
 		var time := str(r.get("time", ""))
 		if started == "" and time != "":
 			started = time
@@ -67,11 +160,11 @@ static func summarise(records: Array) -> Dictionary:
 					failed.append([str(r.get("request", "")), "the AI was unavailable: " + str(r.get("reason", ""))])
 			continue
 		if type == "race_result":
-			races_finished.append(int(r.get("player_place", 0)))
+			races_finished.append(int(_field(r, "player_place", 0)))
 			continue
 		if not r.has("result"):
 			continue
-		if bool(r.get("revision_pending", false)) or _is_plan_step(r):
+		if bool(_field(r, "revision_pending", false)) or _is_plan_step(r):
 			continue
 
 		var source := str(r.get("source", {}).get("source", "")) if typeof(r.get("source", null)) == TYPE_DICTIONARY else ""
@@ -117,10 +210,10 @@ static func summarise(records: Array) -> Dictionary:
 				# whose name is about worlds.
 				done_otherwise.append([request, str(r.get("command", ""))])
 		elif str(r.get("category", "")) == "UNSUPPORTED":
-			var reasons: Array = r.get("reasons", [])
+			var reasons: Array = _field(r, "reasons", [])
 			cannot.append([request, str(reasons[0]) if not reasons.is_empty() else ""])
 		else:
-			var why: Array = r.get("reasons", [])
+			var why: Array = _field(r, "reasons", [])
 			failed.append([request, str(r.get("category", "")) + (": " + str(why[0]) if not why.is_empty() else "")])
 
 	return {
@@ -142,6 +235,7 @@ static func summarise(records: Array) -> Dictionary:
 		"races_started": races_started,
 		"race_places": races_finished,
 		"made_another": built >= 2,
+		"damaged": {"records": damaged, "read": records.size(), "fields": _sorted(damaged_names.keys())},
 		"understanding": _understanding(readbacks, judged),
 	}
 
@@ -266,6 +360,18 @@ static func describe(name: String, s: Dictionary) -> String:
 	for o in other:
 		lines.append("  \"%s\" - %s" % [o[0], o[1]])
 
+	# --- 099: a degraded report never presents itself as a complete one ---
+	# Written ONLY when the count is not zero, so a session whose ledger
+	# nobody edited reads exactly as it did before. The fields are named
+	# because the owner reading this is the person who has to go and look at
+	# the file, and "something was wrong" is not a finding.
+	var dmg: Dictionary = s.get("damaged", {})
+	if int(dmg.get("records", 0)) > 0:
+		lines.append("Damaged ledger records: %d of %s (%s)." % [
+			int(dmg["records"]), Readback.plural(int(dmg["read"]), "record"),
+			", ".join(PackedStringArray(dmg["fields"]))])
+		lines.append("  each damaged field was read as if it were absent, so the counts above may be wrong")
+
 	var u: Dictionary = s.get("understanding", {})
 	if not u.is_empty():
 		var c: Dictionary = u["counts"]
@@ -325,7 +431,7 @@ static func _builds_a_world(r: Dictionary) -> bool:
 		return true
 	if command != "PLAN":
 		return false
-	for step in (r.get("steps", []) as Array):
+	for step in (_field(r, "steps", []) as Array):
 		if worlds.has(str(step)):
 			return true
 	return false
@@ -343,6 +449,14 @@ static func _is_plan_step(r: Dictionary) -> bool:
 		return false
 	var raw = json.data
 	return typeof(raw) == TYPE_DICTIONARY and str(raw.get("command", "")).to_upper() == "PLAN"
+
+
+# Field names in one order every run, so a report and a suite can compare
+# them as text.
+static func _sorted(names: Array) -> Array:
+	var out := names.duplicate()
+	out.sort()
+	return out
 
 
 static func _seconds_between(from: String, to: String) -> float:

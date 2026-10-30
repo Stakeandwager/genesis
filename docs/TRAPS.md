@@ -7463,3 +7463,144 @@ it said to do first: **driving it** rather than reading it. The entry had the
 of which a reading of `main.gd:584` would have reached.
 
 > Count the fields the door hands on. Then count the fields it checks.
+
+---
+
+## 96. A runtime type error abandons the FUNCTION, and the caller reads the empty result as an answer
+
+**Signature:** a report comes out blank, a count comes out zero, a thing that
+was built is not counted as built — and the game says it worked. The only
+sign is a `SCRIPT ERROR` line in output nobody is reading.
+
+**Cause.** In GDScript a failed typed assignment, a bad `int()` or `bool()`
+constructor, and a failed `as` cast are all **non-fatal**. They print an error
+and **abandon the function at that line**. The function then returns its
+return type's default, and the caller cannot tell that apart from a real
+answer:
+
+| the function's return type | what the caller is handed |
+|---|---|
+| `-> Dictionary` | `{}` |
+| `-> Array` | `[]` |
+| `-> bool` | `false` |
+| `-> String` | `""` |
+
+**Measured, driven through the real `/session end` in 099** with one byte of a
+hand-edited `user://track_log.jsonl` changed (`"reasons": "a string"`):
+
+- `SessionReport.summarise()` abandoned at its typed read and returned `{}`.
+- `main.gd` merged that `{}` into the `session_summary` record and wrote it:
+  **four keys**, no numbers at all, against twenty-three for the same session
+  undamaged.
+- `SessionReport.describe()` was then handed the `{}` and abandoned on its own
+  **first line**, returning `""`.
+- the history panel got the request line and **a blank**; the status label read
+  *"Session 'x' ended. Results in the history panel."*; the request was
+  recorded as **`"ok"`**.
+
+One wrong byte turned a whole testing session into an empty report that said
+it had succeeded. That is PROTOCOL section 2's *missing evidence must not
+become success*, at the one artefact a testing session exists to produce.
+
+**Do:**
+
+- **Read which FUNCTION the backtrace names, not which process survived.** The
+  error says `at: summarise (res://scripts/session_report.gd:120)`. The
+  question is what `summarise`'s caller then did with the default.
+- **Count the class by the assumption, not by the construct.** `int(x)`,
+  `bool(x)`, `var a: Array = x` and `(x as Array)` are **four spellings of one
+  assumption**. HANDOVER's entry asking for this work counted *"three of the 24
+  reads assign the result to a typed `Array`"* — true, and it was the boundary
+  of one GDScript construct rather than of the fault. Driven, the class was
+  **five**: the two the entry missed were `int(r.get("player_place", 0))` and
+  `bool(r.get("revision_pending", false))`, and `bool()` breaks on **every**
+  non-numeric type including `String`, which is the commonest thing a hand edit
+  leaves behind.
+- **Make the floor "does the result still carry what it carries when nothing is
+  wrong", not "did it crash".** `record_type_test` asserts that a damaged
+  session's summary has **the same key set** as an undamaged one's. That is the
+  assertion that fails on every row of the table before the fix; a crash
+  assertion would have passed, because nothing crashed.
+- **Keep the error channel as a reader.** `run_tests.sh` greps for
+  `SCRIPT ERROR` and reports it **instead of** the result line. One of the five
+  sites — `(r.get("steps", []) as Array)`, inside `_builds_a_world()` — is
+  caught by **nothing else behavioural**: the error abandons that helper, which
+  returns `false`, so a PLAN that built a world silently stops counting as one
+  while the summary survives whole. Measured: reverting that one read alone
+  gives **388 assertions, failures=2**, both from a source scan, and **8
+  `SCRIPT ERROR` lines** where the control has **0**.
+
+**Don't:**
+
+- **Don't write "would throw" in a document for a fault you have not driven.**
+  The entry that asked for this work predicted a throw. A throw would have been
+  *better*: it is visible. What happened instead was a silent empty artefact
+  reported as a success, which is a different fault with a different fix and a
+  different test.
+- **Don't treat a wrong type as something to refuse at the door when the
+  reader already has a default.** Each of the five reads already named what to
+  do with an **absent** field. A field of a type the game does not write is the
+  same thing to a reader that cannot use it, so it is read as that default —
+  and `FIELD_TYPES` is **one table** that both the fallback and the damage
+  count ask, so a field the report falls back on is exactly a field the report
+  counts.
+- **Don't let the fallback be the whole fix.** Silently reading damage as
+  absence trades a loud empty report for a quietly wrong one: a damaged
+  `revision_pending` makes a correction count as a request, and a damaged
+  `steps` loses a world. The summary carries the count and the report names the
+  fields. Measured: deleting those two lines from `describe()` gives
+  **failures=40**.
+
+> A GDScript type error does not stop the program. It stops the function, and
+> hands its caller an empty answer that looks like an answer.
+
+---
+
+## 97. A suite that writes its own ids into the shared ledger
+
+**Signature:** `record_id_test` goes `failures=0` to `failures=2` on the
+**second** full run in one container, naming ids that "name nobody", and the
+suite that caused it passes both times.
+
+**Cause.** `user://track_log.jsonl` is shared by every copy of this project
+(TRAPS 50) and is **not** cleared between runs unless you clear it.
+`TrackLog.append()` mints an id **only for a record that has not got one**, so
+a suite that hands it records carrying hand-written ids writes those ids
+verbatim — the same ones again on the next run. That breaks **two** invariants
+`record_id_test` holds over the whole file: ids are unique, and every id names
+the process that wrote it (`<unix>-<pid>-<serial>`, which is TRAPS 059's fix).
+
+**Measured rather than reasoned.** 099's first draft of `record_type_test`
+appended a hand-written session whose records were named `"r1".."r4"`. The
+first full run was clean. The **second**, in the same container with `user://`
+not cleared, gave `record_id_test` **failures=2**. The same two runs of the
+tree *without* that suite stayed at **failures=0** both times, which is how the
+cause was attributed rather than guessed at.
+
+**Do:**
+
+- **Erase the id and let `TrackLog` mint it**, then read the minted id back out
+  of the dictionary — `append()` writes it in by reference — and remap any
+  `about` that pointed at the old name.
+- **Use `TrackLog.next_id()` and never a clock for anything that has to be
+  unique.** The same draft built its session id from
+  `Time.get_unix_time_from_system()`, and two runs of the suite inside one
+  second shared it. That is TRAPS 059 again, in the harness this time.
+- **Give the suite the floor itself** rather than relying on another suite to
+  notice: `record_type_test` now asserts that every id it wrote appears
+  **exactly once** in the ledger. Said plainly, because it is a weak floor:
+  with a fresh `user://` it is **silent** — the duplicate only exists on a
+  second run. Measured: putting the hand-written ids back gives
+  **388, failures=0** on a fresh `user://` and **388, failures=1** on the
+  second run of the same copy.
+- **Append; never truncate.** Opening `TrackLog.PATH` with `FileAccess.WRITE`
+  to set up a test takes 62 other suites' records with it.
+
+**Don't:**
+
+- **Don't conclude "a repeat run is just dirty" without measuring the tree
+  without your change.** That two-run control is what separated "my suite did
+  this" from "this container does this".
+
+> A ledger is shared, and it outlives the run. An id a test writes by hand is
+> an id a second run writes twice.
