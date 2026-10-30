@@ -59,8 +59,37 @@ extends SceneTree
 #
 # NOT IN SCOPE, and stated rather than quietly skipped: proxy_test also reads
 # netlify/functions/interpret.js and export_presets.web.cfg. Their comment
-# syntax is "//" and ";", not "#", so _code_of() is the wrong reader for them
-# and nothing about them was measured in 067.
+# syntax is "//" and ";", not "#", so _code_of() is the wrong reader for them.
+#
+# --- 093: AND THE SECOND HALF OF THAT PARAGRAPH IS CORRECTED, NOT DELETED ---
+#
+# It used to end "and nothing about them was measured in 067". That was true
+# when it was written and it stayed true for twenty-six commits, which is the
+# whole lesson: a stated exclusion reads like a closed question and is an open
+# one with a note attached. 093 measured interpret.js and found FOUR of
+# proxy_test's five reads of it answerable by a comment - the env var the key
+# comes from, the size cap, the POST guard and the field allowlist, each
+# injected alone against a control of 26 assertions, failures=0, each SILENT,
+# and the first of them byte-identical to the baseline across the whole --all
+# set. Those four now go through proxy_test's own _js_without_comments().
+# TRAPS 90.
+#
+# TWO THINGS THAT FOLLOW, AND BOTH BELONG HERE RATHER THAN BEING REDERIVED.
+# FIRST: the fifth read is RIGHT to read the raw file and was left alone. "No
+# key is written into it" asks what is MENTIONED ANYWHERE, because a key in a
+# comment is still a published key - measured, a fake AIza-prefixed key in a
+# comment gives failures=1 raw and would pass through a stripper. That is this
+# file's DIRECTION rule, and it is why applying "scan code, not comments" to
+# all five would have introduced a fault while fixing four.
+# SECOND: export_presets.web.cfg is NOT in that change, deliberately. Its one
+# read asks the same MENTIONED question, so the raw file is the right text and
+# no ini comment reader was written. None is needed until a read of that file
+# asks what its code does.
+#
+# THIS FILE STILL HOLDS NOTHING ABOUT EITHER, which is the honest statement of
+# where the convention ends: section 2 and section 3 are about _code_of() in
+# files that read .gd sources, and a .js reader is held by its own probes
+# beside its own reads in proxy_test and by nothing here.
 
 var asserted := 0
 var bad := 0

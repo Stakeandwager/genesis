@@ -6763,3 +6763,87 @@ Found in 092, in its own first full run, against itself.
 
 > The comment explaining why the copy was not made cited a rule by number.
 > The rule said the opposite of what the project does.
+
+---
+
+## 90. An exclusion written down honestly, and left standing for twenty-six commits
+
+**Signature:** a suite reads a file that is not GDScript and asserts things
+about what it is written to do. Its header says, correctly and in writing, why
+the project's comment-stripping reader is the wrong one for that file — and
+then reads the raw text anyway. Every one of those reads is answerable by a
+comment, and the suite is green.
+
+**Cause:** 067 asked TRAPS 11's question of every source scan in `tests/` —
+how many of these can a comment answer — found nine members, measured three
+silent and fixed them. It did the honest thing about the one file its reader
+did not fit: `netlify/functions/interpret.js` uses `//`, `_code_of()` strips
+`#`, so it wrote the exclusion into `source_scan_test`'s header, *"and nothing
+about them was measured in 067"*, and into `proxy_test`'s own comment beside
+the reads.
+
+**Nothing came back to it.** The sentence was true, it was visible, it named
+the gap precisely, and it sat there for twenty-six commits while five
+assertions about a *deployed* function rested on it. A stated exclusion reads
+like a closed question. It is an open one with a note attached.
+
+**What it was holding up, measured in 093 one fault at a time, each alone in
+its own copy with its own `config/name`, the diff read before each run,
+against an unpatched control of 26 assertions, failures=0:**
+
+```
+the key read pointed at a DIFFERENT env var, old name left in a comment   26/0  SILENT
+MAX_BODY and the whole 413 branch DELETED, cap left in a comment          26/0  SILENT
+the POST guard DELETED, "POST only" left in a comment                     26/0  SILENT
+the field allowlist replaced by `body = sent`, names left in a comment    26/0  SILENT
+```
+
+The first was then run through the **whole 74-suite set with `--all`**: the
+output was **byte-identical to the baseline**. Nothing in Genesis noticed that
+the function reads a different environment variable from the one Genesis tells
+a web player to check — the drift 057 built that sentence to make impossible.
+The last replaces the field allowlist with `body = sent`, which is the open
+relay the file's own header says it must never be: *"a function that forwards
+whatever it is handed is an open relay with somebody's credit card behind
+it."*
+
+**Do:**
+
+- **A stated exclusion is a live entry, not a closed one.** When a reason is
+  written down for not checking something, it belongs where the next session
+  reads what is still open, not only beside the check it excuses. 067's note
+  was honest and that is exactly why nobody re-read it.
+- **The direction decides the reader, and a blanket fix breaks the one read
+  that was already right.** Of the five reads, four ask what the code DOES and
+  belong behind a stripper; the fifth asks whether a key is MENTIONED
+  ANYWHERE, and a key in a comment is still a published key. Measured: a fake
+  `AIza`-prefixed key in a comment gives **failures=1** on the raw read and
+  would pass in silence through the stripper. Applying "scan code, not
+  comments" to all five would have *introduced* a fault while fixing four.
+  That is `source_scan_test`'s own DIRECTION rule, and it is the reason it is
+  phrased as a direction and not as a habit.
+- **Name the second reader so it cannot answer the first one's question.**
+  `source_scan_test` decides a file has a reader of its own by grepping for
+  the substring `_code_of(`. A function called `_js_code_of` **contains that
+  substring**, so a file carrying only it would satisfy that check while
+  having no `_code_of()` at all. It is called `_js_without_comments()` for
+  that reason, and the reason is written beside it.
+
+**And the new check has the same derived-count limit, written down rather than
+discovered later.** It reads the statuses off `interpret.js` and drives each,
+so a status *removed* from the function takes two assertions with it: change
+`status: 413` to a status the file already returns and `proxy_test` is **42
+assertions, failures=0** against a control of **44/0** — TRAPS 73's signature,
+a count that falls in silence. That is the same limit 092 recorded about its
+own arm reader, and the same answer applies: a declared list of required
+statuses would be TRAPS 82's shape and would have to be moved by hand every
+time the function legitimately changed. **Recorded as an open limit, not as a
+fix.**
+
+Found in 093, by following 092's own "Next action" to its answer and reading
+what was beside it.
+**Nothing in `scripts/`, `scenes/`, `netlify/`, `.github/`, either runner,
+`project.godot` or `export_presets.web.cfg` was touched.**
+
+> The reader did not fit the file, so the suite read the raw text and said so.
+> The note was true for twenty-six commits and held nothing for any of them.

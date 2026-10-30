@@ -13,7 +13,190 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **092**, which did the **reading** 091a
+- Last commit at the time of writing: **093**, which took 092's first live
+  "Next action" - *is there anything the code already states that could
+  require `_friendly_http_error`'s 400 and 404 arms, the way the retry tie
+  reads `WORTH_RETRYING`?* - as the **reading** that entry asked for rather
+  than as a build. **THE ANSWER IS NO, 092's "leave it" STANDS, and it is now
+  written in the file beside the reader so it is not re-asked.** What the
+  reading found on the way is the commit, and it is the part worth reading
+  first: **four of `proxy_test`'s five reads of `netlify/functions/interpret.js`
+  - a DEPLOYED function - were answerable by a comment, and the whole 74-suite
+  set was BYTE-IDENTICAL to its baseline with the key read pointed at a
+  different environment variable.** New TRAPS **90**. No new "Human decision
+  needed".
+
+  **THE BASELINE AGREED WITH THE RECORD BEFORE ANYTHING WAS TOUCHED.** The
+  `--all` run in this container, on a clean tree at `43665cc` with
+  `git status --porcelain` empty and a fresh `user://`, was **BYTE-IDENTICAL
+  to the md5 092 recorded**: `a68eab2760302504f6edbd601151a3d9`, 74 suites, 0
+  with something to look at. `ls tests/*.gd` returned **76** and the run
+  reported **74**, re-counted rather than remembered.
+
+  **THE READING, WHICH IS AN ANSWER AND NOT A CHECK.** 092 asked for a count
+  read OFF something the code already states. There is exactly one other place
+  in this repository that states HTTP statuses in code -
+  `netlify/functions/interpret.js` - and **it is the proof that no such thing
+  exists, rather than the candidate.** Read off its own source: it originates
+  **four** statuses, `405`, `503`, `413` and `400`, and **two of them, 405 and
+  413, have no arm in `_friendly_http_error` and are RIGHT not to** - the
+  generic default names the code and says what it honestly can. So that file
+  states which statuses **arrive**, never which arms must **exist**, and a
+  requirement built on it as though it were the second **would fail on correct
+  code**. That is the whole answer to the entry, and the "leave it" is now
+  three paragraphs in `proxy_test` rather than a sentence in this file.
+
+  **AND THE FINDING, WHICH IS WHAT WAS SITTING BESIDE IT.** 067 asked TRAPS
+  11's question of every source scan in `tests/` and fixed three. It wrote the
+  one file its reader did not fit into `source_scan_test`'s header, honestly
+  and in writing: `interpret.js`'s comments are `//`, `_code_of()` strips `#`,
+  *"and nothing about them was measured in 067"*. **Nothing came back to it for
+  twenty-six commits**, while five assertions about a deployed function rested
+  on the raw text. Measured one fault at a time (TRAPS 50, TRAPS 80), each
+  alone in its own copy with its own `config/name`, the diffs read before the
+  runs, against an unpatched control of **26 assertions, failures=0**:
+
+  | injection | verdict |
+  |---|---|
+  | the key read pointed at a DIFFERENT env var, old name left in a comment | **26/0 SILENT** |
+  | `MAX_BODY` and the whole 413 branch DELETED, cap left in a comment | **26/0 SILENT** |
+  | the POST guard DELETED, `"POST only"` left in a comment | **26/0 SILENT** |
+  | the field allowlist replaced by `body = sent`, names left in a comment | **26/0 SILENT** |
+
+  **THE FIRST ROW WAS THEN RUN THROUGH THE WHOLE SUITE, `--all`, AND THE
+  OUTPUT WAS BYTE-IDENTICAL TO THE BASELINE** -
+  `a68eab2760302504f6edbd601151a3d9`, 0 with something to look at. Nothing in
+  Genesis noticed that the function reads `GENESIS_MODEL_KEY` while Genesis
+  tells a web player to check `GEMINI_API_KEY`. **That is the exact drift 057
+  built that sentence to make impossible**, and it was checked against a
+  comment. The last row is worse in kind: `body = sent` is the open relay the
+  file's own header says it must never be - *"a function that forwards whatever
+  it is handed is an open relay with somebody's credit card behind it."*
+
+  **ONE OF THE FIVE WAS ALREADY RIGHT AND A BLANKET FIX WOULD HAVE BROKEN IT**
+  (TRAPS 11 cuts both ways). *"No key is written into it"* asks what is
+  **mentioned anywhere**, because a key sitting in a comment is still a
+  published key. Measured both ways rather than reasoned: a fake
+  `AIza`-prefixed key added in a comment gives **26 assertions, failures=1**
+  against the raw read and **would have passed in silence through a stripper**.
+  So four reads moved behind the new reader and that one did not, each with the
+  reason written beside it. That is `source_scan_test`'s own DIRECTION rule,
+  and it is why the rule is a direction and not the habit "scan code, not
+  comments".
+
+  **WHAT CHANGED. `tests/proxy_test.gd` and one comment in
+  `tests/source_scan_test.gd` ONLY.** `_js_without_comments()` is the
+  project's first JavaScript comment reader, with its own positive and
+  negative probes beside the reads, and **it is deliberately not called
+  `_js_code_of`**: `source_scan_test` decides a file has a reader of its own by
+  grepping for the substring `_code_of(`, which `_js_code_of(` **contains**, so
+  that name would have let a file satisfy that check while having no
+  `_code_of()` at all. The reason is written beside the function. The second
+  new function reads the statuses `interpret.js` originates and drives each
+  through `_friendly_http_error`, asserting the sentence **says something** and
+  **names the code that arrived** - keyed off the producer in the other file
+  (TRAPS 82), so a status added to the function is driven from the moment it is
+  added. `source_scan_test`'s header paragraph is **corrected rather than
+  deleted**, because half of it had become false and a false sentence left
+  standing is TRAPS 14.
+
+  **MEASURED, EACH FAULT ALONE, AND RE-MEASURED AGAINST THE FINAL CODE RATHER
+  THAN CARRIED FORWARD** (TRAPS 14). Control **44/0**. All four silent
+  injections now fail **by name**: the env var **44/1**, the field allowlist
+  **44/1**, the cap **42/1** and the POST guard **42/1** - the two at 42
+  because deleting a branch removes a status from the file, so the driven loop
+  is shorter *and* red rather than only shorter. The `AIza` control still
+  catches at **44/1**. And the new rows hold a sentence, not just a loop: the
+  default arm made to say nothing gives **44, failures=4**, naming **405 and
+  413** - the two statuses 092's arm reader does not drive at all; the default
+  arm made to say `(HTTP 500)` for every code gives **44, failures=2**, quoting
+  the sentence, which is TRAPS 24's rule at a refusal sentence and the exact
+  fault class 092 named.
+
+  **THE PREDICTION WAS WRITTEN DOWN BEFORE THE FIRST RUN AND HELD EXACTLY**
+  (092's lesson, TRAPS 89): `proxy_test` **26 -> 44**, failures=0, and nothing
+  else moving - naming in advance why `source_scan_test` would **not** move
+  this time (`proxy_test` is already a member of its class, the new reads name
+  `netlify` and not `scripts` or `tests`, its own `_code_of()` is untouched,
+  and the new reader's name avoids the substring).
+
+  **AND 413 IS NOT REACHABLE FROM GENESIS, WHICH IS A MEASUREMENT AND THE
+  REASON NO ARM WAS ADDED FOR IT.** A first request is **17,262 bytes** against
+  `MAX_BODY`'s **204,800** (8.4%); `assembled_prompt()` is 16,555 characters. A
+  `revise()` body with an **80,000-character** model answer - far beyond what
+  `maxOutputTokens: 8000` can produce - plus a 6,000-character feedback is
+  **103,373 bytes**, half the cap, and `revise()` sends three turns rather than
+  an accumulating history. So the generic default is the honest answer for 413
+  and **nothing player-facing was changed**.
+
+  **THE RUNS.** md5 `5e2840e7d17d8c607774c6a256cb7e15`, 74 suites, 0 with something to look at,
+  `--all`, said in the order they were taken (080's standard is about the
+  ORDER): run 1 once `proxy_test` was final and this file not yet; the
+  `source_scan_test` comment correction and the docs then written; runs 2 and 3
+  on the **complete tree**, code and docs together. **ALL THREE ARE
+  BYTE-IDENTICAL, WHICH IS WHAT ESTABLISHES THAT THE COMMENT CORRECTION MOVED
+  NOTHING** - it was made between run 1 and run 2 and the output did not
+  change by a byte.
+  **AND THE ONE DEPARTURE FROM 092's SEQUENCE IS SAID RATHER THAN GLOSSED.**
+  092 wrote its md5 into this file *before* runs 2 and 3. Here the md5 is
+  written in *after* them, because it is the md5 of the runs that were about to
+  be taken and there is no way to know it first. That cannot affect the number:
+  **no suite in `tests/` reads `docs/` at all** - grepped, not assumed, no file
+  there names `res://docs` - so a change to this file cannot move a single
+  assertion. What runs 2 and 3 therefore prove is the tree with every code and
+  comment change in place and the docs complete except for this one number. **The diff against the
+  baseline is the one line the prediction named in writing before the run**:
+  `proxy_test` **26 -> 44**, and nothing else moved.
+  **NO FILE IN `scripts/`, `scenes/`, `netlify/`, `.github/`, EITHER RUNNER,
+  `project.godot` OR `export_presets.web.cfg` WAS TOUCHED** - `git status`
+  named only the two suites and `docs/`, read rather than assumed. The
+  injections above were made in **throwaway copies** under the scratch
+  directory and never in the repository; the tree was `git status --porcelain`
+  clean between them. `PROMPT_FINGERPRINT` and `PROMPT_VERSION` did not move.
+  The diff was grepped for `key`, `secret`, `token`, `GEMINI`, `netlify` and
+  `export_presets`: every hit is prose or an assertion message. No model was
+  asked anything, no request left the container, there is no API key here.
+  **NOTHING A PLAYER MEETS CHANGED**: this commit is entirely `tests/` and
+  `docs/`.
+
+  **NOT DONE AND NOT VERIFIED.**
+  **THE NEW CHECK HAS THE SAME DERIVED-COUNT LIMIT 092's DOES, AND IT IS
+  WRITTEN DOWN HERE RATHER THAN LEFT TO BE FOUND.** Change `status: 413` to a
+  status the file already returns and `proxy_test` is **42 assertions,
+  failures=0** against a control of **44/0** - TRAPS 73's signature, a count
+  that falls in silence. A declared list of required statuses would close it
+  and is **deliberately not written** (TRAPS 82). It is the first live entry
+  under "Next action".
+  **THE LIVE PATH WAS NOT DRIVEN AND `interpret.js` WAS NOT EXECUTED.** It is
+  JavaScript and nothing in this container runs it; what is checked is what it
+  is **written** to do. No browser ran, no web export was made, and whether a
+  real deployment answers as its source says is the owner's machine's to tell.
+  Google's own status is returned unchanged by that function, so the four
+  statuses above are the ones it **originates**, not the set a player can meet.
+  **`export_presets.web.cfg` IS STILL READ RAW AND THAT IS CORRECT, NOT AN
+  OVERSIGHT.** Its one read asks whether a key is mentioned, which is a raw-file
+  question by the same direction rule. No ini comment reader was written and
+  none is needed until a read of that file asks what its code does. Said here
+  because the alternative is the next session re-deriving it.
+  **THE 503 SENTENCE IS STILL WRONG AND IS STILL THE OWNER'S.** The function's
+  503 means *"this Genesis has no AI configured"*; Genesis retries three times
+  and says the service is busy. That is "Human decision needed" **19**,
+  unchanged, and the new row asserts only that the sentence says something and
+  names 503 - **a green row there is not a claim that it is true**, and that is
+  said in the suite as well as here.
+  **091'S AND 090'S OPEN ITEMS ARE UNTOUCHED AND NOT RE-MEASURED HERE**: the
+  farm passthrough at `farm_module.gd:277`, "says something" not being "says
+  the right thing" for the dungeon's and the farm's refusals, the four
+  controller sentences 090 left silent, and `command_schema_test`'s
+  no-empty-reason check. All are still live under "Next action".
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is **2026-10-16**, and 048's *"there is no way to ASK
+  Genesis anything"* was written up in 050 as far as it goes without him.
+  Checked before this was started, not assumed.
+  **064'S FINDING IS CARRIED FORWARD AND NOT RE-VERIFIED**; the live site's
+  commit cannot be read from this container.
+
+- Last commit before that: **092**, which did the **reading** 091a
   left as the newest "Next action" - *can the `reason` behind
   `experiment_runner.gd:140`'s `FAILED_AI` refusal arrive empty?* - and the
   answer is **no, it cannot**, so **no assertion was written about it**. What
@@ -4014,6 +4197,23 @@ than suites, leaving **74 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 74
 and are skipped without it.
+**093 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
+what the two numbers above say. Its baseline on the clean tree at `43665cc`,
+`git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 092
+recorded**: `a68eab2760302504f6edbd601151a3d9`, 74 suites, 0 with something to
+look at. The container was fresh, so `user://` was empty rather than cleared.
+After the change, **THREE byte-identical full `--all` runs**, md5
+`5e2840e7d17d8c607774c6a256cb7e15`, 0 with something to look at, the last two on the complete
+tree with `docs/` in place. The diff against the baseline is the **one line
+predicted in writing before the run**: `proxy_test` **26 -> 44**.
+**AND THE INJECTED MEASUREMENTS WERE TAKEN IN THROWAWAY COPIES, NEVER IN THE
+REPOSITORY.** Each copy got its own `config/name` so no two could share a
+`user://`, each was given `--headless --import` of its own before any suite ran
+(TRAPS 88), and the repository tree was `git status --porcelain` clean between
+them. One injection was carried through the **whole `--all` set** rather than
+`proxy_test` alone, which is the run that produced the finding: a fault in a
+deployed function, and 74 suites byte-identical to their baseline.
+
 **092 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
 what the two numbers above say. Its baseline on the clean tree at `24a9c0b`,
 `git status --porcelain` empty and `user://` cleared, was **BYTE-IDENTICAL to
@@ -10204,6 +10404,67 @@ it took three byte-identical `--all` runs, the last two on the complete tree
 with `docs/` in place, which is why there is no 092a. **Do not start by
 re-running on 092's behalf**; take your own baseline so you learn the record
 and the container still agree, and spend the time on the work below.
+
+**NOTHING IS OWED FROM 093 EITHER.** Its baseline was byte-identical to the
+md5 092 recorded, it wrote its predicted diff down before running and the
+prediction held exactly, and it took three byte-identical `--all` runs - the
+last two on the complete tree with `docs/` in place - which is why there is no
+093a. **Do not start by re-running on 093's behalf**; take your own baseline so
+you learn the record and the container still agree, and spend the time on the
+work below.
+
+**THE FIRST LIVE ENTRY AS OF 093, AND IT IS THE LIMIT OF 093'S OWN CHECK
+RATHER THAN A FAULT IN THE CODE - THE SAME SHAPE 092 RECORDED ABOUT ITS
+READER, WHICH IS THE POINT: A STATUS REMOVED FROM `interpret.js` TAKES TWO
+ASSERTIONS WITH IT AND NOTHING GOES RED.** Measured, not argued: change
+`status: 413` to a status that file already returns and `proxy_test` is **42
+assertions, failures=0** where the control is **44/0** - TRAPS 73's signature,
+a count that falls in silence. The reader is right to stop driving a status the
+function no longer returns, and nothing reads the difference.
+**DO NOT CLOSE IT WITH A LIST OF REQUIRED STATUSES**, for the same reason 092
+gives for the arms: a list beside the code is TRAPS 82's shape and would have
+to be moved by hand every time the function legitimately changed. **And note
+what 093's reading already settled before anybody re-asks it**: the two files
+cannot hold each other up here. `interpret.js` states which statuses arrive and
+`_friendly_http_error` states which arms exist, and 405 and 413 are the proof
+they are different claims - they are the function's own statuses, they have no
+arm, and they are **right** to fall to the generic default. So neither file is
+the denominator for the other, and that is written in `proxy_test` beside the
+reader as well as here. **The honest reading left, if anybody takes this on, is
+whether a status's presence is tied to anything at all** - the branch that
+returns it is, the status number is not - and it may well come back "leave
+it" twice over, which is a reason to read rather than to build.
+
+**AND A SECOND THING 093 MEASURED AND DELIBERATELY DID NOT BUILD: 405 AND 413
+GET THE GENERIC DEFAULT, AND THAT IS THE RIGHT ANSWER FOR BOTH TODAY.**
+Measured rather than judged. **405** cannot arrive from Genesis at all:
+`_post()` is the only place a request is made and it passes
+`HTTPClient.METHOD_POST`, grepped rather than remembered, so the function's
+method guard answers a stranger and never a player. **413** cannot either: a
+first request is **17,262 bytes** against `MAX_BODY`'s **204,800**, and a
+`revise()` body with an 80,000-character model answer - far beyond
+`maxOutputTokens: 8000` - plus a 6,000-character feedback is **103,373 bytes**,
+half the cap, with `revise()` sending three turns rather than an accumulating
+history. **So no arm was added for either**, and the reason is a number rather
+than a preference. What would change that is a larger prompt or a growing
+history, and the thing to re-measure if either arrives is the first number
+above and not this paragraph.
+
+**~~THE FIRST LIVE ENTRY AS OF 092: AN ARM COMMENTED OUT OF
+`_friendly_http_error` TAKES TWO ASSERTIONS WITH IT AND NOTHING GOES RED, AND
+THE READING WORTH DOING FIRST IS WHETHER ANYTHING THE CODE ALREADY STATES
+COULD CLOSE IT.~~ DONE IN 093, AND THE ANSWER IS "LEAVE IT", WRITTEN BESIDE
+THE READER IN `proxy_test`.** The entry was right to insist the first step was
+a reading, right to forbid a list of required arms, and right that it might
+come back "leave it". There is exactly one other place in the repository that
+states HTTP statuses in code - `netlify/functions/interpret.js` - and **it is
+the proof that no such thing exists rather than the candidate**: it originates
+four statuses, two of which have no arm and are right not to, so it states
+which statuses **arrive** and never which arms must **exist**. A requirement
+built on it would fail on correct code. What the reading found beside it is
+TRAPS **90** and the 093 entry under "Starting state". Struck rather than
+deleted, with the original text below, because the sketch is the record of what
+was asked for. The original text:**
 
 **THE FIRST LIVE ENTRY AS OF 092, AND IT IS THE LIMIT OF 092'S OWN CHECK
 RATHER THAN A FAULT IN THE CODE: AN ARM COMMENTED OUT OF
