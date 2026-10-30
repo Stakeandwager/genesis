@@ -13,7 +13,265 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **100**, which took **099a's own first
+- Last commit at the time of writing: **101**, which took **the first live
+  entry as of 100** - *the rest of `tests/replay.gd` is held by nothing* - and
+  did the thing that entry said to do: **asked of each remaining part whether
+  it can be made a function of its inputs, took the ones that can, and wrote
+  down which cannot and why**. Asking it of the **gate** found a fault that no
+  reading of this file had named in three commits of looking at it. New
+  TRAPS **101**. **No new file**: `tests/replay.gd` and
+  `tests/field_type_test.gd` are the only code changed, `scripts/` is **0
+  lines of diff**, and no new "Human decision needed" - but **two questions
+  for the owner are written up below**.
+
+  **THE FAULT: THE LEDGER WAS DELETED BEFORE THE TOOL KNEW IT COULD DO
+  ANYTHING.** `DirAccess.remove_absolute(user://track_log.jsonl)` was the
+  **fourth statement** of `_initialize()` and the two guards were **twenty
+  lines below it**, so every invocation this tool **refuses** destroyed the
+  ledger first and then said what was missing. The deletion is wanted on the
+  path that works - produced records are counted by line offset into a ledger
+  that has to start empty - and is wanted nowhere else.
+
+  **MEASURED ON `3f7ae94` BEFORE ANYTHING WAS CHANGED**, each probe a
+  throwaway copy of the repository with its own `config/name` and its own
+  `user://` holding a planted 52-line ledger (TRAPS 50, 80, 88) -
+  **THREE OF THREE REFUSALS DESTROYED IT**:
+
+  | invocation | result | the ledger afterwards |
+  |---|---|---|
+  | `REPLAY_LOG` unset, `REPLAY_OUT` unset | `rc=1`, *"needs REPLAY_LOG"* | **GONE** |
+  | `REPLAY_LOG` naming a missing file | `rc=1`, *"cannot open"* | **GONE** |
+  | `REPLAY_LOG` good, `REPLAY_OUT` unset | `rc=1`, *"needs REPLAY_OUT"* | **GONE** |
+  | both good (control) | `rc=0`, `groups=42 damaged=0` | present, rewritten by the replay |
+
+  **AND IT IS THE OWNER'S OWN LEDGER AND NOT A SCRATCH FILE, WHICH IS READ
+  OFF `docs/harness/run.sh.txt` RATHER THAN ASSUMED.** That script builds its
+  throwaway project with `config/name="AI_Game_Builder"` - **the same name as
+  `project.godot`** - so `user://` is the very directory the game writes to.
+  The documented way to run this tool therefore points it at the real ledger,
+  and a typo in `REPLAY_OUT` cost the session history
+  `scripts/session_report.gd` reads for `/session`.
+
+  **THE CLASS WAS SWEPT AND HAS ONE MEMBER, SAID WITH THE SWEEP THAT
+  ESTABLISHES IT (TRAPS 11).** The rule is *a destructive act waits until the
+  work is known to be possible*. Every `DirAccess` deletion in the repository
+  was read one at a time - **four sites**: `scripts/world_store.gd:119`
+  (`remove_world`) **refuses first and then deletes**, which is the correct
+  order already; `tests/look_test.gd:168` deletes a fixture **it made
+  itself**; `tests/session_test.gd:30` clears the ledger it is about to write
+  into and **has no gate that can refuse**. And every `OS.get_environment`
+  site the same way - **six, in two files**: `drive_test`'s `PARK` and
+  `ONLY_PLAN` are **options** and cannot refuse. So `replay.gd`'s two are the
+  only gates in the repository, and this is the only member.
+
+  **WHAT IS NOW A FUNCTION OF ITS INPUTS, AND WHAT CANNOT BE, so the exclusion
+  is bounded rather than left standing (TRAPS 90).** Three new `static`
+  functions in `tests/replay.gd`, all driven directly by
+  `tests/field_type_test.gd`:
+
+  | part | now | held by |
+  |---|---|---|
+  | the two guards | `_refusal(log_in, out_path, log_readable) -> String` | section 5, all **8** combinations |
+  | the `2026-10` filter | `_records_of(text) -> {records, counts}` | section 6, the accounting identity |
+  | the grouping rule | `_group(originals) -> Array` | section 7, flattening gives the input back |
+  | the deletion and the output write | **cannot** - they are the side effect itself | section 7 holds the deletion's POSITION |
+  | the replay loop | **cannot** - a live `GameController` in a `SceneTree` | nothing, and it says so |
+  | `OS.get_environment` | **cannot** - it IS the input | - |
+
+  **THE PROPERTIES ARE THE CAPABILITY AND NOT THE WORDING (TRAPS 6, 14).**
+  Section 5 asserts that **exactly one of the eight combinations is allowed to
+  proceed** and that every refusal **names a variable to set**, not that it
+  says any particular sentence. Section 6 asserts the **identity**
+  `records + other_month + unreadable == lines` over six different texts - the
+  thing that breaks when a line is silently dropped - and reads the month off
+  `REPLAY.MONTH` rather than typing it. Section 7 asserts that **flattening
+  the groups gives the records back, in order, once each**, which sees a
+  dropped or duplicated record without re-spelling the grouping rule.
+
+  **AN UNREADABLE LINE IS NOW COUNTED SEPARATELY FROM A LINE OF ANOTHER
+  MONTH**, which is 099's rule one layer out. Before this, a line of broken
+  JSON and a September record were **both silently dropped** and the tool said
+  the same thing either way, so a hand-edited ledger could leave a replay
+  quietly short a record. The tool now prints
+  `REPLAY READ lines=N records=N other_month=N unreadable=N` before it starts
+  and carries the same four numbers in `REPLAY_OUT` under `"read"`.
+  **`"REPLAY DONE groups=N damaged=N"` IS UNCHANGED, WORD FOR WORD.**
+
+  **AND `_records_of()` USES `JSON.new().parse()` WHERE THE OTHER TWO PARSES
+  IN THE FILE KEEP `JSON.parse_string()`, WHICH IS A RULE AND NOT A HALF-FIX
+  (TRAPS 11).** `parse_string()` pushes an engine error per failure. In
+  `_records_of` a failure is an **expected, counted** outcome, so the engine's
+  error is a duplicate and a ledger with fifty damaged lines would bury its own
+  summary. In `_group()`'s read of `raw_command` and in the read-back of
+  produced records a failure is **counted nowhere**, so the engine's error is
+  the only signal they have and silencing it would remove it.
+
+  **VERIFIED:**
+  **BASELINE REPRODUCED 100's md5 BYTE-FOR-BYTE FROM A FOURTH INDEPENDENT
+  CONTAINER** with its own Godot download (`4.7.1.stable.official.a13da4feb`,
+  `--version` read): `--all` on a clean `3f7ae94`, `git status --porcelain`
+  empty, `user://` empty because the container was fresh -
+  **`5a11933fb40cbb0d178e5b0a53c4ca1b`, 78 suites, 0 with something to look
+  at**. `ls tests/*.gd` **80**, run reported **78**.
+  **THE PREDICTION WAS WRITTEN DOWN BEFORE ANY CODE WAS CHANGED AND HELD
+  EXACTLY** (TRAPS 89). It named **one** line - `field_type_test` **189 ->
+  more than 189, failures=0** - and said that **no line moves because of
+  `tests/replay.gd` at all**, since neither runner drives it; and it named six
+  suites with a reason each that it said would **not** move -
+  `result_line_test` **342** (no file added), `source_scan_test` 33,
+  `scan_floor_test` 120 (`remove_absolute` is a WRITE and gets no row),
+  `record_type_test` 388, `record_id_test` 23, `loadcheck` 39. **`diff`
+  against the baseline is ONE LINE**: `FIELD TYPE 189 -> 267 assertions,
+  failures=0`, and nothing else.
+  **THREE BYTE-IDENTICAL FULL `--all` RUNS**, md5
+  `6f506342e2826219876806a48289d77e`, **78 suites, 0 with something to look
+  at**, `user://` cleared before each and taken one at a time (TRAPS 50), each
+  md5-ed only after `suites with something to look at:` had printed (099a's
+  finish check).
+  **AND THE THREE TREES ARE NAMED RATHER THAN BLURRED, INCLUDING THE PART
+  THAT IS UNTIDY.** Run 1 was on the finished code with `docs/` as it stood at
+  `3f7ae94`, except that `docs/TRAPS.md`'s new entry was appended **while that
+  run was in flight**. Run 2 was after the whole of this entry, the
+  "Run the tests first" paragraph, the struck entry, the live entry below and
+  "Human decision needed" 34. Run 3 was after one further `docs/` paragraph,
+  and one `docs/TRAPS.md` sentence was tightened **while run 3 was in
+  flight**. So the three runs were taken over **three different states of
+  `docs/`, two of them moving underneath the run**, and all three returned the
+  same number. That two edits overlapped a run is said rather than hidden; it
+  is also exactly why the claim "no suite reads `docs/`" is re-checked above
+  rather than carried forward.
+  **TWO FURTHER RUNS WERE TAKEN AND NEITHER IS COUNTED AMONG THE THREE, AND
+  THE REASON THE FIRST OF THEM IS NOT COUNTED IS THIS RUN'S OWN MISTAKE.**
+  Run 4 was started with every file's md5 recorded first - and then
+  `tests/field_type_test.gd`'s header was corrected **while it was running**,
+  so `md5sum -c` afterwards named `tests/field_type_test.gd` and
+  `docs/HANDOVER.md` as having moved under it. It returned the same number,
+  and a comment cannot change a suite's output because `_code_of()` blanks
+  comments before anything reads them - but **a run on a tree that moved under
+  it is a measurement of a tree that no longer exists**, so it is recorded and
+  discarded rather than quietly counted. **Run 5 is the settled one**: taken
+  after every code and `docs/` change bar this paragraph, with every file's
+  md5 recorded before it and `md5sum -c` afterwards reporting **nothing moved
+  except Godot's own `.godot/` cache**, which is gitignored. Same number,
+  `6f506342e2826219876806a48289d77e`, 78 suites, 0 with something to look at.
+  **THE FOUR PROBES WERE RE-TAKEN AFTER THE FIX AND THREE OF THREE REFUSALS
+  NOW LEAVE THE LEDGER ALONE** - present, and **byte-identical** to the
+  planted file (`md5 43e299bf0b741cdb7d0a4f055d750e77`, 52 lines, before and
+  after) - with the **same three sentences, word for word**.
+  **AND THE PATH THAT WORKS IS UNCHANGED, MEASURED AND NOT ASSUMED.** The
+  control replay after the fix: `rc=0`, `groups=42 damaged=0`, the same as
+  before. `compare.py` over the two outputs: **log messages identical in 42 of
+  42 executions, closure feedback identical in 42 of 42, prompt byte-identical
+  (12,334 bytes), allowed commands the same set**, and the **only** field that
+  differs in any of the 52 records is the generated `id`, with key order
+  identical. With `"read"` removed and `id`/`time` normalised the two outputs
+  are **byte-identical: `2462bee0b6a6ec246469874e8e7396f1`, 206,118 bytes
+  each**. The file grew by **64 bytes**, which is exactly the length of
+  `,"read":{"lines":52,"records":52,"other_month":0,"unreadable":0}`.
+  **AND THE FIRST DRAFT OF `_records_of()` ADDED 98,754 BYTES TO THE OUTPUT**
+  by storing its whole return value - a second copy of every record read -
+  and that was caught **by comparing the control run's size against the one
+  taken before the change**, not by reading the code. The counts are a
+  separate dictionary from the records because of it.
+  **SIX DELIBERATE FAULTS INJECTED INTO `tests/replay.gd`**, each alone in its
+  own throwaway copy with its own `config/name`, against the clean suite at
+  **267 assertions, failures=0** - **every one caught, none as a `SCRIPT
+  ERROR`**:
+
+  | fault injected into `replay.gd` | what the suite said |
+  |---|---|
+  | the ledger deletion moved back above the gate | **267, failures=1** |
+  | the `REPLAY_OUT` guard removed from `_refusal()` | **266, failures=1** |
+  | an unreadable line dropped without being counted | **267, failures=3** |
+  | `_group()` drops its last group | **259, failures=13** |
+  | an unreadable line counted as "another month" | **267, failures=2** |
+  | the month literal written a second time in the condition | **267, failures=1** |
+
+  **NEITHER RUNNER NEEDED A LINE AND NEITHER WAS TOUCHED (TRAPS 4).** No file
+  was added, so no list in either runner can be short one; `replay.gd` is
+  already on `run_tests.sh`'s `NOT_A_SUITE` and matched by `run_tests.bat`'s
+  `findstr /c:"replay"`, and `result_line_test` excludes it **by name** at its
+  line 89 with the reason *"a tool that needs REPLAY_LOG and REPLAY_OUT set,
+  not a suite"* - **which is still true**. The new `print` line carries
+  **neither** of the two verdict words the runners match on (`"failures="`,
+  `"bad="`), checked against `result_line_test`'s own `_verdict_words()`, so
+  `replay.gd` stays out of that class.
+  **`compare.py` READS ONLY `groups`, `prompt` AND `allowed`** - read, not
+  assumed, from `docs/harness/compare.py.txt` - so the new top-level `"read"`
+  key cannot reach it.
+  **`_code_of()` IS UNTOUCHED AND STILL BYTE-IDENTICAL TO THE REFERENCE
+  COPY**, which `source_scan_test` section 3 asserts; the 33 it reports did
+  not move.
+  **AND THE SUITE'S OWN HEADER WAS REWRITTEN, BECAUSE LEAVING IT WOULD HAVE
+  BEEN TRAPS 14 IN THIS COMMIT.** 100 wrote in `field_type_test.gd`, in
+  writing, *"NOT held: the rest of `replay.gd` - the REPLAY_LOG and REPLAY_OUT
+  guards, the grouping, the output file"*. That was true when it was written
+  and this commit makes it **false**, so the paragraph now says which sections
+  hold what and names the two parts that are still held by nothing. **A
+  comment that describes what a suite covers is a claim about Genesis and goes
+  stale the same way a limitation does.** It was caught by re-reading the file
+  the change was in, not by a check, and nothing in `tests/` would have
+  failed on it.
+
+  **AND NO SUITE READS `docs/`, RE-CHECKED THIS RUN RATHER THAN CARRIED
+  FORWARD.** `grep -n "docs/" tests/*.gd` now returns **14** hits across nine
+  files and **every one is a comment**, read one at a time. The record says
+  "ten" from 100; the four new ones are this commit's, in `tests/replay.gd`,
+  and the number is said here so a later session running the grep does not
+  have to work out why it disagrees with the older paragraph.
+
+  **NOT DONE AND NOT VERIFIED:**
+  **A NEW FILE WAS DELIBERATELY NOT ADDED, AND THE REASON IS THE SECOND LIVE
+  ENTRY.** The new sections went into `tests/field_type_test.gd` rather than
+  into a suite of their own because that file **is** the standing check for
+  `tests/replay.gd` and reads the same source - and because **adding a file
+  would have falsified `README.md`'s suite count**, which is the open class
+  100 left and which **this run did not close**. That entry is untouched and
+  its named smallest step is unchanged.
+  **THE REPLAY LOOP AND THE OUTPUT WRITE ARE STILL HELD BY NOTHING**, and now
+  that is the whole of what is left rather than "the rest of the file". They
+  are named in the table above with the reason each cannot be made pure.
+  **`prompt_test` IS STILL CHECKED BY NOTHING.** It is the other member of
+  `NOT_A_SUITE` and nothing in this commit touches it.
+  **`docs/harness/replay.gd.txt` IS STILL A STALE SNAPSHOT AND WAS NOT
+  UPDATED** - 94 lines against the live file's 444 - and `docs/harness/`'s own
+  README table was not re-read for counts either. Named rather than quietly
+  left (TRAPS 90).
+  **THE HARD-CODED MONTH IS A LIMIT AND IT IS THE OWNER'S, NOT FIXED HERE.**
+  `MONTH = "2026-10"`, and from November a run of this tool over a current
+  ledger matches **nothing**. What changed is only that `groups=0` can now be
+  told apart from *"there was nothing in that file for this month"*; **what
+  the filter selects is untouched**, because widening it changes which of his
+  records a replay covers. Written up below.
+  **NO LIVE PATH WAS DRIVEN.** No model was asked anything, no request left
+  the container, there is no API key here, no browser ran, no web export was
+  made, `interpret.js` was not executed.
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is **2026-10-16**, checked by grepping every
+  `2026-1[01]-*` date in `HANDOVER.md` and `TRAPS.md` rather than taken from
+  100's paragraph saying the same thing.
+  **064'S FINDING IS CARRIED FORWARD AND NOT RE-VERIFIED**; the live site's
+  commit cannot be read from this container.
+
+  **NOTHING IN `scripts/`, `scenes/`, `netlify/`, `.github/`, EITHER RUNNER,
+  `project.godot` OR `export_presets.web.cfg` WAS TOUCHED** -
+  `git status --porcelain` names `tests/replay.gd`,
+  `tests/field_type_test.gd` and two files in `docs/`, and nothing else. No
+  file was added or removed, so the `.gd`/`.uid` pairing in `tests/` is
+  unchanged at 80 and 80. `ai_interpreter.gd` is 0 lines of diff, so
+  `PROMPT_FINGERPRINT` and `PROMPT_VERSION` cannot have moved.
+  `git diff -- tests/` grepped for `AIza`, `api key`, `secret`, `token`,
+  `bearer`, `GEMINI`, `netlify` and `export_presets` returns **ZERO**. Every
+  probe and every injection was in a throwaway copy under the scratch
+  directory, each with its own `config/name`, never in the repository.
+
+  **AND WHAT CHANGED FOR ANYONE USING GENESIS: NOTHING.** `scripts/` is
+  untouched and the suite output moves by one line. The only behaviour that
+  changed is a tool the owner runs by hand, which **no longer deletes his
+  ledger when it refuses to run**, and which now says how many lines it read
+  and how many it put aside and why.
+
+- Before 101: **100**, which took **099a's own first
   live "Next action"** - *`tests/replay.gd`'s three reads are driven by
   nothing in a full run* - and did the thing that entry said to do first:
   asked which of its two options was cheaper. **The answer was a third one,
@@ -5999,6 +6257,40 @@ than suites, leaving **78 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 78
 and are skipped without it.
+
+**101 ADDED NO FILE**, which is why the two numbers above did not move, and
+that was deliberate: a new suite would have falsified `README.md`'s count,
+which is the open class 100 left and which 101 did not close. The new sections
+went into `tests/field_type_test.gd`, which already **is** the standing check
+for `tests/replay.gd` and reads the same source. Its baseline on the clean
+tree at `3f7ae94`, `git status --porcelain` empty, was **BYTE-IDENTICAL to the
+md5 100 recorded, from a FOURTH independent container with its own Godot
+download**: `5a11933fb40cbb0d178e5b0a53c4ca1b`, 78 suites, 0 with something to
+look at. The container was fresh, so `user://` was empty rather than cleared.
+After the change, **THREE byte-identical full `--all` runs on the settled
+complete tree, code and docs together**, md5 `6f506342e2826219876806a48289d77e`, **78 suites, 0 with
+something to look at**, `user://` cleared before each. **The md5 is written
+into this file AFTER the runs**, for the reason 093 through 100 all gave, and
+the circularity is the same one none of them escaped.
+**THE PREDICTION WAS WRITTEN DOWN BEFORE ANY CODE WAS CHANGED AND HELD
+EXACTLY** (TRAPS 89): **one** line moves, `field_type_test` **189 -> 267
+assertions, failures=0**, and **no line moves because of `tests/replay.gd` at
+all** since neither runner drives it. `diff` against the baseline is that one
+line and nothing else. It also named six suites with a reason each that it
+said would not move — `result_line_test` **342** (no file added),
+`source_scan_test` 33, `scan_floor_test` 120 (`remove_absolute` is a WRITE and
+is asked for no row), `record_type_test` 388, `record_id_test` 23 and
+`loadcheck` 39 — and none of them did.
+**AND `tests/replay.gd` IS STILL RUN BY NEITHER RUNNER.** What changed is that
+its gate, its month filter and its grouping are now `static` functions driven
+by `field_type_test` directly, and that the position of its one destructive
+act is asserted off the source. **What is still held by nothing is the replay
+loop and the output write**, which are named with the reason each cannot be
+made a function of its inputs.
+**NEITHER RUNNER NEEDED A LINE AND NEITHER WAS TOUCHED** (TRAPS 4): no file
+was added, so no list in either runner can be short one, and the new `print`
+in `replay.gd` carries neither verdict word the runners match on — checked
+against `result_line_test`'s own `_verdict_words()`.
 
 **100 ADDED ONE FILE** — `tests/field_type_test.gd`, which is why the two
 numbers above moved from 79 and 77. Its baseline on the clean tree at
@@ -12634,6 +12926,20 @@ their results, each alone in its own copy with its own `config/name`, and the
 property they attribute is now `tests/field_type_test.gd` rather than a table
 in a document.
 
+**NOTHING IS OWED FROM 101 EITHER.** Its baseline was byte-identical to the
+md5 100 recorded - from a **fourth** independent container with its own Godot
+download - it wrote its predicted diff down **before any code was changed**
+and **the prediction held exactly**, and it took three byte-identical `--all`
+runs, the last two on the complete tree with `docs/` in place, which is why
+there is no 101a. **Do not start by re-running on 101's behalf**; take your
+own baseline so you learn the record and the container still agree, and spend
+the time on the work below. **And do not re-take 101's measurements** - the
+four invocation probes before the fix, the four after it, the control
+comparison through `compare.py` and the six injected faults are all in the 101
+entry with their results, each alone in its own throwaway copy with its own
+`config/name`, and the property they attribute is now
+`tests/field_type_test.gd` sections 5 to 7 rather than a table in a document.
+
 **~~THE FIRST LIVE ENTRY AS OF 099a: `tests/replay.gd`'S THREE READS ARE
 DRIVEN BY NOTHING IN A FULL RUN.~~ HALF DONE IN 100, AND THE READS WERE
 FOUR.** They are now held by `tests/field_type_test.gd`, which drives
@@ -12648,8 +12954,25 @@ five wrong types hung the tool. New TRAPS **99** and **100**. Struck rather
 than deleted, because the half still open is the next entry and the record of
 a reading that was right and under-counted is the useful part.
 
-**THE FIRST LIVE ENTRY AS OF 100, WHICH IS WHAT IS LEFT OF 099a'S: THE REST OF
-`tests/replay.gd` IS HELD BY NOTHING, AND NEITHER IS `prompt_test`.** The four
+**~~THE FIRST LIVE ENTRY AS OF 100, WHICH IS WHAT IS LEFT OF 099a'S: THE REST
+OF `tests/replay.gd` IS HELD BY NOTHING, AND NEITHER IS `prompt_test`.~~ DONE
+IN 101 FOR `replay.gd`, AND ASKING THE ENTRY'S OWN QUESTION OF THE GATE FOUND
+A FAULT NOTHING HAD NAMED.** The entry's instruction was exactly right and is
+the part that paid: *ask of each remaining part whether it can be made a
+function of its inputs, take the ones that can, and write down which cannot
+and why.* Asked of the **gate**, the answer required reading what ran before
+it — and the ledger deletion was the fourth statement of `_initialize()` with
+both guards twenty lines below, so **every refused invocation destroyed
+`user://track_log.jsonl` and then said what was missing**. Three of three
+refusals, measured on `3f7ae94`. The gate, the month filter and the grouping
+are now `static` functions held by `field_type_test` sections 5, 6 and 7; the
+deletion and the output write **cannot** be made pure and what section 7 holds
+about the deletion is its POSITION. New TRAPS **101**. **The `prompt_test`
+half is UNTOUCHED and is the live entry below.** Struck rather than deleted,
+because the record of an instruction that was right and whose value was in a
+place it did not predict is the useful part. The original reading follows:
+
+**AS 100 WROTE IT:** The four
 field reads are driven in a full run now. **Nothing else in that file is**:
 the `REPLAY_LOG` guard and its `push_error`, the `REPLAY_OUT` guard, the
 `"2026-10"` filter, the grouping rule that keeps a plan's step records with
@@ -12670,6 +12993,36 @@ ones that can, and write down which cannot and why - which turns a stated
 exclusion into a bounded one rather than leaving it standing (TRAPS 90).
 **The `prompt_test` half of the question is completely untouched**; nothing in
 100 looked at it.
+
+**THE FIRST LIVE ENTRY AS OF 101: `prompt_test` IS CHECKED BY NOTHING, AND
+WHAT IS LEFT OF `replay.gd` IS THE TWO PARTS THAT CANNOT BE MADE PURE.**
+101 closed the `replay.gd` half of 100's entry and bounded what remains, so
+this entry is deliberately smaller than the one it replaces.
+
+**`prompt_test` is completely untouched** — the other member of
+`NOT_A_SUITE`, driven by neither runner, looked at by neither 100 nor 101. It
+prints the AI's prompt for a human to read and `result_line_test`'s row for it
+says it *"has no verdict to give"*. **Whether that is still true is the first
+question and it has not been asked**: a file that only prints could still
+build what it prints wrongly, and the prompt it assembles is the same
+`AIInterpreter.SYSTEM_PROMPT + WorldRegistry.prompt_sections()` that
+`replay.gd` writes into `REPLAY_OUT`. **Before writing "it cannot be checked"
+anywhere, grep for what that denies** — TRAPS 14, and this project has told
+players it could not do things it had been doing for releases.
+
+**And `replay.gd`'s replay loop and output write are what is left**, named
+with the reason rather than left as a standing exclusion (TRAPS 90): the loop
+drives a live `GameController` through a `SceneTree` and reads the ledger back
+between groups, and the write is the side effect itself. **Neither can be made
+a function of its inputs and neither should be forced to be.** What a suite
+could still hold about them has not been worked out and is the honest next
+question — the loop's one accounting rule, `lines_before`, is arithmetic over
+numbers and may well be separable; nothing has tried.
+
+**AND DO NOT RUN `replay.gd` FROM A SUITE, WHICH IS STILL TRUE AND IS NOW TRUE
+FOR A NARROWER REASON.** It still deletes `user://track_log.jsonl` on the path
+that works, which is the shared ledger four other suites read (TRAPS 50,
+TRAPS 97). What changed in 101 is only that a **refused** run no longer does.
 
 **THE SECOND LIVE ENTRY AS OF 100, FOUND WHILE CHECKING THIS RUN'S OWN
 COUNTS: `README.md` SAID "67 SUITES" FOR 43 COMMITS, AND NOTHING IN THIS
@@ -22638,3 +22991,39 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     here: nobody will remember what 12.0 was. 087 took the measurement and
     wrote it here rather than acting on it, and **touched no file in
     `scripts/`**.
+
+
+34. **Two questions about `tests/replay.gd`'s reading of his own records,
+    both raised by 101 and neither one the assistant's to answer.** Both are
+    measured; neither was changed, because each decides **which of the owner's
+    records a replay covers**, which is his.
+
+    **(a) THE MONTH IS HARD-CODED AND OCTOBER IS OVER.**
+    `tests/replay.gd` keeps only records whose `time` begins `"2026-10"` —
+    now `const MONTH`, written in the code exactly once and asserted to be
+    (101). **From November, a run of this tool over a current ledger matches
+    nothing**, and what it printed before 101 for that case was `REPLAY DONE
+    groups=0 damaged=0` and an output file with an empty `groups` array —
+    indistinguishable from a ledger the tool could not read. **101 fixed only
+    the half that needs no decision**: it now prints
+    `REPLAY READ lines=N records=N other_month=N unreadable=N` first and
+    carries the same four numbers in `REPLAY_OUT`, so *"nothing matched"* can
+    be told from *"nothing was there"*. **What the filter SELECTS is
+    untouched.** The options are a wider window, a `REPLAY_MONTH` variable
+    alongside the two that already gate the tool, or leaving it and reading
+    the new denominator — and which is right depends on what the owner wants a
+    replay to be a replay **of**, which is a product question and not a
+    defect. **If he is absent, LEAVE IT**: the denominator already takes the
+    part that could make a reading wrong.
+
+    **(b) A PLAN WHOSE `PLAN` RECORD NEVER ARRIVED SWALLOWS THE REST OF THE
+    FILE.** The grouping keeps a plan's step records open until the `PLAN`
+    record closes them, so a ledger truncated mid-plan — a crash, a copy taken
+    while the game was running — puts **every remaining record into one
+    group**. Asserted in `field_type_test` section 7 as *what this code does*
+    and explicitly not as what is correct. The alternatives are to close an
+    open plan at the end of the file, or to say so in the `REPLAY READ` line,
+    or to leave it; **the right answer depends on whether a truncated ledger
+    is a thing he actually has**, which the assistant cannot know from here.
+    No record in this container is one, so the case is reasoned from the code
+    and not from an example. Nothing was changed.

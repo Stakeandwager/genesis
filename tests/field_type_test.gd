@@ -1,6 +1,6 @@
 extends SceneTree
 
-# --- 100: the four reads in tests/replay.gd, held in a full run ---
+# --- 100, widened by 101: the parts of tests/replay.gd a full run holds ---
 #
 # WHY THIS FILE EXISTS. 099a fixed three reads of a record that came off a
 # FILE in `tests/replay.gd` and measured them eighteen ways by hand, and then
@@ -19,14 +19,34 @@ extends SceneTree
 # what is driven here is the two functions that do the reading, called
 # directly, which is why both are `static` in that file.
 #
-# WHAT IS HELD AND WHAT IS NOT, said plainly (TRAPS 6, TRAPS 14). Held: the
-# reader converts, the table and the call sites agree in both directions, the
-# value that comes out fits the typed member it is assigned to, and nothing a
-# JSON file can hold reaches `RacingModule`'s read of `revision_of` as a
-# non-Dictionary. NOT held: the rest of `replay.gd` - the REPLAY_LOG and
-# REPLAY_OUT guards, the grouping, the output file - which no suite drives and
-# which is still the person running the tool's to check. That half of 099a's
-# entry stays open and says so in docs/HANDOVER.md.
+# 101 ADDED THREE MORE STATIC FUNCTIONS TO THAT FILE FOR THE SAME REASON, and
+# the subprocess option is STILL out for the same one: replay.gd deletes the
+# shared ledger on the path that WORKS. What 101 changed is that a REFUSED run
+# no longer does - it used to delete the ledger four statements in and refuse
+# twenty lines later, measured three ways. See TRAPS 101 and section 7.
+#
+# WHAT IS HELD AND WHAT IS NOT, said plainly (TRAPS 6, TRAPS 14), AND THIS
+# PARAGRAPH IS REWRITTEN BY 101 BECAUSE IT WOULD OTHERWISE BE FALSE - the
+# version 100 wrote said the guards and the grouping were held by nothing,
+# which was true when it was written and is the exact shape of TRAPS 14.
+#
+# HELD, sections 1-4: the reader converts, the table and the call sites agree
+# in both directions, the value that comes out fits the typed member it is
+# assigned to, and nothing a JSON file can hold reaches `RacingModule`'s read
+# of `revision_of` as a non-Dictionary.
+# HELD, sections 5-7 (101): the gate lets exactly one of eight combinations
+# proceed and every refusal names a variable to set; every line of a record
+# file lands in exactly one of three buckets and the month is read off
+# REPLAY.MONTH rather than typed here; flattening the groups gives the records
+# back in order, once each; and every destructive idiom in replay.gd sits
+# BELOW the gate's return, which is the only thing a suite can hold about an
+# irreversible act and is a guard rather than a measurement (TRAPS 6).
+# NOT HELD: replay.gd's replay loop and its output write. Neither is a
+# function of its inputs - the loop drives a live GameController through a
+# SceneTree and reads the ledger back between groups, and the write is the
+# side effect itself - and what a suite could still say about them has not
+# been worked out. `prompt_test`, the other member of NOT_A_SUITE, is checked
+# by nothing at all. Both are live entries in docs/HANDOVER.md.
 #
 # HOW A BREAK LOOKS HERE, MEASURED IN 100 RATHER THAN ASSUMED, because the
 # first draft of this comment got it wrong and that is TRAPS 14's shape.
@@ -284,11 +304,241 @@ func _the_value_fits_the_member() -> void:
 	controller.free()
 
 
+# --- section 5: the gate, every combination of what it is given (101) ---
+#
+# 100 wrote down that the REPLAY_LOG and REPLAY_OUT guards were held by
+# nothing, and 101 made the decision they take a pure function so that it can
+# be asked here. THE PROPERTY IS NOT THE THREE SENTENCES, it is that exactly
+# one of the eight combinations is allowed to proceed and that every refusal
+# names the variable the person running the tool has to set. The sentences are
+# checked for naming a variable, not for their wording (TRAPS 6, TRAPS 14).
+func _the_gate_lets_exactly_one_combination_through() -> void:
+	for log_in in ["", "/some/record/file.jsonl"]:
+		for out_path in ["", "/some/output.json"]:
+			for readable in [false, true]:
+				var said := REPLAY._refusal(str(log_in), str(out_path), bool(readable))
+				var should_go: bool = str(log_in) != "" and bool(readable) and str(out_path) != ""
+				_check((said == "") == should_go,
+					"REPLAY_LOG=%s readable=%s REPLAY_OUT=%s %s" % [
+						"set" if str(log_in) != "" else "unset", str(readable),
+						"set" if str(out_path) != "" else "unset",
+						"is allowed to proceed" if should_go else "is refused"])
+				if said == "":
+					continue
+				_check(said.contains("REPLAY_LOG") or said.contains("REPLAY_OUT"),
+					"and the refusal names a variable to set rather than just failing: %s" % said)
+				if str(log_in) != "" and not bool(readable):
+					_check(said.contains(str(log_in)),
+						"and a file it could not open is QUOTED, so the typo is visible: %s" % said)
+
+	# And the order of the two is a fact and not an accident: a run with
+	# NEITHER variable set is told about REPLAY_LOG, because that is the one
+	# that decides whether there is anything to replay at all.
+	_check(REPLAY._refusal("", "", false).contains("REPLAY_LOG"),
+		"with nothing set at all, the first thing named is REPLAY_LOG")
+
+
+# --- section 6: every line of a record file is accounted for (101) ---
+#
+# The month is READ OFF REPLAY.MONTH rather than typed here, so this follows
+# the filter instead of pinning it. What is asserted is the IDENTITY -
+# records + other_month + unreadable == lines - which is the thing that breaks
+# when a line is silently dropped, and the SEPARATION of a line that could not
+# be read from a line of another month, which is 099's rule: damage read as
+# absence trades a loud empty answer for a quietly wrong one.
+func _every_line_is_accounted_for() -> void:
+	var month := str(REPLAY.MONTH)
+	var other_month := "0001-01" if month != "0001-01" else "0002-02"
+
+	var keep_a := {"time": month + "-02T10:00:00", "command": "CREATE_TRACK", "raw_command": "{}"}
+	var keep_b := {"time": month + "-29T23:59:59", "command": "CLEAR_WORLD", "raw_command": "{}"}
+	var wrong_month := {"time": other_month + "-02T10:00:00", "command": "CREATE_FARM"}
+	var no_time := {"command": "CREATE_FARM"}
+
+	var text := "\n".join([
+		JSON.stringify(keep_a),
+		"",
+		"   ",
+		"not json at all {",
+		JSON.stringify(wrong_month),
+		"[1, 2, 3]",
+		"42",
+		"\"a string\"",
+		JSON.stringify(no_time),
+		JSON.stringify(keep_b),
+		"",
+	])
+
+	var read: Dictionary = REPLAY._records_of(text)
+	var records: Array = read["records"]
+	var counts: Dictionary = read["counts"]
+
+	_check(records.size() == 2, "the two records of %s are kept (%d)" % [month, records.size()])
+	_check(records.size() > 0 and records[0] == keep_a and records[-1] == keep_b,
+		"and they come back in file order, unchanged")
+	_check(int(counts["records"]) == records.size(),
+		"the reported record count IS the number of records returned, not a second tally")
+	_check(int(counts["lines"]) == 8,
+		"blank and whitespace-only lines are not lines of a record file (%d)" % int(counts["lines"]))
+	_check(int(counts["other_month"]) == 2,
+		"a record of another month and a record with NO time are both 'other month' (%d)" % int(counts["other_month"]))
+	_check(int(counts["unreadable"]) == 4,
+		"broken JSON, an array, a number and a bare string are UNREADABLE, not absent (%d)" % int(counts["unreadable"]))
+
+	# THE IDENTITY. This is the assertion that catches a line going missing,
+	# whatever the reason, and it is asked of every text below as well.
+	for sample_text in [text, "", "\n\n\n", JSON.stringify(keep_a), "{", JSON.stringify(wrong_month)]:
+		var r: Dictionary = REPLAY._records_of(str(sample_text))
+		var c: Dictionary = r["counts"]
+		_check(int(c["records"]) + int(c["other_month"]) + int(c["unreadable"]) == int(c["lines"]),
+			"every line is in exactly one of the three buckets (lines=%d)" % int(c["lines"]))
+		_check(int(c["records"]) == (r["records"] as Array).size(),
+			"and the kept count still matches the kept records")
+
+	var empty: Dictionary = REPLAY._records_of("")
+	_check((empty["records"] as Array).is_empty() and int((empty["counts"] as Dictionary)["lines"]) == 0,
+		"an empty file is zero lines and zero records, rather than one empty record")
+
+	# AND THE FILTER HAS ONE PLACE. The month literal appears on the const
+	# line and nowhere else in the code, so a change to what this tool
+	# replays cannot be made in one of two places. Derived from the constant,
+	# so renaming the month moves the check with it.
+	var code := _source_of(SOURCE)
+	if code != "":
+		var literal := "\"" + month + "\""
+		_check(code.count(literal) == 1,
+			"the month %s is written in the code exactly once (%d)" % [literal, code.count(literal)])
+
+
+# --- section 7: the grouping loses nothing, and nothing is destroyed before
+#                the gate (101) ---
+#
+# TWO PROPERTIES, and the first is deliberately not the grouping rule restated.
+# A grouping that drops or duplicates a record is how this goes wrong, and
+# FLATTENING THE GROUPS BACK gives an assertion that sees it without
+# re-spelling the rule. The shapes below then say what the rule does.
+#
+# The second is the fault 101 found and is the only thing a suite can hold
+# about an irreversible act: its POSITION. The ledger deletion was the fourth
+# statement of _initialize and the guards were twenty lines below it, so every
+# refused invocation destroyed the ledger first - measured three ways on
+# 3f7ae94, each in a throwaway copy with its own config/name and a planted
+# 52-line ledger, and three of three came back with the ledger GONE. This
+# section is the guard against that coming back, and it is labelled as a
+# guard rather than counted as the measurement (TRAPS 6).
+func _a_record_is_in_exactly_one_group() -> void:
+	var plain := func(c: String) -> Dictionary:
+		return {"command": c, "raw_command": JSON.stringify({"command": c})}
+	var step := func(c: String) -> Dictionary:
+		return {"command": c, "raw_command": JSON.stringify({"command": "PLAN"})}
+	var plan_end := func() -> Dictionary:
+		return {"command": "PLAN", "raw_command": JSON.stringify({"command": "PLAN"})}
+
+	var shapes := {
+		"nothing at all": [],
+		"one ordinary record": [plain.call("CREATE_TRACK")],
+		"three ordinary records": [plain.call("CREATE_TRACK"), plain.call("CLEAR_WORLD"), plain.call("CREATE_FARM")],
+		"a plan with two steps": [step.call("CREATE_FARM"), step.call("CREATE_TRACK"), plan_end.call()],
+		"a plan between two ordinary records": [plain.call("CLEAR_WORLD"), step.call("CREATE_FARM"), plan_end.call(), plain.call("EQUIP")],
+		"two plans running together": [step.call("CREATE_FARM"), plan_end.call(), step.call("CREATE_TRACK"), plan_end.call()],
+		"a plan whose PLAN record never arrived": [plain.call("EQUIP"), step.call("CREATE_FARM"), step.call("CREATE_TRACK")],
+	}
+	var expected_groups := {
+		"nothing at all": 0, "one ordinary record": 1, "three ordinary records": 3,
+		"a plan with two steps": 1, "a plan between two ordinary records": 3,
+		"two plans running together": 2, "a plan whose PLAN record never arrived": 2,
+	}
+
+	for what in shapes:
+		var originals: Array = shapes[what]
+		var groups: Array = REPLAY._group(originals)
+
+		# NOTHING LOST, NOTHING DUPLICATED, ORDER KEPT.
+		var flat: Array = []
+		for g in groups:
+			for r in (g as Array):
+				flat.append(r)
+		_check(flat == originals,
+			"%s: flattening the groups gives the records back, in order, once each" % what)
+		for g in groups:
+			_check(not (g as Array).is_empty(), "%s: no group is empty" % what)
+		_check(groups.size() == int(expected_groups[what]),
+			"%s: %d groups (expected %d)" % [what, groups.size(), int(expected_groups[what])])
+
+	# A plan's steps and its PLAN record are ONE execution, which is what the
+	# grouping is for, asked of the group's contents rather than its count.
+	var plan_shape: Array = shapes["a plan between two ordinary records"]
+	var plan_groups: Array = REPLAY._group(plan_shape)
+	if plan_groups.size() == 3:
+		_check((plan_groups[1] as Array).size() == 2,
+			"the step and its PLAN record are collected into one group")
+		_check(str(((plan_groups[1] as Array)[-1] as Dictionary).get("command", "")) == "PLAN",
+			"and the PLAN record is the one that closes it")
+
+	# The raw command is matched without regard to case, because to_upper() is
+	# what the code does and a ledger is a file somebody can edit.
+	var lower: Array = [
+		{"command": "CREATE_FARM", "raw_command": JSON.stringify({"command": "plan"})},
+		{"command": "PLAN", "raw_command": JSON.stringify({"command": "plan"})},
+	]
+	_check(REPLAY._group(lower).size() == 1,
+		"a raw command of \"plan\" in lower case still opens a plan group")
+
+
+func _destructive_idioms() -> Array:
+	return ["remove_absolu" + "te(", "FileAcc" + "ess.WRITE", "store_str" + "ing("]
+
+
+func _nothing_is_destroyed_before_the_gate() -> void:
+	var code := _source_of(SOURCE)
+	if code == "":
+		return
+	var lines := code.split("\n")
+
+	var gate_at := -1
+	var leave_at := -1
+	var destructive: Array = []
+	for i in lines.size():
+		var line := str(lines[i])
+		# The CALL, not the definition: the definition has no `var refusal`.
+		if gate_at < 0 and line.contains("_refusal(") and line.contains("var refusal"):
+			gate_at = i
+		if gate_at >= 0 and leave_at < 0 and line.strip_edges() == "return":
+			leave_at = i
+		for idiom in _destructive_idioms():
+			if line.contains(str(idiom)):
+				destructive.append([i, str(idiom)])
+
+	_check(gate_at >= 0, "the gate is a call to _refusal() in the body, so there is a line to be after")
+	_check(leave_at > gate_at,
+		"and the gate can LEAVE: a bare return at line %d follows it at %d" % [leave_at + 1, gate_at + 1])
+	# A whitelist that matches nothing is TRAPS 75 one layer out, so the list
+	# is asserted to be classifying something before its members are judged.
+	_check(destructive.size() >= 2,
+		"the destructive idioms list found %d sites to place, not zero" % destructive.size())
+	for site in destructive:
+		var at: int = (site as Array)[0]
+		var idiom: String = str((site as Array)[1])
+		_check(at > leave_at,
+			"%s at line %d is BELOW the gate's return at %d, so a refused run destroys nothing" % [
+				idiom, at + 1, leave_at + 1])
+
+	# And the three functions the sections above drive are the ones the tool
+	# actually uses, so none of them is a parallel copy that can drift.
+	for called in ["_refusal(", "_records_of(", "_group("]:
+		_check(code.count(str(called)) >= 2,
+			"%s is defined AND called in the body, so this suite drives live code" % str(called))
+
+
 func _run() -> void:
 	_the_class_is_closed_by_the_code()
 	_every_field_against_every_type()
 	_the_attempt_dictionary()
 	_the_value_fits_the_member()
+	_the_gate_lets_exactly_one_combination_through()
+	_every_line_is_accounted_for()
+	_a_record_is_in_exactly_one_group()
+	_nothing_is_destroyed_before_the_gate()
 
 	print("FIELD TYPE %d assertions, failures=%d" % [asserted, bad])
 	quit(1 if bad > 0 else 0)

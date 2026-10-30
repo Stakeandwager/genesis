@@ -154,10 +154,209 @@ static func _attempt_of(r: Dictionary, damaged: Array) -> Dictionary:
 	return out
 
 
+# --- 101: THE GATE, THE FILTER AND THE GROUPING, ASKED WHETHER THEY ARE
+#          FUNCTIONS OF THEIR INPUTS - AND THE LEDGER WAS BEING DELETED
+#          BEFORE THE GATE ---
+#
+# 100 left the rest of this file as the first live entry in docs/HANDOVER.md
+# and named the honest next step: ask of each remaining part whether it can be
+# made a function of its inputs, take the ones that can, and write down which
+# cannot and why. That is what the three functions below are, and asking it of
+# the GATE is what found the fault.
+#
+# THE FAULT: THE LEDGER WAS DELETED BEFORE THE TOOL KNEW IT COULD DO ANYTHING.
+# `DirAccess.remove_absolute(user://track_log.jsonl)` was the fourth statement
+# of _initialize and the two guards were twenty lines below it, so every
+# invocation that this tool REFUSES still destroyed the ledger first. The
+# deletion is wanted on the path that works - the tool counts produced records
+# by line offset into a ledger it needs empty - and is wanted NOWHERE ELSE.
+#
+# MEASURED ON 3f7ae94 BEFORE ANYTHING WAS CHANGED, each probe a throwaway copy
+# of the repository with its own config/name and its own user:// holding a
+# planted 52-line ledger (TRAPS 50, 80, 88). THREE OF THREE REFUSALS
+# DESTROYED IT:
+#
+#   REPLAY_LOG unset, REPLAY_OUT unset      rc=1, "needs REPLAY_LOG"
+#                                           LEDGER GONE
+#   REPLAY_LOG naming a missing file        rc=1, "cannot open"
+#                                           LEDGER GONE
+#   REPLAY_LOG good, REPLAY_OUT unset       rc=1, "needs REPLAY_OUT"
+#                                           LEDGER GONE
+#   REPLAY_LOG good, REPLAY_OUT good        rc=0, REPLAY DONE groups=42
+#   (control)                               damaged=0, ledger present and
+#                                           rewritten by the replay
+#
+# AND IT IS THE OWNER'S OWN LEDGER AND NOT A SCRATCH FILE, which is read off
+# docs/harness/run.sh.txt rather than assumed: that script builds its
+# throwaway project with `config/name="AI_Game_Builder"` - THE SAME NAME AS
+# project.godot - so user:// is the same directory the game writes to. The
+# documented way to run this tool therefore points it at the real ledger, and
+# a mistyped REPLAY_OUT cost the session history that scripts/session_report.gd
+# reads for /session.
+#
+# THE CLASS, SWEPT RATHER THAN ASSUMED (TRAPS 11). The rule is "a destructive
+# act waits until the work is known to be possible". Every DirAccess deletion
+# in the repository was read one at a time - four sites:
+# scripts/world_store.gd:119 (remove_world) REFUSES FIRST and then deletes,
+# which is the correct order already; tests/look_test.gd:168 deletes a fixture
+# IT MADE ITSELF; tests/session_test.gd:30 clears the ledger it is about to
+# write into and has no gate that can refuse. And every OS.get_environment
+# site was read the same way - six, in two files: drive_test's PARK and
+# ONLY_PLAN are OPTIONS that cannot refuse, so this file's two are the only
+# gates in the repository. THE CLASS HAS ONE MEMBER AND THIS IS IT, which is
+# said with the sweep that establishes it rather than left as a claim.
+#
+# WHAT COULD NOT BE MADE A FUNCTION OF ITS INPUTS, AND WHY, so that the
+# exclusion is bounded rather than standing (TRAPS 90):
+#   - THE DELETION AND THE OUTPUT WRITE. Both are the side effect itself.
+#     What a suite can hold about the deletion is its POSITION, which
+#     tests/field_type_test.gd section 7 asserts off the source: it is
+#     downstream of the gate. That is a guard against future change and is
+#     labelled as one (TRAPS 6); the measurement is the four probes above.
+#   - THE REPLAY LOOP. It drives a live GameController through a SceneTree and
+#     reads the ledger back between groups. There is nothing to make pure.
+#   - THE ENVIRONMENT READ ITSELF. OS.get_environment is the input; _refusal()
+#     below is the decision taken on it, and that IS now a function.
+
+
+# Does this invocation have what it needs? "" means go; anything else is the
+# sentence to push_error and leave on.
+#
+# The three sentences are the three that were measured on 3f7ae94, kept
+# word-for-word so that a reader comparing the probe output above with this
+# code finds the same strings. PURE, so tests/field_type_test.gd can ask it
+# every combination of the two variables without a file or a process.
+static func _refusal(log_in: String, out_path: String, log_readable: bool) -> String:
+	if log_in == "":
+		return "replay.gd needs REPLAY_LOG to name a readable record file (REPLAY_LOG is unset)"
+	if not log_readable:
+		return "replay.gd needs REPLAY_LOG to name a readable record file (cannot open '%s')" % log_in
+	if out_path == "":
+		return "replay.gd needs REPLAY_OUT to name where to write"
+	return ""
+
+
+# The month this tool replays. Named rather than written into the condition,
+# because a suite that asserts the filter has to be able to ask what the
+# filter IS without matching a string in the source.
+#
+# IT IS A HARD-CODED MONTH AND THAT IS A LIMIT, NOT A BUG, and it is written
+# into docs/HANDOVER.md as a question for the owner rather than changed here:
+# from November a run of this tool over a current ledger matches NOTHING and
+# the old behaviour was to say only "groups=0". What changed is that it now
+# says how many lines it read and how many it put aside and why - the
+# denominator, which is 099's rule - so "groups=0" can be told apart from
+# "there was nothing to group". What the filter SELECTS is untouched.
+const MONTH := "2026-10"
+
+
+# Every line of a record file, accounted for. Returns
+#   {"records": Array, "counts": {lines, records, other_month, unreadable}}
+# and counts.records + counts.other_month + counts.unreadable == counts.lines,
+# which is an IDENTITY a suite can assert rather than four counts it has to
+# trust. The counts are a separate dictionary from the records so that the
+# thing written into REPLAY_OUT is the accounting and NOT a second copy of the
+# input: the first draft of this stored the whole returned dictionary and
+# added 98,754 bytes of duplicated records to the output file, caught by
+# comparing the control run's size against the one taken before the change.
+#
+# AN UNREADABLE LINE IS COUNTED SEPARATELY FROM A LINE OF ANOTHER MONTH, which
+# is 099's rule applied one layer out: before this, a line of broken JSON and a
+# September record were both silently dropped, so a hand-edited ledger could be
+# quietly short a record and the tool said the same thing either way. Blank
+# lines are not counted at all - they are not lines of a record file.
+static func _records_of(text: String) -> Dictionary:
+	var records: Array = []
+	var lines := 0
+	var other_month := 0
+	var unreadable := 0
+	for raw in text.split("\n"):
+		var line := str(raw).strip_edges()
+		if line == "":
+			continue
+		lines += 1
+		# JSON.new().parse() AND NOT JSON.parse_string(), WHICH IS A CHOICE
+		# AND IS WRITTEN DOWN AS ONE. parse_string() pushes an engine error
+		# per failure. HERE a failure is an EXPECTED, COUNTED outcome - it
+		# becomes `unreadable` and is printed with a denominator - so the
+		# engine's error is a duplicate, and a ledger with fifty damaged
+		# lines would bury its own summary in fifty engine errors.
+		# THE OTHER TWO PARSES IN THIS FILE KEEP parse_string(), which is the
+		# same rule and not an omission (TRAPS 11): _group()'s read of
+		# raw_command and the read-back of produced records are NOT counted
+		# anywhere, so the engine's error is the only signal they have, and
+		# silencing it would remove the only thing that says they failed.
+		var reader := JSON.new()
+		var r: Variant = reader.data if reader.parse(line) == OK else null
+		if typeof(r) != TYPE_DICTIONARY:
+			unreadable += 1
+			continue
+		if not str((r as Dictionary).get("time", "")).begins_with(MONTH):
+			other_month += 1
+			continue
+		records.append(r)
+	return {"records": records, "counts": {
+		"lines": lines, "records": records.size(),
+		"other_month": other_month, "unreadable": unreadable}}
+
+
+# One group per execution: a plan's step records and its PLAN record share one
+# raw command, so they are collected until the PLAN record arrives.
+#
+# PURE, and the property worth holding is not the rule's spelling but that
+# NOTHING IS LOST: flattening the groups gives back the input, in order, once
+# each. A grouping that drops or duplicates a record is the way this goes
+# wrong, and it is the way a suite can see it without restating the rule.
+#
+# A PLAN WHOSE PLAN RECORD NEVER ARRIVES leaves the last group open to the end
+# of the file, so a truncated ledger produces one long final group. That is
+# what this code does today; it is asserted as behaviour rather than defended
+# as correct, because which of the two is right is the owner's call over his
+# own records and is written into docs/HANDOVER.md.
+static func _group(originals: Array) -> Array:
+	var groups: Array = []
+	var open_plan := false
+	for entry in originals:
+		var r: Dictionary = entry
+		if open_plan:
+			(groups[-1] as Array).append(r)
+		else:
+			groups.append([r])
+		var raw: Variant = JSON.parse_string(str(r.get("raw_command", "")))
+		var is_plan_raw: bool = typeof(raw) == TYPE_DICTIONARY and str((raw as Dictionary).get("command", "")).to_upper() == "PLAN"
+		open_plan = is_plan_raw and str(r.get("command", "")) != "PLAN"
+	return groups
+
+
 func _initialize() -> void:
 	var out_path: String = OS.get_environment("REPLAY_OUT")
 	var log_in: String = OS.get_environment("REPLAY_LOG")
 	var via_module := OS.get_environment("REPLAY_VIA_MODULE") == "1"
+
+	# THE GATE, AND NOTHING IS DESTROYED BEFORE IT. This open is a READ and
+	# the only thing in front of it. Everything irreversible is below.
+	#
+	# REPLAY_LOG unset, or naming a file that is not there, used to reach
+	# f.eof_reached() on a null and throw - and a script error in a SceneTree
+	# aborts _initialize before quit(), so this tool hung until the harness's
+	# 600 s timeout instead of failing. Same fault as report_test's; see
+	# TRAPS 13. Say what is missing and leave.
+	var f := FileAccess.open(log_in, FileAccess.READ) if log_in != "" else null
+	var refusal := _refusal(log_in, out_path, f != null)
+	if refusal != "":
+		if f != null:
+			f.close()
+		push_error(refusal)
+		quit(1)
+		return
+
+	# THE FIRST IRREVERSIBLE ACT IN THIS FILE, AND IT IS BELOW THE GATE ON
+	# PURPOSE (101). It was the fourth statement of this function and the two
+	# guards were twenty lines under it, so a refused invocation destroyed the
+	# ledger and did nothing else - measured three ways on 3f7ae94, see the
+	# header above _refusal(). The deletion is wanted here and nowhere else:
+	# produced records are counted by line offset into a ledger that starts
+	# empty. tests/field_type_test.gd section 7 holds the position.
 	var log_path := ProjectSettings.globalize_path("user://track_log.jsonl")
 	if FileAccess.file_exists(log_path):
 		DirAccess.remove_absolute(log_path)
@@ -170,43 +369,16 @@ func _initialize() -> void:
 	controller.log_message.connect(func(t): messages.append(t))
 	controller.revision_requested.connect(func(fb, rec): feedbacks.append({"feedback": fb, "category": rec.get("category", "")}))
 
-	var originals: Array = []
-	# REPLAY_LOG unset, or naming a file that is not there, used to reach
-	# f.eof_reached() on a null and throw - and a script error in a SceneTree
-	# aborts _initialize before quit(), so this tool hung until the harness's
-	# 600 s timeout instead of failing. Same fault as report_test's; see
-	# TRAPS 13. Say what is missing and leave.
-	var f := FileAccess.open(log_in, FileAccess.READ) if log_in != "" else null
-	if f == null:
-		push_error("replay.gd needs REPLAY_LOG to name a readable record file"
-			+ (" (REPLAY_LOG is unset)" if log_in == "" else " (cannot open '%s')" % log_in))
-		quit(1)
-		return
-	if out_path == "":
-		push_error("replay.gd needs REPLAY_OUT to name where to write")
-		quit(1)
-		return
-	while not f.eof_reached():
-		var line := f.get_line().strip_edges()
-		if line == "":
-			continue
-		var r = JSON.parse_string(line)
-		if typeof(r) == TYPE_DICTIONARY and str(r.get("time", "")).begins_with("2026-10"):
-			originals.append(r)
+	# THE READ AND THE GROUPING, both functions of their input now (101).
+	# The denominator is printed as well as written, because "groups=0" and
+	# "there was nothing in that file for this month" used to look the same.
+	var read: Dictionary = _records_of(f.get_as_text())
 	f.close()
-
-	# One group per execution: a plan's step records and its PLAN record
-	# share one raw command, so they are collected until the PLAN record.
-	var groups: Array = []
-	var open_plan := false
-	for r in originals:
-		if open_plan:
-			groups[-1].append(r)
-		else:
-			groups.append([r])
-		var raw = JSON.parse_string(str(r.get("raw_command", "")))
-		var is_plan_raw: bool = typeof(raw) == TYPE_DICTIONARY and str(raw.get("command", "")).to_upper() == "PLAN"
-		open_plan = is_plan_raw and str(r.get("command", "")) != "PLAN"
+	var originals: Array = read["records"]
+	var counts: Dictionary = read["counts"]
+	print("REPLAY READ lines=%d records=%d other_month=%d unreadable=%d" % [
+		int(counts["lines"]), int(counts["records"]), int(counts["other_month"]), int(counts["unreadable"])])
+	var groups: Array = _group(originals)
 
 	var results: Array = []
 	var lines_before := 0
@@ -257,7 +429,7 @@ func _initialize() -> void:
 
 	var prompt := AIInterpreter.SYSTEM_PROMPT + "\n\nOTHER WORLDS YOU CAN BUILD\n" + WorldRegistry.prompt_sections()
 	var out := FileAccess.open(out_path, FileAccess.WRITE)
-	out.store_string(JSON.stringify({"groups": results, "prompt": prompt, "allowed": CommandParser.allowed_commands(), "damaged": damaged}))
+	out.store_string(JSON.stringify({"groups": results, "prompt": prompt, "allowed": CommandParser.allowed_commands(), "damaged": damaged, "read": counts}))
 	out.close()
 	# The damage count is PRINTED and not only written, because the file is
 	# read by compare.py and the person running the tool reads the terminal.

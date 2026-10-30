@@ -7799,3 +7799,78 @@ TRAPS 81's vacuous guard.
   `SCRIPT ERROR`, or a timeout.
 
 > Nothing was raised, nothing was written, and the member kept what it had.
+
+---
+
+## 101. The destructive act was above the gate that refuses the work
+
+**Signature:** a tool is run with a variable unset or a path mistyped. It
+refuses, says exactly what is missing, exits 1 — and a file it was never going
+to write has already been deleted. Nothing in the error mentions it.
+
+**Cause.** `tests/replay.gd` deleted `user://track_log.jsonl` as the **fourth
+statement** of `_initialize()`, and its two guards — `REPLAY_LOG` must name a
+readable file, `REPLAY_OUT` must name somewhere to write — were **twenty lines
+below it**. The deletion is wanted on the path that works: produced records
+are counted by line offset into a ledger that has to start empty. It is wanted
+nowhere else, and on three of the three refusal paths it happened anyway.
+
+**MEASURED on `3f7ae94` before anything was changed**, each probe a throwaway
+copy of the repository with its own `config/name` and its own `user://`
+holding a planted 52-line ledger (TRAPS 50, 80, 88):
+
+| invocation | result | the ledger afterwards |
+|---|---|---|
+| `REPLAY_LOG` unset, `REPLAY_OUT` unset | `rc=1`, *"needs REPLAY_LOG"* | **GONE** |
+| `REPLAY_LOG` naming a missing file | `rc=1`, *"cannot open"* | **GONE** |
+| `REPLAY_LOG` good, `REPLAY_OUT` unset | `rc=1`, *"needs REPLAY_OUT"* | **GONE** |
+| both good (control) | `rc=0`, `groups=42 damaged=0` | present, rewritten by the replay |
+
+**And it is the owner's own ledger, not a scratch file**, which is read off
+`docs/harness/run.sh.txt` rather than assumed: that script builds its
+throwaway project with `config/name="AI_Game_Builder"` — **the same name as
+`project.godot`** — so `user://` is the directory the game itself writes to.
+The documented way to run this tool therefore points it at the real ledger,
+and a typo in `REPLAY_OUT` cost the session history that
+`scripts/session_report.gd` reads for `/session`.
+
+**Why no suite saw it.** `replay.gd` is on `run_tests.sh`'s `NOT_A_SUITE`
+list, so neither runner drives it; and the only thing a suite can hold about
+an irreversible act is its **position**. 100 had already written down that
+these guards were held by nothing and named the next step as *"ask of each
+remaining part whether it can be made a function of its inputs"* — the fault
+surfaced on asking it of the **gate**, because the answer required reading
+what ran before the gate and what ran after it.
+
+**The class, swept rather than assumed** (TRAPS 11). The rule is **a
+destructive act waits until the work is known to be possible**. Every
+`DirAccess` deletion in the repository, read one at a time — four sites:
+`scripts/world_store.gd:119` (`remove_world`) **refuses first and then
+deletes**, the correct order already; `tests/look_test.gd:168` deletes a
+fixture it made itself; `tests/session_test.gd:30` clears the ledger it is
+about to write into and has no gate that can refuse. And every
+`OS.get_environment` site the same way — six, in two files:
+`drive_test`'s `PARK` and `ONLY_PLAN` are **options** and cannot refuse. So
+`replay.gd`'s two are the only gates in the repository and **the class has one
+member**, which is said with the sweep that establishes it.
+
+**Do:**
+
+- **Put every irreversible act below the gate**, and keep everything above it
+  a read. In `replay.gd` the only statements before the refusal are now the
+  three `OS.get_environment` reads and the gate's own
+  `FileAccess.open(..., READ)`; the deletion is the first thing after it.
+- **Make the gate's decision a function of its inputs.** `_refusal(log_in,
+  out_path, log_readable) -> String` is pure, so a suite can ask it all eight
+  combinations and assert that **exactly one is allowed to proceed** — the
+  capability, not the three sentences (TRAPS 6, TRAPS 14).
+- **Hold the position in a suite and label it as a guard.**
+  `tests/field_type_test.gd` section 7 reads the source, finds the gate's
+  `return`, and asserts every destructive idiom in the file is below it —
+  classified from a whitelist of idioms that is itself asserted to have
+  matched something (TRAPS 75, 79). It is a guard against future change; the
+  four probes above are the measurement.
+- **Ask of a refusal what it has already done.** "It exits 1 and says what is
+  missing" is not the whole of what a refused run does.
+
+> It said exactly what was wrong, and the file was already gone.
