@@ -13,7 +13,153 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **093**, which took 092's first live
+- Last commit at the time of writing: **094**, which took **090's SECOND live
+  "Next action"** - *`command_schema_test`'s no-empty-reason check passes on a
+  refusal that names nothing* - and did the thing that entry named as the
+  precondition: **the measurement, before the assertion** (TRAPS 6). 089 and
+  090 both read this and both declined to build it, for a good reason: this
+  suite cannot demand that every probe refuse, because three of its commands
+  build nothing whatever they are sent. 090 found what dissolves that, and
+  094 measured it and wrote it: **the condition is already in the record.** A
+  record whose `category` begins with `FAILED_` has refused by its own report,
+  and a refusal carrying no sentence is the fault. New TRAPS **91**. No new
+  "Human decision needed".
+
+  **THE BASELINE AGREED WITH THE RECORD BEFORE ANYTHING WAS TOUCHED.** The
+  `--all` run in this container, on a clean tree at `7e74046` with
+  `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 093
+  recorded**: `5e2840e7d17d8c607774c6a256cb7e15`, 74 suites, 0 with something
+  to look at. The container was fresh, so `user://` was empty rather than
+  cleared. `ls tests/*.gd` returned **76** and the run reported **74**,
+  re-counted rather than remembered.
+
+  **WHAT WAS WRONG, RE-MEASURED AGAINST THE COMMITTED 093 TREE RATHER THAN
+  CARRIED FORWARD** (TRAPS 14). Assertion 2 walks each record's reasons and
+  asserts that none is the empty string; **an empty LIST has no elements, so
+  the loop body never runs and the check passes** - TRAPS 75's shape inside an
+  assertion. `_finish_nothing` made to write `reasons = []`, against the
+  pre-change suite: **149 assertions, failures=0 - SILENT**, exactly as TRAPS
+  86 recorded, with seven of the controller's refusals telling a player
+  nothing at all.
+
+  **THE MEASUREMENT THE ENTRY ASKED FOR, AND IT IS TWO MEASUREMENTS.**
+
+  *The ledger, over every record every suite writes.* All 74 suites were run
+  one at a time with the lines each appended to `user://track_log.jsonl`
+  captured **per suite**: **671 records, 146 of them `FAILED_`, eight distinct
+  `FAILED_` categories, and ZERO carrying no sentence.** 36 of the 146 are
+  `command_schema_test`'s own run, which is where the new assertion count
+  comes from - counted, not guessed. The per-category table is in TRAPS 91.
+
+  *The producers, read off the code.* All **37** places in `scripts/` that
+  write `"ok": false` were read one at a time. **Twenty-six of them carry an
+  `errors` or `reasons` array**, and every one of those is either a **literal
+  non-empty array**, guarded by `if not <list>.is_empty()`, or returns a list
+  whose own `ok` was **derived from `<list>.is_empty()`** - so **no validator
+  in Genesis can answer `ok=false` with nothing to say today**. **The other
+  eleven are a different shape and are named rather than glossed**: four are
+  `{"ok": false}` internal signals in `_prepare_world`, written after
+  `_finish_failed` has already put the record in the ledger; six are
+  `WorldStore`'s `"message"` returns, which never become a record's reasons;
+  and one is `CommandParser.parse`'s result **initializer**, not a return,
+  whose refusal travels as a single `"error"` string. **That last one is
+  where this session's own finding came from** - see the first live "Next
+  action". **So the new assertion is a guard against DRIFT and not a
+  fault-finder**, and this entry does not pretend otherwise.
+
+  **WHAT CHANGED.** `tests/command_schema_test.gd` **only**. Assertion **7**:
+  a sweep over every record THIS run left in the ledger - the same `log_mark`
+  scope `_ids_resolve` uses, for the reason written above it - asserting that
+  each record whose own category begins with `FAILED_` carries at least one
+  sentence that is not blank. **Nothing is written down beside the probes**,
+  which is what keeps it off TRAPS 82's shape: a command that answers some
+  other way writes no such record and is never asked a question. The predicate
+  is **byte-identical** to 089's `_says_something` in `controller_reach_test`
+  and 091's in `refusal_reach_test`, which is this project's convention for a
+  helper rather than an oversight - there is no shared library in `tests/`.
+
+  **THE PREDICTION WAS WRITTEN DOWN BEFORE THE FIRST RUN AND HELD EXACTLY**
+  (TRAPS 89): `command_schema_test` **149 -> 186**, as 149 + **36** (the
+  FAILED_ records measured in the per-suite capture) + **1** (the
+  denominator), and nothing else moving - with the reasons named in advance,
+  including the one 092 got wrong: `source_scan_test`'s class is files in
+  `tests/` whose **code** contains `res://scripts` or `res://tests`, and the
+  new code contains neither.
+
+  **MEASURED EACH FAULT ALONE, IN ITS OWN COPY WITH ITS OWN `config/name`**
+  (TRAPS 50, TRAPS 80), each given its own `--headless --import` (TRAPS 88),
+  every diff read before its run. Control **186 assertions, failures=0**.
+
+  | injection | before 094 | after 094 |
+  |---|---|---|
+  | `_finish_nothing` writes `reasons = []` | **149/0 SILENT** | 186, failures=**14**, each named |
+  | `_finish_failed` writes `reasons = []` | 149/0 | 186, failures=**44** |
+  | `_finish_nothing` writes `reasons = [""]` | 149, failures=12 | 186, failures=**26** |
+  | the sweep's scope broken so it reads no records | - | **150**, failures=**1**, naming both numbers |
+  | `NpcGoals.validate` answers `ok=false` with `errors = []` | - | **186/0 SILENT HERE**; `controller_reach_test` **305, failures=4** |
+
+  **AND THE CATCH IS ATTRIBUTED RATHER THAN ASSUMED.** The predicate has two
+  halves - there IS a sentence, and it is not blank. With the first half
+  removed and the `[]` fault in place, the suite is **186 assertions,
+  failures=0**: the non-empty half is precisely what does the work.
+
+  **THE FIFTH ROW IS THE FINDING AND IT IS A LIMIT OF THIS FILE, WRITTEN INTO
+  IT RATHER THAN LEFT TO BE DISCOVERED.** A sweep over the records a run
+  produces is only as wide as the requests the run sends. `ORDER`, `SHUT`,
+  `OPEN`, `EQUIP`, `CLEAR_WORLD` and the three `CREATE_` commands all carry
+  `"fields": []` in the probe table, so this suite sends them **only sound
+  requests** and their validators' refusal paths are **never driven here at
+  all**. That door is `controller_reach_test`'s, which drives those branches
+  and caught the same injection at **305, failures=4**. So the property is
+  held across **three** files - `controller_reach_test` for the controller's
+  28 branches, `refusal_reach_test` for the modules' twelve, this file for the
+  malformed-field class per whitelisted command - and **no machinery was
+  copied between them** (TRAPS 91).
+
+  **AND THE EIGHT CATEGORIES THE LEDGER MEASUREMENT CANNOT SPEAK FOR ARE
+  NAMED.** Eight of the sixteen `FAILED_` names in `scripts/` reached **no**
+  ledger record in any of the 74 suites - the world modules' refusals are
+  returned as dictionaries from `pre_check`, `solve` and `post_check`. They
+  are **not uncovered**: `refusal_reach_test`'s table at lines 175-190 is
+  collected off every `FAILED_<NAME>` literal in `scripts/` and holds those
+  twelve module branches directly with its own `_says_something` (091), read
+  off that file this session rather than taken from a commit message. Nothing
+  was copied here for them.
+
+  **AND THE FINDING THIS SESSION DID NOT GO LOOKING FOR, WHICH IS THE PART
+  WORTH READING: THE ONE `"ok": false` SITE THAT IS NOT A VALIDATOR HAS A
+  REFUSAL WITH NOTHING IN IT BEHIND IT, REACHABLE TODAY, AND NOTHING HOLDS
+  IT.** `CommandParser.parse`'s *"no reason given"* default answers a
+  **missing** `reason` and not a **present and empty** one, so
+  `{"command": "UNSUPPORTED", "parameters": {"reason": ""}}` writes a record
+  whose only sentence is the empty string, and `{"reason": null}` writes the
+  five-character string `<null>`. **Driven through `main.gd` and read off the
+  ledger**, not argued: the table is in TRAPS 91 and in the first live "Next
+  action". **It is MEASURED AND NOT FIXED**, and the reason is written in both
+  places: the general rule is *a default that answers an absent key does not
+  answer an empty one*, one grep found thirteen more sites of that shape in
+  `scripts/`, and fixing the one found first while leaving the rest is TRAPS
+  11's exact shape. **094's own sweep cannot catch it either** - that record's
+  category is `UNSUPPORTED`, not `FAILED_` - and widening the condition to
+  reach it would be an absence assertion over a set this suite drives none of
+  (TRAPS 75), so nothing was widened.
+
+  **NOT DONE AND NOT VERIFIED.** The injected silent validator is **invisible
+  to this suite** and that is recorded above rather than fixed, because fixing
+  it here would mean adding malformed probes for eight commands to a table
+  whose subject is unvalidated numeric FIELDS - another file's class imported
+  into this one, which is what 089 refused for the same reason. **090's FIRST
+  live "Next action" is untouched** - the one reader over the 32 sentences a
+  delegating validator can make - and so are 091's and 090's other open items.
+  `_finish_nothing` and `_finish_failed` were injected in **throwaway copies
+  under a scratch directory and never in the repository**; the tree was
+  `git status --porcelain` clean between them. **No model was asked anything,
+  no request left the container, there is no API key here. NOTHING A PLAYER
+  MEETS CHANGED**: this commit is `tests/` and `docs/` only, `git diff --
+  scripts/` is 0 lines, so `PROMPT_FINGERPRINT` and `PROMPT_VERSION` did not
+  move.
+
+- Last commit before that: **093**, which took 092's first live
   "Next action" - *is there anything the code already states that could
   require `_friendly_http_error`'s 400 and 404 arms, the way the retry tie
   reads `WORTH_RETRYING`?* - as the **reading** that entry asked for rather
@@ -4197,6 +4343,39 @@ than suites, leaving **74 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 74
 and are skipped without it.
+**094 ADDED NO FILE** and re-ran the `ls` anyway: **76** and **74**, which is
+what the two numbers above say. Its baseline on the clean tree at `7e74046`,
+`git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 093
+recorded**: `5e2840e7d17d8c607774c6a256cb7e15`, 74 suites, 0 with something to
+look at. The container was fresh, so `user://` was empty rather than cleared.
+After the change, **THREE byte-identical full `--all` runs**, md5
+`d542b9f91f937039567d7512582b244f`, 0 with something to look at, all three on
+the complete tree with `docs/` in place. **The md5 is written into this file
+AFTER the three runs rather than before**, said rather than glossed, because it
+is the md5 of the runs it describes and cannot be known earlier. That cannot
+move the number: **no suite in `tests/` reads `docs/` at all** - every mention
+of `docs/` in `tests/` is a comment line, grepped this session rather than
+taken from 093's commit message, and no file there names `res://docs`.
+The diff against the baseline is the **one line predicted in writing before
+the run**: `command_schema_test` **149 -> 186**, and nothing else moved.
+**AND ONE RUN WAS DISCARDED RATHER THAN COUNTED, which is said because it is
+the kind of thing a later session would otherwise read out of a gap.** 094's
+first full run was started before the last comment was written into
+`command_schema_test`, so the tree moved under it. The change was
+comment-only and could not have moved a number, and the run was **thrown away
+anyway**: a run on a moving tree is not a run, and three clean ones cost less
+than the argument. The three above are the only ones counted.
+**AND A SECOND KIND OF RUN WAS TAKEN THIS SESSION, WHICH IS WORTH KNOWING
+ABOUT BEFORE THE NEXT MEASUREMENT OF THE LEDGER.** The invariant 094 asserts
+had to be measured over every record every suite writes, and the ledger is one
+file that **every suite appends to and `session_test` deletes at its start** -
+so the file left at the end of a full run holds 52 records, not 671. What was
+run instead: all 74 suites one at a time, with the lines each one appended
+captured per suite by remembering the line count before it and reading from
+there, and the whole-of-it taken when a suite shrank the file. That is how the
+146 figure in the 094 entry was arrived at, and it is reproducible from the
+description alone.
+
 **093 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
 what the two numbers above say. Its baseline on the clean tree at `43665cc`,
 `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 092
@@ -10413,6 +10592,121 @@ last two on the complete tree with `docs/` in place - which is why there is no
 you learn the record and the container still agree, and spend the time on the
 work below.
 
+**NOTHING IS OWED FROM 094 EITHER.** Its baseline was byte-identical to the
+md5 093 recorded, it wrote its predicted diff down before running and the
+prediction held exactly, and it took three byte-identical `--all` runs, all
+three on the complete tree with `docs/` in place, which is why there is no
+094a. **Do not start by re-running on 094's behalf**; take your own baseline so
+you learn the record and the container still agree, and spend the time on the
+work below. **And do not re-take 094's per-suite ledger capture either** - the
+671 records and the 146 `FAILED_` among them are measured, the method is
+written down under "Run the tests first", and the number it produced is now an
+assertion in `command_schema_test` rather than a figure in a document.
+
+**THE FIRST LIVE ENTRY AS OF 094, AND IT IS A FAULT IN THE PRODUCT RATHER THAN
+IN A SUITE: `CommandParser.parse`'s UNSUPPORTED REASON CAN ARRIVE BLANK, AND
+NOTHING HOLDS IT. 094 MEASURED IT AND DID NOT FIX IT, FOR A REASON THAT IS
+WRITTEN DOWN.** Driven, not argued - sent through `main.gd` in a throwaway copy
+and the record read off the ledger:
+
+  | what the AI answers | `parse()`'s `error` | the record's `reasons` |
+  |---|---|---|
+  | `{"command": "UNSUPPORTED", "parameters": {"reason": ""}}` | `""` | **`[""]`** |
+  | `{"command": "UNSUPPORTED", "parameters": {"reason": "   "}}` | `"   "` | whitespace only |
+  | `{"command": "UNSUPPORTED", "parameters": {"reason": null}}` | `"<null>"` | **`["<null>"]`** |
+  | `{"command": "UNSUPPORTED", "parameters": {}}` | `"no reason given"` | correct |
+  | `{"command": "UNSUPPORTED"}` | `"no reason given"` | correct |
+
+**THE CAUSE IS THE DEFAULT.** `command_parser.gd:54` reads
+`str(data["parameters"].get("reason", reason))`, and the *"no reason given"*
+substitution answers an **absent** key and not a **present and empty** one;
+`str(null)` in GDScript is the five-character string `<null>`. So the one
+refusal a player meets when Genesis says it cannot do the thing at all can
+arrive blank, or can read `<null>`. **Nothing in `tests/` holds it**: eight
+files name `UNSUPPORTED`, `controller_reach_test` counts the site,
+`check_wiring_test` asserts the quarrel is carried, `session_test` sends one
+with a real reason - and **no suite sends an empty one or reads that record's
+sentence**, grepped rather than assumed.
+**094'S OWN SWEEP CANNOT CATCH IT**, which is why it is here and not closed:
+that record's category is `UNSUPPORTED`, not `FAILED_`, so the condition read
+off the record excludes it by construction, and widening the condition would be
+an absence assertion over a set this suite drives **zero** members of
+(TRAPS 75). Nothing was widened.
+**AND THE REASON IT WAS NOT JUST FIXED IS TRAPS 11, WHICH CUTS BOTH WAYS HERE.**
+The general rule is *a default that answers an absent key does not answer an
+empty or a null one*. **THIRTEEN other code sites in `scripts/` have that
+shape, and the number is what ONE GREP FOUND rather than the class**, said
+that way on purpose: the pattern was
+`get("<key>", "<string literal>")` and it cannot see a default held in a
+variable, a multi-line call, or a numeric default read as text, so the first
+job is to widen the reading before trusting the count. What it found:
+`boots_tool.gd:324` `colour`, `car_tool.gd:165` `paint`,
+`dungeon_module.gd:1475` `name`, `experiment_runner.gd:188` `category`,
+`farm_module.gd:389` `crop`, `game_controller.gd:1352` `command`,
+`game_controller.gd:1444` `difficulty`, `readback.gd:463` (`one`, with a
+nested `key` default) and `:478` `one`, `section_validator.gd:122` `mode`,
+`session_report.gd:167` `understanding`, `track_geometry.gd:100` `direction`,
+and `world_registry.gd:461` `command`. Two further hits were **comment lines**
+at `world_registry.gd:359` and `:443` and are not sites; they are worth reading
+first anyway, because they are this project's own record of a
+`record.get("world", "circuit")` default that **did** fire. **For each site
+the question is the same two questions and they are TRAPS 47's**: can an empty
+or null value reach it, and does a player read the result? **Several will come back "unreachable" and some
+of those defaults are right** - `direction` and `mode` are read behind
+validators that already refuse a value they cannot read - so this is a
+measurement before it is a change, one site at a time, and the answer per site
+goes in writing whichever way it comes back.
+**THE SMALLEST HONEST FIX, WHEN THE CLASS HAS BEEN ASKED**: make the
+substitution answer emptiness as well as absence at every site where a player
+reads the result, and drive each one. **Do not fix the UNSUPPORTED site alone**
+- that is this file's trap 11 exactly, and the measurement above is already the
+hard part.
+**AND IT IS A `scripts/` CHANGE, SO IT IS THE FIRST ONE IN FOURTEEN COMMITS.**
+Read the "Do not" list in the standing instruction before starting: this is a
+bug fix to a refusal's wording and not a product decision, but it touches what
+a player meets, so the diff wants reading twice and the prompt fingerprint
+wants checking rather than assuming.
+
+**THE SECOND LIVE ENTRY AS OF 094, AND IT IS TRAPS 11'S QUESTION ASKED OF THE
+CLASS 094 PROBED EXACTLY ONE MEMBER OF: A VALIDATOR THAT ANSWERS `ok=false`
+WITH NOTHING TO SAY. ONE OF THE EIGHT IS HELD. THE OTHER SEVEN WERE NOT
+MEASURED AND THIS ENTRY DOES NOT GUESS.** What 094 established by reading all
+**37** `"ok": false` returns in `scripts/`: none of them can carry an empty
+list today, because each is literal, guarded by `if not <list>.is_empty()`, or
+derives `ok` from `<list>.is_empty()`. That is a reading about **today's code**
+and says nothing about what notices if one of them drifts. 094 injected
+**one** - `NpcGoals.validate` answering `ok=false` with `errors = []` - and the
+answer was **`command_schema_test` 186/0, SILENT, and `controller_reach_test`
+305, failures=4**. So that one is held, and by the sibling file rather than by
+the one 094 touched.
+**THE EIGHT MEMBERS, ENUMERATED OFF THE CODE RATHER THAN LISTED FROM MEMORY**:
+`NpcGoals.validate` (measured), `NpcGoals.validate_door`, the three tools'
+`validate` (`boots_tool`, `car_tool`, `look_tool`), `DungeonModule.validate`,
+`FarmModule.validate` and `RacingModule.validate` (which is
+`SectionValidator._result`'s derived `ok`, so the injection site is the
+`_result` return and not the module).
+**TWO MORE ARE `ok=false` PRODUCERS AND ARE DELIBERATELY NOT IN THE EIGHT**,
+said rather than left to be argued about: `ToolModule.validate` and
+`WorldModule.validate` are base-class stubs returning a literal *"this tool
+has no validator"* / *"this module has no validator"*, reached only by a tool
+or module that overrides neither - which none does. They belong to the same
+class and are unreachable today, so measuring them would measure the fixture
+and not the code.
+**THE METHOD IS THE ONE THAT WORKED, AND IT IS A MEASUREMENT AND NOT A BUILD**:
+one member at a time, in a throwaway copy with its own `config/name` and its
+own `--headless --import` (TRAPS 50, TRAPS 80, TRAPS 88), the guarded return
+made to hand back `[]`, and **the whole `--all` set run**, because the question
+is *which file notices* and only the whole set can answer it. **It may well
+come back "all eight held", and that is a reason to measure rather than to
+build**: seven green answers are worth more than a ninth assertion, and a
+silent one is a finding of exactly the shape 089, 090 and 094 have each found
+once.
+**DO NOT CLOSE IT BY ADDING MALFORMED PROBES TO `command_schema_test`'s
+TABLE.** That table's subject is unvalidated numeric FIELDS, and eight new
+probes for commands whose parameters all go through a validator would import
+`controller_reach_test`'s class into it - which is what 089 refused, for the
+same reason, when it declined to re-key its own table by sentence.
+
 **THE FIRST LIVE ENTRY AS OF 093, AND IT IS THE LIMIT OF 093'S OWN CHECK
 RATHER THAN A FAULT IN THE CODE - THE SAME SHAPE 092 RECORDED ABOUT ITS
 READER, WHICH IS THE POINT: A STATUS REMOVED FROM `interpret.js` TAKES TWO
@@ -10598,6 +10892,24 @@ that reader belongs in a new suite or in `limits_test`'s file, and that is worth
 one session's reading before a line is written. **It may come back "four
 assertions after all", and the argument for the reader is the direction of its
 count, not its size.**
+
+**~~AND THE SECOND, UNCHANGED FROM 089 AND STILL MEASURED:
+`command_schema_test`'s NO-EMPTY-REASON CHECK PASSES ON A REFUSAL THAT NAMES
+NOTHING.~~ DONE IN 094, AND THE INVARIANT WAS MEASURED BEFORE IT WAS
+ASSERTED.** The entry was right that the reading had been done and the change
+had not, right to name the measurement as the precondition, and right that the
+condition could be read off the record's own category rather than written as a
+list of which probes must refuse. **The measurement came back clean both ways**
+- 671 records over 74 suites, 146 of them `FAILED_`, none silent; and all 37
+`"ok": false` returns in `scripts/` either literal, guarded or derived - so
+assertion **7** is a guard against drift and 094 says so rather than claiming a
+fault it did not find. What it also found, by injecting against its own new
+check, is the limit **written into the file**: a sweep over the records a run
+produces is only as wide as the requests the run sends, and this suite sends
+eight of its commands nothing but sound requests. See TRAPS **91** and the 094
+entry under "Starting state". Struck rather than deleted, with the original
+text below, because the sketch is the record of what was asked for. The
+original text:**
 
 **AND THE SECOND, UNCHANGED FROM 089 AND STILL MEASURED:
 `command_schema_test`'s NO-EMPTY-REASON CHECK PASSES ON A REFUSAL THAT NAMES

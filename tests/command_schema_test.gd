@@ -67,6 +67,14 @@ extends SceneTree
 #   6. A plan with a GOOD "around" still builds and still says one world is
 #      inside another. Assertion 4 would otherwise be satisfiable by
 #      refusing every plan that mentions the field.
+#   7. 094: EVERY record this run leaves in the ledger whose own category
+#      begins with FAILED_ carries at least one sentence that is not blank.
+#      Assertion 2 holds only the blank half - it walks the list, so an EMPTY
+#      list passes it (TRAPS 75, measured in TRAPS 86) - and this is the other
+#      half. The condition is read off the record's own category, so no probe
+#      is required to refuse and nothing is written down beside the table. See
+#      the long note on _refusals_say_something for the two measurements taken
+#      before it was asserted, and for what it does not hold.
 #
 # THE TABLE IS KEYED ON THE WHITELIST. A command added to CORE_COMMANDS or to
 # a world module with no row here FAILS this suite and is never skipped, the
@@ -79,6 +87,10 @@ extends SceneTree
 #     whatever they are sent, so "refused" is not the right word for them and
 #     a suite demanding it would be asserting a design decision. What is
 #     demanded is a record, a non-empty reason and a resolvable id.
+#     094: assertion 7 does not change that. It asks nothing of a command that
+#     answers some other way; it reads the records that DID refuse and holds
+#     them to saying so. A command that writes no FAILED_ record is never
+#     asked a question by it.
 #   - Not that a plan step's "offset" is refused. Measured: it is a WORKING
 #     placement-by-coordinate (an offset of 150 moves a world to x = 150),
 #     and the prompt says "never give coordinates" and never names it - the
@@ -93,6 +105,13 @@ var main: Node3D
 var lines: Array = []
 var failures: Array = []
 var asserted := 0
+
+# 094: counted as the probes fire, never written down beside them. It is the
+# denominator for the sweep at the end: a probe that refuses for the SHAPE of
+# the request puts a FAILED_SCHEMA record in the ledger, so the sweep must see
+# at least this many refusals. Without it the sweep is an absence assertion
+# that is greenest when it reads nothing (TRAPS 75, TRAPS 73).
+var schema_refusals := 0
 
 const ROOMS := "{\"name\": \"entrance\", \"width\": 12, \"depth\": 12}, {\"name\": \"store\", \"width\": 12, \"depth\": 12}"
 const SECTIONS := "{\"type\": \"straight\", \"length\": 200}, {\"type\": \"corner\", \"radius\": 60, \"angle\": 90}, {\"type\": \"straight\", \"length\": 200}, {\"type\": \"corner\", \"radius\": 60, \"angle\": 90}, {\"type\": \"straight\", \"length\": 200}, {\"type\": \"corner\", \"radius\": 60, \"angle\": 90}, {\"type\": \"straight\", \"length\": 200}, {\"type\": \"corner\", \"radius\": 60, \"angle\": 90}"
@@ -273,6 +292,7 @@ func _probe(label: String, json_text: String, field: String) -> void:
 	#    A command that answers some other way (it builds nothing whatever it
 	#    is sent) is not required to refuse - see the header.
 	if schema_refusal:
+		schema_refusals += 1
 		_check(names_field, "%s named '%s' in its refusal" % [label, field])
 
 
@@ -305,6 +325,114 @@ func _ids_resolve(from: int) -> void:
 			dangling.append(about)
 	_check(dangling.is_empty(),
 		"every understanding record names an id some record carries (dangling: %s)" % [dangling])
+
+
+# --- 094: assertion 7, the half of "a refusal names what was wrong" that this
+#          file did not hold ---
+#
+# WHAT WAS WRONG WITH ASSERTION 2, MEASURED RATHER THAN REASONED. Assertion 2
+# walks each record's reasons and asserts that none of them is the empty
+# string. An empty LIST has no elements, so the loop body never runs and the
+# check passes - TRAPS 75's shape inside an assertion, where zero is read as a
+# pass. 089 measured it and left it: with _finish_nothing writing
+# reasons = [], seven of the controller's refusals tell a player nothing at
+# all and this suite is 149 assertions, failures=0, while the same file
+# catches reasons = [""] with 12 failures. So "a blank sentence" was held here
+# and "no sentence" was not, and the half that was missing is the one a player
+# meets as a refusal with nothing under it. The table is in TRAPS 86.
+#
+# WHY IT WAS NOT CLOSED IN 089 OR 090, AND WHAT DISSOLVED IT. This file cannot
+# demand that every probe REFUSE: three of these commands build nothing
+# whatever they are sent, which this suite's own header says, so a bare
+# non-empty assertion per probe would be a false alarm on correct code. 090
+# read the thing that answers it: the condition does not have to be "which
+# probes must refuse", it can be read off THE RECORD'S OWN CATEGORY. A record
+# whose category begins with FAILED_ has refused, by its own report, and a
+# refusal carrying no sentence is the fault. A command that answers some other
+# way never writes such a record and is never asked. Nothing is written down
+# beside the probes, which is what keeps this off TRAPS 82's shape.
+#
+# AND IT WAS MEASURED BEFORE IT WAS ASSERTED (TRAPS 6), because an invariant
+# asserted on the strength of an argument is a guard over an assumption. Two
+# measurements, both in 094:
+#
+#   THE LEDGER. All 74 suites were run one at a time with the lines each one
+#   appended to user://track_log.jsonl captured per suite: 671 records, 146 of
+#   them FAILED_, across eight distinct FAILED_ categories, and ZERO carrying
+#   no sentence. 36 of those 146 are this suite's own run, which is where the
+#   count below comes from.
+#
+#   THE PRODUCERS. All 37 "ok": false returns in scripts/ were read. Every one
+#   either carries a literal non-empty array, is guarded by
+#   `if not <list>.is_empty()`, or derives `ok` from `<list>.is_empty()` - so
+#   no validator in Genesis can answer ok=false with nothing to say today. The
+#   four `{"ok": false}` returns in _prepare_world carry no reasons key at all
+#   and are internal signals, after _finish_failed has already written the
+#   record. So this assertion is a guard against DRIFT and not a fault-finder,
+#   and saying otherwise would be a claim this session cannot make.
+#
+# WHAT IT DOES NOT HOLD, said rather than left to be found:
+#   - It reads the LEDGER. Eight of the sixteen FAILED_ categories in scripts/
+#     reached no record in any of the 74 suites - the world modules' own
+#     refusals are returned as dictionaries from pre_check, solve and
+#     post_check, and refusal_reach_test holds those twelve branches directly
+#     (091). This sweep says nothing about them and no machinery was copied
+#     here to pretend otherwise.
+#   - "It says something" is not "it says the right thing". The sentence is
+#     not read for its content; assertion 4 does that for the field name, and
+#     every wording check in this project lives elsewhere on purpose.
+#   - The per-record count is DERIVED from the run, so it falls if the probes
+#     stop refusing. That is exactly TRAPS 73's signature, and it is why the
+#     denominator assertion below exists: schema_refusals is counted as the
+#     probes fire, so a sweep that reads less than the probes produced is red.
+#   - AND THE SWEEP IS ONLY AS WIDE AS THE REQUESTS THIS SUITE SENDS, which is
+#     the limit worth knowing and was found by injecting against it rather
+#     than reasoned. ORDER, SHUT, OPEN, EQUIP, CLEAR_WORLD and the three
+#     CREATE_ commands all carry "fields": [] in the table, so this suite
+#     sends them only SOUND requests and their validators' refusal paths are
+#     never driven here at all. Measured: NpcGoals.validate made to answer
+#     ok=false with errors = [] leaves this suite at 186 assertions,
+#     failures=0 - SILENT - while controller_reach_test, which drives those
+#     branches, is 305 assertions, failures=4. So the class is held across
+#     three files and this file's share is the malformed-FIELD class per
+#     whitelisted command. TRAPS 47's reachability question, asked of a sweep
+#     instead of a check. TRAPS 91.
+func _refusals_say_something(from: int) -> void:
+	var all := _written()
+	var written: Array = all.slice(mini(from, all.size()))
+	var swept := 0
+	for r in written:
+		var d: Dictionary = r
+		var category := str(d.get("category", ""))
+		if not category.begins_with("FAILED_"):
+			continue
+		swept += 1
+		_check(_says_something(d.get("reasons", [])),
+			"the %s refusal of %s says something (reasons: %s)" % [
+				category, str(d.get("command", "(no command)")),
+				JSON.stringify(d.get("reasons", []))])
+	# The tie. Both numbers are counted as they happen - one as the probes
+	# fire, one as the records are read - so nothing has to be edited when a
+	# probe is legitimately added or removed, and a sweep that reads nothing
+	# cannot pass.
+	_check(swept >= schema_refusals,
+		"the sweep read every refusal the probes drew (%d refusals swept, %d probes refused for the shape)" % [
+			swept, schema_refusals])
+
+
+# 094: byte-identical to 089's predicate in controller_reach_test and 091's in
+# refusal_reach_test, and deliberately so. There is no shared library in
+# tests/ - every suite stands alone, which is this project's convention and the
+# reason source_scan_test holds _code_of() at file granularity rather than by
+# one implementation everybody calls. The property has two halves, which is the
+# whole point of it: there IS a sentence, and it is not blank.
+static func _says_something(reasons: Variant) -> bool:
+	if typeof(reasons) != TYPE_ARRAY or (reasons as Array).is_empty():
+		return false
+	for reason in (reasons as Array):
+		if str(reason).strip_edges() == "":
+			return false
+	return true
 
 
 func _run() -> void:
@@ -467,6 +595,11 @@ func _run() -> void:
 
 	# --- assertion 3, over everything written above ---
 	_ids_resolve(log_mark)
+
+	# --- 094: assertion 7, over everything written above ---
+	# Same scope and the same mark: every record THIS run put in the ledger,
+	# never the whole file, for the reason _ids_resolve gives above.
+	_refusals_say_something(log_mark)
 
 	for line in lines:
 		print(line)

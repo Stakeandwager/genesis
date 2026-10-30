@@ -6847,3 +6847,181 @@ what was beside it.
 
 > The reader did not fit the file, so the suite read the raw text and said so.
 > The note was true for twenty-six commits and held nothing for any of them.
+
+---
+
+## 91. The condition could not be written as a list, and the subject was already declaring it
+
+**The rule it produced: when a property must hold for some cases and not
+others, and you cannot say in advance which, look for a field the subject
+already sets to declare what it is — and hold it to that. A list of "these
+ones must" is a second label beside the code (TRAPS 82); a flag the code
+itself writes is a measurement. But a sweep keyed off that flag is bounded by
+what the run actually drives, so count the requests as well as the records.**
+
+### What was open, and why it stayed open for two commits
+
+089 measured it and left it. `command_schema_test` walks each record's reasons
+and asserts that none is the empty string; **an empty LIST has no elements, so
+the loop body never runs and the check passes** — TRAPS 75's shape inside an
+assertion. With `_finish_nothing` writing `reasons = []`, seven of the
+controller's refusals tell a player nothing at all and this suite is **149
+assertions, failures=0**, while the same file catches `reasons = [""]` with
+**12** failures. The full table is in TRAPS 86.
+
+**Re-measured in 094 against the committed 093 tree rather than carried
+forward** (TRAPS 14): `_finish_nothing` writing `[]`, the pre-change suite is
+**149 assertions, failures=0** — still silent, exactly as recorded.
+
+Both 089 and 090 declined to close it, and the reason was good. This suite
+**cannot demand that every probe refuse**: three of these commands build
+nothing whatever they are sent, which its own header says, so a bare non-empty
+assertion per probe is a false alarm on correct code. The obvious alternative
+is a list of which probes must refuse, which is a number written beside the
+table rather than read off it.
+
+### The thing that dissolved it, which 090 found by reading and did not build
+
+**The condition does not have to be stated. It is already in the record.** A
+record whose `category` begins with `FAILED_` has refused, **by its own
+report**, and a refusal carrying no sentence is the fault. A command that
+answers some other way never writes such a record and is never asked a
+question. Nothing is written down beside the probes, and nothing has to move
+when a probe is legitimately added or removed.
+
+### Measured before it was asserted, because an invariant argued for is a guard over an assumption (TRAPS 6)
+
+**THE LEDGER, over every record every suite writes.** All 74 suites were run
+one at a time with the lines each appended to `user://track_log.jsonl`
+captured per suite: **671 records, 146 of them `FAILED_`, eight distinct
+`FAILED_` categories, and ZERO carrying no sentence.** 36 of the 146 are
+`command_schema_test`'s own run, which is where the new assertion count comes
+from — counted, not guessed.
+
+| category | records | silent |
+|---|---|---|
+| `FAILED_SCHEMA` | 87 | 0 |
+| `FAILED_SCENE` | 31 | 0 |
+| `FAILED_NOTHING_BUILT` | 15 | 0 |
+| `FAILED_CLOSURE` | 4 | 0 |
+| `FAILED_PARSE` | 4 | 0 |
+| `FAILED_UNWALKABLE` | 3 | 0 |
+| `FAILED_AI` | 1 | 0 |
+| `FAILED_NO_HANDLER` | 1 | 0 |
+
+**THE PRODUCERS, read off the code.** All **37** places in `scripts/` that
+write `"ok": false` were read one at a time. **Twenty-six carry an `errors` or
+`reasons` array**, and every one of those is either a **literal non-empty
+array**, guarded by `if not <list>.is_empty()`, or returns a list whose own
+`ok` was **derived from `<list>.is_empty()`** — so no validator in Genesis can
+answer `ok=false` with nothing to say today. **The other eleven are a
+different shape, counted rather than waved at**: four `{"ok": false}` internal
+signals in `_prepare_world`, written after `_finish_failed` has already put the
+record in the ledger; six `WorldStore` returns carrying a `"message"` that
+never becomes a record's reasons; and `CommandParser.parse`'s result
+**initializer**, which is not a return at all and whose refusal travels as one
+`"error"` string. **So the new assertion is a guard against drift and not a
+fault-finder, and saying otherwise would be a claim this session cannot
+make** — and the eleventh is where the finding under its own heading below
+came from.
+
+
+### Measured, each fault alone, in its own copy with its own `config/name`
+
+TRAPS 50, TRAPS 80, each copy given its own `--headless --import` (TRAPS 88),
+every diff read before its run. Control **186 assertions, failures=0**.
+
+| injection | before 094 | after 094 |
+|---|---|---|
+| `_finish_nothing` writes `reasons = []` | **149/0 — SILENT** | 186, failures=**14**, each named |
+| `_finish_failed` writes `reasons = []` | 149/0 | 186, failures=**44** |
+| `_finish_nothing` writes `reasons = [""]` | 149, failures=12 | 186, failures=**26** |
+| the sweep's scope broken so it reads no records | — (094's own code) | **150**, failures=**1**, naming both numbers |
+| `NpcGoals.validate` answers `ok=false` with `errors = []` | — | **186/0 — SILENT HERE**, and `controller_reach_test` **305, failures=4** |
+
+**AND THE CATCH IS ATTRIBUTED RATHER THAN ASSUMED.** The predicate has two
+halves — there IS a sentence, and it is not blank. With the first half removed
+and the `[]` fault in place, the suite is **186 assertions, failures=0**: the
+non-empty half is precisely what does the work, measured rather than argued.
+
+### The limit, which is the second half of the rule and was found by injecting against it
+
+**A SWEEP OVER THE RECORDS A RUN PRODUCES IS BOUNDED BY THE REQUESTS THE RUN
+SENDS.** The fifth row above is the one worth keeping. A validator made to
+refuse with nothing to say is **invisible to this suite**, and the reason is
+not the sweep: it is the probe table. `ORDER`, `SHUT`, `OPEN`, `EQUIP`,
+`CLEAR_WORLD` and the three `CREATE_` commands all carry `"fields": []`, so
+this suite sends them **only sound requests** and their validators' refusal
+paths are never driven at all. The sweep reads 36 records and is wide over
+every one of them; the class it can speak for is the one the table drives.
+That door is held in `controller_reach_test`, which drives those branches and
+caught the same injection at **305, failures=4** — so the property is held
+across three files (`controller_reach_test` for the controller's 28 branches,
+`refusal_reach_test` for the modules' twelve, this file for the malformed-field
+class per whitelisted command) and **no machinery was copied between them**.
+This is TRAPS 47's reachability question one layer in, asked of a sweep instead
+of a check.
+
+**And the per-record count is derived, so it can fall.** If the probes stop
+refusing, the 36 assertions go with them — TRAPS 73's signature. That is why
+`schema_refusals` is counted **as the probes fire** and the sweep asserts it
+read at least that many: the fourth row above is that assertion failing, with
+both numbers in the message.
+
+### AND THE ELEVENTH RETURN HAD A REFUSAL WITH NOTHING IN IT BEHIND IT, REACHABLE TODAY, HELD BY NOTHING
+
+**This is a fault in the product and it is NOT fixed in 094.** It was found by
+reading the one `"ok": false` site that is not a validator, and it was
+**driven** rather than argued — sent through `main.gd` in a throwaway copy and
+the record read off the ledger:
+
+| what the AI answers | `parse()`'s `error` | the record's `reasons` |
+|---|---|---|
+| `{"command": "UNSUPPORTED", "parameters": {"reason": ""}}` | `""` | **`[""]`** |
+| `{"command": "UNSUPPORTED", "parameters": {"reason": "   "}}` | `"   "` | whitespace only |
+| `{"command": "UNSUPPORTED", "parameters": {"reason": null}}` | `"<null>"` | **`["<null>"]`** |
+| `{"command": "UNSUPPORTED", "parameters": {}}` | `"no reason given"` | correct |
+| `{"command": "UNSUPPORTED"}` | `"no reason given"` | correct |
+
+**THE CAUSE IS THE DEFAULT, AND IT IS THE WHOLE RULE.**
+`str(data["parameters"].get("reason", reason))` substitutes *"no reason given"*
+when the key is **ABSENT**. It does nothing when the key is **PRESENT AND
+EMPTY**, and `str(null)` in GDScript is the five-character string `<null>`. So
+the one refusal a player meets when Genesis says it cannot do something at all
+can arrive blank, or can read `<null>`.
+
+**NOTHING HOLDS IT, grepped rather than assumed.** Eight files in `tests/`
+name `UNSUPPORTED`. `controller_reach_test` counts the **site** in `main.gd`
+and says in its own message that it is not a `FAILED_` category;
+`check_wiring_test` asserts the record carries a quarrel with the refusal;
+`session_test` sends one with the reason `"no boats"`. **No suite sends an
+empty one and no suite reads that record's sentence.**
+
+**AND 094'S OWN NEW SWEEP DOES NOT CATCH IT**, which is the honest reason it
+is written here as a finding and not as a fix: the category of that record is
+`UNSUPPORTED`, not `FAILED_`, so the condition read off the record excludes it
+by construction. Widening the condition would be an absence assertion over a
+set this suite drives **zero** members of (TRAPS 75), so nothing was widened.
+
+**AND IT IS NOT FIXED HERE BECAUSE THE CLASS HAS NOT BEEN ASKED (TRAPS 11).**
+One grep for `get("<key>", "<string literal>")` found **thirteen** other code
+sites in `scripts/` with that shape — the enumeration is in HANDOVER's first
+live "Next action", and that number is **what the grep found and not the
+class**, because the pattern cannot see a default held in a variable or spread
+over two lines. For each the question is whether an empty or null value is
+reachable and whether a player reads the result (TRAPS 47). Fixing the one found first and leaving the fifteen is the exact
+shape this file has a trap about. The measurement above is the hard part and it
+is done; the class sweep is the next session's first task.
+
+Found in 094, by taking 090's second live "Next action" — a reading that had
+been done and a change that had not been made — and doing the measurement it
+named as the precondition before writing the assertion.
+**Nothing in `scripts/`, `scenes/`, `netlify/`, `.github/`, either runner,
+`project.godot` or `export_presets.web.cfg` was touched**, read off
+`git status` rather than assumed. **Nothing a player meets changed**: every
+refusal Genesis writes today says what it said before this commit, and what
+was missing is anything that would notice if one stopped.
+
+> A list of which cases must refuse is a label. The record saying "I refused"
+> is a measurement. The sweep that reads it is still only as wide as the
+> requests you send.
