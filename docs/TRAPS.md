@@ -7025,3 +7025,132 @@ was missing is anything that would notice if one stopped.
 > A list of which cases must refuse is a label. The record saying "I refused"
 > is a measurement. The sweep that reads it is still only as wide as the
 > requests you send.
+
+---
+
+## 92. A guard that answers the empty string, where `str(null)` is five characters
+
+**Signature:** a world is built, validated and recorded, with something in it
+called `<null>`.
+
+**Cause:** 094 found one default that answered a missing key and not a present
+and empty one — `CommandParser`'s *"no reason given"* — wrote the general rule
+down, and deliberately did not fix the instance (TRAPS 11). It handed over the
+grep it had used, `get("<key>", "<string literal>")`, thirteen sites it had
+found, and a warning in writing that **the number was what the grep found and
+not the class**, because that pattern cannot see a default held in a variable
+or spread over two lines.
+
+095 widened the reading, and the widening found two things rather than one.
+
+**The first was the one the entry predicted**: defaults held in an identifier
+or an expression. `CommandParser`'s own fault is one of those —
+`get("reason", reason)` — and `LookTool` reads `get("skin", DEFAULT_SKIN)`
+twice. A parse of **every** `.get()` in `scripts/` (324 with a default, read
+across line breaks, classified by the KIND of the default) finds them; a grep
+for a quoted literal cannot.
+
+**The second was not predicted by anything, and it is the trap.** There are
+not two ways a text field can say nothing, there are four, and the fourth is
+not an empty string at all:
+
+| the value | `str()` of it | an `== ""` guard |
+|---|---|---|
+| absent | — | a default stands in, correctly |
+| `""` | `""` | caught |
+| `"   "` | `"   "` | caught **only if** the site stripped first |
+| `null` | **`<null>`** | **passes straight through as a WORD** |
+
+`str(null)` in GDScript is the five-character string `<null>`. So **a site
+written `if label == ""` lets a null through as a name.** One grep for that
+shape in `scripts/` returns 27 lines; the ones reading an AI-supplied text
+field were read one at a time, and **five let a null through as a word,
+measured by driving them** — the dungeon's room name and thing name, the track
+readback's difficulty, and boots' and the car's nickname. A sixth of the same
+shape, the thing label in the dungeon's own readback, was changed by the same
+rule and is **not separately measured**, which is said rather than rounded up.
+Every one of those sites has an **empty** default, which put them outside
+094's grep class entirely. The two halves of the class do not overlap.
+
+**What that cost, measured by driving the validators rather than reading them
+(TRAPS 48), before a line was changed:**
+
+| driven | before 095 |
+|---|---|
+| a dungeon whose room is named `null` | **`validate` ok=TRUE, and the room is KEPT as `<null>`** |
+| a thing named `null` | **ok=TRUE, kept as `<null>`** — while a thing named `""` is correctly refused *"thing 1: no name"* one branch above it |
+| boots or a car with `"nickname": null` | **ok=TRUE, kept, and said back as *"called `<null>`"*** |
+| `TrackBuilder.readback` with `"difficulty": null` | *"to make corner 1 `<null>`"* |
+| a boots/car/look spec whose colour, paint or skin is `""` | *"the ordinary&nbsp;&nbsp;boots"*, *"the ordinary&nbsp;&nbsp;car"*, *"a plain&nbsp;&nbsp;head"*, off the **refused-spec** readback path |
+| `CommandParser`'s UNSUPPORTED reason, `""` or `null` | blank, or `<null>` — 094's finding, the same rule one site along |
+
+**Nothing in `scripts/` or `tests/` contained the substring `<null>` at all**,
+grepped rather than assumed, so nothing could have noticed any of it. A player
+could be shown a room, a thing, a car and a pair of boots named after an engine
+debug spelling, in a game whose whole thesis is that it says what it actually
+did.
+
+**And one of those rows was argued away in 095's own notes before the suite
+found it.** The reading said the tools' text fields were safe from `null`
+because `ToolRegistry._same_kind()` drops a value of the wrong type rather than
+laying it over the defaults. That is **true of the refused-spec readback path
+and false of the validator**, which reaches `str(asked["nickname"])` behind a
+`has()` check and keeps the result. TRAPS 47 exactly — the door measured was
+the one in front of the door that mattered — and it was caught because the
+suite was written to drive the class rather than the five sites the reading had
+convinced itself of.
+
+**Do:**
+
+- **Ask what a value that is PRESENT and says NOTHING means, and answer all
+  four forms in one reader.** `Readback.said()` and `Readback.said_or()` are
+  that reader, and they sit next to `Readback.measure()`, which has been the
+  one reading for a *number* behind a key since 036. Genesis had the number
+  half of this and not the text half, so thirteen readers each decided for
+  themselves.
+- **A reader is one reader even when the sites disagree about policy.**
+  `said()` returns what a value *says* — stripped, or `""` when there is
+  nothing there — so every site's existing `== ""` branch answers all four
+  forms **without changing its own policy**: the dungeon still renames a
+  nameless room `room_1`, still refuses a nameless thing, and the track
+  readback still says *"to change corner 1"*. One reader, thirteen unchanged
+  decisions. That is what makes a class fix smaller than thirteen instance
+  fixes rather than larger.
+- **`said_or()` returns a value that DOES say something exactly as it was
+  sent**, edges and all. Every site using it is a readback, whose whole job is
+  to show what was heard; tidying a player's words there would be TRAPS 8.
+- **Assert the property, never the wording.** *"The readback says 'a room'"*
+  passes against a site that was never fixed, because the absent key always
+  said that. What `tests/says_nothing_test.gd` asserts is an **equality
+  between measured outputs** — *a value that says nothing is answered exactly
+  as an absent key is answered* — with the expected sentence taken from the
+  same code in the same run by asking the same function with the key left out.
+  A default whose wording legitimately changes moves nothing; a site that stops
+  answering one of the four forms fails by name.
+- **And add the assertion that needs no enumeration at all.** Collect every
+  sentence the run produced and assert that none of them contains `<null>`.
+  That one check would have caught all five sites without knowing what they
+  were, and it has a denominator, because an empty collection passes it in
+  silence (TRAPS 75).
+- **Keep the rows keyed off the producer** (TRAPS 82). The tool rows are read
+  off each tool's own `defaults()` — every key whose default is a String — so a
+  tool that gains a text field is driven from the moment it gains it, and no
+  list in the suite has to be moved by hand.
+
+**What 095 deliberately did NOT change, so that the boundary is a stated one
+and not a gap.** A value that says nothing and is **refused either way** —
+`"mode": null` answered *"mode '`<null>`' is not available"*, `"goal": null`,
+`"crop": null`, a colour or skin that is not on the whitelist — is a **refusal
+quoting what was sent**, not a kept name, and its wording is the owner's. The
+sites that KEEP a value, or SAY one back as Genesis's own, are the class this
+commit closed. The refusal-wording half is named in HANDOVER with the
+measurement beside it.
+
+Found in 095, by taking the first live "Next action" and doing the widening it
+asked for before trusting the count it carried. `tests/says_nothing_test.gd`
+fails by name against eleven deliberate breakages, one at a time, each in its
+own copy with its own `config/name`, against a control of 51 assertions and
+no failures.
+
+> A default answers a key that is not there. Four things can be there and say
+> nothing, and in this language one of them is five characters long.

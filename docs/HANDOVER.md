@@ -13,7 +13,231 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **094**, which took **090's SECOND live
+- Last commit at the time of writing: **095**, which took **HANDOVER's FIRST
+  live "Next action"** - *`CommandParser.parse`'s UNSUPPORTED reason can arrive
+  blank, and nothing holds it* - and did the thing that entry asked for first:
+  **WIDEN THE READING BEFORE TRUSTING THE COUNT.** The widening is the commit.
+  094's grep found thirteen sites of one shape; the widened reading found that
+  **the class has a second half the grep could not see, and that half had
+  already let a dungeon be built with a room called `<null>`.** New TRAPS
+  **92**. New suite `tests/says_nothing_test.gd`. **This is the first
+  `scripts/` change in THIRTY-ONE commits** - `git log a331e40..HEAD` is 30
+  commits, 071 through 094 including the four `a` commits, and
+  `git log a331e40..HEAD -- scripts/` is **empty**, counted rather than
+  carried forward. **094's own entry says "the first one in fourteen commits"
+  and that number is WRONG**; it is corrected here rather than left standing,
+  which is TRAPS 14 in the smallest possible form - a figure in a document
+  that nobody rechecked. No new "Human decision needed".
+
+  **THE BASELINE AGREED WITH THE RECORD BEFORE ANYTHING WAS TOUCHED.** The
+  `--all` run in this container, on a clean tree at `28a9980` with
+  `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 094
+  recorded**: `d542b9f91f937039567d7512582b244f`, 74 suites, 0 with something
+  to look at. The container was fresh, so `user://` was empty rather than
+  cleared. `ls tests/*.gd` returned **76** and the run reported **74**,
+  re-counted rather than remembered.
+
+  **THE WIDENING, WHICH IS WHAT THE ENTRY ASKED FOR.** Every `.get()` in
+  `scripts/` was parsed rather than grepped - **332 sites, 324 of them with a
+  default**, read across line breaks, each classified by the KIND of its
+  default (119 string literals, 45 empty dicts, 40 floats, 31 identifiers, 29
+  nulls, 26 empty arrays, 19 ints, 8 expressions, 7 bools). That reproduces
+  094's thirteen **exactly** - the non-empty string-literal text defaults -
+  and adds the ones a quoted-literal pattern cannot see: `get("reason",
+  reason)` in `CommandParser` itself, `get("skin", DEFAULT_SKIN)` twice in
+  `LookTool`, `get("one", str(entry.get("key", "item")))` in `Readback`,
+  `get("name", name)` twice in `main.gd`.
+
+  **AND THEN THE SECOND HALF, WHICH NOTHING PREDICTED.** There are **four**
+  ways a text field can say nothing, not two, and the fourth is not an empty
+  string: **`str(null)` in GDScript is the five-character string `<null>`**, so
+  a site written `if label == ""` lets a null through **as a word**. One grep
+  for that shape in `scripts/` returns **27 lines**; the ones reading an
+  AI-supplied text field were then read one at a time, and **five let a null
+  through as a word, measured by driving them** (the dungeon's room name and
+  thing name, the track readback's difficulty, and boots' and the car's
+  nickname). A sixth of the same shape - the thing label in the dungeon's own
+  readback - was changed by the same rule and is **not separately measured**,
+  said that way on purpose. **Every one of those sites has an EMPTY default
+  and was therefore outside 094's grep class entirely: the two halves of the
+  class do not overlap.**
+
+  **MEASURED BY DRIVING THE VALIDATORS RATHER THAN READING THEM (TRAPS 48),
+  before a line was changed:**
+
+  | driven | before 095 |
+  |---|---|
+  | a dungeon whose room is named `null` | **`validate` ok=TRUE, room KEPT as `<null>`** |
+  | a thing named `null` | **ok=TRUE, kept as `<null>`** - while `""` is correctly refused *"thing 1: no name"* one branch above |
+  | boots or a car with `"nickname": null` | **ok=TRUE, kept, said back as *"called `<null>`"*** |
+  | `TrackBuilder.readback`, `"difficulty": null` | *"to make corner 1 `<null>`"* |
+  | boots/car/look colour, paint or skin as `""` | *"the ordinary  boots"*, *"the ordinary  car"*, *"a plain  head"*, off the **refused-spec** readback path |
+  | the UNSUPPORTED reason, `""` / `"   "` / `null` | blank, whitespace, `<null>` - 094's finding, reproduced in this container |
+
+  **Nothing in `scripts/` or `tests/` contained the substring `<null>` at all**,
+  grepped rather than assumed, so nothing could have noticed any of it.
+
+  **AND ONE OF THOSE ROWS WAS ARGUED AWAY IN THIS SESSION'S OWN NOTES BEFORE
+  THE SUITE FOUND IT, WHICH IS THE PART WORTH READING.** The reading had the
+  tools' text fields down as safe from `null`, because
+  `ToolRegistry._same_kind()` drops a value of the wrong type rather than
+  laying it over the defaults - **true of the refused-spec readback path and
+  false of the validator**, which reaches `str(asked["nickname"])` behind a
+  `has()` check and keeps the result. `says_nothing_test` failed on its first
+  run with *"the ordinary brown boots called `<null>`"*, naming two sites the
+  reading had excluded. **TRAPS 47 in this session's own reading**, and the
+  reason the suite was written to drive the class rather than the five sites
+  the reading was sure of.
+
+  **WHAT CHANGED. One new reader, and thirteen sites that kept their own
+  policy.** `Readback.said()` and `Readback.said_or()` sit next to
+  `Readback.measure()`, which has been the one reading for a NUMBER behind a
+  key since 036 - Genesis had the number half of this and not the text half.
+  `said()` returns what a value SAYS, stripped, or `""` when there is nothing
+  there, so **every existing `== ""` branch answers all four forms without
+  changing its own decision**: the dungeon still renames a nameless room
+  `room_1`, still refuses a nameless thing, and the track readback still says
+  *"to change corner 1"*. `said_or()` is for the sites whose answer is a word
+  rather than a branch, and it returns a value that DOES say something
+  **exactly as it was sent**, edges and all, because every one of them is a
+  readback and tidying a player's words there would be TRAPS 8.
+  The sites: `command_parser.gd` (the reason), `dungeon_module.gd` (the room
+  name the validator keeps, the thing name it refuses, and both names the
+  readback says), `track_builder.gd` (the difficulty), `boots_tool.gd` and
+  `car_tool.gd` (colour/paint and the nickname the VALIDATOR keeps),
+  `look_tool.gd` (skin and face, in both `readback()` and `summary()`), and
+  `game_controller.gd` (the difficulty it hands the builder).
+
+  **TWO OF THOSE WERE CHANGED THOUGH NOTHING A PLAYER MEETS MOVES, AND IT IS
+  SAID RATHER THAN GLOSSED.** `LookTool.summary()` is only ever handed the
+  VALIDATED spec, and `game_controller.gd`'s difficulty feeds
+  `modify_corner()`, whose interpolating branch is **unreachable today** -
+  `corner_nodes` is never filled any more, because `build()` says the
+  Prototype 001 ring is not built. Both were driven and confirmed. They were
+  changed anyway: a reader that is right only by the grace of the door in
+  front of it, or of dead code behind it, is TRAPS 11's next instance.
+
+  **WHAT WAS DELIBERATELY NOT CHANGED, SO THE BOUNDARY IS STATED AND NOT A
+  GAP.** A value that says nothing and is **refused either way** is a refusal
+  **quoting what was sent**, not a kept name: `"mode": null` answers *"mode
+  '`<null>`' is not available (only: circuit)"*, and so do `"goal": null`,
+  `"crop": null`, `"type": null`, a colour/paint/skin off the whitelist,
+  `"face": null` (*"there is no file at '`<null>`'"*) and
+  `str(data["command"])` (*"Rejected command: `<NULL>`"*). All measured. The
+  request is refused in every case, so no world and no name is wrong; what is
+  wrong is the WORDING of a refusal, and refusal wording is the owner's.
+  **It is the first live "Next action".**
+
+  **MEASURED, EACH FAULT ALONE, IN ITS OWN COPY WITH ITS OWN `config/name`**
+  (TRAPS 50, TRAPS 80), given its own `--headless --import` (TRAPS 88), the
+  diff read before each run. Control **51 assertions, failures=0**. Every one
+  of the eleven is caught **by name and by form**:
+
+  | the pre-095 reading put back | after 095 |
+  |---|---|
+  | `command_parser`'s `get("reason", reason)` | 51, failures=**4** (EMPTY, BLANK, NULL, and the sweep) |
+  | the dungeon ROOM name's `strip_edges()` only | 51, failures=**1**, naming `<null>` vs `room_1` |
+  | the dungeon THING name's `strip_edges()` only | 51, failures=**1**, naming `true []` vs `false ["thing 1: no name"]` |
+  | the dungeon readback's `get("name", "a room")` | 51, failures=**4** |
+  | the track readback's `strip_edges()` only | 51, failures=**2** |
+  | `boots` colour's `get("colour", "brown")` | 51, failures=**2** (EMPTY and BLANK only - `_same_kind` really does drop the null there, now measured rather than argued) |
+  | `boots` nickname's `str(asked[...])` in the VALIDATOR | 51, failures=**2** (NULL, and the sweep) |
+  | `car` paint's `get("paint", "red")` | 51, failures=**2** |
+  | `look` skin's `get("skin", DEFAULT_SKIN)` | 51, failures=**2** |
+  | the `<null>` sweep made to collect nothing | 51, failures=**1**, *"this run produced sentences to examine (0)"* |
+  | `said_or()`'s says-nothing half replaced by `has()` | 51, failures=**16** |
+
+  The last two rows are the attribution: the sweep has a **denominator**, so a
+  blind collection fails instead of passing in silence (TRAPS 75), and the new
+  reader's says-nothing half is precisely what does the work.
+
+  **THE PREDICTION WAS WRITTEN DOWN BEFORE THE FIRST RUN AND IT WAS WRONG IN
+  ONE LINE, WHICH IS RECORDED RATHER THAN TIDIED (TRAPS 89).** It named the new
+  suite's count exactly - **`says_nothing_test` 51 assertions**, derived as
+  11 + 19 + 10 + 4 + 5 + 2 with the 19 read off the tools' own `defaults()` -
+  and said *"nothing else moves"*, naming in advance why `source_scan_test`
+  would not (`says_nothing_test.gd` contains no `FileAccess`, so it is not a
+  member of that class) and why `PROMPT_FINGERPRINT` would not. **It missed
+  `result_line_test`, which went 326 -> 330.** That suite's class is **the
+  suites themselves** - it is the reader 077 built for the 71 result-line
+  counts - so **adding any file to `tests/` moves it by four**, correctly and
+  by design. The lesson is the one 092 learned in the other direction: this
+  project has suites whose subject is the suite list, and a prediction about a
+  new FILE has to ask which of them count per suite. One does.
+
+  **NOT DONE AND NOT VERIFIED.**
+  **THE REFUSAL-WORDING HALF IS MEASURED AND NOT CHANGED** - see above and the
+  first live "Next action". Every one of those requests is refused, so this is
+  a wording question and not a fault in what Genesis does.
+  **THE SUITE IS A FAULT-FINDER FOR THESE SITES AND A DRIFT GUARD AFTERWARDS**,
+  and it does not pretend otherwise: it says nothing about whether the default
+  WORD is the right word. *"a room"* for a nameless room is the owner's
+  wording.
+  **THE 324 DEFAULTS WERE CLASSIFIED, NOT ALL READ.** The non-empty TEXT
+  defaults were read one at a time and answered; the 40 float, 19 int and 7
+  bool defaults were **not** asked the same question, and `null` reaching one
+  of those is a different fault with a different consequence (`float(null)`
+  throws, which is the class 036 and 030 closed at five doors). Said here
+  rather than left to be re-derived.
+  **`main.gd`'s `get("name", name)` PAIR IS IN THE WIDENED CLASS AND WAS NOT
+  CHANGED.** Both read a SAVED WORLD FILE, which Genesis itself wrote, not an
+  AI answer; a save file whose `name` is empty would make `pending_request`
+  read *"load "*. Reachable only by hand-editing a save file, so it is named
+  rather than fixed, and it is under "Next action".
+  **NO LIVE PATH WAS DRIVEN AND NO MODEL WAS ASKED ANYTHING.** No browser ran,
+  no web export was made, no request left the container, there is no API key
+  here. `interpret.js` was not executed.
+  **090'S FIRST LIVE ENTRY IS UNTOUCHED** - the one reader over the 32
+  sentences a delegating validator can make - and so is **094's SECOND live
+  entry**, the seven unmeasured members of the silent-validator class.
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is **2026-10-16**. Checked before this was started,
+  not assumed.
+  **064'S FINDING IS CARRIED FORWARD AND NOT RE-VERIFIED**; the live site's
+  commit cannot be read from this container.
+
+  **NOTHING IN `scenes/`, `netlify/`, `.github/`, EITHER RUNNER,
+  `project.godot` OR `export_presets.web.cfg` WAS TOUCHED** - `git status`
+  named eight files in `scripts/`, the two new files in `tests/` and `docs/`,
+  read rather than assumed. `PROMPT_FINGERPRINT` and `PROMPT_VERSION` did not
+  move: no `prompt_section()`, no `lists()` declaration, no bound and no
+  capability sentence was touched, and `git diff -- scripts/ai_interpreter.gd`
+  is 0 lines. The diff was grepped for `AIza`, `api key`, `secret`, `token`,
+  `bearer`, `GEMINI`, `netlify` and `export_presets`: no hits at all. The
+  injections above were made in **throwaway copies** under the scratch
+  directory and never in the repository; the tree was
+  `git status --porcelain` clean of them throughout.
+  **AND WHAT A PLAYER MEETS DID CHANGE, WHICH IS THE POINT AND IS SAID
+  PLAINLY**: a room, a thing, a car and a pair of boots can no longer be named
+  `<null>`; a readback can no longer say `<null>` or leave a hole where a word
+  should be; and an UNSUPPORTED refusal can no longer arrive blank. Every
+  value that says something is said exactly as it was before, asserted rather
+  than assumed.
+
+  **THE RUNS.** md5 `e82f4ec23054a4088ebaf549002ac93c`, **75 suites, 0 with
+  something to look at**, `--all`, said in the order they were taken (080's
+  standard is about the ORDER): run 1 once `scripts/` and the new suite were
+  final and `docs/` not yet written; runs 2 and 3 on the **complete tree**,
+  code and docs together. **ALL THREE ARE BYTE-IDENTICAL, WHICH IS WHAT
+  ESTABLISHES THAT WRITING `docs/` MOVED NOTHING** - they
+  were written between run 1 and run 2 and the output did not change by a
+  byte. No run was discarded; the tree was `git status --porcelain` stable
+  across each. **A FOURTH RUN WAS THEN TAKEN WITH THIS md5 IN PLACE**, and a
+  **FIFTH AND FINAL ONE ON THE TREE EXACTLY AS IT IS COMMITTED** - which
+  closes 093's and 094's standing caveat, that the md5 cannot be known before
+  the runs it describes, by measurement instead of by argument. **All five are
+  byte-identical.**
+  **AND ONE STARTED RUN WAS DISCARDED RATHER THAN COUNTED**, said because a
+  later session would otherwise read it out of a gap. It was begun and then
+  three overstated figures in these notes were corrected underneath it - a
+  count of sites, a count of numeric defaults, and the commit distance above.
+  All three corrections were to `docs/` and could not have moved a number. The
+  run was thrown away anyway: **a run on a moving tree is not a run** (094's
+  rule), and one more clean run costs less than the argument. The diff against the baseline is **exactly two lines**, and one
+  of them was not predicted: `says_nothing_test` **(new) 51 assertions,
+  failures=0** and `result_line_test` **326 -> 330**.
+
+- Last commit before that: **094**, which took **090's SECOND live
   "Next action"** - *`command_schema_test`'s no-empty-reason check passes on a
   refusal that names nothing* - and did the thing that entry named as the
   precondition: **the measurement, before the assertion** (TRAPS 6). 089 and
@@ -4338,11 +4562,36 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-**76** files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **74 suites**, counted with `ls tests/*.gd` rather than
+**77** files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **75 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
-broken. `--all` adds the two slow racing suites, which are counted in the 74
+broken. `--all` adds the two slow racing suites, which are counted in the 75
 and are skipped without it.
+**095 ADDED ONE FILE** — `tests/says_nothing_test.gd`, which is why the two
+numbers above moved from 76 and 74. Its baseline on the clean tree at
+`28a9980`, `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 094
+recorded**: `d542b9f91f937039567d7512582b244f`, 74 suites, 0 with something to
+look at. The container was fresh, so `user://` was empty rather than cleared.
+After the change, **THREE byte-identical full `--all` runs**, md5
+`e82f4ec23054a4088ebaf549002ac93c`, 0 with something to look at — the first on the final code
+tree with `docs/` not yet written, the second and third on the complete tree.
+**The md5 is written into this file AFTER the runs rather than before**, for
+the reason 093 and 094 both gave: it is the md5 of the runs it describes and
+cannot be known earlier. That cannot move the number — **no suite in `tests/`
+reads `docs/` at all**, grepped this session rather than taken from a commit
+message, and no file there names `res://docs`.
+The diff against the baseline is **two lines, one of which the prediction
+missed**: `says_nothing_test` **(new) 51 assertions, failures=0**, which was
+predicted exactly, and `result_line_test` **326 -> 330**, which was not. That
+suite's class is **the suites themselves**, so any new file in `tests/` moves
+it by four. See TRAPS 89 and the 095 entry: the prediction is recorded as
+written, wrong line included.
+**AND THE INJECTED MEASUREMENTS WERE TAKEN IN A THROWAWAY COPY, NEVER IN THE
+REPOSITORY.** It had its own `config/name` so it could not share a `user://`,
+it was given `--headless --import` of its own before any suite ran (TRAPS 88),
+and `scripts/` and `tests/` were restored from the repository between every
+one of the eleven injections, which is what makes each a measurement of one
+fault alone (TRAPS 50, TRAPS 80).
 **094 ADDED NO FILE** and re-ran the `ls` anyway: **76** and **74**, which is
 what the two numbers above say. Its baseline on the clean tree at `7e74046`,
 `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 093
@@ -5344,6 +5593,17 @@ runs there without `--fixed-fps` too, and it was run both with
 `run_tests.bat` needed no edit. `physics_test` gained 038's car measurement and is already
 on both the Linux `TIMED` list and the `.bat`'s `physics` pattern, so it
 keeps `--fixed-fps` on both.
+`says_nothing_test` is 095's one new file and matches **none** of the
+`.bat`'s patterns — checked by running every one of them against the name
+rather than by reading the list — so it runs there without `--fixed-fps`, and
+it was run with `--fixed-fps 120`, with `--fixed-fps 30` and without any, and
+gives **51 assertions, failures=0** all three times (TRAPS 4). It is not on
+the Linux `TIMED` or `SLOW` list and needs neither: it steps no physics and
+drives no scene, it opens no directory and reads no file, and it finishes in
+under a second. Its exit code was checked separately from its line — `$?` is
+0 on a pass and the suite calls `quit(1)` when `bad > 0`, which is 077's rule
+and what `result_line_test` holds it to. **`run_tests.bat` needed no edit for
+it**, and neither runner was touched.
 
 **Run `--all` before believing a green suite.** 033 introduced a fault that
 the 38 fast suites all passed and `session_test` caught — see TRAPS 25's last
@@ -10603,10 +10863,97 @@ work below. **And do not re-take 094's per-suite ledger capture either** - the
 written down under "Run the tests first", and the number it produced is now an
 assertion in `command_schema_test` rather than a figure in a document.
 
-**THE FIRST LIVE ENTRY AS OF 094, AND IT IS A FAULT IN THE PRODUCT RATHER THAN
-IN A SUITE: `CommandParser.parse`'s UNSUPPORTED REASON CAN ARRIVE BLANK, AND
-NOTHING HOLDS IT. 094 MEASURED IT AND DID NOT FIX IT, FOR A REASON THAT IS
-WRITTEN DOWN.** Driven, not argued - sent through `main.gd` in a throwaway copy
+**NOTHING IS OWED FROM 095 EITHER.** Its baseline was byte-identical to the
+md5 094 recorded, it wrote its predicted diff down before running - **wrongly
+in one line, which is recorded rather than tidied (TRAPS 89)** - and it took
+three byte-identical `--all` runs, the last two on the complete tree with
+`docs/` in place, which is why there is no 095a. **Do not start by re-running
+on 095's behalf**; take your own baseline so you learn the record and the
+container still agree, and spend the time on the work below. **And do not
+re-take 095's eleven injections** - they are in the 095 entry with their
+counts, each was measured alone in its own copy, and the property they
+attribute is now `tests/says_nothing_test.gd` rather than a table in a
+document.
+
+**THE FIRST LIVE ENTRY AS OF 095, AND IT IS THE HALF OF 095'S OWN CLASS THAT
+WAS MEASURED AND DELIBERATELY LEFT: A REFUSAL THAT QUOTES `<null>` BACK AT THE
+PLAYER. THE REQUEST IS REFUSED IN EVERY CASE, SO THIS IS A WORDING QUESTION
+AND THE WORDING IS THE OWNER'S.** Driven in 095, not argued, each through its
+own validator:
+
+  | what the AI answers | what the player reads |
+  |---|---|
+  | `"mode": null` | *"mode '`<null>`' is not available (only: circuit)"* |
+  | `"goal": null` | *"'`<null>`' is not something a character can be asked to do"* |
+  | `"crop": null` | *"zone 1 (crop): '`<null>`' is not a crop this farm grows"* |
+  | `"colour"` / `"paint"` / `"skin"`: `null` | *"'`<null>`' is not a colour this game has"*, and the two siblings |
+  | `"face": null` | *"there is no file at '`<null>`'"* |
+  | `"command": null` | *"Rejected command: `<NULL>`"* |
+
+**WHY IT IS NOT JUST THE SAME FIX.** At every one of these sites the empty
+string is ALREADY answered correctly and differently from the null - *"an
+order needs a goal"* and *"zone 1 (crop): missing 'crop'"* are the sentences a
+player gets for `""`, and they are better sentences than the quoting ones. So
+`Readback.said()` would **change what the player is told**, from *"'`<null>`'
+is not a crop"* to *"missing 'crop'"*. That is defensible and it is also a
+change to a refusal's wording on six doors at once, which is the owner's call
+and not an assistant's (PROTOCOL section 6). **The alternative, which needs no
+decision at all**: leave the branch alone and fix only the SPELLING, so a null
+is quoted as `null` rather than as the engine's `<null>`. That is strictly
+smaller and strictly honest.
+**EITHER WAY THE READING IS DONE AND IS IN TRAPS 92**, so this is one
+question to the owner and not a measurement to re-take. **Ask him which**, and
+if he is absent, prefer the spelling fix: it cannot make a sentence worse.
+**AND THE ASSERTION IS ALREADY HALF-WRITTEN.** `says_nothing_test`'s section 5
+collects every sentence a run produced and refuses `<null>` in any of them. It
+collects **readbacks only** today, on purpose, because a refusal's wording was
+out of scope. Widening it to collect the refusals these doors produce is the
+whole test, and it needs no list.
+
+**THE SECOND LIVE ENTRY AS OF 095, AND IT IS THE PART OF 095'S OWN WIDENING IT
+DID NOT FINISH: THE 324 DEFAULTS WERE CLASSIFIED AND ONLY THE TEXT ONES WERE
+ASKED THE QUESTION.** The parse is reproducible from the description in the 095
+entry: 119 string literals, 45 empty dicts, 40 floats, 31 identifiers, 29
+nulls, 26 empty arrays, 19 ints, 8 expressions, 7 bools. **The non-empty TEXT
+defaults were read one at a time and answered. The 40 float, 19 int and 7 bool
+defaults were not.** A null reaching one of those is a **different fault with a
+different consequence** - `float(null)` and `int(null)` THROW in GDScript,
+which abandons the function mid-way and is exactly the class 030 and 036 closed
+at five doors, each time after it had cost a record that existed and said
+nothing. So the question per numeric site is not *"does a player read a hole"*
+but *"does this throw, and what is abandoned when it does"*, and
+`Readback.measure()`/`as_number()` is the reader that already answers it. **The
+honest first step is a count**: of the **59** float and int defaults - the 7
+bool defaults are a third question and are not these - how many are read
+through `Readback.measure()` or `as_number()` and how many go straight into
+`float()` or `int()`? That is one parse away and it is a measurement, not a
+build (TRAPS 6).
+**DO NOT ASSUME THE ANSWER IS "ALL OF THEM ARE FINE".** 036's own comment in
+`game_controller.gd` says the same shape was live and unheld three commits
+after the rule was written for it.
+
+**THE THIRD LIVE ENTRY AS OF 095, AND IT IS SMALL AND SAID SO THAT IT IS NOT
+RE-DERIVED: `main.gd`'s TWO `get("name", name)` READS.** Both are in the
+`/load` path and both read a SAVED WORLD FILE rather than an AI answer, so a
+save whose `name` says nothing makes `pending_request` read *"load "* and
+`record_load_check` name nothing. **Genesis writes those files itself**, so
+this is reachable only by hand-editing one, which is why 095 named it instead
+of changing it. The fix is the same one line; the question worth asking first
+is whether `WorldStore.save()` can write a world whose name says nothing, which
+is a read of one function.
+
+**THE FIRST LIVE ENTRY AS OF 094, AND IT IS NOW CLOSED - KEPT HERE BECAUSE THE
+RECORD OF WHAT WAS DONE TO IT IS THE USEFUL PART.** ~~`CommandParser.parse`'s
+UNSUPPORTED reason can arrive blank, and nothing holds it.~~ **Done in 095**,
+as the CLASS and not the instance: the reading was widened first, as this entry
+asked, and the widening found a second half of the class that had already let a
+dungeon be built with a room called `<null>`. See the 095 entry and TRAPS 92.
+The original text follows, unedited, because the measurement in it is still the
+measurement.
+
+**094's ENTRY, AS WRITTEN: `CommandParser.parse`'s UNSUPPORTED REASON CAN
+ARRIVE BLANK, AND NOTHING HOLDS IT. 094 MEASURED IT AND DID NOT FIX IT, FOR A
+REASON THAT IS WRITTEN DOWN.** Driven, not argued - sent through `main.gd` in a throwaway copy
 and the record read off the ledger:
 
   | what the AI answers | `parse()`'s `error` | the record's `reasons` |

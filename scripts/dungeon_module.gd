@@ -180,7 +180,11 @@ func validate(parameters: Dictionary) -> Dictionary:
 			errors.append(Readback.member_error(list_of("rooms"), n))
 			continue
 		var room: Dictionary = rooms[i]
-		var label := str(room.get("name", "")).strip_edges().to_lower()
+		# 095: this read str(room.get("name", "")).strip_edges(), which answers
+		# "" and whitespace and NOT null - str(null) is "<null>", so a room
+		# named null validated ok and the dungeon was BUILT with a room called
+		# <null>. Measured before it was changed. said() answers all three.
+		var label := Readback.said(room, "name").to_lower()
 		if label == "":
 			label = "room_%d" % n
 		if names.has(label):
@@ -250,7 +254,10 @@ func validate(parameters: Dictionary) -> Dictionary:
 			errors.append(Readback.member_error(list_of("things"), n))
 			continue
 		var thing: Dictionary = things[i]
-		var label := str(thing.get("name", "")).strip_edges().to_lower().replace(" ", "_")
+		# 095: the same reading as a room's name above, and the same fault
+		# measured here: a thing named "" was correctly refused "thing %d: no
+		# name" and a thing named null was KEPT, called <null>.
+		var label := Readback.said(thing, "name").to_lower().replace(" ", "_")
 		if label == "":
 			errors.append("thing %d: no name" % n)
 			continue
@@ -1472,7 +1479,11 @@ func readback(parameters: Dictionary) -> String:
 		var room: Dictionary = entry
 		# The AI names rooms with underscores, as the format asks. A player
 		# reading the line should see "great hall", not "great_hall".
-		names.append(str(room.get("name", "a room")).replace("_", " "))
+		# 095: a readback runs before anything is validated, so this reads the
+		# RAW name. It said "entered through a 40 m " for an empty name and
+		# "a 40 m <null>" for a null one, both measured. said_or() gives the
+		# same "a room" the absent key already got.
+		names.append(Readback.said_or(room, "name", "a room").replace("_", " "))
 		# A side that is not a number leaves the room unmeasured rather than
 		# 0 m, and an unmeasured entrance is described without a size below.
 		# EITHER side, not both: size_of() draws the line in the same place
@@ -1610,7 +1621,9 @@ func _things_said(parameters: Dictionary, names: PackedStringArray) -> String:
 		if typeof(entry) != TYPE_DICTIONARY:
 			continue
 		var thing: Dictionary = entry
-		var label := str(thing.get("name", "")).replace("_", " ").strip_edges()
+		# 095: said() so a null name is skipped here exactly as an empty one
+		# is, which is what the validator does with both after 095.
+		var label := Readback.said(thing, "name").replace("_", " ")
 		if label == "":
 			continue
 		# --- 044: the resolution, and what it said when it could not ---

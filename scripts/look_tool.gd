@@ -129,13 +129,23 @@ static func face_texture(path: String) -> Texture2D:
 # half of it is usually their name; saying it into a log nobody asked for is
 # a small leak with no upside.
 func readback(spec: Dictionary) -> String:
-	var skin := str(spec.get("skin", DEFAULT_SKIN))
-	if str(spec.get("face", "")) != "":
+	# 095: a refused spec is described from ToolRegistry.asked_spec(), so this
+	# reads what the player sent. A skin of "" read back as "a plain  head" -
+	# measured through ToolRegistry.readback(). said_or() answers an empty,
+	# whitespace or null value the way the absent key is already answered, and
+	# a face that says nothing is no face, which is what said() decides here.
+	var skin := Readback.said_or(spec, "skin", DEFAULT_SKIN)
+	if Readback.said(spec, "face") != "":
 		return "your own face, on %s skin" % skin
 	return "a plain %s head" % skin
 
 
 func summary(spec: Dictionary) -> String:
-	if str(spec.get("face", "")) != "":
+	# 095: summary() is only ever handed the VALIDATED spec, where skin is one
+	# of SKINS and face has been opened as a file, so neither reader can meet
+	# a value that says nothing today - driven and confirmed. They are changed
+	# anyway, because the rule is the same rule and a reader that is right by
+	# the grace of the door in front of it is TRAPS 11's next instance.
+	if Readback.said(spec, "face") != "":
 		return "That's you. The picture stays on this computer."
-	return "A plain %s head." % str(spec.get("skin", DEFAULT_SKIN))
+	return "A plain %s head." % Readback.said_or(spec, "skin", DEFAULT_SKIN)

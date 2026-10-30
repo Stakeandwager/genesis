@@ -218,7 +218,16 @@ func validate(parameters: Dictionary) -> Dictionary:
 		else:
 			spec["colour"] = colour
 	if asked.has("nickname"):
-		spec["nickname"] = str(asked["nickname"]).strip_edges().substr(0, 40)
+		# 095: this was str(asked["nickname"]).strip_edges(), which answers ""
+		# and whitespace and NOT null - str(null) is the five characters
+		# "<null>", so a nickname of null was KEPT, ok=true, and the readback
+		# said "called <null>". Found by says_nothing_test on its first run,
+		# against a reading in 095's own notes that had argued this site was
+		# unreachable because ToolRegistry._same_kind() drops a null: true of
+		# the REFUSED-spec path and false of this one, which is the validator.
+		# TRAPS 47 - the door measured was the one in front of the door that
+		# mattered.
+		spec["nickname"] = Readback.said(asked, "nickname").substr(0, 40)
 
 	# The consequence, checked only once the fields themselves are sound: a
 	# body that is already being refused for a bad number does not also need
@@ -321,8 +330,13 @@ func readback(spec: Dictionary) -> String:
 		if p != "":
 			said.append(p)
 
-	var colour := str(spec.get("colour", "brown"))
-	var nickname := str(spec.get("nickname", ""))
+	# 095: a REFUSED spec is still described, from ToolRegistry.asked_spec(),
+	# so these two read what the player sent and not what the validator kept.
+	# A colour of "" read back as "the ordinary  boots" - measured through
+	# ToolRegistry.readback(). said_or/said answer that the same way an
+	# absent key is already answered.
+	var colour := Readback.said_or(spec, "colour", "brown")
+	var nickname := Readback.said(spec, "nickname")
 	var thing := "%s boots" % colour
 	if nickname != "":
 		thing = "%s called %s" % [thing, nickname]

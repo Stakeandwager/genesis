@@ -51,7 +51,14 @@ static func parse(json_text: String) -> Dictionary:
 			# UNSUPPORTED answer now also carries what the AI understood, and
 			# Genesis must show that before explaining what it cannot do.
 			result["parameters"] = data["parameters"]
-			reason = str(data["parameters"].get("reason", reason))
+			# 095: "no reason given" answered an ABSENT key and not a present and
+			# empty one, so {"reason": ""} wrote a record whose only sentence was
+			# the empty string and {"reason": null} wrote the five characters
+			# "<null>". Measured in 094, driven through main.gd and read off the
+			# ledger. This is the one refusal a player meets when Genesis says it
+			# cannot do the thing at all, so it is the sharpest member of the
+			# class Readback.said_or() now reads for all of them.
+			reason = Readback.said_or(data["parameters"], "reason", reason)
 		result["error"] = reason
 		return result
 	if not command in allowed_commands():

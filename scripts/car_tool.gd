@@ -102,7 +102,16 @@ func validate(parameters: Dictionary) -> Dictionary:
 		else:
 			spec["paint"] = paint
 	if asked.has("nickname"):
-		spec["nickname"] = str(asked["nickname"]).strip_edges().substr(0, 40)
+		# 095: this was str(asked["nickname"]).strip_edges(), which answers ""
+		# and whitespace and NOT null - str(null) is the five characters
+		# "<null>", so a nickname of null was KEPT, ok=true, and the readback
+		# said "called <null>". Found by says_nothing_test on its first run,
+		# against a reading in 095's own notes that had argued this site was
+		# unreachable because ToolRegistry._same_kind() drops a null: true of
+		# the REFUSED-spec path and false of this one, which is the validator.
+		# TRAPS 47 - the door measured was the one in front of the door that
+		# mattered.
+		spec["nickname"] = Readback.said(asked, "nickname").substr(0, 40)
 
 	if not errors.is_empty():
 		return {"ok": false, "errors": errors, "spec": {}}
@@ -162,8 +171,11 @@ func readback(spec: Dictionary) -> String:
 		if p != "":
 			said.append(p)
 
-	var paint := str(spec.get("paint", "red"))
-	var nickname := str(spec.get("nickname", ""))
+	# 095: the same two readers as BootsTool.readback(), for the same reason
+	# and measured the same way: a paint of "" read back as "the ordinary
+	# car" with a hole in it, off the refused-spec path.
+	var paint := Readback.said_or(spec, "paint", "red")
+	var nickname := Readback.said(spec, "nickname")
 	var thing := "%s car" % paint
 	if nickname != "":
 		thing = "%s called %s" % [thing, nickname]

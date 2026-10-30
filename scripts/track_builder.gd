@@ -74,7 +74,11 @@ static func readback(parameters: Dictionary) -> String:
 	# filled in from the handler's default of 1 (TRAPS 8); a corner that was
 	# given is said, whatever number it was.
 	var named := "a corner" if is_nan(corner) else Readback.position_said(corner, "corner")
-	var difficulty := str(parameters.get("difficulty", "")).to_lower().strip_edges()
+	# 095: this guard answered "" and whitespace and not null, so a request
+	# carrying "difficulty": null read back as "to make corner 1 <null>" -
+	# measured, not argued. The branch below is unchanged; said() is what
+	# decides whether a value says anything, for every text field in Genesis.
+	var difficulty := Readback.said(parameters, "difficulty").to_lower()
 	if difficulty == "":
 		return "to change %s" % named
 	return "to make %s %s" % [named, difficulty]

@@ -106,6 +106,60 @@ static func measure(source: Dictionary, key: String) -> float:
 	return as_number(source[key])
 
 
+# --- 095: one reading, applied to the TEXT behind a key ---
+#
+# measure() above is this decision for a number. This is the same decision for
+# a word, and it exists because Genesis had the number half and not the text
+# half, so thirteen readers each decided for themselves what a value that was
+# GIVEN and said NOTHING meant.
+#
+# There are three ways a text field can say nothing, and every reader in
+# Genesis was reading at most two of them:
+#
+#   absent          a default stands in, which is what a default is for
+#   ""              the empty string
+#   "   "           whitespace, which some readers stripped and some did not
+#   null            and this is the one that got through: str(null) in GDScript
+#                   is the FIVE-CHARACTER STRING "<null>", which is not empty,
+#                   so a guard written `if label == ""` lets it past as a NAME.
+#
+# Measured in 095 by driving the validators, not by reading them (TRAPS 48):
+# a dungeon whose room was named null validated ok=true and the room was KEPT
+# as `<null>`; a thing named null was kept the same way while a thing named ""
+# was correctly refused one branch above it; TrackBuilder.readback() said "to
+# make corner 1 <null>"; and CommandParser's UNSUPPORTED reason came back
+# blank or as `<null>`, which is 094's finding and the same rule one site
+# along. Nothing in scripts/ or tests/ contained the substring "<null>" at
+# all, so nothing could have noticed any of it.
+#
+# said() returns what the value actually SAYS - the text with its edges
+# stripped - or "" when there is nothing there. Every site that already had a
+# correct `== ""` branch then answers all four cases WITHOUT CHANGING ITS OWN
+# POLICY, which is the reason this is one reader rather than a decision taken
+# thirteen times (TRAPS 11).
+static func said(source: Dictionary, key: String) -> String:
+	if not source.has(key):
+		return ""
+	var got = source[key]
+	if got == null:
+		return ""
+	return str(got).strip_edges()
+
+
+# The same reading at a site whose answer to "it says nothing" is a word
+# rather than a branch of its own.
+#
+# A value that DOES say something is returned AS IT WAS SENT, edges and all,
+# and not as said() strips it: what a player asked for is not this function's
+# to tidy, and every one of these sites is a readback, whose whole job is to
+# show what was heard. So this changes exactly one thing - which values get
+# the default - and nothing about the ones that do not.
+static func said_or(source: Dictionary, key: String, fallback: String) -> String:
+	if said(source, key) == "":
+		return fallback
+	return str(source[key])
+
+
 # --- 040: one reading of a reference by its POSITION in a list ---
 #
 # The prompt tells the model to name a piece of a world by its number,

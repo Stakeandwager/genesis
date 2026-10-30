@@ -1441,7 +1441,14 @@ func _modify_track(parameters: Dictionary) -> void:
 			["'corner' must be a number, the corner to change"])
 		return
 	var corner: int = 1 if is_nan(asked_corner) else int(asked_corner)
-	var difficulty: String = str(parameters.get("difficulty", "medium"))
+	# 095: the same reader as TrackBuilder.readback()'s, which said "to make
+	# corner 1 <null>" before 095. The sentence behind THIS one - "MODIFY_TRACK
+	# corner=%d difficulty=%s" - is unreachable today, because corner_nodes is
+	# never filled any more (build() says the Prototype 001 ring is not built),
+	# so nothing a player meets changes here. It is changed anyway: a reader
+	# that is right only because the branch behind it is dead is TRAPS 11's
+	# next instance, and the rule is the same rule.
+	var difficulty: String = Readback.said_or(parameters, "difficulty", "medium")
 	# The builder's own sentence, which 032 tied to what it actually did, is
 	# both the player's line and the record's reason.
 	_finish_nothing(record, NOTHING_BUILT, track_builder.modify_corner(corner, difficulty))
