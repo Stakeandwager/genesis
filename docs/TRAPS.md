@@ -7672,3 +7672,130 @@ timestamps are normalised — checked rather than assumed.
   `_initialize` in a `SceneTree` skips `quit()` and looks exactly like a hang.
 
 > A grep has a scope. A rule does not.
+
+---
+
+## 99. The class was closed by sweeping for the IDIOM, and the fourth member was a bare index
+
+**Signature:** a commit fixes a class of unguarded reads of a record that came
+off a file, puts the fields in a table, routes them through one reader, writes
+*"ONE TABLE AND ONE READER, so the three cannot be held at two of three"* and
+names TRAPS 11. The count is wrong. The sweep that produced it looked for the
+**shape being fixed** — `r.get("field", default)` — and the missing member was
+read as **`r["field"]` behind a `has()` guard**, which is a different idiom for
+the same act.
+
+**Cause.** 099a closed three fields in `tests/replay.gd` —
+`source`, `experiment`, `attempt` — and each of the three it found was a
+`.get()` or a conversion. The fourth, `revision_of`, was two lines of a
+different shape:
+
+```gdscript
+if first.has("revision_of"):
+    attempt["revision_of"] = first["revision_of"]
+```
+
+**Nothing threw at the door, which is why it survived a session that was
+looking straight at it.** `current_attempt` is a typed `Dictionary` and the
+dictionary assigned to it is well-typed whatever is inside, so the file ran.
+The value threw **one process later, in `scripts/`**, at
+`racing_module.gd:151`'s `record["revision_of"].get("proposed_metrics", {})`,
+reached because `game_controller.gd:656-657` copies it onto the record.
+
+**Measured on `e1c9b6d` before anything was changed**, one real October
+`CREATE_TRACK` record carrying a real `revision_of` (attempt 2), each type
+alone in its own throwaway copy with its own `config/name` — **five of five
+wrong types came back `rc=124` with nothing written**, the same cost as the
+three fields 099a had just fixed:
+
+| `revision_of` holds | result |
+|---|---|
+| a dictionary (control) | `rc=0`, `REPLAY_OUT` 20,281 bytes |
+| `null` | **`rc=124`, nothing written** |
+| a string | **`rc=124`, nothing written** |
+| an array | **`rc=124`, nothing written** |
+| a number | **`rc=124`, nothing written** |
+| a bool | **`rc=124`, nothing written** |
+
+**And the backtrace names the site, so the attribution is read and not
+inferred.** First error `Nonexistent function 'get'` at
+`RacingModule.pre_check (res://scripts/racing_module.gd:151)`; the error
+abandons `pre_check`, the caller reads the `{}` it is handed as an answer
+(TRAPS 96's shape, one function along), and the second error is
+`GameController._prepare_world (game_controller.gd:1196)` on `['ok']`.
+`_initialize` never reaches `quit()`, so the tool hangs.
+
+**Do:**
+
+- **Enumerate the class by the FIELD, not by the idiom.** "Which fields of
+  this record does this file read" has a fixed answer; "which `.get()` calls
+  are there" is a question about syntax and will miss `r[f]`, `f in r`, a
+  destructure, or a `has()` guard with an index under it.
+- **A suite that closes such a class must ask for BOTH shapes, off the record
+  variable the code actually uses.** `tests/field_type_test.gd` derives the
+  variable names from the `_field(<var>, "<name>"` matches themselves and
+  then asserts that neither `<var>.get("<name>"` nor `<var>["<name>"]`
+  appears — so a rename moves the check instead of bypassing it. The bare
+  index put back at the call site is one of five injected faults it catches.
+- **"Nothing threw at the door" is not evidence the door is safe.** Ask where
+  the value is read with a type assumed, which may be a different file and a
+  different process.
+
+> The grep in 098 had a scope. This one had a shape.
+
+---
+
+## 100. `set()` on a typed member does not throw, so an assignment is not a check
+
+**Signature:** a suite wants to know that the value a reader returns can be
+held by the typed member it is assigned to. It makes the assignment for real —
+which is the right instinct, because it asks the engine instead of asking the
+suite's own arithmetic — and then looks for an error. There is none. The
+assertion passes while the member holds something else entirely.
+
+**Cause.** Measured in 100 in Godot 4.7.1, not reasoned about.
+`Object.set("current_source", "x")` where the declaration is
+`var current_source: Dictionary = {}` prints **no error and no warning**, does
+not throw, and **silently keeps the previous value**. The deliberate fault
+that found it was `FIELD_TYPES["source"]` widened to admit `TYPE_STRING`, so
+the reader began passing strings through to a `Dictionary` member. The suite
+caught it at **189 assertions, failures=2** — and both failures came from
+assertions that read the member BACK afterwards, not from the assignment:
+
+```
+FAIL  every type FIELD_TYPES admits for "source" is the type current_source
+      is declared as: String vs Dictionary
+FAIL  current_source accepted what _field() returned for a "source" holding
+      a String
+```
+
+**This is the opposite of the sibling case in the same file, which is why
+both are written down.** `(value as Dictionary).get(...)` on a non-Dictionary
+**does** raise: *"Invalid cast: could not convert value to 'Dictionary'"*,
+measured at `field_type_test.gd:208` when the bare index was injected back
+into `replay.gd`. **And what it abandons is the FUNCTION, not the process**
+(TRAPS 96), which was also measured rather than assumed: `_run()` carried on
+into the next section, so that injection printed **`FIELD TYPE 160
+assertions, failures=3` AND a `SCRIPT ERROR`**, and `run_tests.sh` reports
+the `SCRIPT ERROR` line because it tests for that before it reads the result
+line. Run from `_initialize` directly rather than from a deferred `_run`, the
+same cast never reaches `quit()` at all: a one-file probe came back
+**`rc=124`** with the same `SCRIPT ERROR` and no end-of-run line (TRAPS 13).
+
+So of the two ways a suite can ask the engine about a type, one is loud and
+one is silent, and a suite that uses the silent one without a read-back is
+TRAPS 81's vacuous guard.
+
+**Do:**
+
+- **Assign, then read the member back and assert its TYPE.** `typeof(obj.get(
+  member)) == typeof(value)` is the assertion; the assignment alone is not.
+- **Do not reason about which engine operations throw. Inject the fault and
+  read the output.** The first draft of the comment above this suite's
+  section 4 said the assignment "would throw here", in writing, and it was
+  wrong — corrected only because the injection was run (TRAPS 14).
+- **Say which failure mode a suite has, in the suite.** A reader of
+  `failures=0` is entitled to know whether a break shows up as a FAIL, a
+  `SCRIPT ERROR`, or a timeout.
+
+> Nothing was raised, nothing was written, and the member kept what it had.

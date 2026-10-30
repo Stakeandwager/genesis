@@ -13,7 +13,236 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
-- Last commit at the time of writing: **099a**, which is a **SECOND
+- Last commit at the time of writing: **100**, which took **099a's own first
+  live "Next action"** - *`tests/replay.gd`'s three reads are driven by
+  nothing in a full run* - and did the thing that entry said to do first:
+  asked which of its two options was cheaper. **The answer was a third one,
+  and on the way to it the class turned out to be FOUR reads and not three.**
+  New TRAPS **99** and **100**. One new file,
+  `tests/field_type_test.gd` (**189** assertions), and `tests/replay.gd` is
+  the only other code change. `scripts/` is **0 lines of diff**. No new
+  "Human decision needed".
+
+  **THE FOURTH MEMBER WAS `revision_of`, AND IT WAS READ BY INDEX RATHER THAN
+  BY `.get()`, WHICH IS WHY 099a's OWN SWEEP WALKED PAST IT.** The two lines
+  were `if first.has("revision_of"): attempt["revision_of"] =
+  first["revision_of"]` - a **bare index behind a `has()` guard**, a different
+  idiom for the same act, where the three fields 099a found were all `.get()`
+  calls or conversions. **Nothing threw at the door**: `current_attempt` is a
+  typed `Dictionary` and the dictionary put in it is well-typed whatever is
+  inside it, so the file ran. The value threw **one process later, in
+  `scripts/`**.
+
+  **MEASURED ON `e1c9b6d` BEFORE ANYTHING WAS CHANGED**, one real October
+  `CREATE_TRACK` record carrying a real `revision_of` (attempt 2), each type
+  alone in its own throwaway copy with its own `config/name` (TRAPS 50, 80,
+  88) - **FIVE OF FIVE WRONG TYPES CAME BACK `rc=124` WITH NOTHING WRITTEN**,
+  the same cost as the three 099a had just fixed:
+
+  | `revision_of` holds | result |
+  |---|---|
+  | a dictionary (control) | `rc=0`, `REPLAY_OUT` **20,281 bytes** |
+  | `null` | **`rc=124`, nothing written** |
+  | a string | **`rc=124`, nothing written** |
+  | an array | **`rc=124`, nothing written** |
+  | a number | **`rc=124`, nothing written** |
+  | a bool | **`rc=124`, nothing written** |
+
+  **AND THE BACKTRACE NAMES THE SITE, so the attribution is read and not
+  inferred.** First error: *"Nonexistent function 'get'"* at
+  `RacingModule.pre_check (res://scripts/racing_module.gd:151)`, which does
+  `record["revision_of"].get("proposed_metrics", {})` and is reached because
+  `game_controller.gd:656-657` copies `current_attempt`'s `revision_of`
+  straight onto the record. The error then **abandons `pre_check`** and the
+  caller reads the `{}` it is handed as an answer - TRAPS 96's shape, one
+  function along - so the second error is
+  `GameController._prepare_world (game_controller.gd:1196)` on `['ok']`.
+  `_initialize` never reaches `quit()`, so the tool hangs.
+
+  **THE DOOR IS IN `tests/`, AND `racing_module.gd` IS 0 LINES OF DIFF, SAID
+  OUT LOUD (TRAPS 11).** `racing_module.gd:151` is right by the grace of its
+  writers for every in-process path - `main.gd:402` builds that dictionary -
+  and the only way a non-`Dictionary` reaches it is a **file** read by this
+  tool. So the conversion is at the file reader, and `:151` is left as
+  defence in depth, exactly as 099a left `game_controller.gd:644` and for the
+  same stated reason. **A later session reading TRAPS 11 would otherwise
+  think this missed it.**
+
+  **AND THE ANSWER TO 099a's "WHICH IS CHEAPER" WAS NEITHER OF ITS TWO
+  OPTIONS.** The entry offered a subprocess suite (`OS.execute`, *"an idiom
+  `tests/` does not have anywhere"*) or a written policy that a hand-run tool
+  is held by the person running it. **The subprocess option is worse than
+  expensive, it is unsafe, and that is read off the code rather than
+  guessed**: `replay.gd`'s first lines **delete `user://track_log.jsonl`**,
+  which is the ledger every other suite in the run appends to and four of
+  them read. A suite that ran it would be TRAPS 50 and TRAPS 97 by
+  construction. **So what the new suite drives is the two functions that do
+  the reading, called directly** - which is why both are now `static` in
+  `replay.gd`, with the damage list as an out-parameter rather than a member.
+  An instance works (measured) but leaks a second `SceneTree`'s RIDs at exit,
+  and that noise would sit in the output of a suite that passes.
+
+  **WHAT THE NEW SUITE HOLDS, AND WHAT IT DOES NOT.** Held: the reader
+  converts; **the table and the call sites agree in both directions**; no
+  field in the table is **also** read through a bare `<var>.get("f"` or
+  `<var>["f"]`, with the variable names **derived from the `_field(` matches
+  themselves** so a rename moves the check instead of bypassing it; the value
+  that comes out fits the typed member it is assigned to, with the member's
+  declared type read off `game_controller.gd`; and nothing a JSON file can
+  hold reaches `RacingModule`'s own read of `revision_of` as a
+  non-`Dictionary`. **NOT held: the rest of `replay.gd`** - the `REPLAY_LOG`
+  and `REPLAY_OUT` guards, the grouping, the output file - which no suite
+  drives. **That half of 099a's entry stays open and is still under "Next
+  action".**
+
+  **AND THE SUITE WAS CHECKED AGAINST FIVE DELIBERATE FAULTS, each injected
+  into `tests/replay.gd` alone in its own throwaway copy with its own
+  `config/name`, against the clean suite at 189 assertions, failures=0:**
+
+  | fault injected into `replay.gd` | what the suite said |
+  |---|---|
+  | the bare index put back at the call site | **160 assertions, failures=3**, + 1 `SCRIPT ERROR` |
+  | a damaged `revision_of` passed on as `{}` | **197 assertions, failures=8** |
+  | the damage count removed from `_field()` | **157 assertions, failures=40** |
+  | `_field()` returns the value without checking | **73 assertions, failures=31**, + 6 `SCRIPT ERRORs` |
+  | `FIELD_TYPES["source"]` widened to `TYPE_STRING` | **189 assertions, failures=2** |
+
+  **AND THE LAST ROW IS ITS OWN TRAP, BECAUSE IT CONTRADICTED A SENTENCE THIS
+  RUN HAD ALREADY WRITTEN (TRAPS 14, 100).** The suite's section 4 makes the
+  real assignment onto the typed member, and the comment above it said, in
+  writing, that a wrong type **would throw there**. It does not.
+  `Object.set()` on a typed member handed the wrong type prints **no error and
+  no warning** and **silently keeps the previous value** - measured in Godot
+  4.7.1 - so an assertion that only made the assignment and looked for a
+  crash would have passed while the member held something else. Both failures
+  in that row come from assertions that read the member **back**. The comment
+  was corrected because the injection was run, not because it was re-read.
+
+  **A damaged field is now NAMED rather than swallowed, which is 099's rule
+  applied to this file.** `_field()` appends `{field, type}` to a damage list;
+  an **absent** field is not damage. The tool prints `REPLAY DONE groups=N
+  damaged=N` and one line per damaged field, and `REPLAY_OUT` carries a
+  top-level `"damaged"` array. `"damaged="` is **not** one of the two verdict
+  words the runners match on (`"failures="`, `"bad="`), so `replay.gd` stays
+  out of `result_line_test`'s class exactly as its `NO_RESULT_LINE` row at
+  line 89 says - checked by reading `_verdict_words()`, not by eye.
+
+  **AND A DAMAGED `revision_of` IS LEFT OUT RATHER THAN PASSED ON AS `{}`**,
+  which is a choice and is written down as one. An empty dictionary would
+  still satisfy `record.has("revision_of")` at `game_controller.gd:656`,
+  reach `_compare_designs` through `racing_module.gd:151`, and produce a
+  `revision_comparison` **against a proposal that was never read** - a number
+  in the owner's own output that is not evidence. Absent says *"not a
+  revision"*, and the damage line says why it is absent. This is the same
+  question the second live entry puts to the owner, answered here only for
+  the one case where the fallback would have **invented a comparison**; the
+  numbers in his `/session` report are still his call and are untouched.
+
+  **VERIFIED:**
+  **The baseline reproduced 099a's recorded md5 byte-for-byte**, from a THIRD
+  independent container with its own Godot download
+  (`4.7.1.stable.official.a13da4feb`, `--version` read): `--all` on a clean
+  `e1c9b6d`, `git status --porcelain` empty, `user://` empty because the
+  container was fresh - **`4111d7b7c625e732d4f13f7e5e77ca99`, 77 suites, 0
+  with something to look at**. `ls tests/*.gd` **79**, run reported 77.
+  **THE PREDICTION WAS WRITTEN DOWN BEFORE THE RUN AND HELD EXACTLY** (TRAPS
+  89), naming two lines: `field_type_test` **(new) 189 assertions,
+  failures=0** and `result_line_test` **338 -> 342**, that second being the
+  four per-file checks the 095 entry records. It also named, with a reason
+  each, the suites it said would **not** move - `source_scan_test` 33 because
+  its section 1 is a **floor** and its sections 2 and 3 are a fixed number of
+  assertions whatever the member count, `record_id_test` 23 because the new
+  suite starts no named session, `scan_floor_test` 120 because it calls no
+  `DirAccess`, `record_type_test` 388 because its source is
+  `session_report.gd`, `loadcheck` 39 because it reads `scripts/`, and the
+  rest - **and none of them moved.** `diff` against the baseline is those two
+  lines and nothing else.
+  **SIX REPLAYS OF A REAL RECORD DRIVEN THROUGH THE REAL `replay.gd` AFTER
+  THE FIX, each alone in its own process with its own `config/name`: all six
+  `rc=0`, zero script errors**, and the five damaged ones each **name the
+  field and the type** in the terminal and in `REPLAY_OUT`. Before: five of
+  five hung.
+  **AND AN UNDAMAGED REPLAY IS BYTE-IDENTICAL BEFORE AND AFTER EXCEPT FOR THE
+  NEW KEY** - checked rather than assumed. 20,281 bytes before, 20,294 after;
+  removing the 13 bytes of `,"damaged":[]` gives **exactly 20,281**, and the
+  two are byte-identical once record ids and timestamps are normalised.
+  **THE THREE FIELDS 099a FIXED STILL CONVERT**, spot-checked end to end
+  after the signature change rather than taken on trust: `source` as a
+  string, `experiment` as an array and `attempt` as a string each come back
+  `rc=0`, named in the damage report, and `attempt` replays as **1** (the
+  default the call site names) rather than the 0 that `int("x")` gave before
+  099a.
+  **NEITHER RUNNER NEEDED A LINE AND NEITHER WAS TOUCHED (TRAPS 4)**, checked
+  mechanically rather than by eye: every `/c:"..."` pattern was extracted
+  from `run_tests.bat` and tested against the name `field_type_test` - **no
+  match** - and the name is in none of `run_tests.sh`'s `TIMED`, `SLOW`,
+  `BROKEN` or `NOT_A_SUITE` lists. **The name was chosen for that**: anything
+  containing `replay` would have been skipped by the `.bat`'s
+  `findstr /c:"replay"` at line 34 as "not a suite" **while the `.sh` ran
+  it**, which is exactly the divergence TRAPS 4 is about.
+  **AND ITS `_code_of()` IS BYTE-IDENTICAL TO THE REFERENCE COPY**, extracted
+  from `record_type_test.gd` programmatically and compared, because
+  `source_scan_test` section 3 asserts every copy in `tests/` agrees and the
+  new file joins that class the moment it reads a `.gd` source.
+  **THE NEW SUITE WRITES NOTHING TO `user://`** - no `FileAccess` write, no
+  `TrackLog`, and `GameController.new()` is never added to the tree so
+  `_ready` never runs. Checked by running it alone in a throwaway copy and
+  looking: no `track_log.jsonl` in that copy's `user://` at all. So its sort
+  position between `farm_test` and `formula_test` cannot matter to a ledger
+  scanner.
+
+  **NOT DONE AND NOT VERIFIED:**
+  **THE REST OF `replay.gd` IS STILL HELD BY NOTHING**, which is the
+  surviving half of 099a's entry and is the first live entry below. The
+  `REPLAY_LOG`/`REPLAY_OUT` guards, the October filter, the grouping and the
+  output file are driven by no suite, and the measurements above are this
+  run's and not a standing check.
+  **`prompt_test` IS STILL CHECKED BY NOTHING EITHER.** It is the other
+  member of `NOT_A_SUITE` and nothing in this commit touches it.
+  **`docs/harness/replay.gd.txt` IS A STALE SNAPSHOT AND WAS NOT UPDATED.**
+  It is 94 lines against the live file's 272, it was already stale before
+  this commit, nothing in `tests/` reads `docs/`, and it is the owner's
+  hand-off pack rather than code. Named here rather than quietly left
+  (TRAPS 90: a stated exclusion is a live entry).
+  **THE OWNER'S COUNTING QUESTION IS UNTOUCHED** and is still a live entry.
+  Nothing in `scripts/` changed, so no number in his `/session` report moved.
+  **094'S SECOND LIVE ENTRY, THE NUMERIC HALF OF 095'S WIDENING AND 098'S
+  SECOND LIVE ENTRY ARE ALL UNTOUCHED.**
+  **NO LIVE PATH WAS DRIVEN.** No model was asked anything, no request left
+  the container, there is no API key here, no browser ran, no web export was
+  made, `interpret.js` was not executed.
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is **2026-10-16**, checked by grepping every
+  `2026-1[01]-*` date in `HANDOVER.md` and `TRAPS.md` and reading the context
+  of each of the eight distinct dates - the five later ones are assistant
+  commits and scheduling notes - rather than taken from 099a's paragraph
+  saying the same thing.
+  **064'S FINDING IS CARRIED FORWARD AND NOT RE-VERIFIED**; the live site's
+  commit cannot be read from this container, and the secrets it is about are
+  the owner's.
+
+  **NOTHING IN `scripts/`, `scenes/`, `netlify/`, `.github/`, EITHER RUNNER,
+  `project.godot` OR `export_presets.web.cfg` WAS TOUCHED** -
+  `git status --porcelain` named `tests/replay.gd`, the new
+  `tests/field_type_test.gd` and its `.uid`, and two files in `docs/`, and
+  nothing else. `ai_interpreter.gd` is 0 lines of diff, so
+  `PROMPT_FINGERPRINT` and `PROMPT_VERSION` cannot have moved.
+  `git diff -- tests/` and the whole of the new file grepped for `AIza`,
+  `api key`, `secret`, `token`, `bearer`, `GEMINI`, `netlify` and
+  `export_presets` return **ZERO**. (The same grep over `docs/` returns six,
+  all of them in the sentence you are reading and the two around it, which is
+  said because a later session running the grep over the whole diff will see
+  them and should not have to work out why.)
+  Every probe was in a throwaway copy under the scratch directory, each with
+  its own `config/name`, never in the repository.
+
+  **AND WHAT CHANGED FOR ANYONE USING GENESIS: NOTHING.** `scripts/` is
+  untouched, the suite output moves by two lines, and the only behaviour that
+  changed is a tool the owner runs by hand, which no longer hangs for ten
+  minutes when the record file he points it at has a fourth field of the
+  wrong type - and which now names the field when it does.
+
+- Before 100: **099a**, which is a **SECOND
   OVERLAPPING RUN of the same scheduled task**, and the record of what it did
   with that is the useful part. **It is not a re-run on 099's behalf and it
   undoes nothing.**
@@ -5765,11 +5994,70 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
 ```
 
-**79** files in `tests/`, of which `replay` and `prompt_test` are tools rather
-than suites, leaving **77 suites**, counted with `ls tests/*.gd` rather than
+**80** files in `tests/`, of which `replay` and `prompt_test` are tools rather
+than suites, leaving **78 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
-broken. `--all` adds the two slow racing suites, which are counted in the 77
+broken. `--all` adds the two slow racing suites, which are counted in the 78
 and are skipped without it.
+
+**100 ADDED ONE FILE** — `tests/field_type_test.gd`, which is why the two
+numbers above moved from 79 and 77. Its baseline on the clean tree at
+`e1c9b6d`, `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5
+099a recorded, from a THIRD independent container with its own Godot
+download**: `4111d7b7c625e732d4f13f7e5e77ca99`, 77 suites, 0 with something to
+look at. The container was fresh, so `user://` was empty rather than cleared.
+After the change, **THREE byte-identical full `--all` runs on the settled
+complete tree, code and docs together**, md5
+`5a11933fb40cbb0d178e5b0a53c4ca1b`, **78 suites, 0 with something to look
+at**, `user://` cleared before each. **The md5 is written into this file AFTER
+the runs**, for the reason 093 through 099a all gave.
+**AND THE FOUR TREES ARE NAMED RATHER THAN BLURRED, because they were four
+different trees and saying "three byte-identical runs" alone would hide
+that.** Run 1 was on the finished code with `docs/` untouched. Runs 2 and 3
+were on the complete tree as the docs stood then - run 3 one `docs/` line
+behind run 2, which is said because it is true. **Run 4 was taken after every
+code change and every `docs/` change except this paragraph**, with every
+file's md5 recorded before it started and `md5sum -c` confirming afterwards
+that nothing had moved under it: **same number,
+`5a11933fb40cbb0d178e5b0a53c4ca1b`, 78 suites, 0 with something to look at**.
+It is not counted among the three, which is the convention 093 onwards used.
+**The circularity is the one 093 through 099a all named and none of them
+escaped**: an entry that records its own run's md5 cannot have been written
+before that run. What is left after this paragraph is prose in `docs/`, and
+that it cannot move a number is held by two things rather than by trust -
+the ten `docs/` mentions in `tests/` are **all comments**, read one at a time,
+and **four runs across four different states of `docs/` returned the same
+md5**.
+**THE PREDICTION WAS WRITTEN DOWN BEFORE THE RUN AND HELD EXACTLY**, naming
+two lines: `field_type_test` **(new) 189 assertions, failures=0** and
+`result_line_test` **338 -> 342**, and `diff` against the baseline is those
+two lines and nothing else. It also named six suites, with a reason each,
+that it said would not move — `source_scan_test`, `record_id_test`,
+`scan_floor_test`, `record_type_test`, `loadcheck` and the other `tests/`
+enumerators — and none of them did.
+**AND THE CHECK THAT A RUN HAS FINISHED IS ITS LAST LINE, NOT ITS EXISTENCE**,
+which is 099a's correction and is used here: each run was md5-ed only after
+`suites with something to look at:` had been printed, and the runs were taken
+one at a time with `user://` cleared between, never two at once (TRAPS 50).
+**NEITHER RUNNER NEEDED A LINE AND NEITHER WAS TOUCHED** (TRAPS 4).
+`field_type_test` matches **none** of `run_tests.bat`'s `/c:"..."` patterns —
+checked by extracting every one of them from the file and testing the name
+against each, not by eye — and it is in none of `run_tests.sh`'s `TIMED`,
+`SLOW`, `BROKEN` or `NOT_A_SUITE` lists. **The name was chosen for that**:
+anything containing `replay` would have been skipped by the `.bat` and run by
+the `.sh`. It costs **1 s**, timed with `date` either side over three runs
+(1 s, 1 s, 1 s) and well inside `run_tests.sh`'s 600-second per-suite
+`timeout`, and it is **189 assertions, failures=0** run alone with no
+`--fixed-fps`, with `--fixed-fps 120` and with `--fixed-fps 30` — all three
+checked rather than assumed, which is what makes "neither runner needs a
+line" a measurement. It sorts between `farm_test` and `formula_test`, and it
+**writes nothing to `user://` at all** — checked by running it alone in a
+throwaway copy and finding no `track_log.jsonl` there — so no ledger scanner
+can be affected by where it sits.
+**AND `tests/replay.gd` IS STILL RUN BY NEITHER RUNNER.** What changed is
+that its four reads are now driven by `field_type_test` directly, which is
+the first half of 099a's first live entry; **the rest of the tool is still
+held by nothing** and is the first live entry now.
 
 **099a ADDED NO FILE** and re-ran the `ls` anyway: **79** and **77**, which is
 what the two numbers above say. **It changed one of the two files that is NOT
@@ -12332,23 +12620,95 @@ neither runner - and it held. **Do not re-take 099a's eighteen `replay.gd`
 runs**; they are in the 099a entry with their results, each alone in its own
 process with its own `config/name`.
 
-**THE FIRST LIVE ENTRY AS OF 099a, AND IT IS 099a'S OWN UNHELD HALF:
-`tests/replay.gd`'S THREE READS ARE DRIVEN BY NOTHING IN A FULL RUN.** 099a
-fixed them and measured them eighteen ways, and **that measurement is not a
-standing check**: `replay.gd` is on `run_tests.sh`'s `NOT_A_SUITE` list and
-matched by `run_tests.bat`'s `findstr /c:"replay"`, for the reason those lists
-give - it needs `REPLAY_LOG` and `REPLAY_OUT` and has no verdict to give - so
-neither runner drives it at all. A later session can revert all three and
-every suite stays green. **The question worth asking first is which is
-cheaper**, and it is a real question rather than a rhetorical one: a suite
-that writes a two-line record file and runs `replay.gd` as a subprocess, which
-is an idiom `tests/` does not have anywhere (grep `OS.execute` over `tests/` -
-**zero** hits), or accepting that a hand-run tool is held by the person running
-it and writing that down as the policy for all of `NOT_A_SUITE`. **Do NOT
-simply add `replay.gd` to the suite list**: it exits 1 naming a missing
-variable, so it would be a red suite on every run for no finding at all, which
-is what `NOT_A_SUITE` exists to prevent. **And the same question is open for
-`prompt_test`**, the other member of that list, which nothing checks either.
+**NOTHING IS OWED FROM 100 EITHER.** Its baseline was byte-identical to the
+md5 099a recorded - from a **third** independent container with its own Godot
+download - it wrote its predicted diff down before running and **the
+prediction held exactly**, and it took three byte-identical `--all` runs, the
+last two on the complete tree with `docs/` in place, which is why there is no
+100a. **Do not start by re-running on 100's behalf**; take your own baseline
+so you learn the record and the container still agree, and spend the time on
+the work below. **And do not re-take 100's measurements** - the five
+`revision_of` types, the six replays after the fix, the undamaged
+byte-comparison and the five injected faults are all in the 100 entry with
+their results, each alone in its own copy with its own `config/name`, and the
+property they attribute is now `tests/field_type_test.gd` rather than a table
+in a document.
+
+**~~THE FIRST LIVE ENTRY AS OF 099a: `tests/replay.gd`'S THREE READS ARE
+DRIVEN BY NOTHING IN A FULL RUN.~~ HALF DONE IN 100, AND THE READS WERE
+FOUR.** They are now held by `tests/field_type_test.gd`, which drives
+`_field()` and `_attempt_of()` directly and asserts the call sites in **both**
+idioms. The entry's two options were both passed over for a third, and the
+reason the subprocess one was rejected is **not** that it is expensive:
+`replay.gd` **deletes `user://track_log.jsonl`** on its first lines, so a
+suite that ran it would be TRAPS 50 and TRAPS 97 by construction. **And the
+class was four, not three** - `revision_of` was read as `first["revision_of"]`
+behind a `has()` guard, which a sweep for `.get()` shapes walked past, and all
+five wrong types hung the tool. New TRAPS **99** and **100**. Struck rather
+than deleted, because the half still open is the next entry and the record of
+a reading that was right and under-counted is the useful part.
+
+**THE FIRST LIVE ENTRY AS OF 100, WHICH IS WHAT IS LEFT OF 099a'S: THE REST OF
+`tests/replay.gd` IS HELD BY NOTHING, AND NEITHER IS `prompt_test`.** The four
+field reads are driven in a full run now. **Nothing else in that file is**:
+the `REPLAY_LOG` guard and its `push_error`, the `REPLAY_OUT` guard, the
+`"2026-10"` filter, the grouping rule that keeps a plan's step records with
+its `PLAN` record, and the writing of the output file. A later session can
+break any of them and every suite stays green. **The third option 100 took
+does not obviously extend to them**, which is why it stopped where it did and
+said so: those parts are not pure functions of a record, so holding them means
+either making them pure the way `_field()` and `_attempt_of()` now are - a
+real refactor of a tool, and the parts that touch `FileAccess` and
+`OS.get_environment` cannot all be made pure - or running the tool. **Do NOT
+run it from a suite**: it deletes the shared ledger, which is read off its
+first lines and is the whole reason 100 did not. **And do NOT simply add
+`replay.gd` to the suite list**: it exits 1 naming a missing variable, so it
+would be a red suite on every run for no finding, which is what `NOT_A_SUITE`
+exists to prevent. The honest next step is the smallest one: **ask of each
+remaining part whether it can be made a function of its inputs**, take the
+ones that can, and write down which cannot and why - which turns a stated
+exclusion into a bounded one rather than leaving it standing (TRAPS 90).
+**The `prompt_test` half of the question is completely untouched**; nothing in
+100 looked at it.
+
+**THE SECOND LIVE ENTRY AS OF 100, FOUND WHILE CHECKING THIS RUN'S OWN
+COUNTS: `README.md` SAID "67 SUITES" FOR 43 COMMITS, AND NOTHING IN THIS
+REPOSITORY COULD HAVE SAID SO.** 100 recounted it to **78** - the instance is
+fixed - **and the CLASS is not, which is the entry.** The line is the worst
+possible place for it to have happened: it carries its own parenthesis saying
+*"it is counted rather than remembered - `ls tests/*.gd` less `replay` and
+`prompt_test` ... A count written down once is a claim with nothing behind it:
+`docs/TRAPS.md`, trap 14"*, and it had said 33, then 64, then 67, written at
+`924d274` (063, 22 October) and still there 43 commits later. **TRAPS 93's
+shape over a document rather than over a fix**, and TRAPS 90's: the reason not
+to trust the number was written down beside the number.
+
+**WHAT IS MEASURED AND WHAT IS NOT.** Measured: `README.md`'s numeric claims
+were enumerated by grep and read one at a time, and **that was its only live
+count** - the `38 fast suites` is a statement about 033 and true as written,
+and the two file names it cites (`log_022_test.gd`, `log_023_test.gd`) both
+exist, checked with `ls`. **Not measured: the same sweep over
+`docs/GENESIS_BRIEF.md`, `docs/003-container-fitting.md`,
+`docs/006-the-foundry.md` and `docs/harness/`**, which 100 did not read for
+counts at all.
+
+**AND THE REASON THE CLASS IS HARD IS WORTH STATING, BECAUSE IT IS A DECISION
+AND NOT A CHORE.** No suite in `tests/` reads `docs/`: the grep returns **ten
+hits and every one of them is a comment**, read one at a time rather than
+counted, and this run's own new file is two of the ten. HANDOVER has said the
+same thing in every entry since 093, and checking it is the point. So holding a count in a
+document means **a suite that reads `docs/`**, which this project has never
+had, and the first one would be a precedent rather than a file: it decides
+that prose in `docs/` is a thing the suite set can fail on. That is close
+enough to the owner's own documentation conventions (PROTOCOL 5) that it
+should not be started without him - but it is **not** written up as "Human
+decision needed", because the cheaper half needs no decision at all:
+**`README.md` is the only document a stranger reads first, and it now has one
+count in it.** A suite that reads `README.md` alone, recounts
+`ls tests/*.gd` less `NOT_A_SUITE`, and asserts the number in that one
+sentence would hold the instance that actually matters without deciding
+anything about the rest of `docs/`. **That is the smallest useful next step on
+this entry; the general question stays open and stays named.**
 
 **THE SECOND LIVE ENTRY AS OF 099a, SMALL, AND IT IS A COUNTING QUESTION
 RATHER THAN A FAULT: WHAT SHOULD A REPORT SAY FOR A VALUE IT COULD NOT READ?**
@@ -12366,6 +12726,13 @@ folding it into a score**, and *"cannot tell"* is the same kind of thing. The
 reading is done and is in the 099 and 099a entries, so **this is one question
 to the owner and not a measurement to re-take**. If he is absent, LEAVE IT -
 099's damage line already takes the part that cannot make a number wrong.
+**100 LEFT IT, and answered one corner of it that was not a judgement**: a
+damaged `revision_of` in a replayed record is left OUT rather than passed on
+as `{}`, because `{}` would have reached `_compare_designs` and produced a
+`revision_comparison` against a proposal that was never read - a fabricated
+number rather than a defensible default. That is a tool's output and not the
+owner's `/session` report, and **no number in his report moved**; `scripts/`
+is 0 lines of diff. **The question itself is unchanged and still his.**
 
 **~~THE FIRST LIVE ENTRY AS OF 098: `session_report.gd` ASSUMES THE TYPE OF
 THREE LEDGER FIELDS AND WOULD THROW.~~ DONE IN 099, AND THE ENTRY HAD THREE

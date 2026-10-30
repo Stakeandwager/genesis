@@ -62,16 +62,19 @@ run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      Windows
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      Linux
 ```
 
-67 suites, run against the scripts beside them, so what is tested is what is
+78 suites, run against the scripts beside them, so what is tested is what is
 committed. `--all` adds the two slow racing suites, and it is worth the wait:
 they are the only ones that drive a whole scripted session, in 033 one of them
 caught a fault that all 38 fast suites passed, and in 055 `session_test` turned
 out to be the only suite holding the controller's solve step. Nothing is
-skipped as broken. (The number had said 33 since the suite count passed it,
-and 64 for the two commits after that; it is counted rather than remembered —
+skipped as broken. (The number is counted rather than remembered —
 `ls tests/*.gd` less `replay` and `prompt_test`, which are tools and have no
 verdict to give. A count written down once is a claim with nothing behind it:
-`docs/TRAPS.md`, trap 14.)
+`docs/TRAPS.md`, trap 14. **And this sentence proved its own point: it said
+33, then 64, then 67 — and 67 was written at 063 on 22 October and was still
+there 43 commits later, when a run of 78 found it. The line that explains why
+a count must be counted went 43 commits without being counted.** Recounted in
+100.)
 
 Run them **one at a time**. Every copy of this project shares one Godot
 `user://` directory, so two runs at once write over each other's ledger and

@@ -52,22 +52,106 @@ var messages: Array = []
 # correspondence by scanning the source, so adding these three to it would
 # break that assertion; and `tests/` has no shared library, which is this
 # project's settled convention (TRAPS 89, and source_scan_test's own header).
+#
+# --- 100: THE CLASS IN THIS FILE WAS FOUR, AND THE FOURTH WAS READ BY INDEX
+#          RATHER THAN BY .get(), WHICH IS WHY 099a's GREP WALKED PAST IT ---
+#
+# 099a put three fields in the table and wrote "Three reads" in this header.
+# The fourth is `revision_of`, which this file read as `first["revision_of"]`
+# behind a `first.has()` guard - a BARE INDEX, not a `.get()`, so a grep for
+# the shape 099a was fixing could not see it. It went into current_attempt
+# untyped, so nothing threw at the door; it threw one process later, in
+# scripts/.
+#
+# MEASURED on e1c9b6d BEFORE ANYTHING HERE WAS CHANGED, the same way: one
+# real October CREATE_TRACK record carrying a real revision_of (attempt 2),
+# each type alone in its own throwaway copy with its own config/name
+# (TRAPS 50, 80, 88). FIVE OF FIVE WRONG TYPES CAME BACK rc=124 WITH NOTHING
+# WRITTEN - the SAME COST as the three above:
+#
+#   revision_of  a dictionary (control)   rc=0,   REPLAY_OUT 20,281 bytes
+#   revision_of  null                     rc=124, nothing written
+#   revision_of  a string                 rc=124, nothing written
+#   revision_of  an array                 rc=124, nothing written
+#   revision_of  a number                 rc=124, nothing written
+#   revision_of  a bool                   rc=124, nothing written
+#
+# AND THE BACKTRACE NAMES WHERE, so this is not inferred. The first error is
+#   RacingModule.pre_check (res://scripts/racing_module.gd:151)
+# which does `record["revision_of"].get("proposed_metrics", {})`, and it is
+# reached because game_controller.gd:656-657 copies current_attempt's
+# revision_of straight onto the record. The error then ABANDONS pre_check,
+# which is TRAPS 96's shape: the caller read the {} it was handed as an
+# answer and the second error is
+#   GameController._prepare_world (res://scripts/game_controller.gd:1196)
+# on `['ok']`. _initialize never reaches quit(), so the tool HANGS.
+#
+# THE DOOR IS HERE AND NOT IN scripts/. racing_module.gd:151 is right by the
+# grace of its writers for every in-process path - main.gd:402 builds that
+# dictionary - and the only way a non-Dictionary reaches it is a FILE read by
+# this tool. So this file converts, and racing_module.gd is 0 lines of diff
+# and is left as defence in depth, said out loud for the same reason 099a
+# said it of game_controller.gd:644 (TRAPS 11).
+#
+# AND THESE FOUR READS ARE NOW HELD BY A SUITE IN A FULL RUN, which is what
+# 099a's own live entry asked for: tests/field_type_test.gd drives _field()
+# and _attempt_of() over every field in the table against every value a
+# hand-edited JSON file can hold, and asserts the call sites in THIS file go
+# through them. That is why both are static; see _field() below.
 const FIELD_TYPES := {
 	"source": [TYPE_DICTIONARY],
 	"experiment": [TYPE_DICTIONARY],
 	"attempt": [TYPE_INT, TYPE_FLOAT],
+	"revision_of": [TYPE_DICTIONARY],
 }
 
 
 # One field of one record, read as the default the call site names unless its
-# type is one FIELD_TYPES admits.
-func _field(r: Dictionary, field: String, fallback: Variant) -> Variant:
+# type is one FIELD_TYPES admits. A field that is PRESENT and of a type the
+# table does not admit is appended to `damaged`; an ABSENT field is not
+# damage, it is a record that does not carry it. That distinction is 099's,
+# and the reason is 099's: silently reading damage as absence trades a loud
+# empty answer for a quietly wrong one.
+#
+# static, WITH `damaged` AS AN OUT-PARAMETER RATHER THAN A MEMBER, for two
+# reasons said out loud. The accounting has to live in the ONE reader or it is
+# at four call sites (TRAPS 11). And a static function can be driven by a
+# suite WITHOUT instantiating this SceneTree: tests/field_type_test.gd calls
+# it directly, which is the thing that holds these reads in a full run. An
+# instance works - measured, 100 - but leaks a second SceneTree's RIDs at
+# exit, and that noise would sit in the output of a suite that passes.
+static func _field(r: Dictionary, field: String, fallback: Variant, damaged: Array) -> Variant:
 	if not r.has(field):
 		return fallback
 	var value: Variant = r[field]
 	if not (FIELD_TYPES[field] as Array).has(typeof(value)):
+		damaged.append({"field": field, "type": type_string(typeof(value))})
 		return fallback
 	return value
+
+
+# The dictionary assigned to controller.current_attempt, which is where two of
+# the four fields live.
+#
+# A record with NO "attempt" key gets {}, including when it carries
+# revision_of - that is what this file did before 100 and it is kept, because
+# current_attempt is the attempt and a revision of nothing is not one.
+#
+# AND A revision_of THE TABLE DOES NOT ADMIT IS LEFT OUT rather than passed
+# on as {}. An empty dictionary here would still satisfy record.has(
+# "revision_of") at game_controller.gd:656, reach
+# RacingModule._compare_designs through racing_module.gd:151, and produce a
+# revision_comparison against a proposal that was never read - a number in
+# the owner's own output that is not evidence. Absent says "not a revision",
+# and `damaged` says why it is absent.
+static func _attempt_of(r: Dictionary, damaged: Array) -> Dictionary:
+	if not r.has("attempt"):
+		return {}
+	var out := {"attempt": int(_field(r, "attempt", 1, damaged))}
+	var revision: Variant = _field(r, "revision_of", null, damaged)
+	if typeof(revision) == TYPE_DICTIONARY:
+		out["revision_of"] = revision
+	return out
 
 
 func _initialize() -> void:
@@ -126,21 +210,26 @@ func _initialize() -> void:
 
 	var results: Array = []
 	var lines_before := 0
+	var damaged: Array = []
+	var group_index := 0
 	for g in groups:
 		var first: Dictionary = g[0]
 		feedbacks = []
 		messages = []
 		controller.current_request = str(first.get("request", ""))
 		controller.current_raw = str(first.get("raw_command", ""))
-		# 099a: three reads of a record off a FILE, through the same reader
-		# and the same kind of table 099 put in session_report.gd. See the
-		# header above FIELD_TYPES for what these cost before.
-		controller.current_source = _field(first, "source", {})
-		controller.current_experiment = _field(first, "experiment", {})
-		var attempt := {"attempt": int(_field(first, "attempt", 1))}
-		if first.has("revision_of"):
-			attempt["revision_of"] = first["revision_of"]
-		controller.current_attempt = attempt if first.has("attempt") else {}
+		# FOUR reads of a record off a FILE, through the one reader and the
+		# one table 099 settled on in session_report.gd. 099a wrote three
+		# here; `revision_of` is the fourth and lives inside _attempt_of().
+		# See the header above FIELD_TYPES for what each cost before, and
+		# for the backtrace that names where the fourth one threw.
+		var mine: Array = []
+		controller.current_source = _field(first, "source", {}, mine)
+		controller.current_experiment = _field(first, "experiment", {}, mine)
+		controller.current_attempt = _attempt_of(first, mine)
+		for d in mine:
+			(d as Dictionary)["group"] = group_index
+			damaged.append(d)
 		var parsed := CommandParser.parse(controller.current_raw)
 		if parsed["unsupported"]:
 			controller.record_rejection("UNSUPPORTED", str(parsed["error"]))
@@ -164,10 +253,20 @@ func _initialize() -> void:
 		lf.close()
 		lines_before = n
 		results.append({"original": g, "produced": produced, "feedbacks": feedbacks.duplicate(), "messages": messages.duplicate(), "last_build_command": controller.last_build.get("command", "")})
+		group_index += 1
 
 	var prompt := AIInterpreter.SYSTEM_PROMPT + "\n\nOTHER WORLDS YOU CAN BUILD\n" + WorldRegistry.prompt_sections()
 	var out := FileAccess.open(out_path, FileAccess.WRITE)
-	out.store_string(JSON.stringify({"groups": results, "prompt": prompt, "allowed": CommandParser.allowed_commands()}))
+	out.store_string(JSON.stringify({"groups": results, "prompt": prompt, "allowed": CommandParser.allowed_commands(), "damaged": damaged}))
 	out.close()
-	print("REPLAY DONE groups=%d" % groups.size())
+	# The damage count is PRINTED and not only written, because the file is
+	# read by compare.py and the person running the tool reads the terminal.
+	# "damaged=" is not one of the two verdict words the runners match on
+	# ("failures=", "bad="), so this file stays out of result_line_test's
+	# class exactly as its NO_RESULT_LINE row at line 89 says.
+	print("REPLAY DONE groups=%d damaged=%d" % [groups.size(), damaged.size()])
+	for d in damaged:
+		print("  DAMAGED group %s field \"%s\" was a %s, read as the default" % [
+			str((d as Dictionary).get("group", "?")), str((d as Dictionary).get("field", "?")),
+			str((d as Dictionary).get("type", "?"))])
 	quit(0)
