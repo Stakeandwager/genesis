@@ -37,6 +37,7 @@ func _initialize() -> void:
 	_what_is_not()
 	_the_waits()
 	_the_message_a_player_ends_up_with()
+	_every_branch_of_the_http_message()
 	_the_record()
 
 	print("RETRY TEST %d assertions, failures=%d" % [asserted, bad])
@@ -136,3 +137,157 @@ func _the_record() -> void:
 	# The signal the UI listens to, so a retry is visible rather than a pause.
 	_check(interpreter.has_signal("retrying"), "a retry is announced, not silent")
 	interpreter.free()
+
+
+# --- 092: every branch of the HTTP message, driven off the function's own arms ---
+#
+# WHY THIS IS HERE. 091a named `experiment_runner.gd:140` as the one refusal
+# producer outside both reach tables - it writes `"reasons": [reason]`, where
+# `reason` is whatever a failed interpret call said - and left a READING as the
+# first step, not a check (TRAPS 6). The reading is done and the answer is
+# that `reason` CANNOT arrive empty: `ai_interpreter.gd` emits
+# `interpretation_failed` at ten places, nine of them non-empty literals, and
+# the tenth is `_friendly_http_error(code)`, whose every branch returns one too.
+# All fourteen codes driven came back non-empty. So no assertion was added
+# about an empty `reason`; there is no fault there to hold.
+#
+# WHAT THE READING FOUND ON THE WAY IS WHY THIS FUNCTION EXISTS, and it was
+# measured one fault at a time, each alone in its own copy with its own
+# `config/name` (TRAPS 50, TRAPS 80), against the 091a tree, every other suite
+# run after each:
+#
+#   400 branch made to say nothing         nothing noticed      SILENT
+#   404 branch made to say nothing         nothing noticed      SILENT
+#   400 branch made to say "(HTTP 500)"    nothing noticed      SILENT
+#   429 branch made to say nothing         agreement_test       caught
+#   default branch made to say nothing     retry_test, via 418  caught
+#
+# And the 429 catch is not this property being held. `agreement_test` COUNTS
+# the occurrences of `Readback.plural(MAX_ATTEMPTS, "time")` in the source and
+# found one where it wanted two: the plural idiom being counted, not the
+# sentence being read. That is the same accidental catch 091 found sitting
+# behind `FAILED_PLACEMENT`.
+#
+# SO THE CHECK IS ON THE CLASS AND NOT ON THE TWO SILENT MEMBERS (TRAPS 11),
+# and the codes are read OFF the `match` arms rather than listed here
+# (TRAPS 82): an arm added to the function is driven by this suite from the
+# moment it is added, and fails it until it says something.
+#
+# THE SECOND HALF - "and it names the code that arrived" - IS NOT TIDINESS.
+# Three of the six arms write their code as a LITERAL (`(HTTP 400)`,
+# `(HTTP 404)`, `(HTTP 429)`) instead of through `% code`, and the
+# `500, 502, 503, 504` arm is the standing proof that an arm can gain a second
+# code. The day one of those three does, its sentence starts naming a code
+# that did not happen - which is the injection above that nothing noticed.
+func _every_branch_of_the_http_message() -> void:
+	var f := FileAccess.open("res://scripts/ai_interpreter.gd", FileAccess.READ)
+	_check(f != null, "the interpreter's source opened, so the arms below were read and not typed out here")
+	if f == null:
+		return
+	# Through _code_of(), which is this project's convention for every suite
+	# that reads source: a scan a comment can satisfy is not a check, and
+	# source_scan_test holds that every scanner in tests/ defines its own
+	# byte-identical copy because tests/ has no shared library. This suite
+	# joined that class with 092 and is named in its KNOWN list.
+	var body := _function_body(_code_of(f.get_as_text()), "func _friendly_http_error(code: int) -> String:")
+	f.close()
+	_check(body != "", "and _friendly_http_error is still in it, under that name")
+
+	var codes := _arm_codes(body)
+
+	# A reader that found nothing would pass every loop below by never running
+	# it (TRAPS 75), so it is tied to something the code already states rather
+	# than to a number written beside it. Every retried code must have its own
+	# arm: that is 026's whole point - a player told the service is busy has to
+	# be told Genesis already tried, and the generic default does not say it.
+	_check(AIInterpreter.WORTH_RETRYING.size() > 0, "there is a retry list to tie the reader to")
+	for code in AIInterpreter.WORTH_RETRYING:
+		_check(codes.has(int(code)),
+			"HTTP %d is retried, so it has its own arm rather than falling to the generic message" % code)
+	print("      _friendly_http_error names %d codes across its arms: %s" % [codes.size(), str(codes)])
+
+	# The reader held by its own probes, positive and negative, the way
+	# proxy_test holds its comment stripper.
+	# 067's pair, beside the scan: prose in, nothing out; code in, the needle
+	# out. Held twice over, because an arm can be hidden by a comment in two
+	# ways and _code_of() and the pattern each catch one.
+	_check(not _code_of("\t\t# 418:\n").contains("418"),
+		"a commented-out arm is blanked before the pattern ever sees it")
+	_check(_code_of("\t\t418:\n").contains("418"),
+		"while a real one survives _code_of(), so the reader is not passing by seeing nothing")
+	_check(not _arm_codes("\t\t# 418:\n\t\tvar x := 1\n").has(418),
+		"and the pattern rejects it too, if it ever arrives unstripped")
+	_check(_arm_codes("\t\t418, 419:\n") == [418, 419],
+		"while a real two-code arm gives both, in order")
+	_check(_arm_codes("\t\tvar d := {}\n\t\tif x:\n").is_empty(),
+		"and a line that ends in a colon without being an arm gives nothing")
+
+	var interpreter := AIInterpreter.new()
+	# 599 matches no arm, so the default is driven too. It is the one branch
+	# with no arm to be read off, which is why it is named here.
+	var driven := codes.duplicate()
+	driven.append(599)
+	for code in driven:
+		var said: String = interpreter._friendly_http_error(int(code))
+		_check(said.strip_edges() != "", "HTTP %d gets a sentence that says something" % code)
+		_check(said.contains(str(code)),
+			"and it names the code that arrived rather than one beside it: '%s'" % said)
+	interpreter.free()
+
+
+# The arms of a `match` on an integer, as a flat list of codes in source order.
+# Only a line whose whole head is digits and commas counts, so a comment, a
+# dictionary entry and an `if` cannot be mistaken for one - asserted above
+# rather than assumed. That is the SECOND guard and not the first: the body
+# handed in here has already been through _code_of(), which is this project's
+# convention and is held by source_scan_test. An earlier draft of this
+# function had the pattern INSTEAD of _code_of() and said so in a comment
+# citing TRAPS 86 - that comment was wrong, source_scan_test went red by name
+# on the first full run, and the episode is TRAPS 89.
+static func _arm_codes(body: String) -> Array:
+	var out: Array = []
+	for raw in body.split("\n"):
+		var line := str(raw).strip_edges()
+		if not line.ends_with(":"):
+			continue
+		var head := line.substr(0, line.length() - 1).strip_edges()
+		if head == "":
+			continue
+		var pieces := head.split(",")
+		var all_numbers := true
+		for piece in pieces:
+			if not str(piece).strip_edges().is_valid_int():
+				all_numbers = false
+				break
+		if not all_numbers:
+			continue
+		for piece in pieces:
+			out.append(int(str(piece).strip_edges()))
+	return out
+
+
+# A function's body: everything after its header up to the next top-level
+# `func`, which is where its last branch ends.
+static func _function_body(source: String, header: String) -> String:
+	var start := source.find(header)
+	if start < 0:
+		return ""
+	var out := ""
+	for raw in source.substr(start + header.length()).split("\n"):
+		var line := str(raw)
+		if line.begins_with("func ") or line.begins_with("static func "):
+			break
+		out += line + "\n"
+	return out
+
+
+static func _code_of(source: String) -> String:
+	var out := ""
+	for raw in source.split("\n"):
+		var line := str(raw)
+		if line.strip_edges().begins_with("#"):
+			out += "\n"
+			continue
+		var hash_at := line.find("#")
+		out += (line if hash_at < 0 else line.substr(0, hash_at)) + "\n"
+	return out

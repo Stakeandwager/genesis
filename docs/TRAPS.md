@@ -6702,3 +6702,64 @@ INJECTED to measure what would notice.
 
 > Ten rows said a refusal fired. Seven of them could have fired with nothing
 > in it.
+
+---
+
+## 89. A rule read out of this file, applied over a convention the project had already settled
+
+**Signature:** a session cites a TRAPS number as the reason it did *not* do
+something, writes a careful comment explaining the general principle, and a
+suite that has held the opposite rule for twenty-odd commits goes red on the
+first full run.
+
+**Cause.** 092 needed to read the `match` arms of `_friendly_http_error` out
+of `ai_interpreter.gd`. Every other suite in `tests/` that reads `.gd` source
+strips comments through a function called `_code_of()`, and each of them
+**defines its own byte-identical copy**, because — as `source_scan_test`'s own
+header says in so many words — *there is no shared library in `tests/`; every
+suite stands alone, which is this project's convention.*
+
+092 did not read that header. It reasoned instead from **TRAPS 86** — *two
+files came to hold half a property each because one wrote a second shape of
+the other's predicate* — concluded that a second copy of `_code_of()` was
+exactly the trap 86 warns about, and wrote a narrower pattern-match with a
+comment saying so: *"which is why there is no second copy of another suite's
+comment stripper here (TRAPS 86)"*. The comment is wrong, and it is wrong in
+the most confident available form: it cites a rule by number.
+
+`source_scan_test` caught it on the first `--all` run, **by name, in two
+sentences that say what to do**: *"a file in `tests/` scans this project's
+source and has no `_code_of()` at all, so a comment can answer its
+questions: `retry_test.gd`"* and *"every file that scans source defines
+`_code_of()` itself, because `tests/` has no shared library"*. The prediction
+written before that run said only `retry_test` would move, and was wrong.
+
+**The two rules are not in conflict and reading either file would have shown
+it.** TRAPS 86 is about two *different* shapes of one predicate drifting
+apart. The convention here is **byte-identical** copies, and `source_scan_test`
+asserts that byte-identity across all of them — so the thing 86 fears is the
+thing this convention is built to prevent. A principle and its implementation
+were mistaken for each other.
+
+**Do:**
+
+- **Before citing a TRAPS number as a reason not to do something, grep for
+  whether the project already does it.** A rule in this file is a lesson from
+  one commit, not a licence to overrule a convention twenty commits have kept.
+  The same discipline TRAPS 14 demands of a *limitation* — grep for the thing
+  the sentence denies — applies to a *justification*.
+- **Write the prediction down before the run anyway.** It was wrong, and that
+  is what made the gap legible: a diff of two lines where one was forecast is
+  a finding, and a diff nobody forecast is just an outcome.
+- **When a suite fails by name and its message says what to do, do that**
+  before re-deriving it. `source_scan_test` named the file, named the missing
+  function and gave the reason in the same breath.
+- **A convention is findable.** It was in the header of the suite that failed,
+  three paragraphs long, under the words "WHAT THIS FILE HOLDS".
+
+Found in 092, in its own first full run, against itself.
+**Nothing in `scripts/`, `scenes/`, `netlify/`, `.github/`, either runner,
+`project.godot` or `export_presets.web.cfg` was touched.**
+
+> The comment explaining why the copy was not made cited a rule by number.
+> The rule said the opposite of what the project does.

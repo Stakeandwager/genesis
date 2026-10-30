@@ -13,6 +13,140 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
+- Last commit at the time of writing: **092**, which did the **reading** 091a
+  left as the newest "Next action" - *can the `reason` behind
+  `experiment_runner.gd:140`'s `FAILED_AI` refusal arrive empty?* - and the
+  answer is **no, it cannot**, so **no assertion was written about it**. What
+  the reading found on the way is the part worth reading first: **of the six
+  branches of `_friendly_http_error`, the function behind that `reason`, TWO
+  WERE HELD BY NOTHING AT ALL AND A THIRD ONLY BY A SOURCE SCAN COUNTING A
+  PLURAL IDIOM - and a branch made to name the WRONG HTTP code was silent in
+  the whole 74-suite set.** New TRAPS **89**, and it is about this session's
+  own mistake. No new "Human decision needed".
+
+  **THE BASELINE AGREED WITH THE RECORD BEFORE ANYTHING WAS TOUCHED.** The
+  `--all` run in this container, on a clean tree at `24a9c0b` with
+  `git status --porcelain` empty and `user://` cleared, was **BYTE-IDENTICAL
+  to the md5 091 recorded and 091a reproduced**:
+  `695896af9d7812330e7f6d271081e6e6`, 74 suites, 0 with something to look at.
+  `ls tests/*.gd` returned **76** and the run reported **74**, re-counted.
+  **That number has now been produced by THREE containers**, two of which did
+  not write it.
+
+  **THE READING, WHICH IS AN ANSWER AND NOT A CHECK.** `ai_interpreter.gd`
+  emits `interpretation_failed` at **ten** places, read off the file rather
+  than assumed. **Nine are non-empty string literals.** The tenth is
+  `_friendly_http_error(response_code)`, whose every branch returns a literal
+  too - including the one that delegates to `key_refused_message()`, whose two
+  arms are literals as well. **Fourteen codes were driven through it in this
+  container** - 400, 401, 403, 404, 429, 500, 502, 503, 504, 418, 409, 0, -1,
+  599 - and every one came back non-empty and naming its own code. So
+  `experiment_runner.gd:140`'s `"reasons": [reason]` **cannot be handed an
+  empty string today**, the thirteenth site 091a found is not a fault, and
+  **the fixture question that entry raised does not need answering**: there is
+  nothing there to assert.
+
+  **THE FINDING IS WHAT HOLDS THAT FUNCTION, AND IT WAS MEASURED ONE FAULT AT
+  A TIME** (TRAPS 50, TRAPS 80), each alone in its own copy with its own
+  `config/name`, the diffs read before the runs, every other suite run after
+  each, against an unpatched control that came back clean:
+
+  | injection | what noticed | verdict |
+  |---|---|---|
+  | `400` branch made to say nothing | nothing | **SILENT** |
+  | `404` branch made to say nothing | nothing | **SILENT** |
+  | `400` branch made to say `(HTTP 500)` | nothing | **SILENT** |
+  | `429` branch made to say nothing | `agreement_test` | caught |
+  | default branch made to say nothing | `retry_test`, through 418 | caught |
+
+  **AND THE 429 CATCH IS NOT THIS PROPERTY BEING HELD**, read off the failure
+  rather than inferred from the count: `agreement_test` reported *"routes 2
+  counts through the reader: `Readback.plural(MAX_ATTEMPTS, "time")` (found
+  1)"*. It is **counting an idiom in the source**, not reading a sentence -
+  the same accidental catch 091 found sitting behind `FAILED_PLACEMENT`. The
+  `500/502/503/504` arm and the `401/403` arm are genuinely held, by
+  `retry_test`'s and `proxy_test`'s content checks on 503, 403 and 401.
+
+  **THE THIRD ROW IS THE ONE WORTH THE COMMIT.** Three of the six arms write
+  their code as a **literal** - `(HTTP 400)`, `(HTTP 404)`, `(HTTP 429)` -
+  rather than through `% code`, and the `500, 502, 503, 504` arm is the
+  standing proof that an arm can gain a second code. The day one of those
+  three does, Genesis tells the player an HTTP code **that did not happen**.
+  That is TRAPS 24's rule - *a line that states a fact reads it from what
+  happened* - at a refusal sentence, and nothing in the repository could see
+  it.
+
+  **WHAT CHANGED. `tests/retry_test.gd` and `tests/source_scan_test.gd`
+  only.** One new function in `retry_test`, in the file whose subject this
+  already is (090's warning against bolting a sentence check into four suites
+  about something else). It reads the `match` arms **OFF
+  `_friendly_http_error`'s own source**, through `_code_of()`, and drives
+  every code it finds plus one that matches no arm, asserting of each that the
+  sentence **says something** and **names the code that arrived**. Keyed off
+  the producer and not listed beside it (TRAPS 82): **an arm added to that
+  function is driven by this suite from the moment it is added.** The reader
+  is tied to `AIInterpreter.WORTH_RETRYING` rather than to a number written
+  here, so a reader that goes blind fails instead of passing on an empty loop
+  (TRAPS 75). `source_scan_test` gains the `retry_test.gd` row, because the
+  suite is now a member of its class.
+
+  **MEASURED, EACH FAULT ALONE, AND RE-MEASURED AGAINST THE FINAL CODE RATHER
+  THAN CARRIED FORWARD** (TRAPS 14). Control **58/0** before each. The three
+  silent injections above now give **58, failures=2, 2 and 1**, naming the
+  code and quoting what it said; the default blanked gives **58, failures=3**;
+  `429` blanked gives **58, failures=2**; a **new `410:` arm returning `""`**
+  gives **60, failures=2** - driven without being listed, which is the whole
+  point; the **`404` arm given a second code** gives **60, failures=1**
+  quoting *"The AI model name is out of date. (HTTP 404)"* against a request
+  for 410; and the reader made to return nothing gives **40, failures=6**,
+  red rather than quietly smaller.
+
+  **THE PREDICTION WRITTEN BEFORE THE FIRST RUN WAS WRONG, AND THAT IS TRAPS
+  89.** It said `retry_test` alone would move. `source_scan_test` went red,
+  **two failures, by name**: this project holds that every suite reading `.gd`
+  source defines its own **byte-identical** `_code_of()`, because `tests/` has
+  no shared library. 092 had reasoned from **TRAPS 86** that a second copy was
+  exactly the trap to avoid, and had written a comment citing it by number.
+  **The comment was wrong and the convention was three paragraphs long in the
+  header of the suite that failed.** The copy is now in place, the false
+  comment is corrected rather than deleted, and the lesson - *grep before
+  citing a TRAPS number as a reason not to do something* - is TRAPS 89.
+
+  **ONE LIMIT, MEASURED AND NOT CLOSED.** Comment out an arm in the source -
+  `#404:` - and the suite is **56 assertions, failures=0**: the count falls by
+  two with nothing red, which is TRAPS 73's signature. The reader is right to
+  stop reading a commented arm, but `404` then falls to the generic default
+  message and **nothing notices**. The same injection on the `401/403` arm
+  **is** caught (`proxy_test` and `retry_test` read those sentences' content)
+  and on the `500` group **is** caught (503's content check), so the exposure
+  is exactly the two arms that were silent to begin with: **400 and 404**. A
+  declared list of required arms would close it and is **not** written,
+  because a list beside the code is the shape TRAPS 82 is about; what would
+  close it honestly is something the code already states, and there is no such
+  thing today. **Recorded as an open limit, not as a fix.**
+
+  **THE RUNS.** md5 `a68eab2760302504f6edbd601151a3d9`, 74 suites, 0 with
+  something to look at, `--all`, `user://` cleared before each, said in the
+  order they were taken (080's standard is about the ORDER): run 1 once the
+  CODE was final and this file not yet, producing the md5; the md5 then
+  written into this file before runs 2 and 3, both on the complete tree, code
+  and docs together.
+  **THE DIFF AGAINST THE BASELINE IS THE TWO LINES THE SECOND PREDICTION
+  NAMED IN WRITING BEFORE THE RUN**: `retry_test` **25 -> 58** and
+  `source_scan_test` **32 -> 33**, and nothing else moved.
+  **NO FILE IN `scripts/`, `scenes/`, `netlify/`, `.github/`, EITHER RUNNER,
+  `project.godot` OR `export_presets.web.cfg` WAS TOUCHED** - `git status`
+  named only `tests/retry_test.gd`, `tests/source_scan_test.gd` and `docs/`,
+  read rather than assumed. `PROMPT_FINGERPRINT` and `PROMPT_VERSION` did not
+  move. No model was asked anything, no request left the container, there is
+  no API key here.
+  **NOTHING A PLAYER MEETS CHANGED**: this commit is entirely `tests/` and
+  `docs/`. Every one of the fourteen sentences is written today exactly as it
+  was before it, and all fourteen were already correct when driven - the
+  blanks and the wrong code were INJECTED to measure what would notice.
+  **064'S FINDING IS CARRIED FORWARD AND NOT RE-VERIFIED**; the live site's
+  commit cannot be read from this container.
+
 - **TWO RUNS OVERLAPPED AGAIN ON 2026-10-29, AND THIS TIME THEY DID THE SAME
   WORK.** Both read `532ae1c` (090) as the last commit, both took 090's third
   next action, both counted **twelve** module refusal sites and both found the
@@ -47,7 +181,7 @@ that the owner has not ruled on.** Do not promote one to the other.
   force-pushed and nothing was lost. The two touched no file in `scripts/` in
   common.
 
-- Last commit at the time of writing: **091**, which did the **measurement** 090
+- Last commit before that: **091**, which did the **measurement** 090
   left as its third live "Next action" - `refusal_reach_test` does not check
   that a module's refusal says anything, *"and measuring is the first step"* -
   and then closed what the measurement found. The number is the part worth
@@ -3880,6 +4014,24 @@ than suites, leaving **74 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 74
 and are skipped without it.
+**092 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
+what the two numbers above say. Its baseline on the clean tree at `24a9c0b`,
+`git status --porcelain` empty and `user://` cleared, was **BYTE-IDENTICAL to
+the md5 091 recorded and 091a reproduced**:
+`695896af9d7812330e7f6d271081e6e6` - **the third container to produce that
+number, and the second that did not write it**. After the change, **THREE
+byte-identical full `--all` runs**, md5 `a68eab2760302504f6edbd601151a3d9`, 0
+with something to look at, the last two on the complete tree with `docs/` in
+place, `user://` cleared before each. The diff against the baseline is the
+**two lines predicted in writing before the run**: `retry_test` 25 -> 58 and
+`source_scan_test` 32 -> 33.
+**AND 092'S FIRST PREDICTION, WRITTEN BEFORE ITS FIRST RUN, WAS WRONG.** It
+named `retry_test` alone; `source_scan_test` went red with two failures
+because this project holds that every suite reading `.gd` source defines its
+own byte-identical `_code_of()`. The second prediction, written after that
+was fixed, held exactly. **Write the prediction down even when it is going to
+be wrong** - the wrong one is what made the convention legible. See TRAPS 89.
+
 **091 ADDED NO FILE** and re-ran the `ls` anyway: **76 and 74**, which is
 what the two numbers above say. Its baseline on the clean tree at `532ae1c`,
 `git status --porcelain` empty, was **BYTE-IDENTICAL to the md5 090 recorded**:
@@ -10044,6 +10196,46 @@ container reproduced `695896af9d7812330e7f6d271081e6e6` exactly. Take your own
 baseline anyway - the point of it is that you learn the record and the
 container still agree today - but do not re-measure 091's twelve injections.
 They were measured twice, independently, and agreed on all seven.
+
+**NOTHING IS OWED FROM 092 EITHER.** Its baseline was byte-identical to the
+md5 091 recorded and 091a reproduced, it wrote its predicted diff down before
+running - **wrongly the first time, which is the point and is TRAPS 89** - and
+it took three byte-identical `--all` runs, the last two on the complete tree
+with `docs/` in place, which is why there is no 092a. **Do not start by
+re-running on 092's behalf**; take your own baseline so you learn the record
+and the container still agree, and spend the time on the work below.
+
+**THE FIRST LIVE ENTRY AS OF 092, AND IT IS THE LIMIT OF 092'S OWN CHECK
+RATHER THAN A FAULT IN THE CODE: AN ARM COMMENTED OUT OF
+`_friendly_http_error` TAKES TWO ASSERTIONS WITH IT AND NOTHING GOES RED.**
+Measured, not argued: comment out `404:` in `ai_interpreter.gd` and
+`retry_test` is **56 assertions, failures=0** where the control is **58/0** -
+TRAPS 73's signature, a count that falls in silence. `404` then falls to the
+generic default message and no suite reads the difference. **The exposure is
+exactly two arms, 400 and 404**, because the `401/403` arm and the `500`
+group are held by `proxy_test`'s and `retry_test`'s content checks on those
+sentences, and the default is held through 418 - each of those three
+re-measured against the 092 tree rather than assumed.
+**DO NOT CLOSE IT WITH A LIST OF REQUIRED ARMS.** A list of codes written
+beside the function is the shape TRAPS 82 is about, and it would have to be
+moved by hand every time an arm legitimately changed. What would close it
+honestly is a count read OFF something the code already states - the way the
+retry tie reads `WORTH_RETRYING` - and **there is no such thing for 400 and
+404 today**. The reading worth doing first is whether one exists or could
+exist without being invented for the purpose; it may well come back "leave
+it", and that is a reason to read rather than to build.
+
+**~~A NEW ENTRY FROM THE OVERLAPPING RUN: `experiment_runner.gd:140` WRITES A
+`FAILED_AI` REFUSAL WHOSE ONE SENTENCE IS WHATEVER THE FAILED AI CALL SAID,
+AND NOTHING HOLDS THAT IT SAYS ANYTHING.~~ DONE IN 092, AND THE ANSWER IS
+THAT `reason` CANNOT ARRIVE EMPTY, SO NOTHING WAS ASSERTED ABOUT IT.** The
+entry was right to insist the first step was a reading and not a check, and
+right that the fixture question should be weighed rather than started - it
+never had to be answered. All ten `interpretation_failed.emit` sites are
+non-empty literals and the computed one is too, on all fourteen codes driven.
+What the reading found instead is in the 092 entry under "Starting state" and
+in TRAPS 89. Struck rather than deleted, with the original text below, because
+the sketch is the record of what was asked for. The original text:**
 
 **A NEW ENTRY FROM THE OVERLAPPING RUN, AND IT IS THE ONE PRODUCER THE TWO
 REACH TABLES BETWEEN THEM DO NOT REACH: `experiment_runner.gd:140` WRITES A

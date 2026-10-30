@@ -108,6 +108,14 @@ const KNOWN := [
 	"proxy_test.gd",
 	"record_id_test.gd",
 	"refusal_reach_test.gd",
+	# 092: retry_test joined the class when it stopped driving three HTTP
+	# codes typed into itself and started reading the match arms of
+	# _friendly_http_error OFF ai_interpreter.gd, so that an arm added to
+	# that function is driven from the moment it is added. This suite
+	# caught the departure the same run, two FAILs by name, before the row
+	# was added or the _code_of() was written - which is the only reason
+	# either happened.
+	"retry_test.gd",
 	# 077: result_line_test reads every suite's CODE to find the line it
 	# prints, so it is in this class by the same door formula_test came in
 	# by: a question about what the code DOES, answered from the code.
