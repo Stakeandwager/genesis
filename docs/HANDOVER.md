@@ -137,6 +137,15 @@ that the owner has not ruled on.** Do not promote one to the other.
   `a7dc209287e9f8cd30b7bf1deadc5d2e`, 78 suites, 0 with something to look at,
   `diff` against the baseline **that one line**; and the third route on the
   post-change tree reports **524 and 54**, site set unchanged.
+  **AND A FOURTH RUN IS A FRESH `git clone` OF THE PUSHED COMMIT `b433455`**,
+  with `git status --porcelain` **empty before and after**, byte-identical to
+  runs 2 and 3 (`a7dc209287e9f8cd30b7bf1deadc5d2e`, 78 suites, 0 with
+  something to look at) - **and the third route re-run against that clone
+  gives 524 and 54**, so the header's numbers are a measurement of the pushed
+  tree. This is written in by **110a**, a docs-only commit, for the reason
+  104a and 106a through 109a were taken: the alternative is a sound inference
+  about the pushed tree in place of a measurement of it, which is TRAPS 14's
+  shape applied to this file.
   **THE SITE-SET COMPARISON IS THE LOAD-BEARING MEASUREMENT** and it was taken
   four ways: `string-aware/loose/first_eq` and `string-aware/loose/any_eq`
   both give the 54 exactly, and the `no-blanking` variants of both give the
@@ -7841,6 +7850,16 @@ header numbers it confirms.* After-run **`a7dc209287e9f8cd30b7bf1deadc5d2e`,
 one line**: `source_scan_test 76 -> 79 assertions, failures=0`. The third
 route on the post-change tree: **524 and 54, site set unchanged.**
 
+**AND RUN 4 IS A FRESH `git clone` OF THE PUSHED COMMIT** - `b433455`, into
+its own directory with its own empty `user://`, `git status --porcelain`
+**EMPTY both before and after the run** (so `project.godot` was not edited to
+take the measurement), same Godot: **BYTE-IDENTICAL to runs 2 and 3**, md5
+`a7dc209287e9f8cd30b7bf1deadc5d2e`, 78 suites, 0 with something to look at,
+`source_scan_test` **79 assertions, failures=0**. So the tree on the remote is
+the tree that was measured. **And the third route was re-run against that
+clone**: 524 conditions, 54 sites - the numbers in `source_scan_test`'s header
+are a property of the pushed tree, not of a working copy.
+
 **TWO INJECTIONS AND A NEGATIVE CONTROL**, each in its own throwaway copy
 under the scratch directory with its own `config/name`, applied to **all 18
 copies** of `_code_of()` so section 3's byte-identical assertion stayed green
@@ -15116,8 +15135,11 @@ a document.
 and 109a both recorded, from a **thirteenth** independent container with its
 own Godot download; its predicted diff was written to a file before any
 repository file was edited and **held exactly, in all three clauses**; it took
-its runs on the code tree and then on the complete tree with `docs/` in place;
-and it drove its three new assertions with **two injections and a negative
+its runs on the code tree, then on the complete tree with `docs/` in place,
+**and a fourth on a fresh `git clone` of the pushed commit `b433455` with
+`git status --porcelain` EMPTY, byte-identical to both** - so the tree on the
+remote is the tree that was measured, and **110a is that measurement written
+in, a docs-only commit**; and it drove its three new assertions with **two injections and a negative
 control**, each in its own throwaway copy with its own `config/name`. **Do not
 start by re-running on 110's behalf**; take your own baseline so you learn the
 record and the container still agree, and spend the time on the work below.
