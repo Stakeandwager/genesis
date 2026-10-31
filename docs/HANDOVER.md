@@ -7031,6 +7031,17 @@ something to look at**. The md5 was written in after the run, and the
 circularity is the one every commit since 093 has recorded: the only edits
 after it are to `docs/HANDOVER.md` and `docs/TRAPS.md`, and nothing in
 `tests/` reads `docs/`.
+**AND A FOURTH RUN IS A FRESH `git clone` OF THE PUSHED COMMIT** - `e04922f`,
+taken from the remote with its own `config/name` and its own `user://` -
+**BYTE-IDENTICAL to the complete-tree run**, md5
+`c69c26ebdb93e3fc472caadffaf9ee1d`, 78 suites, 0 with something to look at. So
+what is on the remote is what was measured, rather than what the working copy
+happened to hold, and **there is no 105a owed**. This run was taken because
+104 claimed `NOTHING IS OWED` on the strength of three runs that were all in
+the working copy and had to add 104a to make the record hold the measurement
+instead of only the claim - TRAPS 14's shape applied to this file, and not
+worth repeating one commit later.
+
 **ONE INJECTION, TWO NEGATIVE CONTROLS AND A RE-RUN OF THE INJECTION ON THE
 FIXED TREE**, each alone in its own throwaway copy with its own `config/name`,
 the diff read before each run. The injection - a COMPLETE fourth world module,
@@ -14080,7 +14091,12 @@ wrote its pre-injection prediction down before changing anything and was right
 in six of its seven numbered claims, with the seventh honestly blank and the
 module-side count deliberately **not** inferred from the tool side (TRAPS 89);
 it wrote its post-change prediction down too and **that one held exactly** -
-one line, `command_schema_test` 186 -> 187. **Do not start by re-running on
+one line, `command_schema_test` 186 -> 187. **Its fourth run was a fresh
+`git clone` of the pushed commit `e04922f` and was byte-identical to its
+complete-tree run** (`c69c26ebdb93e3fc472caadffaf9ee1d`), so the tree on the
+remote is the tree that was measured and **there is no 105a** - taken
+deliberately, because 104 made this same claim off three working-copy runs and
+owed a 104a for it. **Do not start by re-running on
 105's behalf**; take your own baseline so you learn the record and the
 container still agree, and spend the time on the work below. **And do not
 re-take 105's injection, its two `OPEN` controls or its re-run of the
