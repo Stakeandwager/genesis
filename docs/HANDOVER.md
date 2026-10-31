@@ -6832,7 +6832,16 @@ the line that paid.**
 assumed), any of which could have moved a second number. None did.
 **RUN 2 IS THE CODE TREE**: `user://` cleared before it, md5
 `99fa58e38dd2f2711e1d0261dfed668c`, **78 suites, 0 with something to look at**,
-`diff` against the baseline **one line**.
+`diff` against the baseline **one line**. **RUN 3 IS THE COMPLETE TREE WITH
+`docs/` IN PLACE AND IS BYTE-IDENTICAL TO RUN 2**, with every changed file's
+md5 taken before it and `md5sum -c` afterwards reporting nothing moved.
+**AND RUN 4 IS A FRESH `git clone` OF THE PUSHED COMMIT** - `20426b9`,
+`git status --porcelain` empty, its own `config/name` - **BYTE-IDENTICAL TO
+RUN 3**, which is why there is no 104a: what is on the remote is what was
+measured, rather than what the working copy happened to hold. The md5 in this
+paragraph was written in **after** run 4, and the circularity is the same one
+every commit since 093 has recorded: the only edits after it are to
+`docs/HANDOVER.md`, and nothing in `tests/` reads `docs/`.
 **SIX INJECTIONS AGAINST THE NEW ASSERTIONS, each alone in its own throwaway
 copy with its own `config/name`, the diff read before each run**, against
 134/0: `LookTool`'s section blanked **131/4**; the same set to three spaces
@@ -13814,8 +13823,10 @@ something to look at, `user://` empty because the container was fresh). It
 wrote its prediction down before changing anything and **two of its seven
 numbered claims were wrong**, which is recorded in the 104 entry rather than
 tidied (TRAPS 89); it wrote its post-change prediction down too and **that one
-held exactly** - one line, `claim_field_test` 121 -> 134. **Do not start by
-re-running on 104's behalf**; take your own baseline so you learn the record
+held exactly** - one line, `claim_field_test` 121 -> 134. **Its fourth run was
+a fresh `git clone` of the pushed commit and was byte-identical to its third**,
+so the tree on the remote is the tree that was measured and there is no 104a.
+**Do not start by re-running on 104's behalf**; take your own baseline so you learn the record
 and the container still agree, and spend the time on the work below. **And do
 not re-take 104's six injections or its negative control** - they are in the
 104 entry with their counts, each was measured alone in its own copy with its
