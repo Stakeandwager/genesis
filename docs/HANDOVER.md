@@ -7296,9 +7296,16 @@ TO RUN 2**, `user://` cleared before it, md5
 `84fa64a327fa4d04e4cf9ad2f3c319b5`, with each changed file's md5 taken before
 it and `md5sum -c` afterwards reporting **nothing moved**. The md5 itself was
 written into this file after that run, and the circularity is the one every
-commit since 093 has recorded: nothing in `tests/` reads `docs/`. **Run 4 is
-a fresh `git clone` of the pushed commit and is recorded in the 107a note
-below if it was taken.**
+commit since 093 has recorded: nothing in `tests/` reads `docs/`.
+**AND RUN 4 IS A FRESH `git clone` OF THE PUSHED COMMIT** - `9e9bada`, taken
+from the remote with its own `config/name` and its own `user://` -
+**BYTE-IDENTICAL to runs 2 and 3**, md5
+`84fa64a327fa4d04e4cf9ad2f3c319b5`, 78 suites, 0 with something to look at. So
+what is on the remote is what was measured, rather than what the working copy
+happened to hold, and **there is nothing owed from 107**. Recorded in 107a, a
+docs-only commit, for the reason 104a and 106a were: the alternative is a
+sound inference about the pushed tree in place of a measurement of it, which
+is TRAPS 14's shape applied to this file.
 
 **105 ADDED NO FILE EITHER**, which is why the two numbers above did not move,
 and that was deliberate for the reason 101 through 104 all gave: a new suite
@@ -14397,17 +14404,22 @@ each was measured alone in its own copy with its own `config/name`, and the
 property they attribute is `tests/source_scan_test.gd` rather than a table in
 a document.
 
-**NOTHING IS OWED FROM 106 EITHER.** Its baseline was byte-identical to the
-md5 105 recorded, and 106a then re-took its after-run on a fresh `git clone`
-of the pushed commit and reproduced it byte-for-byte, which is why 107's
-baseline had a number to be checked against. **Do not start by re-running on
-106's behalf**; take your own baseline so you learn the record and the
-container still agree, and spend the time on the work below. **And do not
-re-take 106's measurements** - its three guard-deletion injections, its two
-`OPEN` controls and its section-2 probe are in the 106 entry with their
-counts, each alone in its own copy with its own `config/name`, and the
-property they attribute is `source_scan_test` sections 6 and 7 rather than a
-table in a document.
+**NOTHING IS OWED FROM 107 EITHER.** Its baseline was byte-identical to the
+md5 106 and 106a both recorded, from a **tenth** independent container with
+its own Godot download; its predicted diff was written down before any code
+was changed and was **wrong by one, recorded rather than tidied** (TRAPS 89);
+and it took three byte-identical `--all` runs - the second on the code tree,
+the third on the complete tree with `docs/` in place - **and a fourth on a
+fresh `git clone` of the pushed commit `9e9bada`, byte-identical to both**, so
+the tree on the remote is the tree that was measured. **107a is that
+measurement written in, a docs-only commit, for the reason 104a and 106a were
+taken.** **Do not start by re-running on 107's behalf**; take your own
+baseline so you learn the record and the container still agree, and spend the
+time on the work below. **And do not re-take 107's measurements** - the
+22-read scan probe, the three injections and the re-run of 106's own injection
+are in the 107 entry with their counts, each alone in its own copy with its
+own `config/name`, and the property they attribute is now
+`tests/scan_floor_test.gd` sections 2 and 6 rather than a table in a document.
 
 **THE FIRST LIVE ENTRY AS OF 107, SMALL, NAMED BECAUSE IT IS THE WEAKER HALF
 OF THE SHAPE 107 FIXED: `scan_floor_test`'s SECTION 3 ASSERTS AN EQUALITY
