@@ -13,6 +13,30 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
+- Last commit at the time of writing: **111a**, which is **docs only** - 0
+  lines of diff in `scripts/`, `tests/` and `.github/`, no new finding about
+  Genesis, no new claim about its behaviour, no new live entry. It records one
+  measurement, the one 111 wrote down as owed: **run 135 of `web build`
+  (commit `327fb69`) logs no `command not found` in its publish step**, where
+  run 133's identical step logged two, and 111's commit message was written
+  with backticks in it so that the run would test the fix. The job still fails
+  at the Netlify login, five minutes to the second, which is unchanged and is
+  entry 19's. Written in for the reason 104a and 106a through 110a were each
+  taken: the alternative is a sound inference about the runner in place of a
+  reading of it, which is TRAPS 14's shape applied to this file. **The three
+  places that said the fourth measurement was owed now state it**: the
+  NOT VERIFIED block of the 111 entry, the note under "Next action", and the
+  run record under "Run the tests first".
+  **NOTHING ELSE IN 111 WAS RE-MEASURED.** Its baseline, its predicted diff
+  and amendment, its six injections, its negative control and the two
+  named-file measurements are 111's and are not re-taken. **No suite was run
+  by 111a** - the tree it describes is byte-identical to the one 111 measured
+  at `746aca59e51dc36634dfa599d50142c3`, and the only edits since are to
+  `docs/HANDOVER.md`; nothing in `tests/` reads `docs/`, checked this commit
+  rather than carried forward: every mention of `HANDOVER`, `TRAPS` or `docs/`
+  in `tests/*.gd` is in a comment or an assertion message, and no `res://`
+  path any suite reads begins with `docs`.
+
 - Last commit at the time of writing: **111**, and it is the first commit
   since 102 whose finding is not about `tests/`. **A commit message was being
   executed on the CI runner, and it had been for a hundred runs.**
@@ -131,14 +155,28 @@ that the owner has not ruled on.** Do not promote one to the other.
   `command not found` lines quoted above.
 
   **NOT VERIFIED:**
-  **NO WORKFLOW WAS EXECUTED HERE AND THE FIX IS NOT CONFIRMED ON THE
-  RUNNER.** What is asserted is the YAML's shape - that the repository no
-  longer asks GitHub to build a script out of a value. Whether run 135
-  actually logs no `command not found` is a measurement this entry does not
-  have at the time of writing; it is the first thing the next session should
-  read, and **this commit's own message contains a backtick on purpose** so
-  that the run is a test of the fix rather than of a message that would have
-  been safe either way.
+  **~~NO WORKFLOW WAS EXECUTED HERE AND THE FIX IS NOT CONFIRMED ON THE
+  RUNNER.~~ CONFIRMED BY 111a, AND IT IS A MEASUREMENT AND NOT AN
+  INFERENCE.** What 111 could assert was the YAML's shape. **Run 135** (commit
+  `327fb69`, 111, started 2026-10-31T15:54:29Z) has since run and its publish
+  step logs **no `command not found` line at all** - and 111's own commit
+  message carries `` `_code_of()` `` and `` `if argument != ""` `` in
+  backticks, plus the literal text `${{ github.event.head_commit.message }}`,
+  precisely so that the run would be a test of the fix rather than of a
+  message that would have been safe either way. **The comparison is the same
+  step one run apart**: 133's message had two backtick pairs and the step
+  logged two `command not found` lines; 135's has two and logs none. **The
+  multi-line case is settled too**, which was the one remaining doubt about
+  moving the value into `env:`: 111's message is ninety-odd lines with quotes
+  and newlines in it and the YAML did not break - the job reached the publish
+  step and failed there, not earlier.
+  **AND IT FAILED AT EXACTLY THE SAME PLACE FOR EXACTLY THE SAME KNOWN
+  REASON**, which is the other half of the measurement: `Logging into your
+  Netlify account...` at 15:55:35, `Waiting for authorization...`, then
+  `Error: Timed out waiting for authorization` and exit 1 at 16:00:36 - five
+  minutes to the second, the behaviour entry 19 and "Human decision needed"
+  37 describe. So the fix changed what it was meant to change and nothing
+  else. **Run 135 is the 108th consecutive failure.**
   **THE DEPLOY STILL FAILS AND THIS CHANGES NOTHING ABOUT THAT.** The two
   secrets are still empty, the publish step still waits five minutes on an
   interactive login and still exits 1, and **what a visitor sees is still
@@ -8028,6 +8066,13 @@ deleted **57/1**; `web.yml` renamed **57/1**; the workflow directory emptied
 **53/3**; `--message` deleted **55/1** (and **54/0**, silent, before the floor
 was added); unmodified **57/0**. Every one fires by name.
 
+**AND RUN 135 OF `web build` IS THE MEASUREMENT ON THE RUNNER, written in by
+111a.** Commit `327fb69`, started 2026-10-31T15:54:29Z: the publish step logs
+**no `command not found`**, where run 133's identical step logged two, and
+111's message was written with backticks in it so the run would test the fix.
+The job still fails at the Netlify login after five minutes - unchanged, and
+entry 19's. No suite was run by 111a.
+
 **AND THE TWO OTHER REPOSITORY-FILE READS IN THAT SUITE WERE MEASURED WHILE THE
 HARNESS WAS SET UP**, which is where the new live entry comes from:
 `netlify/functions/interpret.js` removed fires by name (**42/1**),
@@ -15343,6 +15388,25 @@ its two `OPEN`-row controls** - they are in the 106 entry with their counts,
 each was measured alone in its own copy with its own `config/name`, and the
 property they attribute is `tests/source_scan_test.gd` rather than a table in
 a document.
+
+**NOTHING IS OWED FROM 111.** Its baseline was byte-identical to the md5 110
+and 110a both recorded, from a **fourteenth** independent container with its
+own Godot download; its predicted diff was written to a file before any
+repository file was edited and **held exactly in all five clauses**, and was
+then **amended, before the second run and saying so**, when a hole was found
+in its own new section; it took its runs on the code tree and then on the
+complete tree with `docs/` in place, **byte-identical**; and it drove every new
+assertion with **six injections and a negative control**, each alone in its own
+throwaway copy with its own `config/name`. **And the one thing it wrote down as
+owed - whether the runner agrees - was taken by 111a: run 135 logs no
+`command not found`.** **Do not start by re-running on 111's behalf**; take
+your own baseline so you learn the record and the container still agree, and
+spend the time on the work below. **And do not re-take the six injections or
+the two named-file measurements** - they are in the 111 entry and in the run
+record with their counts. **What IS worth reading is run 136's log**, the
+first run after 111a, for the same reason 111 gave: a second clean run on a
+message that happens to carry a backtick costs one API call and is the only
+thing that would catch a fix that worked once.
 
 **NOTHING IS OWED FROM 110.** Its baseline was byte-identical to the md5 109
 and 109a both recorded, from a **thirteenth** independent container with its
