@@ -13,6 +13,20 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
+- Last commit at the time of writing: **108a**, which is **docs only** - 0
+  lines of diff in `scripts/` and `tests/`, no new finding about Genesis, no
+  new claim, no new live entry. It records one measurement: **a fresh
+  `git clone` of the pushed commit `269cc46`**, with its own `config/name` and
+  its own empty `user://`, `git status --porcelain` naming that one throwaway
+  file and nothing else, `--all` with the same Godot
+  (4.7.1.stable.official.a13da4feb, `--version` read):
+  **`dcce46bd0cfdfa68a84cfc5f7a901695`, 78 suites, 0 with something to look at
+  - BYTE-IDENTICAL to the complete-tree run 108 recorded.** So the tree on the
+  remote is the tree that was measured, rather than what the working copy
+  happened to hold. Nothing else in 108 was re-measured: its baseline, its
+  predicted diff, its two enumerations and its four injections are 108's and
+  are not re-taken.
+
 - Last commit at the time of writing: **108**, which took **the first live
   entry as of 107** - *`scan_floor_test`'s section 3 asserts an equality
   between two counts of the same field, and the general question it raises is
@@ -90,9 +104,14 @@ that the owner has not ruled on.** Do not promote one to the other.
   said rather than hidden: run 3 exists because of it, and nothing in `tests/`
   reads `docs/`. **The md5 was written into this file after run 3**, which is
   the circularity every commit since 093 has recorded.
-  **THE FOURTH RUN IS OWED AND IS 108a**: a fresh `git clone` of the pushed
-  commit, so the tree on the remote is the tree that was measured rather than
-  what the working copy happened to hold.
+  **AND RUN 4 IS A FRESH `git clone` OF THE PUSHED COMMIT** - `269cc46`, taken
+  from the remote with its own `config/name` and its own `user://`,
+  `git status --porcelain` naming that one throwaway file and nothing else -
+  **BYTE-IDENTICAL to runs 2 and 3**, md5
+  `dcce46bd0cfdfa68a84cfc5f7a901695`, 78 suites, 0 with something to look at.
+  So what is on the remote is what was measured, rather than what the working
+  copy happened to hold, and **there is nothing owed from 108**. Recorded in
+  108a, a docs-only commit, for the reason 104a, 106a and 107a were taken.
   **THE TWO ROUTES AGREE SITE FOR SITE, WHICH IS THE ONLY REASON THE NUMBER
   FOUR IS BELIEVED (TRAPS 106).** A prototype in Python, written and run over
   `tests/` **before any GDScript was written**, and the GDScript scan report
@@ -7473,8 +7492,11 @@ to look at**, `diff` against the baseline **those two lines**.
 **RUN 3 IS THE COMPLETE TREE WITH `docs/` IN PLACE AND NOTHING EDITED WHILE IT
 RAN, AND IS BYTE-IDENTICAL TO RUN 2**, `user://` cleared before it, md5
 `dcce46bd0cfdfa68a84cfc5f7a901695`, with each changed file's md5 taken before
-it and `md5sum -c` afterwards reporting nothing moved. **THE FOURTH RUN, a
-fresh `git clone` of the pushed commit, IS OWED AND IS 108a.**
+it and `md5sum -c` afterwards reporting nothing moved.
+**AND RUN 4 IS A FRESH `git clone` OF THE PUSHED COMMIT** - `269cc46`, with
+its own `config/name` and its own `user://` - **BYTE-IDENTICAL to runs 2 and
+3**, md5 `dcce46bd0cfdfa68a84cfc5f7a901695`, 78 suites, 0 with something to
+look at. Recorded in 108a, a docs-only commit.
 **FOUR INJECTIONS**, each alone in its own throwaway copy with its own
 `config/name`, the diff read before each run: `+=` matched only at line start
 (`74 assertions, failures=4`, the named-instance assertion failing by name), a
@@ -14640,11 +14662,12 @@ code was changed and was **half right - the `scan_floor_test` half exactly, the
 `source_scan_test` half wrong in both of the two numbers it gave, recorded
 rather than tidied** (TRAPS 89); and it took three byte-identical `--all` runs
 - the second on the code tree, the third on the complete tree with `docs/` in
-place and nothing edited during it. **THE FOURTH RUN - a fresh `git clone` of
-the pushed commit - IS OWED FROM 108 AND IS 108a**, taken for the reason 104a,
-105's own fourth run, 106a and 107a were: the alternative is a sound inference
-about the pushed tree in place of a measurement of it, which is TRAPS 14's
-shape applied to this file. **Do not start by re-running on 108's behalf**; take your own baseline so you learn the record and the
+place and nothing edited during it - **and a fourth on a fresh `git clone` of
+the pushed commit `269cc46`, byte-identical to both**, so the tree on the
+remote is the tree that was measured. **108a is that measurement written in, a
+docs-only commit, for the reason 104a, 106a and 107a were taken**: the
+alternative is a sound inference about the pushed tree in place of a
+measurement of it, which is TRAPS 14's shape applied to this file. **Do not start by re-running on 108's behalf**; take your own baseline so you learn the record and the
 container still agree, and spend the time on the work below. **And do not
 re-take 108's measurements** - the two independent enumerations, the four
 injections and the 524/54 count of `==` conditions are in the 108 entry with
