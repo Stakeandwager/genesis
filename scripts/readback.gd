@@ -283,6 +283,30 @@ static func whole_number_rule(noun: String, count: int) -> String:
 	return "a %s number is a whole number, 1 to %d" % [noun, count]
 
 
+# --- 113: a rule the PROMPT states, for a name two members cannot share ---
+#
+# DungeonModule refuses three name collisions and STATED one of them. The
+# ROOM line said nothing about two rooms and the THING line nothing about two
+# things, so a model asked for "a dungeon with two store rooms" earned a
+# refusal for a rule it had never been given. This is that rule, and it is
+# written ONCE because the same file states it at two doors: two hand-written
+# copies diverge, and the one that diverges is the one nobody is reading
+# (TRAPS 11, which is the rule member_error() below came out of, for the same
+# two doors of the same file).
+#
+# THE REFUSAL IS A DIFFERENT SENTENCE AND STAYS WHERE IT FIRES. It names the
+# offender - "thing 2: two things are both called 'key'" - and a rule cannot
+# name one, so the two are deliberately NOT forced through one reading: they
+# answer different questions for different readers. What is held in one place
+# is the rule, across the two lines that state it.
+#
+# Takes the lists() entry rather than a noun, like list_rule() below, so the
+# plural comes from the module's own declaration of that list.
+static func unique_name_rule(entry: Dictionary) -> String:
+	var many := str(entry.get("many", str(entry.get("key", "members"))))
+	return "no two %s may have the same name" % many
+
+
 # --- 044: the same reference, at the layer that SAYS it back ---
 #
 # ordinal_index() above is the validation layer's reading: it answers "which

@@ -445,6 +445,149 @@ func _run() -> void:
 			_check(once["ok"], "rooms %d and %d joined once is accepted" % [a, b])
 
 	# --------------------------------------------------------------------
+	# 3b. The NAMING half of section 3's class: no two members of a dungeon
+	#     may answer to the same name.
+	# --------------------------------------------------------------------
+	# Section 3 holds an identity two ROOMS share - a door pair. A NAME is
+	# the other identity a dungeon's members share, and DungeonModule
+	# refuses three collisions of it, in validate():
+	#
+	#   room N: two rooms are both called 'X'
+	#   thing N: two things are both called 'X'
+	#   thing N: 'X' is already the name of a room
+	#
+	# NOTHING DROVE ANY OF THE THREE before 113, measured by grep and not
+	# assumed: no suite quoted any of the three messages, and the only
+	# mention of name uniqueness anywhere in tests/ was
+	# false_delivery_test.gd's assertion TEXT - "an object is identified by
+	# name, unique within a dungeon" - over a condition that checks only
+	# that red_key is present and blue_key is not. That is a claim in an
+	# assertion message with nothing behind it (TRAPS 14), in the one suite
+	# whose acceptance criterion is zero false successes, about the property
+	# its own _node_of() depends on: a delivery is verified by reading the
+	# position of the node with the asked-for name.
+	#
+	# AND TWO OF THE THREE WERE ENFORCED WITHOUT BEING STATED. The prompt's
+	# THING line said "may not be the name of a room"; the ROOM line said
+	# nothing about two rooms and the THING line nothing about two things.
+	# So "a dungeon with two store rooms" earned a refusal for a rule the
+	# model had never been given, which is the mirror of TRAPS 14: not a
+	# limitation claimed and absent, but one enforced and unpublished.
+	# 113 states them, in Readback.unique_name_rule(), and these are the
+	# assertions that hold them.
+	#
+	# WHY THIS IS NOT TWENTY FLOORS THAT CANNOT FAIL (TRAPS 6, and the
+	# twenty 112 declined to write): each of the three is a branch of
+	# validate() with its own condition. Both directions are driven below -
+	# the collisions are refused, and a dungeon whose every name differs is
+	# ACCEPTED, so a condition widened to refuse a legal dungeon fails here
+	# too. Asked over every pair of POSITIONS rather than at one example,
+	# the way section 3 asks the door rule, because a check that reads only
+	# the first two entries of a list passes a one-example test.
+	var named := ["hall", "vault", "crypt", "store"]
+	for i in range(1, count + 1):
+		for j in range(i + 1, count + 1):
+			var collide := _rooms(named)
+			(collide[j - 1] as Dictionary)["name"] = str(named[i - 1])
+			var dup_rooms: Dictionary = dm.validate({"rooms": collide, "doors": _spanning(count)})
+			_check(not dup_rooms["ok"],
+				"rooms %d and %d both called '%s' is refused" % [i, j, str(named[i - 1])])
+			_check(_errors_said(dup_rooms).contains(str(named[i - 1])),
+				"   and the refusal names '%s'" % str(named[i - 1]))
+
+	var thing_names := ["lamp", "red_key", "chest"]
+	for i in range(1, thing_names.size() + 1):
+		for j in range(i + 1, thing_names.size() + 1):
+			var things: Array = []
+			for k in thing_names.size():
+				things.append({"name": str(thing_names[k]), "in": 1})
+			(things[j - 1] as Dictionary)["name"] = str(thing_names[i - 1])
+			var dup_things: Dictionary = dm.validate({
+				"rooms": _rooms(named), "doors": _spanning(count), "things": things})
+			_check(not dup_things["ok"],
+				"things %d and %d both called '%s' is refused" % [i, j, str(thing_names[i - 1])])
+			_check(_errors_said(dup_things).contains(str(thing_names[i - 1])),
+				"   and the refusal names '%s'" % str(thing_names[i - 1]))
+
+	# A thing may not take a room's name, asked at EVERY room rather than at
+	# the first: a check that compares against one room name passes at one.
+	for i in range(1, count + 1):
+		var room_name := str(named[i - 1])
+		var clash: Dictionary = dm.validate({
+			"rooms": _rooms(named), "doors": _spanning(count),
+			"things": [{"name": room_name, "in": 1}]})
+		_check(not clash["ok"],
+			"a thing called '%s', which is room %d's name, is refused" % [room_name, i])
+		_check(_errors_said(clash).contains("room"),
+			"   and the refusal says '%s' is a room's name" % room_name)
+
+	# The mirror control. Without it every assertion above is satisfied by a
+	# validator that refuses every dungeon (TRAPS 6: a check that cannot
+	# pass is as useless as one that cannot fail).
+	# (The local below was called "distinct" in this section's first draft and
+	# collided with one already in _run - a Parse Error, from the commit
+	# whose subject is two members of one scope sharing a name. Recorded
+	# rather than tidied away: the compiler caught it, which is the half of
+	# TRAPS 110 that says what the compiler catches is not what a read
+	# catches.)
+	var no_name_shared: Dictionary = dm.validate({
+		"rooms": _rooms(named), "doors": _spanning(count),
+		"things": [{"name": "lamp", "in": 1}, {"name": "red_key", "in": 2}, {"name": "chest", "in": 3}]})
+	_check(bool(no_name_shared["ok"]),
+		"four rooms and three things, every name different, is accepted: %s" % str(no_name_shared["errors"]))
+
+	# WHAT COUNTS AS THE SAME NAME IS DECIDED AFTER FOLDING, and the folding
+	# is not the same for the two kinds: a room's name is lowercased, a
+	# thing's is lowercased AND has its spaces turned into underscores.
+	# Driven rather than read off the code, because what a player meets is
+	# the refusal. NOT added to the prompt: it already requires "a short
+	# lowercase label with underscores", so a model that complies with the
+	# format never reaches either of these.
+	var case_rooms := _rooms(named)
+	(case_rooms[1] as Dictionary)["name"] = str(named[0]).to_upper()
+	var folded: Dictionary = dm.validate({"rooms": case_rooms, "doors": _spanning(count)})
+	_check(not folded["ok"],
+		"'%s' and '%s' are one room name, folded, so it is refused" % [str(named[0]).to_upper(), str(named[0])])
+
+	var spaced: Dictionary = dm.validate({
+		"rooms": _rooms(named), "doors": _spanning(count),
+		"things": [{"name": "red key", "in": 1}, {"name": "red_key", "in": 2}]})
+	_check(not spaced["ok"],
+		"'red key' and 'red_key' are one thing name, folded, so it is refused")
+
+	# A room with no name takes room_N, so an explicit "room_N" elsewhere in
+	# the list collides with a name the player never typed - and two unnamed
+	# rooms do NOT collide, which is the half that says the default is per
+	# position and not one shared label.
+	var defaulted: Dictionary = dm.validate({"rooms": [
+		{"name": "room_2", "width": 12, "depth": 10},
+		{"width": 12, "depth": 10}], "doors": [[1, 2]]})
+	_check(not defaulted["ok"],
+		"an unnamed room takes 'room_2', so an explicit 'room_2' beside it is refused")
+	var unnamed: Dictionary = dm.validate({"rooms": [
+		{"width": 12, "depth": 10}, {"width": 12, "depth": 10}], "doors": [[1, 2]]})
+	_check(bool(unnamed["ok"]),
+		"and two unnamed rooms take room_1 and room_2, which do not: %s" % str(unnamed["errors"]))
+
+	# --- AND THE RULE IS STATED, which no driven refusal can reach ---
+	# These four are WORDING checks and are labelled as such. The facts are
+	# the thirty-one assertions above; these exist only because two of these
+	# rules were enforced and unstated, and a rule the model is not given is
+	# a refusal it cannot avoid earning. The clause is read through the same
+	# function prompt_section() interpolates, so the prompt and this suite
+	# cannot drift apart (TRAPS 11) - and it still fails if either line
+	# loses the clause, which is the failure that matters.
+	var dungeon_prompt := dm.prompt_section()
+	var room_rule := Readback.unique_name_rule(dm.list_of("rooms"))
+	var thing_rule := Readback.unique_name_rule(dm.list_of("things"))
+	_check(dungeon_prompt.contains(room_rule), "wording: the ROOM line states '%s'" % room_rule)
+	_check(dungeon_prompt.contains(thing_rule), "wording: the THING line states '%s'" % thing_rule)
+	_check(dungeon_prompt.contains("may not be the name of a room"),
+		"wording: the THING line still states that a thing may not take a room's name")
+	_check(AIInterpreter.assembled_prompt().contains(dungeon_prompt),
+		"and the dungeon's section is in the prompt the model is actually sent")
+
+	# --------------------------------------------------------------------
 	# 4. "The game can adjust each angle and each straight length by up to
 	#     20% to close the loop."
 	# --------------------------------------------------------------------
@@ -623,6 +766,15 @@ func _run() -> void:
 	for f in failures:
 		print("  - %s" % str(f))
 	quit(failures.size())
+
+
+# Every error of one validate() result as one string, for an assertion that
+# asks what the player was TOLD and not merely that something was refused.
+func _errors_said(result: Dictionary) -> String:
+	var said := ""
+	for e in (result.get("errors", []) as Array):
+		said += str(e) + " "
+	return said
 
 
 # A line of doors joining every room, with a and b joined exactly once. Built

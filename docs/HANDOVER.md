@@ -11,6 +11,172 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
+- Last commit at the time of writing: **113**, and it is **the first commit
+  to change a file under `scripts/` in eighteen** - `git rev-list
+  20426b9..HEAD` is **17**, counted this commit, and `104` (`20426b9`,
+  2026-10-31) is the last commit before this one to touch `scripts/`.
+  **AND COUNTING IT CORRECTED A FALSE NUMBER IN THIS FILE**, which is
+  recorded rather than quietly fixed: "Human decision needed" (b) said *"the
+  last commit to change anything a player meets is `a331e40` (070),
+  2026-10-23"*, which was true when 091 wrote it and has been **false since
+  `85e4d62` on 2026-10-30** - eight commits since `a331e40` have touched
+  `scripts/`, `run_tests.sh` or `run_tests.bat`, listed under (b) now. That
+  is TRAPS 14's shape in the file whose whole job is to be this project's
+  only continuity, found by checking a sentence this entry was about to
+  repeat. **A RULE GENESIS ENFORCES WAS NEVER IN THE PROMPT, AND NOTHING
+  DROVE IT EITHER.** `scripts/dungeon_module.gd` **2 lines changed** (its
+  `prompt_section()` only, not `validate()`), `scripts/readback.gd` **one new
+  function**, `scripts/ai_interpreter.gd` **2 lines** (`PROMPT_VERSION` and
+  `PROMPT_FINGERPRINT`), `tests/procedure_test.gd` **264 -> 299** assertions,
+  `tests/false_delivery_test.gd` **one assertion message narrowed, no
+  condition changed**, `docs/TRAPS.md` one new entry (**111**). No new "Human
+  decision needed". One new live entry; **112's step (4) is NOT closed and is
+  still the owner's**.
+
+  **THE FINDING, DRIVEN BEFORE ANYTHING WAS PREDICTED OR EDITED.**
+  `DungeonModule.validate()` refuses four collisions that exist to stop two
+  members of one dungeon sharing an identity. The class was enumerated off
+  the code - every `errors.append` in `scripts/` grepped for an
+  existing-identity message - and it has **exactly four members, all in one
+  file**:
+
+  | | refusal | stated in the prompt before 113 | driven before 113 |
+  |---|---|---|---|
+  | 1 | `room N: two rooms are both called 'X'` | **no** | **no** |
+  | 2 | `door N: rooms A and B are already joined` | yes | yes (`procedure_test` section 3) |
+  | 3 | `thing N: two things are both called 'X'` | **no** | **no** |
+  | 4 | `thing N: 'X' is already the name of a room` | yes | **no** |
+
+  So "a dungeon with two store rooms", or two torches - an ordinary thing to
+  ask for - earned a refusal for a rule the model had never been given. **This
+  is the mirror of TRAPS 14**: not a limitation claimed and absent, but one
+  enforced and unpublished, and a gap says nothing from either direction.
+  The two that WERE stated are the two somebody happened to write a sentence
+  for; nothing connected the four.
+
+  **AND THE ONE PLACE IN `tests/` THAT MENTIONED THE PROPERTY WAS GUARDING IT
+  IN WORDS.** `false_delivery_test.gd:151` asserted *"an object is identified
+  by name, unique within a dungeon"* over a condition that checks only that
+  `red_key` is in the world and `blue_key` is not. That is TRAPS 14's shape
+  inside the one suite whose acceptance criterion is zero false successes,
+  about the property its own `_node_of()` rests on: a delivery is verified by
+  reading the position of the node carrying the asked-for name, so two nodes
+  of one name would make "where is the red key" a question with two answers.
+  The condition was left alone and the message now says what it checks; the
+  uniqueness is driven in `procedure_test` instead.
+
+  **WHY NO GREEN SUITE SAW IT, which is the part worth keeping.**
+  `check_wiring_test`'s unit is the CALL - is `DungeonModule.validate()` wired
+  in - and that call is held. Three refusal branches inside a held call are
+  invisible to it, and that is a property of its unit rather than a hole in
+  it. `prompt_bounds_test` fingerprints the prompt, so it notices the prompt
+  CHANGING and has nothing to say about what the prompt omits.
+
+  **THE FIX IS ONE CLAUSE STATED ONCE AND NO CHANGE TO WHAT GENESIS REFUSES.**
+  `Readback.unique_name_rule(entry)` returns *"no two rooms may have the same
+  name"* from the module's own `lists()` declaration, and the ROOM and THING
+  lines of `prompt_section()` each interpolate it - one reading across the two
+  lines that state it, which is the shape `Readback.member_error()` was
+  already written for in that same file for those same two doors (TRAPS 11).
+  **`validate()` is 0 lines of diff**: Genesis refuses exactly what it
+  refused before. The refusal sentence is deliberately NOT forced through the
+  same function - it names the offender and a rule cannot.
+
+  **EVERY NEW ASSERTION WAS DRIVEN, each alone in its own throwaway copy with
+  its own `config/name`, `procedure_test` run alone:**
+
+  | injection | result |
+  |---|---|
+  | negative control: unmodified copy | **299, failures=0** |
+  | the room-duplicate refusal removed | **299, failures=14** - 12 room-pair rows, the folding row and the defaulted-name row |
+  | the thing-duplicate refusal removed | **299, failures=7** - 6 thing-pair rows and the folding row |
+  | the thing-named-after-a-room refusal removed | **299, failures=8** - all four room names, each with its reason row |
+  | the ROOM line's clause taken back out of the prompt | **299, failures=1** - the ROOM wording row, by name |
+  | the THING line's clause taken back out | **299, failures=1** - the THING wording row, by name |
+  | the THING rule WIDENED to refuse any second thing | **299, failures=1** - the positive control, quoting the two refusals it should not have got |
+  | the ROOM rule widened the same way | **NOT A MEASUREMENT, and recorded as one that failed**: `validate()` returns early, and a later section of the suite indexes a key that is then absent - three SCRIPT ERRORs and no assertion count. The control is driven by the row above it instead. |
+
+  **AND WHAT COUNTS AS THE SAME NAME IS DECIDED AFTER FOLDING, measured and
+  deliberately NOT added to the prompt.** A room's name is lowercased; a
+  thing's is lowercased AND has its spaces turned into underscores. Driven:
+  `HALL`/`hall` collide, `red key`/`red_key` collide, and an unnamed room
+  takes `room_N` so an explicit `room_2` beside one is refused for a name the
+  player never typed - while two unnamed rooms take `room_1` and `room_2` and
+  do not collide. The prompt already requires "a short lowercase label with
+  underscores", so a model that complies never reaches any of it; stating the
+  folding as well would be noise. It is in the suite and in TRAPS 111 rather
+  than in the prompt, with that reason.
+
+  **VERIFIED:**
+  **BASELINE WAS THE CLEAN TREE AT THE PUSHED COMMIT `85ba875`**,
+  `git status --porcelain` empty, `--all`, `user://` cleared by deleting
+  `app_userdata/AI_Game_Builder` so `project.godot` - which four suites read -
+  was NOT edited, same Godot (4.7.1.stable.official.a13da4feb, `--version`
+  read): **`2aa79dbb0552aab084b3a1d146fed242`, 78 suites, 0 with something to
+  look at, `procedure_test` 264 - BYTE-IDENTICAL to the md5 112 and 112a both
+  recorded, from a SIXTEENTH independent container with its own Godot
+  download.** `ls tests/*.gd` 80, the run reported 78.
+  **THE PREDICTED DIFF WAS WRITTEN TO A FILE BEFORE ANY REPOSITORY FILE WAS
+  EDITED** (TRAPS 89) and **held in every clause, including the one with a
+  real risk in it**: *the prompt moves, so `prompt_bounds_test` goes RED with
+  exactly one failure - the fingerprint row - printing the sha256 to set.
+  THIS IS THE GUARD WORKING AND IS PREDICTED.* It did: **72 assertions,
+  failures=1**, naming
+  `ac8041cbe96a362bcef369e01e9861fb0668da19abc6d691218a0819b89f6b18` and a
+  prompt of **16631 characters**. After `PROMPT_VERSION` and
+  `PROMPT_FINGERPRINT` were moved: **72, failures=0**. The assertion COUNT
+  does not move either way - the fingerprint is one assertion whether it
+  passes or fails, which the prediction also said.
+  **ALL SEVEN RISK CLAUSES HELD.** Predicted unmoved, with reasons, and
+  unmoved: `agreement_test` and `says_nothing_test` (neither enumerates
+  `readback.gd`'s functions), `source_scan_test` sections 8 and 9 (no new
+  `_check` compares two container reads), `scan_floor_test` (no new
+  `DirAccess` site), `field_type_test` section 8 (no prompt SECTION added,
+  only text inside one), `prompt_numeral_test` (the new clause carries the
+  word "two" and no digit), `capability_test`'s wide-sentence guard, and
+  `README.md`'s suite count (**no file added to `tests/`**).
+  **FINAL RUN `1a4164e18f2bc1ddad829fcd9d34b6b2`, 78 suites, 0 with something
+  to look at**, and `diff` against the baseline run is **EXACTLY ONE LINE**:
+  `procedure_test 264 -> 299 assertions, failures=0`.
+
+  **NOT VERIFIED:**
+  **THE PREDICTION DID NOT COVER THE `false_delivery_test` CHANGE**, which was
+  found while measuring and added after the prediction was written. It is one
+  assertion MESSAGE and no condition, so it cannot move a count - but the
+  prediction is amended here rather than read as having covered it (TRAPS 89
+  is about writing the prediction down, not about being right).
+  **AND THIS SECTION'S FIRST DRAFT WOULD NOT COMPILE, from the commit whose
+  subject is two members of one scope sharing a name.** `var distinct`
+  collided with one already in `_run`: Parse Error, caught by the compiler
+  before any run. Recorded in the suite and here rather than tidied away -
+  it is TRAPS 110's point from the other side, that what the compiler catches
+  is not what a read catches, and writing TRAPS 111 about an unpublished rule
+  was no protection against writing a name collision.
+  **NO MODEL WAS ASKED FOR A DUNGEON WITH TWO ROOMS OF ONE NAME.** That the
+  new clause makes a model comply is **not measured and is not claimed**: no
+  live path to a model was driven, no request left the container, there is no
+  API key here. What is measured is that the clause is in the prompt the
+  model is sent, and that the refusal it describes is real and fires by name.
+  **THE FOUR-MEMBER CLASS IS CLOSED; THE 71-MEMBER ONE IS NOT EVEN READ.**
+  See the new live entry under "Next action".
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is still **2026-10-14**, checked this commit by
+  grepping every `OWNER, 2026-1[01]-*` marker in `HANDOVER.md` and
+  `TRAPS.md`, by reading the branch's authors with `git log` (the last
+  non-assistant commit is `b144780`, 2026-10-10), and by listing the
+  repository's GitHub issues (**0, open or closed**).
+  **STEP (4) OF 112'S ENTRY IS UNTOUCHED AND IS STILL THE OWNER'S.** Nothing
+  here holds the four-member named-file-read class; 113 built nothing for it.
+  **THE DEPLOY STILL FAILS**, both secrets are still empty, and what a visitor
+  sees is still commit `71b065f` from 2026-10-14. Nothing here touched a
+  deployment setting, a secret, a flag or a target.
+
+  **AND WHAT CHANGED FOR ANYONE USING GENESIS**, which is a sentence this file
+  has had to write as "nothing" for the last seventeen commits: **the model is
+  now told a rule it was being refused for.** Nothing else. Genesis refuses exactly the same
+  dungeons it refused yesterday, builds exactly the same ones, and the site is
+  still eight days stale behind two unset secrets.
+
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
 - Last commit at the time of writing: **112a**, which is **docs only** - 0
@@ -8150,6 +8316,63 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
+**113 ADDED NO FILE EITHER**, so the two numbers below did not move: `ls
+tests/*.gd` is **80** and the run reports **78** suites. It edited five files
+- `scripts/readback.gd`, `scripts/dungeon_module.gd`,
+`scripts/ai_interpreter.gd`, `tests/procedure_test.gd`,
+`tests/false_delivery_test.gd` - plus `docs/TRAPS.md` and this file.
+**`scripts/` is NOT 0 lines of diff for the first time in eighteen commits**,
+and `DungeonModule.validate()` is: what changed under `scripts/` is one new
+`Readback` function, two lines of one `prompt_section()`, and the two prompt
+constants that move with it.
+
+**BASELINE AT `85ba875`, CLEAN**: `git status --porcelain` empty, `--all`,
+`user://` cleared by **deleting `app_userdata/AI_Game_Builder`** rather than by
+renaming `config/name`, so `project.godot` was not edited to take the
+measurement. Godot 4.7.1.stable.official.a13da4feb, `--version` read.
+**`2aa79dbb0552aab084b3a1d146fed242`, 78 suites, 0 with something to look at**
+- byte-identical to the md5 112 recorded as its final run and 112a reproduced
+from a fresh clone, from a **sixteenth** independent container with its own
+Godot download. `procedure_test` **264**.
+
+**THE PREDICTED DIFF WAS WRITTEN TO A FILE BEFORE ANY REPOSITORY FILE WAS
+EDITED AND HELD** (TRAPS 89), including the risk clause: *the prompt moves, so
+`prompt_bounds_test` goes RED with exactly one failure - the fingerprint row -
+printing the sha256 to set; the guard working, not a regression; and its
+assertion COUNT does not move either way.* It did, at **72 assertions,
+failures=1**, naming
+`ac8041cbe96a362bcef369e01e9861fb0668da19abc6d691218a0819b89f6b18` and a
+prompt of **16631 characters**. After `PROMPT_VERSION` and
+`PROMPT_FINGERPRINT` were moved: **72, failures=0**.
+**AND ALL SEVEN "PREDICTED NOT TO MOVE" CLAUSES HELD**, each written with its
+reason: `agreement_test`, `says_nothing_test`, `source_scan_test` 8 and 9,
+`scan_floor_test`, `field_type_test` 8, `prompt_numeral_test`,
+`capability_test`'s wide-sentence guard, and `README.md`'s suite count.
+**FINAL RUN `1a4164e18f2bc1ddad829fcd9d34b6b2`, 78 suites, 0 with something to
+look at**, `diff` against the baseline **that one line**: `procedure_test
+264 -> 299 assertions, failures=0`. **TAKEN TWICE AND BYTE-IDENTICAL** - once
+on the code tree and once on the complete tree with `docs/` in place, `user://`
+cleared before each by deleting `app_userdata/AI_Game_Builder`, with each
+changed file's md5 recorded before the second and `md5sum -c` afterwards
+reporting **nothing moved**.
+
+**EIGHT INJECTIONS, each in its own throwaway copy under the scratch
+directory with its own `config/name`, `procedure_test` run alone**, and the
+negative control matched its baseline line exactly at **299, failures=0**.
+Seven fired by name - 14, 7, 8, 1, 1 and 1 failures for the three refusal
+removals, the two prompt-clause removals and the widened thing rule. **The
+eighth is recorded as a measurement that FAILED to be one**: widening the ROOM
+rule the same way makes `validate()` return early, and a later section of the
+suite then indexes an absent key - three SCRIPT ERRORs and no assertion count,
+so the positive control is driven by the widened THING rule instead.
+
+**AND THERE IS NO 113a.** The three measurements a fourth run exists to take
+were taken in this commit: `git status --porcelain` was empty before the
+baseline, the final md5 is above, and the diff against the baseline is one
+line. What 104a and 106a through 112a were each written for is a reading of
+the pushed tree rather than an inference about it; **113 has not taken that
+reading**, and that is the one thing it leaves owed.
+
 **112 ADDED NO FILE EITHER**, so the two numbers below did not move: `ls
 tests/*.gd` is **80** and the run reports **78** suites. It edited one file in
 `tests/` - `tests/proxy_test.gd` - plus `docs/TRAPS.md` and this file.
@@ -15677,6 +15900,74 @@ record and the container still agree, and spend the time on the work below.
 **And do not re-take 112's eighteen removal measurements** - they are in the
 112 entry with their counts, each was taken alone in its own copy, and the two
 that overlap 111's were reproduced exactly before anything was changed.
+
+**NOTHING IS OWED FROM 113.** Its baseline was byte-identical to the md5 112
+and 112a both recorded, from a sixteenth independent container; it wrote its
+predicted diff down before any repository file was edited and it held in every
+clause including the risk clause and all seven "predicted not to move"
+clauses; and its final run differs from the baseline run by exactly one line.
+**Do not start by re-running on 113's behalf**; take your own baseline so you
+learn the record and the container still agree, and spend the time on the work
+below. **And do not re-take 113's eight injections** - they are in the 113
+entry with their counts, each alone in its own throwaway copy with its own
+`config/name`, and the property they attribute is `tests/procedure_test.gd`
+section 3b rather than a table in this file. **There is no 113a**: the three
+measurements a fourth run exists to take were taken in this one - porcelain
+empty at the baseline, the final md5, and the one-line diff.
+
+**THE FIRST LIVE ENTRY AS OF 113, AND IT IS A READ RATHER THAN MACHINERY:
+71 REFUSALS IN `scripts/`, AND NOBODY HAS ASKED OF ANY OF THEM WHETHER THE
+PROMPT STATES THE RULE.**
+113 found the four-member identity-collision class with two members enforced
+and unpublished, fixed both, and closed that class. **The class it belongs to
+is much wider and is entirely unread.** Counted this commit rather than
+estimated - `grep -c errors.append scripts/*.gd`:
+
+| file | refusals | has its own `prompt_section()` |
+|---|---|---|
+| `dungeon_module.gd` | 23 | yes |
+| `npc_goals.gd` | 13 | yes |
+| `section_validator.gd` | 13 | **no** - racing's section is in `racing_module.gd` |
+| `farm_module.gd` | 10 | yes |
+| `boots_tool.gd` | 5 | yes |
+| `car_tool.gd` | 4 | yes |
+| `look_tool.gd` | 3 | yes |
+| **total** | **71** | |
+
+**THE QUESTION, asked once per site:** if this refusal fires, was the model
+ever told the rule it fires for? 113's answer for four of the 23 in
+`dungeon_module.gd` was *two of four, no* - and the two that were stated were
+not the interesting ones, they were simply the ones somebody had happened to
+write a sentence for. There is no reason to think the other 67 are better
+connected, and there is no reason to think they are all wrong either: **this
+entry is a read and not a finding, and it is written as one.**
+
+**WHAT IS AND IS NOT WORTH BUILDING FOR IT, said so the next session does not
+re-derive the question.** A scan cannot decide this. "Does the prompt state
+the rule behind `zone %d: unknown type '%s' (allowed: %s)`" is a question
+about meaning, and the prompt states most rules in prose that shares no token
+with the refusal. So the choice is **not** scan-or-nothing:
+  (a) **read the 71, by file and line, and write down only the ones where the
+      answer is no.** One session's work, the same shape 109's entry proposed
+      for its 52 and 109 then did. The output is a list of gaps, each of which
+      is then a one-clause change where the restriction is - which is what
+      113 was. **This is the recommended one**, because every member it finds
+      is a refusal a player can earn and cannot avoid.
+  (b) **hold the class instead**, with a breadth line that requires every
+      `errors.append` site in `scripts/` to carry a row somewhere. That is 71
+      rows attesting a human reading, the verdict is the part nothing can
+      check, and it is the machinery 084, 085 and 109(b) each weighed and
+      declined. **Not recommended**, and named so the next session does not
+      spend a cycle rediscovering why.
+**TRAPS 106's rule applies before any of it is believed**: whatever reads the
+71 must find `dungeon_module.gd`'s room-duplicate and thing-duplicate sites -
+the two 113 fixed - and must NOT report the door-pair site or the
+thing-named-after-a-room site, both of which were already stated. A reading
+that cannot reproduce 113's two-of-four is not reading this class.
+**And the cheap half is already done and should not be redone**: the
+identity-collision class is closed, all four members stated and all four
+driven, and `section_validator.gd`'s 13 are the one group whose prompt section
+lives in another file, which is where a reading will go wrong first.
 
 **THE FIRST LIVE ENTRY AS OF 112, AND IT IS A DECISION WITH A REAL COST, NOT
 A MEASUREMENT: NOTHING HOLDS THE FOUR-MEMBER CLASS, AND WIDENING
@@ -24987,6 +25278,38 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     every step, which is why this is not a discovery so much as an arithmetic
     nobody had done. Over the same stretch `docs/HANDOVER.md` has gone from
     **14,088 lines to 19,344** and `docs/TRAPS.md` to **6,704**.
+
+    **~~THE TWO SENTENCES ABOVE ABOUT `a331e40` WERE TRUE AT 091 AND ARE NOW
+    FALSE. CORRECTED IN PLACE BY 113, WHICH FOUND THEM BY CHECKING A SENTENCE
+    IT WAS ABOUT TO REPEAT.~~** The paragraph is kept verbatim because its
+    question is the owner's and is unchanged; only its arithmetic is
+    re-taken. **EIGHT COMMITS SINCE `a331e40` HAVE TOUCHED A PLAYER-FACING
+    FILE**, the first of them `85e4d62` on 2026-10-30, so "every commit since
+    is `tests/` and `docs/`" stopped being true on the 30th and sat here for
+    two days - which is TRAPS 14 in this file, the thing (b) is itself about
+    doing honestly. Re-counted this commit with `git rev-list a331e40..HEAD`
+    (**58**) and a per-commit `git diff --name-only` over `scripts/`,
+    `scenes/`, `netlify/`, both runners and `project.godot`:
+
+    | commit | date | player-facing files |
+    |---|---|---|
+    | `85e4d62` | 2026-10-30 | 8 files under `scripts/` |
+    | `9234c43` | 2026-10-30 | 9 files under `scripts/` |
+    | `6198a2e` | 2026-10-30 | `game_controller.gd`, `world_registry.gd` |
+    | `3973e41` | 2026-10-30 | `world_store.gd` |
+    | `867d89b` | 2026-10-30 | `session_report.gd` |
+    | `b3f4ff9` | 2026-10-30 | both runners, `world_registry.gd` |
+    | `b155083` | 2026-10-31 | `dungeon_module.gd`, `readback.gd`, `world_registry.gd` |
+    | `20426b9` | 2026-10-31 | `tool_registry.gd` |
+
+    **The streak as of 113 is seventeen, not twenty-six, and it runs from
+    `20426b9` (104) rather than from `a331e40`.** `docs/HANDOVER.md` is
+    **26,664 lines** and `docs/TRAPS.md` **8,676**, both re-counted. **(b)'s
+    question survives the correction intact** - the proportion is still
+    heavily `tests/` and `docs/`, the roadmap is still unnamed as a milestone,
+    and that is still the owner's to answer. What the correction removes is
+    only the claim that NOTHING player-facing had moved in a month, which is
+    not what the numbers say.
 
     **This is not a complaint about the work, and the work is not busywork:**
     every one of those commits closed a measured hole in what the suite can

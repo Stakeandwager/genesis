@@ -8593,3 +8593,84 @@ compile-time dependency of the reading suite**. The four are
 - **Resolve one level of indirection before you believe a source count.** A
   reading that only matches the call line misses every path held in a constant
   and every read behind a helper. Here that was 14 of 24.
+
+---
+
+## 111. A rule the code enforces and the prompt never states is the mirror of trap 14, and it reads as healthy from both sides
+
+**Signature:** a refusal fires correctly, names the offender, and is honest
+about the rule it is enforcing — and the model was never told the rule, so
+the refusal is one no proposal could have avoided earning. Nothing is red.
+Every claim in the documents is true. The prompt simply has a gap in it,
+and a gap says nothing from either direction: reading the validator you see
+a rule, reading the prompt you see no rule to compare it against.
+
+**Cause.** Trap 14 is a limitation **claimed and absent** — HANDOVER said
+"no persistence of any kind" while `/save` and `/load` had been in `main.gd`
+for releases, and the suite that was supposed to catch it asserted the words
+instead. This is the same fault turned around: a limitation **enforced and
+unpublished**.
+
+`DungeonModule.validate()` has four refusals that exist to stop two members
+of one dungeon sharing an identity. Enumerated off the code in 113 rather
+than listed, by grepping every `errors.append` in `scripts/` for an
+existing-identity message — the class is exactly four, all in one file:
+
+| | refusal | stated in `prompt_section()` before 113 |
+|---|---|---|
+| 1 | `room N: two rooms are both called 'X'` | **no** |
+| 2 | `door N: rooms A and B are already joined` | yes |
+| 3 | `thing N: two things are both called 'X'` | **no** |
+| 4 | `thing N: 'X' is already the name of a room` | yes |
+
+So "a dungeon with two store rooms" or "a dungeon with two torches" — an
+ordinary thing to ask for — was refused for a rule the model had no way to
+know. The two that WERE stated are the two somebody happened to write a
+sentence for; nothing connected the four.
+
+**And nothing drove any of 1, 3 or 4.** Measured, not assumed: no suite in
+`tests/` quoted any of the three messages, and the only mention of name
+uniqueness anywhere in `tests/` was the **text** of an assertion in
+`false_delivery_test.gd` — *"an object is identified by name, unique within a
+dungeon"* — over a condition that checks that `red_key` is in the world and
+`blue_key` is not. That is trap 14's shape inside the one suite whose
+acceptance criterion is zero false successes, and about the property its own
+`_node_of()` rests on: a delivery is verified by reading the position of the
+node carrying the asked-for name, so two nodes of one name would make
+"where is the red key" a question with two answers.
+
+**Why green was no help.** The suite had the right words in it and the wrong
+condition under them, which is indistinguishable from coverage at the bottom
+of a run. `check_wiring_test` was no help either, correctly: its unit is the
+CALL — is `DungeonModule.validate()` wired in — and that call is held. Three
+refusal branches inside a held call are invisible to it, and that is a
+property of its unit rather than a hole in it.
+
+**Do:**
+
+- **A refusal is a claim about the game, and so is its absence from the
+  prompt.** Before adding a check that refuses a proposal, ask whether the
+  model was told the rule. Where the restriction is enforced is where its
+  statement belongs.
+- **Enumerate the class off the code, then ask the prompt question of every
+  member** (trap 11). Here two of four were stated, and the two that were
+  not were not the interesting ones — they were simply the ones nobody had
+  written a sentence for.
+- **State the rule once and interpolate it.** `Readback.unique_name_rule()`
+  is the clause both the ROOM line and the THING line now carry. Two
+  hand-written copies in one function is the shape `Readback.member_error()`
+  was already written for, in this same file, for these same two doors.
+- **An assertion's message is not an assertion.** When a message claims more
+  than its condition checks, either make the condition check it or make the
+  message say what it checks. Both were done here: the uniqueness is driven
+  in `procedure_test` section 3b at every pair of positions, and the
+  `false_delivery_test` message was narrowed to the presence-and-absence it
+  actually tests.
+- **The folding is part of the rule and was deliberately NOT added to the
+  prompt.** A collision is decided after lowercasing, and for a thing after
+  turning spaces into underscores, so `Store`/`store` and
+  `red key`/`red_key` each collide — driven. The prompt already demands "a
+  short lowercase label with underscores", so a model that complies never
+  reaches either; stating the folding as well would be noise. Recorded here
+  and in the suite instead, which is the place for a mechanism that no
+  compliant request meets.

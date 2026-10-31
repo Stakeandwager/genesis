@@ -83,7 +83,7 @@ const TEMPERATURE := 1.0
 # fitted a question, so the only answers left were an invented reason or the
 # nearest command. Interpretation of a question under this version is not
 # comparable with interpretation under 039.
-const PROMPT_VERSION := "050-no-command-for-a-question-1"
+const PROMPT_VERSION := "113-no-two-names-the-same-1"
 
 # --- 035: the version cannot be left behind again ---
 #
@@ -105,7 +105,7 @@ const PROMPT_VERSION := "050-no-command-for-a-question-1"
 # if they disagree, and says to move PROMPT_VERSION as well as this string.
 # It is a fingerprint, not an assertion about wording: it says only that the
 # prompt the model receives is the one this version names.
-const PROMPT_FINGERPRINT := "5a15cd3972ceb300e353c6204ef80ca08f991f07cf8662e30599e475bf1d9cfb"
+const PROMPT_FINGERPRINT := "ac8041cbe96a362bcef369e01e9861fb0668da19abc6d691218a0819b89f6b18"
 # Which wording of the closure feedback a revised track was given.
 # feedback-2 adds Godot's test of whether ANY straight lengths could close the layout.
 const REVISION_VERSION := "002C-closure-feedback-2"

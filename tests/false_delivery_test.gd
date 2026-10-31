@@ -147,8 +147,20 @@ func _run() -> void:
 			if (rects[i] as Rect2).intersects(rects[j] as Rect2):
 				overlapping = true
 	_check(not overlapping, "rooms do not overlap, so room membership is unambiguous")
+	# 113: the text of this assertion said "an object is identified by name,
+	# UNIQUE within a dungeon" over a condition that checks only that one
+	# name is in the world and another is not. The uniqueness half was a
+	# claim in an assertion message with nothing behind it (TRAPS 14), in
+	# the suite whose acceptance criterion is zero false successes, about
+	# the property _node_of() rests on: a delivery is verified by reading
+	# the position of the node carrying the asked-for name, so two nodes of
+	# one name would make "where is the red key" ambiguous. It is NOT
+	# unheld any more and it is NOT held here: DungeonModule refuses the
+	# collision, and procedure_test section 3b drives that refusal at every
+	# pair of positions for rooms, for things, and for a thing taking a
+	# room's name. This assertion now says what it actually checks.
 	_check(_node_of("red_key") != null and _node_of("blue_key") == null,
-		"an object is identified by name, unique within a dungeon")
+		"an object is found by the name it was built with, and a name the dungeon has not got finds nothing")
 
 	# --- 1. normal delivery ---
 	await _order("red_key", "room_3")
