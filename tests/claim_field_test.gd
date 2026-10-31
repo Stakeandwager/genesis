@@ -360,8 +360,67 @@ func _initialize() -> void:
 	for m in WorldRegistry.modules():
 		var module: WorldModule = m
 		contributing.append([module.command(), module.prompt_section()])
-	_check(contributing.size() == ToolRegistry.tools().size() + WorldRegistry.modules().size(),
-		"every registry member is asked (%d of them)" % contributing.size())
+	# --- 109: THE BREADTH LINE UNDER THIS SECTION, POINTED AT SOMETHING THAT
+	#          CAN FAIL (HANDOVER's first live entry as of 108) ---
+	#
+	# WHAT WAS HERE AND WHAT IT WAS WORTH. One assertion:
+	# `contributing.size() == ToolRegistry.tools().size() +
+	# WorldRegistry.modules().size()`, under the message "every registry member
+	# is asked". Both loops above append EXACTLY ONCE PER ITERATION - no
+	# `continue`, no condition, nothing between - and `tools` is
+	# `ToolRegistry.tools()` taken at the top of this function and never
+	# touched, so the two sides were two counts of the same two collections and
+	# NO INPUT COULD SEPARATE THEM. The message was TRUE and measured nothing,
+	# which is TRAPS 6's case and not TRAPS 14's.
+	#
+	# WHERE IT CAME FROM. 108 counted the `_check` conditions in tests/ with a
+	# container read on both sides of an `==`, read two of them, and left the
+	# rest as a live entry saying READ THEM. 109 read the class - every site of
+	# it, by file and line, listed in docs/HANDOVER.md - and THIS IS THE ONE
+	# that no input and no duplicate can make fail.
+	#
+	# WHAT THE OLD LINE COULD AND COULD NOT SEE, DRIVEN BEFORE IT WAS TOUCHED,
+	# each injection alone in its own throwaway copy with its own config/name:
+	#   - a `continue` skipping one tool: it FIRED - 132 assertions,
+	#     failures=1, "every registry member is asked (5 of them)". THAT is why
+	#     the count is kept below rather than deleted (TRAPS 6).
+	#   - the "EQUIP " prefix dropped from the label three lines up: 134
+	#     assertions, FAILURES=0. The label reaches the two messages below and
+	#     nothing in tests/ reads it, so a member could be asked under a name
+	#     the prompt never uses with every assertion in this file green.
+	#
+	# WHAT IS ASSERTED INSTEAD: the membership, BY NAME, both ways, read off
+	# `ToolRegistry.names()` and `WorldRegistry.commands()` rather than off the
+	# two loops above - the idiom this project already uses wherever a coverage
+	# claim has to be falsifiable (controller_reach_test's _reachable_coverage,
+	# refusal_reach_test's _driven_coverage, formula_test's "here" rows). A
+	# skipped member now fails BY NAME, and so does a member asked under a name
+	# neither registry gives it.
+	# WHAT IT STILL DOES NOT ASSERT: that the TEXT beside each label is that
+	# member's own prompt_section(). The pair is built in one expression per
+	# loop, so a label paired with another member's text would need both loops
+	# rewritten; it is not checked here and is not claimed to be.
+	# AND THE COUNT IS KEPT BESIDE IT AND SAYS WHAT IT IS: membership both ways
+	# does NOT imply equal size, because `contributing` is an Array and can
+	# carry one label twice, so the count is the duplicate detector and that is
+	# the whole of what it is now for.
+	var asked: Array = []
+	for c in contributing:
+		asked.append(str((c as Array)[0]))
+	var registered: Array = []
+	for tool_name in ToolRegistry.names():
+		registered.append("EQUIP %s" % str(tool_name))
+	for command in WorldRegistry.commands():
+		registered.append(str(command))
+	for member in registered:
+		_check(asked.has(str(member)),
+			"%s is a registry member, so this section asks it for its prompt_section()" % str(member))
+	for who_asked in asked:
+		_check(registered.has(str(who_asked)),
+			"'%s' is asked here under a name one of the two registries gives it" % str(who_asked))
+	_check(asked.size() == registered.size(),
+		"and no member is asked twice - the duplicate detector, not a breadth measurement: %d entries for %d members" % [
+			asked.size(), registered.size()])
 	for c in contributing:
 		var who: String = (c as Array)[0]
 		var text: String = (c as Array)[1]

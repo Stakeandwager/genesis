@@ -13,6 +13,170 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
+- Last commit at the time of writing: **109**, which took **the first live
+  entry as of 108** - *the shape section 8 holds is the local-counter form of
+  a wider question, and 52 candidates for the wider one are unread* - and did
+  what that entry said to do: **READ THEM, by file and line.** No new file.
+  `tests/claim_field_test.gd` **134 -> 146** assertions,
+  `tests/source_scan_test.gd` comment-only. `scripts/` is **0 lines of diff**
+  - no player meets any of this. One new live entry. No new "Human decision
+  needed". **No new TRAPS entry, and that is a choice with a reason given
+  below.**
+
+  **THE READING: 55 SITES, ALL READ, AND EXACTLY ONE OF THEM IS VACUOUS.**
+  The one is **`claim_field_test.gd:363`**, which asserted
+  `contributing.size() == ToolRegistry.tools().size() +
+  WorldRegistry.modules().size()` under the message *"every registry member
+  is asked"*. The two loops above it append **exactly once per member** - no
+  `continue`, no condition, nothing between - and `tools` is
+  `ToolRegistry.tools()` taken at the top of the function and never touched.
+  Both registries return a fresh three-element literal
+  (`scripts/tool_registry.gd:43`, `scripts/world_registry.gd:21`), so the two
+  sides were two counts of the same two collections. **The message was TRUE
+  and measured nothing: TRAPS 6's case, not TRAPS 14's.**
+
+  **AND THE FIX IS NOT A DELETION, BECAUSE THE OLD LINE WAS DRIVEN FIRST.**
+  Two injections before anything was changed, each alone in its own throwaway
+  copy with its own `config/name`:
+
+  | injection | the old line |
+  |---|---|
+  | a `continue` skipping one tool | **FIRED** - 132 assertions, failures=1, *"every registry member is asked (5 of them)"* |
+  | the `"EQUIP "` prefix dropped from the label three lines up | **134 assertions, failures=0** |
+
+  So it was a real guard against one edit and blind to the other - the label
+  reaches two messages and **nothing in `tests/` reads it**, so a member
+  could be asked under a name the prompt never uses with the file green.
+  **What replaced it is membership BY NAME, both ways**, read off
+  `ToolRegistry.names()` and `WorldRegistry.commands()` rather than off the
+  two loops - the idiom this project already uses where a coverage claim has
+  to be falsifiable (`controller_reach_test::_reachable_coverage`,
+  `refusal_reach_test::_driven_coverage`, `formula_test`'s *"here"* rows) -
+  **with the count kept beside it and relabelled as the duplicate detector**,
+  because membership both ways does not imply equal size when the left side
+  is an Array. Three injections on the new assertions, same method:
+
+  | injection | the new assertions |
+  |---|---|
+  | the `"EQUIP "` prefix dropped | **146 assertions, failures=6**, naming `EQUIP car`, `EQUIP boots`, `EQUIP look` and the three bare names |
+  | a `continue` skipping `CREATE_DUNGEON` | **143, failures=2**, naming `CREATE_DUNGEON` and then the count |
+  | one module appended twice | **149, failures=1** - membership passes both ways, **the count catches it**, which is why it is kept |
+
+  **THE SECOND HALF IS ABOUT 108'S OWN NUMBERS AND IT IS THE PART THAT WILL
+  MATTER LONGER: 524 AND 54 DO NOT REPRODUCE.** An independent reader over
+  the same 80 files - comments blanked the way `_code_of()` blanks them, each
+  `_check(` condition read by depth over masked text, the same definition
+  `_counter_equalities()` uses - counts **520** conditions containing an `==`,
+  not 524. And the sentence *"a container read on BOTH sides of that `==`"*
+  has **two readings, neither of which gives 54**: per **conjunct** of the
+  condition, **34** (33 conditions); either side of the first `==` in the
+  **whole** condition, **53** (55 if comments are not blanked, two of those
+  being comment text read as code). 54 sits between the readings, so **what
+  it counted cannot be told from the sentence that describes it.** The
+  numbers are left standing in the file with the disagreement written beside
+  them rather than quietly corrected, because the disagreement is the useful
+  part (TRAPS 106) - and **all 55 sites of the union of every reading were
+  read anyway**, so the entry is answered whichever number was meant.
+  **NO TRAPS NUMBER WAS ADDED FOR IT, DELIBERATELY.** The lesson is TRAPS
+  106's, word for word - *check a scan against an independent enumeration,
+  not against its own output* - and the only new thing here is that it
+  applies to a **count written in prose** as much as to a scan. A fresh
+  number for the same rule would dilute the file.
+
+  **THE 55 SITES AND THE VERDICT ON EACH.** Read individually, not sampled.
+
+  | site | verdict |
+  |---|---|
+  | `claim_field_test.gd:363` | **CANNOT FAIL** - the one. Fixed this commit |
+  | `refusal_reach_test.gd:1222` | cannot fail on the appends as written, **already labelled as exactly that in 091**, and a duplicate branch name does make it fire |
+  | `check_wiring_test.gd:644` | CAN FAIL - a const table against the live registry |
+  | `claim_field_test.gd:478` | CAN FAIL - stated ranges against field bounds plus declared derived ones, three separate derivations |
+  | `claim_field_test.gd:554` | CAN FAIL - two different claims' fields |
+  | `claim_field_test.gd:640` | CAN FAIL - `measured` is appended under a condition |
+  | `command_schema_test.gd:516` | CAN FAIL - 105's breadth floor, past a `continue`. One of the two 108 read |
+  | `controller_reach_test.gd:1208` | CAN FAIL - `answered` is not deduplicated, so a row answered twice fires it |
+  | `controller_reach_test.gd:1327` | CAN FAIL - `reached` is deduplicated, `wanted` is not, so a duplicate table row fires it |
+  | `field_type_test.gd:385`, `:401` | CAN FAIL - the module's own tally against the array it returned. `:385` is the other one 108 read |
+  | `field_type_test.gd:399` | CAN FAIL - three buckets against the line count, all four from the module |
+  | `field_type_test.gd:471` | CAN FAIL - group count against a hand-written expectation |
+  | `formula_test.gd:539` | CAN FAIL - both Arrays, so a doubled row or measurement fires it |
+  | `ledger_audit_test.gd:168` | CAN FAIL - `resolved` is built past two guards |
+  | `limits_test.gd:116`, `:119` | CAN FAIL - the NPC's marks against the route it was given |
+  | `limits_test.gd:259` | CAN FAIL - `free_kit()` is a Dictionary and `names()` an Array, so two tools sharing a name fires it |
+  | `panel_built_test.gd:441`, `:474` | CAN FAIL - two arrays the module returned |
+  | `panel_built_test.gd:399` | CAN FAIL - the panel's named room against the one the depth walk found |
+  | `panel_geometry_test.gd:446` | CAN FAIL - the panel's counts against a walk of the scene tree |
+  | `procedure_test.gd:371`, `:377` | CAN FAIL - the built entrance against the order sent and `ROOM_SIZES` |
+  | `procedure_test.gd:386` | CAN FAIL - two `continue`s guard the append |
+  | `prompt_bounds_test.gd:353` | CAN FAIL - the prompt's stated maximum against the declared constant |
+  | `record_proposal_test.gd:307` | CAN FAIL - the record's field against the table's expectation |
+  | `record_type_test.gd:282` | CAN FAIL - the summary's denominator against the fixture |
+  | `refusal_reach_test.gd:850` | CAN FAIL - a `DECLARED` row's fields against two literals |
+  | `refusal_reach_test.gd:1214`, `:1295` | CAN FAIL - declared rows against the ones driven, both ways |
+  | `source_scan_test.gd:472` | CAN FAIL - the stripped line count against the source's plus one |
+  | `world_file_test.gd:156` | CAN FAIL - the written type against the declared one |
+  | the remaining **21** | **NOT COUNTING EQUALITIES AT ALL** - every one compares against a literal or a second extraction, and they are in the list only because the loose reading cut the condition at its first `==` and found a container read somewhere in the prefix: `carry_test.gd:104`, `field_type_test.gd:383`, `ledger_test.gd:149`, `look_test.gd:51`, `scan_floor_test.gd:862`, `:869`, `:889`, `:894`, `:896`, `session_test.gd:107`, `:109`, `:110`, `source_scan_test.gd:475`, `:566`, `:574`, `:581`, `:590`, `:595`, `:694`, `:700`, `:722`. One more, `source_scan_test.gd:690`, is **comment text read as code** by the no-blanking variant and is not a site |
+
+  **VERIFIED:**
+  **BASELINE WAS THE CLEAN TREE AT THE PUSHED COMMIT `3aa6589`**,
+  `git status --porcelain` empty, `--all`, same Godot
+  (4.7.1.stable.official.a13da4feb, `--version` read), `user://` cleared:
+  **`dcce46bd0cfdfa68a84cfc5f7a901695`, 78 suites, 0 with something to look
+  at - BYTE-IDENTICAL to the md5 108 and 108a both recorded, from a TWELFTH
+  independent container with its own Godot download.** `ls tests/*.gd` 80,
+  the run reported 78.
+  **THE PREDICTED DIFF WAS WRITTEN DOWN BEFORE THE CHANGE AND HELD EXACTLY**
+  (TRAPS 89): *one line moves, `claim_field_test` 134 -> 146, net +12 - 6
+  membership assertions, 6 the other way, 1 count kept; `source_scan_test`
+  comment-only and UNMOVED; no other suite moves.* It was written with the
+  named risk that **four suites read `res://tests`** (`player_door_test`,
+  `source_scan_test`, `scan_floor_test`, `formula_test`) and that
+  **`record_id_test` scans `tests/` for command words**. **None moved:**
+  `user://` cleared, md5 `d3de1b88811b8f0a2e94926dfd0ac0c2`, **78 suites, 0
+  with something to look at**, `diff` against the baseline **that one line**.
+  **FIVE INJECTIONS**, each alone in its own throwaway copy with its own
+  `config/name`, the diff read before each run, two of them on the OLD code
+  and three on the new: the five rows in the two tables above.
+
+  **NOT VERIFIED:**
+  **THE TWO READINGS THAT BRACKET 54 ARE MINE AND THE 54 IS NOT RE-DERIVED.**
+  What is measured is that 520, 34 and 53 are what one independent reader
+  gets under three stated definitions. **It is NOT established what 108's
+  reader counted**, only that no reading of its own sentence reproduces its
+  number. A third route would settle it and was not taken.
+  **THE 55 VERDICTS ARE A HUMAN READING AND NOTHING ASSERTS THEM.** What is
+  asserted is the one site that was fixed. The other 54 rows are read, not
+  held by a test, and a suite edited tomorrow can change any of them in
+  silence - which is the live entry below.
+  **THE NEW ASSERTIONS DO NOT CHECK THAT THE TEXT BESIDE EACH LABEL IS THAT
+  MEMBER'S OWN `prompt_section()`.** Label and text are built in one
+  expression per loop, so pairing a label with another member's text would
+  take rewriting both loops; it is stated in the comment and not claimed.
+  **NO LIVE PATH TO A MODEL WAS DRIVEN**, no model was asked anything, no
+  request left the container, there is no API key here, no browser ran, no
+  web export was made, `interpret.js` was not executed.
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is still **2026-10-14**, checked by grepping every
+  `OWNER, 2026-1[01]-*` marker in `HANDOVER.md` and `TRAPS.md` - the grep
+  returns five in `HANDOVER.md`, all `2026-10-14`, and none in `TRAPS.md`.
+  **064'S FINDING IS CARRIED FORWARD AND NOT RE-VERIFIED.**
+
+  **NOTHING IN `scripts/`, `scenes/`, `netlify/`, `.github/`, `project.godot`,
+  `export_presets.web.cfg` OR EITHER RUNNER WAS TOUCHED** - no file was added
+  or removed, so `tests/` keeps **80** `.gd` and **80** `.uid` (counted with
+  `ls`), no list in either runner can be short one (TRAPS 4), and
+  `README.md`'s suite count cannot have moved. `ai_interpreter.gd` is 0 lines
+  of diff, so `PROMPT_FINGERPRINT` and `PROMPT_VERSION` cannot have moved -
+  and `prompt_bounds_test` is green on the after-run, which is the measurement
+  of that rather than the inference. Every injection was in a throwaway copy
+  under the scratch directory with its own `config/name`, never in the
+  repository.
+
+  **AND WHAT CHANGED FOR ANYONE USING GENESIS: NOTHING, AND THAT IS STATED
+  PLAINLY.** `scripts/` is 0 lines of diff. What changed is that a coverage
+  claim in one suite can now fail by naming the member it is missing, and
+  that a count written in prose in another suite has the disagreement written
+  beside it instead of being believed.
 - Last commit at the time of writing: **108a**, which is **docs only** - 0
   lines of diff in `scripts/` and `tests/`, no new finding about Genesis, no
   new claim, no new live entry. It records one measurement: **a fresh
@@ -7462,6 +7626,44 @@ remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 78
 and are skipped without it.
 
+**109 ADDED NO FILE EITHER**, which is why the two numbers above did not
+move, and that was deliberate for the reason 101 through 108 all gave: a new
+suite would falsify `README.md`'s count, which is the open class 100 left and
+which 109 does not close. The thirteen assertions that replaced one went into
+`tests/claim_field_test.gd`, the file the vacuous assertion was in, and
+`tests/source_scan_test.gd` is **comment-only**. **`scripts/` is 0 lines of
+diff.**
+Its baseline on the clean tree at `3aa6589`, `git status --porcelain` empty,
+was **BYTE-IDENTICAL to the md5 108 and 108a both recorded, from a TWELFTH
+independent container with its own Godot download**
+(4.7.1.stable.official.a13da4feb, `--version` read):
+`dcce46bd0cfdfa68a84cfc5f7a901695`, 78 suites, 0 with something to look at,
+`user://` cleared before it. `ls tests/*.gd` 80, run reported 78.
+**THE PREDICTED DIFF WAS WRITTEN DOWN BEFORE THE CHANGE AND HELD EXACTLY**
+(TRAPS 89): *`claim_field_test` 134 -> 146, net +12 - six membership
+assertions, six the other way, one count kept; `source_scan_test`
+comment-only and unmoved; no other suite moves.* It was written with the named
+risk that **four suites read `res://tests`** (`player_door_test`,
+`source_scan_test`, `scan_floor_test`, `formula_test`) and that
+**`record_id_test` scans `tests/` for command words**, any of which could have
+moved a second number. **None did:** `user://` cleared, md5
+`d3de1b88811b8f0a2e94926dfd0ac0c2`, **78 suites, 0 with something to look
+at**, `diff` against the baseline **that one line**.
+**FIVE INJECTIONS**, each alone in its own throwaway copy with its own
+`config/name`, the diff read before each run, and **two of them were taken on
+the OLD code before it was touched**, which is the half that decided the fix:
+a `continue` skipping one tool (`132 assertions, failures=1` - so the old line
+was a real guard and is kept), the `"EQUIP "` prefix dropped from the label
+(`134, failures=0` - so it was blind to the fault nothing else catches), then
+the same prefix injection on the new assertions (`146, failures=6`, naming
+each member), a `continue` skipping `CREATE_DUNGEON` (`143, failures=2`,
+naming it), and one module appended twice (`149, failures=1` - membership
+passes both ways and **the count** catches it).
+**AND THE INDEPENDENT ROUTE DISAGREED WITH 108'S PROSE, WHICH IS THE OTHER
+HALF OF THE COMMIT.** 520 `_check` conditions contain an `==`, not 524; the
+sites are 34 per conjunct or 53 per whole condition, and 54 is neither. See
+the 109 entry under "Starting state".
+
 **108 ADDED NO FILE EITHER**, which is why the two numbers above did not
 move, and that was deliberate for the reason 101 through 107 all gave: a new
 suite would falsify `README.md`'s count, which is the open class 100 left and
@@ -14655,6 +14857,26 @@ each was measured alone in its own copy with its own `config/name`, and the
 property they attribute is `tests/source_scan_test.gd` rather than a table in
 a document.
 
+**ONE THING IS OWED FROM 109 AND IT IS NAMED RATHER THAN LEFT TO BE
+NOTICED: THE FOURTH RUN ON A FRESH CLONE OF THE PUSHED COMMIT.** 109 took its
+baseline on the clean tree at `3aa6589` (byte-identical to the md5 108 and
+108a both recorded, twelfth independent container), wrote its predicted diff
+down before changing anything and it **held exactly**, and took its
+post-change run on the complete tree with `docs/` in place. **If a 109a stands
+below this line, that fourth run is taken and nothing is owed.** If it does
+not, the one thing to do on 109's behalf is: clone the pushed commit fresh,
+with its own `config/name` and its own `user://`, run `--all`, and write the
+md5 in - **not** re-run the five injections, which are in the 109 entry with
+their counts and whose property is now `tests/claim_field_test.gd` rather
+than a table in a document. **And do not re-read the 55 sites**; read the
+table.
+**WHAT IS WORTH RE-TAKING, AND IT IS THE ONE THING 109 COULD NOT SETTLE:** a
+**third independent route** over `tests/` counting the `_check` conditions
+with an `==` and the sites with a container read on both sides. 109's reader
+says 520 and 34-or-53; 108's prose says 524 and 54. Two routes disagree and
+a third is forty lines. That is the first live entry's last paragraph and it
+is cheap.
+
 **NOTHING IS OWED FROM 108 EITHER.** Its baseline was byte-identical to the
 md5 107 and 107a both recorded, from an **eleventh** independent container
 with its own Godot download; its predicted diff was written down before any
@@ -14675,6 +14897,58 @@ their numbers, each injection alone in its own copy with its own
 `config/name`, and the property they attribute is now
 `tests/source_scan_test.gd` sections 8 and 9 rather than a table in a
 document.
+
+**THE FIRST LIVE ENTRY AS OF 109, AND IT IS WHAT 109'S OWN READING DOES NOT
+HOLD: 54 OF THE 55 VERDICTS ARE IN A DOCUMENT AND NOTHING ASSERTS ANY OF
+THEM.**
+109 read every site of 108's class, fixed the one that could not fail, and
+wrote the other 54 verdicts into the table in its entry above. **That table
+is a reading, and a list in this file is not the class** - which is TRAPS 66,
+and this file has been wrong in exactly that way before. A suite edited
+tomorrow can turn a CAN FAIL into a CANNOT FAIL in silence, and the only
+thing that would notice is somebody reading all 55 again.
+**WHAT IS AND IS NOT WORTH BUILDING FOR IT, said so the next session does not
+re-derive the question.** A scan cannot decide the verdict: three of the four
+sites in section 8's own table compare counts taken under *different*
+predicates, and telling those from the vacuous one is the predicate-
+equivalence problem section 8 already declines (and 108 recorded declining).
+So the choice is not scan-or-nothing, it is **which cheap half to hold**:
+  (a) **the population, not the verdict.** A breadth line over `tests/` that
+      says how many sites of the shape exist, with every site required to
+      carry a row somewhere a reader meets it - the shape
+      `source_scan_test`'s `COUNTER_EQUALITIES` already is, widened from the
+      local-counter form to the container-read form. A 56th site then fails
+      BY NAME with nothing to read it. **TRAPS 106's rule applies before any
+      of it is believed: it must find `claim_field_test.gd:363`'s shape, or
+      the shape it replaced, by file and line.**
+  (b) **nothing, and say so.** 55 sites over 80 files is one session's read,
+      the population moves slowly, and machinery for a class whose verdict
+      nothing can check is what 084 and 085 each weighed and declined.
+**AND THE PART THAT IS NOT A CHOICE: 108'S 524 AND 54 ARE STILL
+UNEXPLAINED.** 109 states three numbers under three stated definitions and
+**did not establish what 108's reader counted.** A third independent route
+over `tests/` would settle whether 54 was a third definition or an arithmetic
+slip, and it is cheap - the reader is forty lines in any language. Until then
+the count in `source_scan_test`'s header carries the disagreement beside it
+and should not be quoted as if it were settled.
+
+**~~THE FIRST LIVE ENTRY AS OF 108, COUNTED AND DELIBERATELY NOT CLOSED: THE
+SHAPE SECTION 8 HOLDS IS THE LOCAL-COUNTER FORM OF A WIDER QUESTION, AND 52
+CANDIDATES FOR THE WIDER ONE ARE UNREAD.~~ DONE IN 109, WHICH DID WHAT THE
+ENTRY SAID TO DO - READ THEM - AND FOUND ONE VACUOUS SITE AND A COUNT THAT
+DOES NOT REPRODUCE.** The entry's instruction was the right one and its
+prescription held: *"the cheap and useful next step is not a wider scan: it
+is to READ the 52, by file and line, and see whether any is the vacuous
+shape. If one is, it is a fault in a suite and TRAPS 6's instruction applies
+to it."* One was - `claim_field_test.gd:363` - and TRAPS 6's instruction is
+what was applied: the assertion was **driven first** (it fires on a
+`continue`, so it is kept), then pointed at membership by name off a second
+enumeration, with the count relabelled as the duplicate detector. **What the
+entry got wrong was its own count**: 52 unread was 53 read, or 32, depending
+on which reading of its sentence is taken, and none of the readings gives the
+54 it was subtracting from. Struck rather than deleted, because an entry
+whose instruction was right and whose number was not is the useful record.
+**The original text follows.**
 
 **THE FIRST LIVE ENTRY AS OF 108, COUNTED AND DELIBERATELY NOT CLOSED: THE
 SHAPE SECTION 8 HOLDS IS THE LOCAL-COUNTER FORM OF A WIDER QUESTION, AND 52

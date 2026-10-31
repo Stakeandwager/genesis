@@ -1091,12 +1091,39 @@ static func _masked(line: String) -> String:
 # sides of that `==`, and NONE of the 54 is in this scan's class, because
 # neither side is a local advanced with `+=`. Two were read by hand and are
 # honest assertions across two different sources
-# (`field_type_test.gd:385`, `command_schema_test.gd:516`). THE OTHER 52 ARE
-# UNREAD. So the shape this section holds is the local-counter form of a wider
-# question, and the wider one is open - recorded in docs/HANDOVER.md as a live
-# entry rather than denied here. Also outside it, and not counted either: a
-# counter advanced by anything but `+=`, and an equality between two counts of
-# one collection that is computed and never asserted.
+# (`field_type_test.gd:385`, `command_schema_test.gd:516`).
+#
+# 109 READ THE REST, AND FOUND ONE VACUOUS SITE AND A COUNT THAT DOES NOT
+# REPRODUCE. Both halves matter and the second one is about this paragraph.
+#
+#   THE SITE: `claim_field_test.gd:363` asserted `contributing.size() ==
+#   ToolRegistry.tools().size() + WorldRegistry.modules().size()` under the
+#   message "every registry member is asked", with `contributing` appended to
+#   exactly once per member by two loops holding no `continue` and no
+#   condition. It could not fail. It is now membership by name, both ways, off
+#   `ToolRegistry.names()` and `WorldRegistry.commands()`, with the count kept
+#   beside it as the duplicate detector - see that file. It was the ONLY site
+#   of the 55 read that no input and no duplicate can make fail;
+#   `refusal_reach_test.gd:1222` is the same shape, already labelled as such
+#   in 091, and a duplicate branch name does make it fire.
+#
+#   THE COUNT: 524 and 54 above are NOT REPRODUCIBLE, and the numbers are left
+#   standing rather than quietly corrected because the disagreement is the
+#   useful part (TRAPS 106). An independent reader over the same 80 files -
+#   comments blanked as `_code_of()` blanks them, each `_check(` condition
+#   read by depth over masked text - counts 520 conditions containing an `==`,
+#   not 524. For the sites, the sentence above has two readings and NEITHER
+#   gives 54: per CONJUNCT of the condition, 34; either side of the first `==`
+#   in the WHOLE condition, 53 (55 if comments are not blanked, 2 of those
+#   being comment text read as code). 54 sits between the readings, so what
+#   it counted cannot be told from the sentence describing it. ALL 55 SITES OF
+#   THE UNION OF EVERY READING WERE READ ANYWAY, by file and line, with the
+#   verdict on each written into docs/HANDOVER.md - so the question the live
+#   entry asked is answered whichever of the three numbers was meant.
+#
+# Also outside this scan, and not counted by it either: a counter advanced by
+# anything but `+=`, and an equality between two counts of one collection that
+# is computed and never asserted.
 func _counter_equalities(code: String) -> Array:
 	var out: Array = []
 	var lines := code.split("\n")
