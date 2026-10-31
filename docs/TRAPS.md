@@ -8261,3 +8261,61 @@ not to invent a rule.
   silent, and silence from the harness reads as a hang rather than as a
   finding. This is TRAPS 13's cause — a script error in a `SceneTree` looking
   exactly like a hang — recurring 93 commits later in a different file.
+
+## 106. The scan written to hold a class found four of its ten members, and the one it missed was the fault the class came from
+
+**Signature:** a new source scan is written to hold a rule, runs green on its
+first try, and the breadth line it prints is a smaller number than the class it
+was written for — with nothing in the run to compare that number against.
+
+**Cause:** 105 fixed `command_schema_test`'s unguarded `table[command]` and
+read the class by hand: seven suites key a hand-written table on an enumerated
+whitelist or registry, six already guarded it. It then left its own next entry
+— *nothing asserts that the six keep doing so*. 106 wrote that scan into
+`source_scan_test`. The first version matched a registry accessor **only where
+it appeared on the `for` line itself**, and derived the loop key by taking the
+**first identifier** of an alias expression. Both errors narrow, and both
+narrow silently:
+
+| the shape | what it looks like | what the first version did |
+|---|---|---|
+| accessor assigned to a local, the local iterated | `var whitelist: Array = CommandParser.allowed_commands()` … `for command in whitelist:` | missed the loop entirely |
+| key derived through a call | `var name := str(command)` | read `str` as the key and lost the read |
+
+**It found 4 sites in 2 files. There are 10 in 5.** And the first of the two
+missed shapes is `command_schema_test`'s own: **the scan written to hold 105's
+fix could not see 105's fault.** It reported *"every one of them has a gate
+above it"*, which was true of the four it found and worth nothing.
+
+**And the breadth line did not catch it**, which is the part worth keeping,
+because a breadth line is what TRAPS 105 itself prescribes. It printed
+*"4 table read(s) … in 2 file(s)"* and passed: a floor of `> 0` fires on an
+empty read and says nothing about a read that is 40% complete. **The number
+was there and nobody had a second number to put beside it.**
+
+**What exposed it** was a throwaway prototype of the same scan, written in
+another language against the same directory before the suite was written, to
+measure the population the suite would face. It counted 8 by a different route
+and under different bugs — two false positives of its own, on a guard inside a
+compound `or` — and the disagreement is what made both sides get read. Eight
+and ten were then reconciled one site at a time, by file and line.
+
+**Do:**
+
+- **Check a new scan against an independent enumeration of its class, not
+  against its own output.** A scan's own count is not evidence of the scan's
+  reach. Two implementations that disagree are cheap; one that is quietly
+  narrow is the fault this file is full of.
+- **Require the scan to find the INSTANCE the rule came from, by file and
+  line.** If the fault that produced the rule is not in the new scan's output,
+  the scan does not hold the rule — whatever else it finds. One line, and it
+  would have caught this on the first run.
+- **A floor of `> 0` is a floor against nothing happening, not against
+  happening partially** (TRAPS 6, 078). It is still worth having — it is what
+  catches a renamed needle — but it must not be read as evidence of breadth.
+  A pattern-matching scan needs its classifier controlled on sources whose
+  answer is known, including the shapes it previously got wrong, or the first
+  narrowing goes unremarked the way this one did.
+- **Write the controls for the bugs you actually made, not for the bugs you
+  imagined.** The two in `source_scan_test` section 7 that matter are the two
+  shapes above, and they are there because the scan got them wrong first.

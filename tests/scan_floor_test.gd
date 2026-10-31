@@ -231,6 +231,19 @@ const FLOORS := {
 		"floor": "members.size() >= KNOWN.size()",
 		"why": "its section 1 already names TRAPS 6 as the reason it is there",
 	},
+	# 106: two reads arrived with the registry-keyed sweep, and this suite
+	# named both of them on the run that added them - which is the class
+	# working rather than a chore. Each is in its own function on purpose: two
+	# reads in one function would share one key, and section 2's claim about
+	# that is weaker than it reads (see HANDOVER 106).
+	"source_scan_test.gd::_registry_keyed_class": {
+		"floor": "keyed_sites > 0",
+		"why": "106: every assertion about a guard comes out of this sweep, so an empty read leaves section 6 with nothing to judge and its clean result would mean it had looked at no code at all",
+	},
+	"source_scan_test.gd::_scripts_code": {
+		"floor": "not declared.is_empty()",
+		"why": "106: the accessor needles are checked against this text, and a scan whose needles have been renamed finds nothing - which looks exactly like finding nothing wrong (TRAPS 6)",
+	},
 }
 
 

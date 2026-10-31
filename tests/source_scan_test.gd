@@ -450,8 +450,355 @@ func _run() -> void:
 		_check(not members.has("session_test.gd"),
 			"and the scan agrees it is not a source scanner")
 
+	# --- 6. every registry-keyed table read in tests/ has a gate above it ---
+	#
+	# 105's own next entry. The six suites that guard correctly do so because
+	# six authors each wrote the guard; nothing asked them to and nothing
+	# noticed the one that did not. This asks.
+	#
+	# THE ACCESSORS FIRST, because a scan whose needles have been renamed
+	# finds nothing and finding nothing looks exactly like finding nothing
+	# wrong (TRAPS 6). Each name is read back out of scripts/ as a declared
+	# function before the sweep is believed.
+	# THE ACCESSORS FIRST, because a scan whose needles have been renamed finds
+	# nothing, and finding nothing looks exactly like finding nothing wrong
+	# (TRAPS 6). Each name is read back out of scripts/ as a declared function
+	# before the sweep below is believed.
+	var declared := _scripts_code()
+	_check(not declared.is_empty(), "the code of scripts/ was read, so the accessor check below is not passing on an empty string")
+	for call_name in _registry_calls():
+		var bare := str(call_name).get_slice(".", 1).trim_suffix("()")
+		_check(declared.contains("func " + bare + "("),
+			"%s is still declared in scripts/, so this scan's needle for it is current" % str(call_name))
+
+	var keyed := _registry_keyed_class()
+	var keyed_sites := keyed.size()
+	var keyed_files := {}
+	var unguarded: Array = []
+	var guarded_in: Array = []
+	for site in keyed:
+		var row: Dictionary = site
+		keyed_files[str(row["file"])] = true
+		if bool(row["guarded"]):
+			guarded_in.append(str(row["where"]))
+		else:
+			unguarded.append(str(row["where"]))
+
+	# THE BREADTH IN ONE LINE, so a reader never infers it from an absence of
+	# failures (TRAPS 105's own rule, 078's floor). A scan that reached no
+	# code at all would report 0 of 0 and pass every assertion below it.
+	_check(keyed_sites > 0,
+		"%d table read(s) keyed on a registry or whitelist were found in %d file(s) of tests/ - IF THIS FAILS, the scan reached no code: check _registry_calls() against scripts/ before believing tests/ has none" % [keyed_sites, keyed_files.size()])
+	_check(unguarded.is_empty(),
+		"every one of them has a has()-and-leave gate above it, so a member the table has no row for is reported and not thrown on: %s" % str(guarded_in) if unguarded.is_empty() else
+		"a table in tests/ is indexed by a key that came from a registry with no gate above the read - a member with no row THROWS, and a script error in a SceneTree prints no verdict at all (TRAPS 105): " + ", ".join(PackedStringArray(unguarded)))
+
+	# --- 7. and the scanner itself, on sources whose answer is known ---
+	#
+	# Section 6 is a presence check over code nobody wrote for it, so it can
+	# be satisfied by a classifier that calls everything guarded, and its
+	# breadth line can be satisfied by one site it read correctly by luck.
+	# These five sources are the controls. The fourth is the shape TRAPS 105
+	# is actually about and the reason `_guarded_above()` is not a `has()`
+	# grep.
+	var loop := "\tfor command in CommandParser.allowed_" + "commands():\n"
+	var bare_read := loop + "\t\tvar row: Dictionary = table[command]\n"
+	_check(_keyed_reads(bare_read).size() == 1,
+		"a bare index read inside a registry loop is one site")
+	_check(not bool((_keyed_reads(bare_read)[0] as Dictionary)["guarded"]),
+		"and it is reported UNGUARDED, so section 6 is not passing by finding nothing")
+
+	var gated := loop + "\t\tif not table.has(command):\n\t\t\tcontinue\n\t\tvar row: Dictionary = table[command]\n"
+	var gated_sites := _keyed_reads(gated)
+	_check(gated_sites.size() == 1 and bool((gated_sites[0] as Dictionary)["guarded"]),
+		"the same read with has()-then-continue above it is reported GUARDED, so the two answers are distinguishable")
+
+	# An ASSERTION is not a gate. This is the 76-commit fault itself, in four
+	# lines: the membership question asked, recorded, and nothing leaving the
+	# iteration on the answer.
+	var asked_only := loop + "\t\t_check(table.has(command), \"there is a row for %s\" % command)\n\t\tvar row: Dictionary = table[command]\n"
+	var asked_sites := _keyed_reads(asked_only)
+	_check(asked_sites.size() == 1 and not bool((asked_sites[0] as Dictionary)["guarded"]),
+		"a has() ASSERTION with nothing leaving the loop under it is UNGUARDED, which is the fault TRAPS 105 is about and the reason this is not a has() grep")
+
+	# An `if not has():` whose block does NOT leave is the same fault wearing
+	# the guard's clothes, and it is the one a reader skims past.
+	var gate_that_does_not = loop + "\t\tif not table.has(command):\n\t\t\tbad += 1\n\t\tvar row: Dictionary = table[command]\n"
+	var soft_sites := _keyed_reads(gate_that_does_not)
+	_check(soft_sites.size() == 1 and not bool((soft_sites[0] as Dictionary)["guarded"]),
+		"and an `if not has():` with no continue or return under it is UNGUARDED too")
+
+	# THE TWO SHAPES THE FIRST VERSION OF THIS SCAN MISSED, controlled here
+	# because they are not hypothetical: it found 4 sites where a prototype of
+	# the same scan found 8, and the two missing shapes are the ones below -
+	# one of them `command_schema_test`'s own, the site TRAPS 105 is about.
+	var via_local := "\tvar whitelist: Array = CommandParser.allowed_" + "commands()\n\tfor command in whitelist:\n\t\tvar row = table[command]\n"
+	var local_sites := _keyed_reads(via_local)
+	_check(local_sites.size() == 1 and not bool((local_sites[0] as Dictionary)["guarded"]),
+		"a registry call assigned to a local and the LOCAL iterated is still a registry-keyed loop")
+
+	var via_alias := loop + "\t\tvar name := str(command)\n\t\tvar row = table[name]\n"
+	var alias_sites := _keyed_reads(via_alias)
+	_check(alias_sites.size() == 1 and not bool((alias_sites[0] as Dictionary)["guarded"]),
+		"and a key DERIVED from the loop variable - str(command) - is still a key from elsewhere")
+
+	# A WRITE creates the key and cannot throw, so it is not a site at all.
+	_check(_keyed_reads(loop + "\t\tout[command] = 1\n").is_empty(),
+		"a write to a table under a registry key is not a site, because an assignment creates the key")
+
+	# AND THE LOOP SOURCE MATTERS. The same read keyed off a local collection
+	# is not in the class: the keys came from the table's own author.
+	_check(_keyed_reads("\tfor command in SOUND:\n\t\tvar row = table[command]\n").is_empty(),
+		"while a loop over a local collection is not scanned at all, so section 6's sites are registry-keyed and not every index read in tests/")
+
 	print("SOURCE SCAN %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)
+
+
+# --- 106: a table indexed by a key that came from a registry (TRAPS 105) ---
+#
+# WHERE THIS CAME FROM. 105 found that `command_schema_test` asserted
+# `table.has(command)` off the whitelist and then read `table[command]` by
+# index fourteen lines below the assertion. An assertion in these suites
+# RECORDS and falls through, so a whitelisted command with no row reached the
+# index read, which THROWS - and a script error in a `SceneTree` abandons
+# `_initialize` before `quit()`, so the suite took the runner's 600-second
+# timeout and printed none of the rows it had already found, including the one
+# naming exactly what was wrong. Latent for 76 commits.
+#
+# 105 FIXED THE INSTANCE AND READ THE CLASS BY HAND: seven suites key a
+# hand-written table on an enumerated whitelist or registry, six already
+# guarded it, `command_schema_test` was the only outlier. **That reading was
+# a reading.** Nothing asserted that the six keep their guards, and 105 wrote
+# that down as its own next entry rather than leaving it to be rediscovered.
+# This section is that assertion.
+#
+# WHAT IS A KEY "FROM ELSEWHERE", and the scope is NAMED because a grep has a
+# scope and a rule does not (TRAPS 98). In scope: the loop variable of a
+# `for ... in <accessor>()` over one of the registry and whitelist accessors
+# in `_registry_calls()`, and anything DERIVED from it - `var word :=
+# str(command)`, `var cmd := m.command()` - because a value computed from a
+# member the table's author never saw is just as absent from the table.
+#
+# NOT IN SCOPE, said plainly rather than quietly skipped:
+#   - per-member accessors that also answer with keys from elsewhere -
+#     `module.lists()`, `t.defaults()`, `FarmModule.CROP_COLOURS.keys()`.
+#     Measured: 6, 3 and 1 `for ... in` sites in tests/ today. The rule
+#     covers them; this scan does not, and that is a bounded exclusion with
+#     a note attached rather than a closed question (TRAPS 90).
+#   - `scripts/`. The fault 105 found was in a suite, and so is every member
+#     of the class it read. The same question asked of `scripts/` is a
+#     different scan.
+#   - a key reached through a function call rather than a local - a table
+#     indexed inside a helper the loop calls. This scan is per-loop-body and
+#     does not follow calls.
+#
+# AND THE SCAN IS NOT TRUSTED ON ITS OWN SAY-SO. Section 7 drives
+# `_keyed_reads()` with synthetic sources whose answer is known, including the
+# shape TRAPS 105 is actually about - a `has()` ASSERTION with no `continue`
+# under it - so a classifier that answered "guarded" to everything, or that
+# found nothing at all, fails there rather than passing here in silence.
+
+
+# The CODE of every .gd in scripts/, concatenated. Its own read in its own
+# function, with its own null question, because scan_floor_test holds both of
+# those about every directory read in tests/ (078, 083) - and the floor that
+# says what fails when it comes back empty is section 6's first assertion.
+func _scripts_code() -> String:
+	var out := ""
+	var dir := DirAccess.open("res://scripts")
+	if dir == null:
+		return out
+	for file_name in dir.get_files():
+		var name := str(file_name)
+		if not name.ends_with(".gd"):
+			continue
+		var handle := FileAccess.open("res://scripts/" + name, FileAccess.READ)
+		if handle == null:
+			continue
+		out += _code_of(handle.get_as_text())
+		handle.close()
+	return out
+
+
+# Every registry-keyed table read in tests/, as
+# {"file","where","guarded"} per site. A DERIVED class: a suite that keys a
+# table on a registry tomorrow is a site by arriving, with no row to add
+# anywhere.
+func _registry_keyed_class() -> Array:
+	var out: Array = []
+	var dir := DirAccess.open("res://tests")
+	if dir == null:
+		return out
+	for file_name in dir.get_files():
+		var name := str(file_name)
+		if not name.ends_with(".gd"):
+			continue
+		var handle := FileAccess.open("res://tests/" + name, FileAccess.READ)
+		if handle == null:
+			continue
+		var found := _keyed_reads(_code_of(handle.get_as_text()))
+		handle.close()
+		for site in found:
+			var row: Dictionary = site
+			out.append({
+				"file": name,
+				"where": "%s:%d  %s[%s]" % [name, int(row["line"]), str(row["table"]), str(row["key"])],
+				"guarded": bool(row["guarded"]),
+			})
+	return out
+
+
+# The accessors that answer with members a table's author never saw. Split
+# across a `+` for the same reason `_needles()` is: this file is itself in
+# `tests/` and this scan reads every file there, so a name written whole here
+# would be a name this suite could find in its own source.
+#
+# EACH ONE IS ASSERTED TO STILL EXIST in `scripts/` below. A renamed accessor
+# would otherwise empty this scan silently, which is the one failure mode a
+# grep-shaped check has (TRAPS 6): finding nothing looks exactly like finding
+# nothing wrong.
+func _registry_calls() -> Array:
+	return [
+		"CommandParser.allowed_" + "commands()",
+		"ToolRegistry." + "tools()",
+		"ToolRegistry." + "names()",
+		"ToolRegistry.free_" + "kit()",
+		"WorldRegistry." + "modules()",
+		"WorldRegistry." + "commands()",
+	]
+
+
+# Every `TABLE[key]` READ inside a registry-keyed loop in one source, as
+# {"table","key","line","guarded"}. The source is expected to be CODE already
+# - comments blanked by _code_of() - so nothing a comment says can add a site
+# or take one away.
+#
+# GUARDED means: somewhere above the read, inside the same loop body, a line
+# says `not TABLE.has(<the key or an alias>)` AND the block indented under
+# that line reaches a `continue` or a `return`. The second half is the whole
+# point: TRAPS 105's fault had the membership question ASKED fourteen lines
+# above the read and nothing acting on the answer, so a check that accepted
+# `has()` alone would have called the fault guarded.
+func _keyed_reads(code: String) -> Array:
+	var out: Array = []
+	var lines := code.split("\n")
+	var in_for := RegEx.create_from_string("^([\\t ]*)for[\\t ]+([A-Za-z_][A-Za-z0-9_]*)[\\t ]+in[\\t ]+(.+):[\\t ]*$")
+	var alias_of := RegEx.create_from_string("^[\\t ]*var[\\t ]+([A-Za-z_][A-Za-z0-9_]*)[^=]*:?=[\\t ]*(.*)$")
+	var words := RegEx.create_from_string("[A-Za-z_][A-Za-z0-9_]*")
+
+	# A registry call assigned to a local and the LOCAL iterated, which is what
+	# `command_schema_test` and `record_proposal_test` both do - `var whitelist:
+	# Array = CommandParser.allowed_commands()`, then `for command in
+	# whitelist:`. The first version of this function matched only the call on
+	# the `for` line itself and therefore MISSED THE CANONICAL SITE, the one
+	# TRAPS 105 is about. Measured against a prototype of the same scan rather
+	# than reasoned about, and it is why section 7 controls this shape.
+	var from_registry := {}
+	for i in range(lines.size()):
+		var m := alias_of.search(str(lines[i]))
+		if m == null:
+			continue
+		for call_name in _registry_calls():
+			if m.get_string(2).contains(str(call_name)):
+				from_registry[m.get_string(1)] = true
+
+	for i in range(lines.size()):
+		var head := in_for.search(str(lines[i]))
+		if head == null:
+			continue
+		var source := head.get_string(3)
+		var is_registry := false
+		for call_name in _registry_calls():
+			if source.contains(str(call_name)):
+				is_registry = true
+		if from_registry.has(source.strip_edges()):
+			is_registry = true
+		if not is_registry:
+			continue
+		var base := head.get_string(1).length()
+
+		# The body: every line indented further than the `for`, blanks
+		# included so a blank line does not end a loop.
+		var body: Array = []
+		var j := i + 1
+		while j < lines.size():
+			var line := str(lines[j])
+			if line.strip_edges() == "":
+				body.append(j)
+				j += 1
+				continue
+			if (line.length() - line.lstrip("\t ").length()) <= base:
+				break
+			body.append(j)
+			j += 1
+
+		# The keys: the loop variable, and anything a `var` in the body
+		# computes from a key already known.
+		var keys := {head.get_string(2): true}
+		for n in body:
+			var m := alias_of.search(str(lines[n]))
+			if m == null:
+				continue
+			# ANY identifier derived from a known key makes the result a key
+			# too: `var name := str(command)` and `var cmd := m.command()` are
+			# both values the table's author never saw. The first version took
+			# the FIRST identifier in the expression, which read `str` out of
+			# `str(command)` and lost four sites - measured, which is the only
+			# reason this reads the whole expression.
+			for word in words.search_all(m.get_string(2)):
+				if keys.has(word.get_string(0)):
+					keys[m.get_string(1)] = true
+
+		for n in body:
+			var line := str(lines[n])
+			for key in keys.keys():
+				var read := RegEx.create_from_string("([A-Za-z_][A-Za-z0-9_]*)[\\t ]*\\[[\\t ]*" + str(key) + "[\\t ]*\\]([\\t ]*=[^=]|[\\t ]*$)?")
+				for hit in read.search_all(line):
+					# `out[key] = x` WRITES the key and cannot throw. Only a
+					# read is a site.
+					var trailing := hit.get_string(2)
+					if trailing != "" and trailing.strip_edges().begins_with("="):
+						continue
+					out.append({
+						"table": hit.get_string(1),
+						"key": str(key),
+						"line": n + 1,
+						"guarded": _guarded_above(lines, body, n, hit.get_string(1), keys),
+					})
+	return out
+
+
+# Is there a `not TABLE.has(<a key>)` above `at`, in this body, with a
+# `continue` or `return` in the block under it?
+func _guarded_above(lines: PackedStringArray, body: Array, at: int, table: String, keys: Dictionary) -> bool:
+	for n in body:
+		if int(n) >= at:
+			break
+		var line := str(lines[int(n)])
+		var asks := false
+		for key in keys.keys():
+			if line.contains("not " + table + ".has(" + str(key) + ")"):
+				asks = true
+		if not asks:
+			continue
+		# The block under the question. An assertion is not a gate: if
+		# nothing here leaves the iteration, the read below is reached
+		# anyway, which is exactly the fault TRAPS 105 is about.
+		var indent := line.length() - line.lstrip("\t ").length()
+		var k := int(n) + 1
+		while k < lines.size():
+			var under := str(lines[k])
+			if under.strip_edges() == "":
+				k += 1
+				continue
+			if (under.length() - under.lstrip("\t ").length()) <= indent:
+				break
+			if under.contains("continue") or under.contains("return"):
+				return true
+			k += 1
+	return false
+
 
 
 # The CODE of a .gd source: comment lines blanked and trailing comments cut,

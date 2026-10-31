@@ -13,6 +13,138 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
+- Last commit at the time of writing: **106**, which took **the second live
+  entry as of 105** - *six suites guard their whitelist-keyed table correctly
+  today, and nothing asserts that they keep doing so* - and **built the scan
+  that entry described**, which the entry had flagged as possibly coming back
+  *"no, and a line in TRAPS is the right weight for this"*. It came back yes.
+  New TRAPS **106**, and it is about **this commit's own first version**. No
+  new file. `tests/source_scan_test.gd` **33 -> 51** assertions,
+  `tests/scan_floor_test.gd` **120 -> 130**. `scripts/` is **0 lines of
+  diff** - no player meets any of this. One new live entry, measured and
+  deliberately not fixed. No new "Human decision needed".
+
+  **WHAT IT HOLDS.** `source_scan_test` sections 6 and 7: every `TABLE[key]`
+  **read** in `tests/` where the key came from a loop over one of the registry
+  or whitelist accessors in `scripts/` must have a `has()`-and-leave gate
+  above it. **Measured: 10 sites in 5 files, all 10 guarded today** -
+  `command_schema_test` (2, the ones 105 fixed), `plan_said_test` (3),
+  `says_nothing_test` (3), `controller_reach_test` (1),
+  `panel_refused_test` (1). The class is DERIVED, so a suite that keys a table
+  on a registry tomorrow is a site by arriving with no row to add anywhere.
+
+  **AND THE FIRST VERSION OF THAT SCAN FOUND 4 OF THE 10, WHICH IS TRAPS 106
+  AND IS THIS COMMIT'S REAL FINDING.** It matched an accessor only where it
+  appeared ON the `for` line, and took the FIRST identifier of an alias
+  expression as the key. So it missed `var whitelist: Array =
+  CommandParser.allowed_commands()` followed by `for command in whitelist:` -
+  **which is `command_schema_test`'s own shape, the site TRAPS 105 is about** -
+  and it missed `var name := str(command)`, reading `str` as the key. **The
+  scan written to hold 105's fix could not see 105's fault, and it reported
+  "every one of them has a gate above it" and passed.** What exposed it was a
+  throwaway prototype of the same scan in another language, run over the same
+  directory BEFORE the suite was written to measure the population it would
+  face: it counted 8 by a different route and with two false positives of its
+  own, and the disagreement is what got both sides read. Both shapes are now
+  controls in section 7, written for the bugs that were actually made.
+
+  **AND THE BREADTH LINE DID NOT CATCH IT**, which is worth recording because
+  a breadth line is what TRAPS 105 itself prescribes. It printed *"4 table
+  read(s) ... in 2 file(s)"* and passed: a `> 0` floor fires on an empty read
+  and says nothing about a read that is 40% complete.
+
+  **VERIFIED:**
+  **BASELINE WAS A FRESH `git clone` OF THE PUSHED COMMIT `8c3a151`** with its
+  own `config/name` and its own empty `user://`, `--all`, same Godot
+  (4.7.1.stable.official.a13da4feb, `--version` read):
+  **`c69c26ebdb93e3fc472caadffaf9ee1d`, 78 suites, 0 with something to look
+  at - BYTE-IDENTICAL to the md5 105 and 105a both recorded**, which is the
+  ninth independent container to reproduce it. A second run in the working
+  copy on the clean tree gave the same md5.
+  **THE AFTER-RUN MOVED EXACTLY THE TWO LINES PREDICTED**, `--all`, `user://`
+  cleared: `scan_floor_test` 120 -> 130 and `source_scan_test` 33 -> 51, **0
+  suites with something to look at**, md5
+  `45a3d1955464944401e7b5e1bb9c034c`. `diff` against the baseline is those two
+  lines and nothing else.
+  **THE SCAN WAS PROVEN TO FIRE ON REAL CODE, THREE TIMES, each injection
+  alone in its own copy with its own `config/name`** - one guard deleted from
+  a real suite, nothing else touched:
+
+  | guard removed from | the shape it exercises | what section 6 said |
+  |---|---|---|
+  | `command_schema_test` | accessor via a local | `FAIL ... command_schema_test.gd:471  table[command]` |
+  | `panel_refused_test` | key via `str(command)` | `FAIL ... panel_refused_test.gd:324  requests[name]` |
+  | `says_nothing_test` | key via `m.command()` | `FAIL ... says_nothing_test.gd:541  SOUND[cmd]` |
+
+  Each was `51 assertions, failures=1`, and **the site count stayed 10 in all
+  three** - removing a guard does not remove a site, which is the arithmetic
+  the breadth line and the guard check are meant to keep separate.
+  **AND THE COST THE MESSAGE CLAIMS WAS RE-MEASURED HERE RATHER THAN
+  INHERITED FROM 105** (TRAPS 14: the message is a claim about Genesis and
+  gets checked like one). Cutting the `OPEN` row from `command_schema_test`'s
+  table, twice, in two copies:
+
+  | `OPEN` row cut | guard removed | guard intact |
+  |---|---|---|
+  | exit | **124**, killed at 90 s | 2 |
+  | script errors | **1**, `Invalid access to property or key 'OPEN'` | 0 |
+  | verdict line | **none** | `COMMAND SCHEMA 184 assertions, failures=2` |
+  | named `FAIL`s | **0** | `there is a row for OPEN`, and 105's floor firing at `10 of 11; not probed: ["OPEN"]` |
+
+  **AND THE CIRCULARITY EVERY COMMIT SINCE 093 HAS RECORDED WAS CHECKED
+  RATHER THAN REPEATED.** Nothing in `tests/` reads `docs/`: the grep for
+  `FileAccess` or `DirAccess` against a `docs` path in `tests/` returns
+  **nothing**. `docs/` is MENTIONED 16 times across 10 files, 15 of them in
+  comments and **one inside an assertion message** (`field_type_test.gd:635`,
+  which names `docs/harness/README.md` as a file that would need rewriting) -
+  so the standing sentence "ten hits and every one of them is a comment" is
+  read here as 16 and 15, measured this session rather than carried forward.
+
+  **NOT VERIFIED:**
+  **THE PREDICTION WAS RIGHT ABOUT BOTH END NUMBERS AND WRONG ABOUT ONE START
+  NUMBER, AND IT IS WRITTEN DOWN RATHER THAN TIDIED.** It said
+  `scan_floor_test` **124 -> 130**; the clean baseline says **120 -> 130**.
+  The 124 was read off a single-suite run taken on the ALREADY-MODIFIED tree -
+  the two new directory reads had added four assertions to `scan_floor_test`
+  before the number was written down - so it was a measurement of a tree that
+  was not the baseline, quoted as if it were. The end number and the
+  "nothing else moves" claim both held exactly.
+  **THE SCOPE IS NAMED AND IS NARROWER THAN THE RULE** (TRAPS 98). Not
+  scanned: per-member accessors that also answer with keys from elsewhere -
+  `module.lists()`, `t.defaults()`, `FarmModule.CROP_COLOURS.keys()`,
+  measured at **6, 3 and 1** `for ... in` sites in `tests/` today; `scripts/`,
+  where the same question is a different scan; and a table indexed inside a
+  helper the loop calls, since the scan is per-loop-body and does not follow
+  calls. All three are stated in the suite's own header, not only here.
+  **NOTHING ASSERTS THE SIX GUARDS ARE *CORRECT*, ONLY THAT THEY ARE THERE
+  AND LEAVE THE LOOP.** A gate that `continue`s on the wrong condition passes
+  section 6.
+  **NO LIVE PATH TO A MODEL WAS DRIVEN.** No model was asked anything, no
+  request left the container, there is no API key here, no browser ran, no web
+  export was made, `interpret.js` was not executed.
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is still **2026-10-16**, checked by grepping every
+  `OWNER, 2026-1[01]-*` marker in `HANDOVER.md` and `TRAPS.md` - the grep
+  returns five, all `2026-10-14`.
+  **064'S FINDING IS CARRIED FORWARD AND NOT RE-VERIFIED.**
+
+  **NOTHING IN `scripts/`, `scenes/`, `netlify/`, `.github/`, `project.godot`,
+  `export_presets.web.cfg` OR EITHER RUNNER WAS TOUCHED** - no file was added
+  or removed, so `tests/` keeps **80** `.gd` and **80** `.uid` (counted with
+  `ls`), no list in either runner can be short one (TRAPS 4), and
+  `README.md`'s suite count cannot have moved. `ai_interpreter.gd` is 0 lines
+  of diff, so `PROMPT_FINGERPRINT` and `PROMPT_VERSION` cannot have moved -
+  and `prompt_bounds_test` is green on the after-run, which is the
+  measurement of that rather than the inference. Every injection was in a
+  throwaway copy under the scratch directory with its own `config/name`,
+  never in the repository.
+
+  **AND WHAT CHANGED FOR ANYONE USING GENESIS: NOTHING, AND THAT IS STATED
+  PLAINLY.** `scripts/` is 0 lines of diff. What changed is that the next
+  suite to key a table on a registry without a gate is named, by file and
+  line, in two seconds - instead of hanging the harness for ten minutes and
+  printing nothing, which is what it did for 76 commits.
+
 - Last commit at the time of writing: **105**, which took **the `NOT MEASURED`
   half of the first live entry as of 104** - *what a complete fourth WORLD
   MODULE costs; the number of hand-typed sites on that side is unknown and is
@@ -14083,6 +14215,63 @@ not re-take 104's six injections or its negative control** - they are in the
 own `config/name`, and the property they attribute is
 `tests/claim_field_test.gd` rather than a table in a document.
 
+**NOTHING IS OWED FROM 106 EITHER.** Its baseline was a fresh `git clone` of
+the pushed commit `8c3a151` with its own `config/name` and its own empty
+`user://`, and it **reproduced `c69c26ebdb93e3fc472caadffaf9ee1d` byte-for-byte
+from a NINTH independent container** (78 suites, 0 with something to look at) -
+the same md5 105 and 105a both recorded. It wrote its predicted diff down
+before running, took the after-run with `--all` and `user://` cleared, and
+`diff` against the baseline is the **two** lines it predicted
+(`45a3d1955464944401e7b5e1bb9c034c`). **There is no 106a**, because the
+after-run was taken on the complete tree, `docs/` included, and the only edits
+after it were to this file and `docs/TRAPS.md`, which nothing in `tests/`
+reads. **Do not start by re-running on 106's behalf**; take your own baseline
+so you learn the record and the container still agree, and spend the time on
+the work below. **And do not re-take 106's three guard-deletion injections or
+its two `OPEN`-row controls** - they are in the 106 entry with their counts,
+each was measured alone in its own copy with its own `config/name`, and the
+property they attribute is `tests/source_scan_test.gd` rather than a table in
+a document.
+
+**THE FIRST LIVE ENTRY AS OF 106, MEASURED WHILE DOING SOMETHING ELSE AND
+DELIBERATELY NOT FIXED: `scan_floor_test`'s SECTION 2 CANNOT FAIL, AND ITS
+MESSAGE STATES A PROPERTY OF `tests/` THAT IT DOES NOT TEST.**
+Section 2 prints *"no function in tests/ opens two directories, so one row
+answers for one read"*. What it asserts is that the site KEYS are unique - and
+`_scan()` **constructs** them to be: a function with one read is keyed
+`file.gd::func`, and a function with two is keyed `file.gd::func#1` and
+`file.gd::func#2`. There is no input for which `collided` is non-empty.
+**MEASURED, NOT ARGUED.** A second `DirAccess.open("res://scripts")` was added
+to `_registry_keyed_class()` in a throwaway copy with its own `config/name`,
+so that one function in `tests/` really did open two directories:
+**section 2 PASSED and printed that sentence**, while three OTHER assertions
+failed - section 1's, demanding rows for the two new `#1`/`#2` keys, and the
+stale-row check on the old key. `130 assertions, failures=3`, and none of the
+three was section 2's.
+**WHY IT IS COUNTED AND NOT FIXED, and this is the part that decides the
+weight.** The COVERAGE the sentence is about is **not** actually missing: the
+ordinal is what makes a second read in one function arrive as a failure, by
+making the keys change, and section 1 catches it immediately - measured above.
+So this is a **false sentence over a working mechanism**, not a hole. That is
+TRAPS 14's shape exactly, and the comment above section 2 makes it worse
+rather than better: it says *"Two opens in one function would collide, and the
+row would silently answer for whichever was asked first. Asserted rather than
+assumed."* **They do not collide, they have not been able to collide since the
+ordinal was written, and the thing asserted is the ordinal's own arithmetic.**
+**WHAT WOULD HOLD IT, and the choice is real.** Either (a) delete section 2
+and say in its place that the ordinal is what holds this, with section 1 named
+as the check that fires - which removes an assertion and adds no coverage, and
+is probably right; or (b) keep an assertion and point it at something that can
+fail - that two sites in one function get DIFFERENT keys, driven on a built
+source the way section 6 drives the classifier, which is a test of `_scan()`'s
+arithmetic and would have to be written to fail if the ordinal were removed.
+**(b) is the shape this project usually chooses** and it is four lines; (a) is
+the honest minimum. **Not chosen here**, because this commit's subject is
+`source_scan_test` and rewriting a second suite's assertion on the way past is
+the instance-and-not-the-class mistake in reverse - a change to a file I was
+measuring, not fixing (TRAPS 11's companion). One reading, one of two shapes,
+and the measurement above is already taken.
+
 **NOTHING IS OWED FROM 105 EITHER.** Its baseline **reproduced the md5 104
 recorded, byte-for-byte, from an EIGHTH independent container with its own
 Godot download** (`99fa58e38dd2f2711e1d0261dfed668c`, 78 suites, 0 with
@@ -14141,9 +14330,29 @@ walkable or drivable module, or one declaring the optional steps, would be
 asked more questions than this one was. **18 is a FLOOR on the module side,
 not the number**, and one injection of a walkable module answers it.
 
-**THE SECOND LIVE ENTRY AS OF 105, NAMED BECAUSE 105 RELIED ON IT AND NOTHING
-HOLDS IT: SIX SUITES GUARD THEIR WHITELIST-KEYED TABLE CORRECTLY TODAY, AND
-NOTHING ASSERTS THAT THEY KEEP DOING SO.**
+**~~THE SECOND LIVE ENTRY AS OF 105, NAMED BECAUSE 105 RELIED ON IT AND
+NOTHING HOLDS IT: SIX SUITES GUARD THEIR WHITELIST-KEYED TABLE CORRECTLY
+TODAY, AND NOTHING ASSERTS THAT THEY KEEP DOING SO.~~ DONE IN 106, AND THE
+SCAN'S OWN FIRST VERSION FOUND 4 OF THE 10 SITES.** `source_scan_test`
+sections 6 and 7 hold it now: 10 registry-keyed table reads in 5 files, all 10
+guarded, the class DERIVED so a new one arrives as a site, and the guard
+question asking for a `has()`-and-leave gate rather than for a `has()` -
+because 105's fault had the membership question asked fourteen lines above the
+read and nothing acting on the answer. Proven to fire by deleting one real
+guard in each of three suites. **The entry's doubt was the useful part and was
+answered the hard way**: it asked whether the `table[command]`-versus-
+`specs[label]` distinction was expressible in a scan, and it is - section 7's
+last control is exactly that case - but the first version of the scan was
+narrow in two other directions and **could not see `command_schema_test`'s own
+site, the one TRAPS 105 is about**, while printing that every site it found
+was guarded. See TRAPS 106 and the 106 entry above. **Struck rather than
+deleted, because its warning that such a scan's breadth is the only thing its
+absences are worth (078, TRAPS 6) is the sentence that paid - and because what
+caught the narrowing was not the breadth line it prescribed but a second,
+independent count.**
+
+**AND THE ORIGINAL ENTRY, KEPT VERBATIM BECAUSE ITS READING WAS RIGHT AND ITS
+DOUBT WAS HONEST:**
 105's fix was small precisely because six of the seven members of the class
 already had the guard - `record_proposal_test` (045), `ledger_said_test`,
 `intent_door_test`, `plan_said_test`, `panel_refused_test`,
