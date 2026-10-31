@@ -11,6 +11,31 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
+- Last commit at the time of writing: **113a**, which is **docs only** - 0
+  lines of diff in `scripts/`, `tests/` and `.github/`, no new finding about
+  Genesis, no new claim about its behaviour, no new live entry. It records one
+  measurement, the one 113's commit message left owed: **a fresh `git clone`
+  of the pushed commit `6be4cd5` runs byte-identical to the two runs 113
+  took** - `1a4164e18f2bc1ddad829fcd9d34b6b2`, 78 suites, 0 with something to
+  look at, `procedure_test` **299, failures=0**, `prompt_bounds_test` **72,
+  failures=0** - with `git status --porcelain` **empty both before and after
+  the run**, so `project.godot` was not edited to take the measurement and
+  `user://` was cleared by deleting `app_userdata/AI_Game_Builder`. So the
+  tree on the remote is the tree that was measured, and the prompt the remote
+  carries is the one its own `PROMPT_FINGERPRINT` names - which matters more
+  for 113 than for the twelve commits before it, because 113 is the first in
+  eighteen to change a file under `scripts/`, and that constant is the only
+  thing standing between a prompt edit and a silent mismatch.
+  **NOTHING ELSE IN 113 WAS RE-MEASURED** - its baseline, its predicted diff
+  and its eight injections are 113's and are not re-taken. **No suite was run
+  against a modified tree by 113a**: the only edits since `6be4cd5` are to
+  `docs/HANDOVER.md`, and nothing in `tests/` reads `docs/`, checked this
+  commit rather than carried forward.
+  **WHAT CHANGED FOR ANYONE USING GENESIS: NOTHING, AND THAT IS STATED
+  PLAINLY.** `scripts/` is 0 lines of diff, the deploy still fails on two
+  unset secrets, and what a visitor sees is still commit `71b065f` from
+  2026-10-14.
+
 - Last commit at the time of writing: **113**, and it is **the first commit
   to change a file under `scripts/` in eighteen** - `git rev-list
   20426b9..HEAD` is **17**, counted this commit, and `104` (`20426b9`,
@@ -157,6 +182,12 @@ that the owner has not ruled on.** Do not promote one to the other.
   live path to a model was driven, no request left the container, there is no
   API key here. What is measured is that the clause is in the prompt the
   model is sent, and that the refusal it describes is real and fires by name.
+  **~~THERE IS NO 113a, AND THE CLONE RUN IS OWED.~~ TAKEN BY 113a, AND IT IS
+  A MEASUREMENT AND NOT AN INFERENCE**: a fresh `git clone` of the pushed
+  `6be4cd5` runs byte-identical to runs 2 and 3 at
+  `1a4164e18f2bc1ddad829fcd9d34b6b2`, 78 suites, 0 with something to look at,
+  `git status --porcelain` empty both before and after. See the run record
+  under "Run the tests first".
   **THE FOUR-MEMBER CLASS IS CLOSED; THE 71-MEMBER ONE IS NOT EVEN READ.**
   See the new live entry under "Next action".
   **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
@@ -8366,12 +8397,18 @@ rule the same way makes `validate()` return early, and a later section of the
 suite then indexes an absent key - three SCRIPT ERRORs and no assertion count,
 so the positive control is driven by the widened THING rule instead.
 
-**AND THERE IS NO 113a.** The three measurements a fourth run exists to take
-were taken in this commit: `git status --porcelain` was empty before the
-baseline, the final md5 is above, and the diff against the baseline is one
-line. What 104a and 106a through 112a were each written for is a reading of
-the pushed tree rather than an inference about it; **113 has not taken that
-reading**, and that is the one thing it leaves owed.
+**AND RUN 4 IS A FRESH `git clone` OF THE PUSHED COMMIT**, written in by 113a
+- `6be4cd5`, into its own directory, `git status --porcelain` **EMPTY both
+before and after the run** (so `project.godot` was not edited to take the
+measurement), `user://` cleared by deleting `app_userdata/AI_Game_Builder`,
+same Godot: **BYTE-IDENTICAL to runs 2 and 3**, md5
+`1a4164e18f2bc1ddad829fcd9d34b6b2`, 78 suites, 0 with something to look at,
+`procedure_test` **299, failures=0**, `prompt_bounds_test` **72,
+failures=0**. So the tree on the remote is the tree that was measured, and
+the prompt the remote carries is the one its own `PROMPT_FINGERPRINT` names.
+Taken for the reason 104a and 106a through 112a were each taken: the
+alternative is a sound inference about the remote in place of a reading of
+it, which is TRAPS 14's shape applied to this file.
 
 **112 ADDED NO FILE EITHER**, so the two numbers below did not move: `ls
 tests/*.gd` is **80** and the run reports **78** suites. It edited one file in
@@ -15911,9 +15948,17 @@ learn the record and the container still agree, and spend the time on the work
 below. **And do not re-take 113's eight injections** - they are in the 113
 entry with their counts, each alone in its own throwaway copy with its own
 `config/name`, and the property they attribute is `tests/procedure_test.gd`
-section 3b rather than a table in this file. **There is no 113a**: the three
-measurements a fourth run exists to take were taken in this one - porcelain
-empty at the baseline, the final md5, and the one-line diff.
+section 3b rather than a table in this file.
+
+**AND 113 HAS NOW HAD ITS FOURTH RUN, SO THERE IS GENUINELY NOTHING OWED.**
+113a cloned the pushed `6be4cd5` and reproduced
+`1a4164e18f2bc1ddad829fcd9d34b6b2` exactly, with porcelain empty on both
+sides. **Do not start by re-running on 113a's behalf either.** (The sentence
+this replaced said *"there is no 113a"*, on the grounds that 113 had taken the
+three measurements a fourth run exists for - porcelain empty at the baseline,
+the final md5, and the one-line diff. That was a sound inference about the
+remote in place of a reading of it, which is exactly what 104a and 106a
+through 112a were each written to avoid, so the reading was taken instead.)
 
 **THE FIRST LIVE ENTRY AS OF 113, AND IT IS A READ RATHER THAN MACHINERY:
 71 REFUSALS IN `scripts/`, AND NOBODY HAS ASKED OF ANY OF THEM WHETHER THE
