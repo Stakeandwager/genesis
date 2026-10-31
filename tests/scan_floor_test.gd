@@ -247,6 +247,13 @@ const FLOORS := {
 		"floor": "not declared.is_empty()",
 		"why": "106: the accessor needles are checked against this text, and a scan whose needles have been renamed finds nothing - which looks exactly like finding nothing wrong (TRAPS 6)",
 	},
+	# 108: the third read in that file, arriving with the counter-equality
+	# scan, and this suite named it on the run that added it - which is the
+	# class working rather than a chore.
+	"source_scan_test.gd::_counter_equality_class": {
+		"floor": "eq_sites.size() > 0",
+		"why": "108: section 8 asks a hand-written table to name the WHOLE class rather than a floor of it, and an empty read satisfies such a table trivially - every site it found has a row, because it found none. The breadth line is the only thing between that and a clean result",
+	},
 }
 
 
@@ -736,6 +743,17 @@ func _run() -> void:
 		_check(checked,
 			"%s:%d tests %s for null in %s, rather than throwing on it" % [
 				str(s["file"]), int(s["line"]), name if name != "" else "<unnamed>", str(s["func"])])
+	# WHICH HALF OF THIS `and` IS LIVE, because they are not the same kind of
+	# claim and 107 named that without writing it here. `> 0` is the
+	# measurement: it fires if the classifier ever calls every open a
+	# get_files_at, which is the silence this section is about. The EQUALITY
+	# cannot fail on anything in tests/ - open_kind is counted off the same
+	# `sites` on the same kind == open, one on a match arm and one after a
+	# continue on its negation - so it is a guard against a change to THIS
+	# section's own predicate and not a count of the directory. Kept and
+	# labelled rather than deleted, which is what TRAPS 6 says to do with a
+	# check that cannot fail, and held centrally by source_scan_test section 8
+	# so the shape is read everywhere it occurs rather than here alone.
 	_check(asked_for_null == open_kind and asked_for_null > 0,
 		"and the null question was put to every site that has a handle to test: %d of %d" % [asked_for_null, open_kind])
 

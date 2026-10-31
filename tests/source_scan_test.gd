@@ -171,6 +171,63 @@ const KNOWN := [
 ]
 
 
+# --- 108: an equality between two counts the suite derived from ONE collection
+#          (HANDOVER's first live entry as of 107) ---
+#
+# WHERE THIS CAME FROM. 107 fixed `scan_floor_test`'s section 2 - an assertion
+# that could not fail under a sentence that was the opposite of the truth
+# (TRAPS 107) - and named its weaker sibling: section 3's
+# `asked_for_null == open_kind`, where BOTH counters are incremented while
+# walking `sites` under the same predicate, so the equality cannot fail. It
+# then asked the question it could not answer in one commit: HOW MANY MORE OF
+# THAT SHAPE ARE THERE, in the 76 suites it did not read?
+#
+# THIS TABLE IS THE ANSWER, AND THE SHAPE TURNED OUT NOT TO BE THE CLASS.
+# FOUR sites in THREE files, measured over all 80 files in tests/ - and
+# exactly ONE of the four is vacuous. The other three compare counts taken
+# under DIFFERENT predicates over one collection, which is a real question
+# with a real answer. So "two counts of one array" is a shape a reader must
+# look at, not a fault; the verdict is per site and is written here.
+#
+# WHY A TABLE AND NOT A PASS/FAIL RULE, said plainly because it is the honest
+# limit of this section. Telling the vacuous case from the live one means
+# deciding whether two predicates are equivalent - `match str(kind): "open":`
+# against `if str(kind) != "open": continue` - and that is not decidable by a
+# scanner. What IS decidable is the shape. So the scan finds the shape, every
+# site must carry a row, and the row carries the reading. A fifth site
+# arriving fails here BY NAME with nothing to read it, which is the only thing
+# this section can honestly promise.
+#
+# AND TRAPS 106's RULE APPLIES BEFORE ANY OF IT IS BELIEVED: the scan must
+# find the instance the rule came from, by file and function, or it holds
+# nothing. It is asserted by name in section 8, not left to the table. The
+# first route to this enumeration - a prototype in another language, run over
+# the same directory before any of this was written - MISSED that instance,
+# because `open_kind` is incremented on a `match` arm (`"open": open_kind +=
+# 1`) and the prototype only matched `+=` at the start of a line. It reported
+# 3 sites in 3 files and one of the three was a parse artifact: a `(` inside a
+# string literal ran its reader past the end of a `_check(` and swallowed the
+# next assertion whole. Both narrownesses are controlled in section 9.
+const COUNTER_EQUALITIES := {
+	"layout_key_test.gd::_lane_width_is_the_threshold::written==farms": {
+		"verdict": "CAN FAIL",
+		"why": "`farms` counts the iterations that got past both `continue`s; `written` counts the subset of those whose layout has a lane_width key. A solve() that stopped writing the key makes written < farms, which is the thing asserted",
+	},
+	"scan_floor_test.gd::_run::files_at_kind,open_kind==sites.size()": {
+		"verdict": "CAN FAIL",
+		"why": "107 read this one and said so: it is vacuous only until a THIRD reading idiom is classified, and on that day the sum stops balancing and names itself. A guard against a real future change, which is what TRAPS 6 says to keep and label",
+	},
+	"scan_floor_test.gd::_run::asked_for_null==open_kind": {
+		"verdict": "CANNOT FAIL ON tests/",
+		"why": "THE INSTANCE THIS SECTION EXISTS FOR. Both counters walk `sites` and both advance on kind == open - one on a `match` arm, one after a `continue` on the negation - so no input to that scan can separate them. The `> 0` conjunct beside it IS live: it fires if the classifier ever calls every open a get_files_at. Labelled in scan_floor_test section 3 rather than deleted, because the equality still fires on a change to that section's own predicate (measured in 108)",
+	},
+	"source_scan_test.gd::_run::mentions==on_extends": {
+		"verdict": "CAN FAIL",
+		"why": "`mentions` counts every line of session_test.gd naming a res:// source path; `on_extends` counts the subset that begin with `extends`. A second mention anywhere else in that file makes them differ, which is the claim section 4 is making. 107 said it had read every _check in THIS file and did not name this one - so the shape was under-counted in the file the question was asked from",
+	},
+}
+
+
 func _check(ok: bool, what: String) -> void:
 	asserted += 1
 	if ok:
@@ -456,10 +513,6 @@ func _run() -> void:
 	# six authors each wrote the guard; nothing asked them to and nothing
 	# noticed the one that did not. This asks.
 	#
-	# THE ACCESSORS FIRST, because a scan whose needles have been renamed
-	# finds nothing and finding nothing looks exactly like finding nothing
-	# wrong (TRAPS 6). Each name is read back out of scripts/ as a declared
-	# function before the sweep is believed.
 	# THE ACCESSORS FIRST, because a scan whose needles have been renamed finds
 	# nothing, and finding nothing looks exactly like finding nothing wrong
 	# (TRAPS 6). Each name is read back out of scripts/ as a declared function
@@ -550,6 +603,131 @@ func _run() -> void:
 	# is not in the class: the keys came from the table's own author.
 	_check(_keyed_reads("\tfor command in SOUND:\n\t\tvar row = table[command]\n").is_empty(),
 		"while a loop over a local collection is not scanned at all, so section 6's sites are registry-keyed and not every index read in tests/")
+
+	# --- 8. every equality between two counts of ONE collection, and the
+	#        reading that rules on each one (HANDOVER's first live entry as of
+	#        107) ---
+	#
+	# The shape, over all of tests/ rather than the two files 107 read. See
+	# COUNTER_EQUALITIES above for where this came from, what the shape turned
+	# out to be, and why the verdict is a row and not an assertion.
+	var eq_sites := _counter_equality_class()
+	var eq_files := {}
+	var eq_keys := {}
+	for site in eq_sites:
+		var row: Dictionary = site
+		eq_files[str(row["file"])] = true
+		eq_keys[str(row["key"])] = str(row["where"])
+
+	# THE BREADTH IN ONE LINE, so a reader never infers it from an absence of
+	# failures (TRAPS 105's own rule, 078's floor). A scan that reached no code
+	# at all would report 0 of 0 and pass the two table assertions below it,
+	# because an empty class satisfies a table nobody is asked to match.
+	_check(eq_sites.size() > 0,
+		"%d assertion(s) comparing two counts of one collection were found in %d file(s) of tests/ - IF THIS FAILS, the scan reached no code: check _counter_equalities() against a built source in section 9 before believing tests/ has none" % [eq_sites.size(), eq_files.size()])
+
+	# TRAPS 106's RULE, FIRST AND BY NAME, because everything else here is a
+	# scan judging its own output: the instance this section was written for
+	# must be in the class the scan derives. It is named by file and function
+	# and counter, not by line, so moving it does not break this and renaming
+	# it does.
+	var came_from := "scan_floor_test.gd::_run::asked_for_null==open_kind"
+	_check(eq_keys.has(came_from),
+		"the instance this section came from is found by the scan that is supposed to hold it: %s at %s" % [
+			came_from, str(eq_keys.get(came_from, "NOT FOUND"))])
+
+	# EVERY SITE HAS A ROW, so a fifth one arriving fails here with nothing to
+	# read it rather than joining the class in silence.
+	for site in eq_sites:
+		var row: Dictionary = site
+		_check(COUNTER_EQUALITIES.has(str(row["key"])),
+			"%s has a row saying whether its equality can fail" % str(row["where"]))
+
+	# AND EVERY ROW IS STILL A SITE, so one LEAVING is noticed too - a row
+	# whose assertion was deleted or rewritten would otherwise sit here
+	# describing code that is gone, which is TRAPS 14's shape applied to this
+	# table.
+	for key in COUNTER_EQUALITIES:
+		_check(eq_keys.has(str(key)),
+			"%s is still an equality between two counts of one collection, so its row here is current" % str(key))
+
+	# AND THE TABLE IS NOT A LIST OF ONE KIND. If every row said CAN FAIL the
+	# table would be a formality; if every row said the opposite, the shape
+	# would be the class after all. Both verdicts are present, counted off the
+	# rows rather than stated in the comment above them.
+	var can_fail := 0
+	var cannot := 0
+	for key in COUNTER_EQUALITIES:
+		var row: Dictionary = COUNTER_EQUALITIES[key]
+		if str(row["verdict"]).begins_with("CAN FAIL"):
+			can_fail += 1
+		else:
+			cannot += 1
+		_check(not str(row["why"]).is_empty(),
+			"%s says why, in the row rather than in a comment" % str(key))
+	_check(can_fail > 0 and cannot > 0,
+		"and both verdicts are in the table, so the shape is a reading and not a rule: %d can fail, %d cannot" % [can_fail, cannot])
+
+	# --- 9. the counter-equality reader, on sources whose answer is known ---
+	#
+	# Section 8 is a shape check over code nobody wrote for it, so it can be
+	# satisfied by a reader that finds one site by luck and a table that was
+	# written from that one site. These are the controls, and the first two are
+	# the two narrownesses the first route to this enumeration actually had
+	# (TRAPS 106): not hypothetical, measured, and each one cost the scan the
+	# instance it was written to find.
+	var decl := "func _f() -> void:\n\tvar a := 0\n\tvar b := 0\n"
+	var two_loops := decl + "\tfor x in items:\n\t\ta += 1\n\tfor y in items:\n\t\tb += 1\n"
+
+	# THE MATCH ARM, which is how scan_floor_test counts open_kind and is the
+	# reason the first route reported 3 sites instead of 4.
+	var on_arm := decl + "\tfor x in items:\n\t\tmatch x:\n\t\t\t\"open\": a += 1\n\tfor y in items:\n\t\tif y: continue\n\t\tb += 1\n"
+	var arm_found := _counter_equalities(on_arm + "\t_check" + "(a == b, \"same\")\n")
+	_check(arm_found.size() == 1,
+		"a counter advanced on a match arm is still advanced inside its loop, which is the read the first route to this enumeration missed")
+
+	# THE BRACKET INSIDE A MESSAGE, which ran the first route's reader past the
+	# end of one _check( and made it report the NEXT assertion's text as a
+	# site. The message here closes a paren that was never opened in code.
+	var past_the_end := two_loops + "\t_check" + "(a == b, \"opens a ( and never closes it\")\n\t_check" + "(1 == 2, \"next\")\n"
+	var past_found := _counter_equalities(past_the_end)
+	_check(past_found.size() == 1 and int((past_found[0] as Dictionary)["line"]) == 8,
+		"and a bracket inside a message does not run the condition reader into the next assertion: %d site(s)" % past_found.size())
+
+	# THE PLAIN CASE, and the two things the key is built from.
+	var plain := _counter_equalities(two_loops + "\t_check" + "(a == b, \"same\")\n")
+	_check(plain.size() == 1, "two counters over one collection compared for equality is one site")
+	_check(str((plain[0] as Dictionary)["coll"]) == "items" and str((plain[0] as Dictionary)["left"]) == "a" and str((plain[0] as Dictionary)["right"]) == "b",
+		"and the collection and both counters are read off the code, which is what the row key is made of")
+
+	# DIFFERENT COLLECTIONS ARE NOT THE SHAPE: two counts of two things can
+	# differ for a reason that has nothing to do with either loop.
+	_check(_counter_equalities(decl + "\tfor x in items:\n\t\ta += 1\n\tfor y in others:\n\t\tb += 1\n\t_check" + "(a == b, \"x\")\n").is_empty(),
+		"while two counters over DIFFERENT collections are not in the class at all")
+
+	# A COUNT WITH NO LOOP BEHIND IT is not a count of a collection.
+	_check(_counter_equalities(decl + "\ta += 1\n\tfor y in items:\n\t\tb += 1\n\t_check" + "(a == b, \"x\")\n").is_empty(),
+		"and a counter advanced outside every loop is not a count of anything this section is about")
+
+	# A LITERAL IS NOT A COUNTER. refusal_reach_test's `worlds == 3` is the
+	# case: it asserts the registry's size against a number somebody typed,
+	# which is a different question and a falsifiable one.
+	_check(_counter_equalities(decl + "\tfor x in items:\n\t\ta += 1\n\t_check" + "(a == 3, \"x\")\n").is_empty(),
+		"and an equality against a typed number is not two counts of one collection")
+
+	# SIZE() ON THE RIGHT IS the shape - it is how scan_floor_test's
+	# conservation assertion is written - but only when the collection is the
+	# one the counters walked.
+	var summed := _counter_equalities(two_loops + "\t_check" + "(a + b == items.size(), \"x\")\n")
+	_check(summed.size() == 1 and str((summed[0] as Dictionary)["right"]) == "items.size()",
+		"a sum of two counters against the size of the collection they walked is one site")
+	_check(_counter_equalities(two_loops + "\t_check" + "(a + b == others.size(), \"x\")\n").is_empty(),
+		"and the same sum against the size of a DIFFERENT collection is not")
+
+	# AND THE SOURCE IS CODE. A site inside a comment is not a site, which is
+	# this file's own direction rule and the reason _code_of() is in the path.
+	_check(_counter_equalities(_code_of(two_loops + "\t# _check" + "(a == b, \"commented out\")\n")).is_empty(),
+		"and an assertion that exists only in a comment is not a site, because the scan reads what _code_of() leaves")
 
 	print("SOURCE SCAN %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)
@@ -818,6 +996,253 @@ func _guarded_above(lines: PackedStringArray, body: Array, at: int, table: Strin
 # only lose a code match and never invent one - so this is safe in the one
 # direction that matters: nothing a comment says can make a presence check
 # pass.
+
+# Every assertion in tests/ that compares two counts derived from ONE
+# collection, as {"file","key","where","left","right","coll","func"} per site.
+# A DERIVED class: a suite that writes one tomorrow is a site by arriving,
+# which is why COUNTER_EQUALITIES is asked to name the whole class rather than
+# a floor of it.
+func _counter_equality_class() -> Array:
+	var out: Array = []
+	var dir := DirAccess.open("res://tests")
+	if dir == null:
+		return out
+	for file_name in dir.get_files():
+		var name := str(file_name)
+		if not name.ends_with(".gd"):
+			continue
+		var handle := FileAccess.open("res://tests/" + name, FileAccess.READ)
+		if handle == null:
+			continue
+		var found := _counter_equalities(_code_of(handle.get_as_text()))
+		handle.close()
+		for site in found:
+			var row: Dictionary = site
+			out.append({
+				"file": name,
+				"key": "%s::%s::%s==%s" % [name, str(row["func"]), str(row["left"]), str(row["right"])],
+				"where": "%s:%d" % [name, int(row["line"])],
+				"left": str(row["left"]),
+				"right": str(row["right"]),
+				"coll": str(row["coll"]),
+				"func": str(row["func"]),
+			})
+	return out
+
+
+# A line with the CONTENTS of every string literal replaced by x, so a bracket,
+# a colon or an identifier inside a literal cannot be read as structure.
+#
+# THIS IS NOT A SECOND COMMENT STRIPPER and it is not a second _code_of()
+# (TRAPS 89, and this file's own header): _code_of() is still the only reader
+# of comments here and its byte-identical copies are still what section 3
+# holds. What this does is the thing _code_of() deliberately does not - it
+# leaves the literal's quotes in place and blanks what is between them - and
+# it is needed because _code_of() cuts a line at its first `#` even inside a
+# literal, which leaves an unterminated quote for the depth counting below to
+# walk into. State is per line, so an unterminated quote ends with the line.
+static func _masked(line: String) -> String:
+	var out := ""
+	var in_string := false
+	var quote := ""
+	var i := 0
+	while i < line.length():
+		var c := line.substr(i, 1)
+		if in_string:
+			if c == "\\" and i + 1 < line.length():
+				out += "xx"
+				i += 2
+				continue
+			if c == quote:
+				out += c
+				in_string = false
+			else:
+				out += "x"
+		elif c == "\"" or c == "'":
+			in_string = true
+			quote = c
+			out += c
+		else:
+			out += c
+		i += 1
+	return out
+
+
+# Every counter equality in ONE source, as {"line","func","left","right",
+# "coll"}. The source is expected to be CODE already - comments blanked by
+# _code_of() - so nothing a comment says can add a site or take one away, and
+# section 9 controls that with a commented-out site.
+#
+# A COUNTER is a local initialised to 0 on its own line and advanced with +=.
+# ITS COLLECTION is the `for ... in X:` it is advanced inside, taken by
+# indentation, so a `match` arm or an `if` between the two does not hide it -
+# that omission is what made the first route to this enumeration miss the one
+# instance it had to find (TRAPS 106).
+# A SITE is a `_check()` whose condition has an `==` with counters on both
+# sides, or counters on the left against `X.size()` on the right, where the set
+# of collections reached on each side is the same and non-empty.
+#
+# WHAT THIS DOES NOT SEE, AND THE FIRST DRAFT OF THIS PARAGRAPH CLAIMED THE
+# ANSWER WITHOUT LOOKING, which is TRAPS 14 in the file holding the rule
+# against it. It said a count kept in a dictionary or an array element "does
+# not occur in tests/ today - counted, not assumed". Nothing had been counted.
+# WHAT WAS THEN COUNTED: tests/ holds 524 `_check` conditions containing an
+# `==`; 54 of them have a container read - a `.size()` or a `[...]` - on BOTH
+# sides of that `==`, and NONE of the 54 is in this scan's class, because
+# neither side is a local advanced with `+=`. Two were read by hand and are
+# honest assertions across two different sources
+# (`field_type_test.gd:385`, `command_schema_test.gd:516`). THE OTHER 52 ARE
+# UNREAD. So the shape this section holds is the local-counter form of a wider
+# question, and the wider one is open - recorded in docs/HANDOVER.md as a live
+# entry rather than denied here. Also outside it, and not counted either: a
+# counter advanced by anything but `+=`, and an equality between two counts of
+# one collection that is computed and never asserted.
+func _counter_equalities(code: String) -> Array:
+	var out: Array = []
+	var lines := code.split("\n")
+	var var_zero := RegEx.create_from_string("^[\\t ]*var[\\t ]+([A-Za-z_][A-Za-z0-9_]*)[\\t ]*(?::[\\t ]*int[\\t ]*)?:?=[\\t ]*0[\\t ]*$")
+	var inc := RegEx.create_from_string("(?:^[\\t ]*|[:;][\\t ]*)([A-Za-z_][A-Za-z0-9_]*)[\\t ]*\\+=")
+	var for_line := RegEx.create_from_string("^([\\t ]*)for[\\t ]+[A-Za-z_][A-Za-z0-9_]*[\\t ]+in[\\t ]+(.+):[\\t ]*$")
+	var func_line := RegEx.create_from_string("^[\\t ]*(?:static[\\t ]+)?func[\\t ]+([A-Za-z_][A-Za-z0-9_]*)")
+	var word := RegEx.create_from_string("[A-Za-z_][A-Za-z0-9_]*")
+	var size_call := RegEx.create_from_string("([A-Za-z_][A-Za-z0-9_]*)\\.size\\(\\)")
+
+	# PASS 1: the counters, the collection each one is advanced inside, and the
+	# function each line belongs to.
+	var counters := {}
+	var in_func := []
+	var loop_indent: Array = []
+	var loop_coll: Array = []
+	var current := ""
+	for i in range(lines.size()):
+		var masked := _masked(str(lines[i]))
+		in_func.append(current)
+		if masked.strip_edges() == "":
+			continue
+		var indent := masked.length() - masked.lstrip("\t ").length()
+		while not loop_indent.is_empty() and int(loop_indent[-1]) >= indent:
+			loop_indent.resize(loop_indent.size() - 1)
+			loop_coll.resize(loop_coll.size() - 1)
+		var f := func_line.search(masked)
+		if f != null:
+			current = f.get_string(1)
+			in_func[i] = current
+			loop_indent.clear()
+			loop_coll.clear()
+		var v := var_zero.search(masked)
+		if v != null and not counters.has(v.get_string(1)):
+			counters[v.get_string(1)] = {}
+		var a := inc.search(masked)
+		if a != null and counters.has(a.get_string(1)):
+			var where: String = str(loop_coll[-1]) if not loop_coll.is_empty() else "<no loop>"
+			(counters[a.get_string(1)] as Dictionary)[where] = true
+		var l := for_line.search(masked)
+		if l != null:
+			loop_indent.append(l.get_string(1).length())
+			loop_coll.append(l.get_string(2).strip_edges())
+
+	# PASS 2: the condition of every _check(), read from the _check( line
+	# forward until the comma that ends the first argument. Depth is counted
+	# over MASKED text, so a bracket inside a message cannot run the read past
+	# the end of the call - which is the second thing the first route got
+	# wrong.
+	for i in range(lines.size()):
+		var masked_line := _masked(str(lines[i]))
+		var at := masked_line.find("_check(")
+		if at < 0:
+			continue
+		var condition := ""
+		var depth := 0
+		var closed := false
+		for j in range(i, mini(i + 12, lines.size())):
+			var seg := _masked(str(lines[j]))
+			if j == i:
+				seg = seg.substr(at + 7)
+			var k := 0
+			while k < seg.length():
+				var c := seg.substr(k, 1)
+				if c == "(" or c == "[":
+					depth += 1
+				elif c == ")" or c == "]":
+					if depth == 0:
+						closed = true
+						break
+					depth -= 1
+				elif c == "," and depth == 0:
+					closed = true
+					break
+				condition += c
+				k += 1
+			if closed:
+				break
+			condition += " "
+		if not closed:
+			continue
+		# Each top-level conjunct separately: `a == b and a > 0` is two claims
+		# and only one of them is this shape.
+		var parts: Array = []
+		for chunk in condition.split(" and "):
+			for piece in str(chunk).split(" or "):
+				parts.append(str(piece))
+		for part in parts:
+			var text := str(part)
+			var eq := text.find("==")
+			if eq < 0:
+				continue
+			var left_text := text.substr(0, eq)
+			var right_text := text.substr(eq + 2)
+			var left_names := _counters_in(left_text, counters, word)
+			var right_names := _counters_in(right_text, counters, word)
+			if left_names.is_empty():
+				continue
+			var right_label := ",".join(PackedStringArray(right_names))
+			var right_colls := _colls_of(right_names, counters)
+			var s := size_call.search(right_text)
+			if right_names.is_empty():
+				if s == null:
+					continue
+				right_label = s.get_string(1) + ".size()"
+				right_colls[s.get_string(1)] = true
+			var left_colls := _colls_of(left_names, counters)
+			if left_colls.is_empty() or left_colls.has("<no loop>") or right_colls.has("<no loop>"):
+				continue
+			var left_keys: Array = left_colls.keys()
+			var right_keys: Array = right_colls.keys()
+			left_keys.sort()
+			right_keys.sort()
+			if left_keys != right_keys:
+				continue
+			out.append({
+				"line": i + 1,
+				"func": str(in_func[i]) if i < in_func.size() else "",
+				"left": ",".join(PackedStringArray(left_names)),
+				"right": right_label,
+				"coll": ",".join(PackedStringArray(left_keys)),
+			})
+	return out
+
+
+# The counter names a piece of an expression mentions, sorted so a key written
+# from them does not depend on which side of the `+` somebody typed first.
+func _counters_in(text: String, counters: Dictionary, word: RegEx) -> Array:
+	var seen := {}
+	for m in word.search_all(text):
+		var name := (m as RegExMatch).get_string(0)
+		if counters.has(name):
+			seen[name] = true
+	var names: Array = seen.keys()
+	names.sort()
+	return names
+
+
+# Every collection the given counters are advanced inside, as a set.
+func _colls_of(names: Array, counters: Dictionary) -> Dictionary:
+	var out := {}
+	for name in names:
+		for coll in (counters[str(name)] as Dictionary):
+			out[str(coll)] = true
+	return out
+
 static func _code_of(source: String) -> String:
 	var out := ""
 	for raw in source.split("\n"):
