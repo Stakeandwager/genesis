@@ -13,6 +13,136 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
+- Last commit at the time of writing: **103**, which took **the first live
+  entry as of 102** - *the wider class: where else in `scripts/` does a
+  function answer the empty string and a caller treat it as an answer* - and
+  **did the enumeration that entry said nothing had done**, rather than
+  reasoning about it. **142 `-> String` functions in `scripts/`, 65 of them
+  able to answer an empty string**, every one of their call sites in `scripts/`
+  read one at a time. **The enumeration found a family of four faults a player
+  meets, three of them live since 003**, and **a suite that was holding one of
+  them in place with a typed string**. New TRAPS **103**. **`scripts/` is not
+  0 lines of diff** - `readback.gd`, `dungeon_module.gd` and `world_registry.gd`
+  all change and what a player sees changes with them. No new file. **Eight
+  files in `git status --porcelain`**, counted rather than remembered. One new
+  "Human decision needed", **36** - and the first draft of that entry stated a
+  refusal the validator does not make, which was replaced by a driven
+  measurement before the commit rather than after it (TRAPS 14).
+
+  **THE FAULT, AND IT IS ONE RULE WITH FOUR MEMBERS: A WORD KEPT FOR A NAME
+  THE REQUEST DID NOT GIVE HAD THE ARTICLE INSIDE IT, AND THE THREE SENTENCES
+  THAT RENDER THAT NAME EACH RENDER IT DIFFERENTLY.**
+  `DungeonModule.readback()` names a room in **three** sentences and reads a
+  different thing in each: `_room_said()` through `Readback.article()`,
+  `_things_said()` through `Readback.the()`, and the hub clause **raw**. The
+  stand-in word was `"a room"`. **MEASURED BY DRIVING `DungeonModule.readback()`
+  in a throwaway copy with its own `config/name`** (TRAPS 50, 80, 88), before
+  anything was changed:
+
+  | the request | said, BEFORE | AFTER |
+  |---|---|---|
+  | a room whose `name` is absent or `null` | *"entered through a 10 m **a room**"* | *"a 10 m room"* |
+  | a thing in that room | *"with a lamp in **the a room**"* | *"in the room"* |
+  | five rooms off that room | *"with five rooms off **a room**"* | *"off the room"* |
+  | five rooms off a room called `vault` | *"with five rooms off **vault**"* | *"off the vault"* |
+  | a room named `"_"` | *"entered through a 10 m **&nbsp;&nbsp;**"* | *"a 10 m room"* |
+  | a thing named `"_"` | *", with **a&nbsp;&nbsp;&nbsp;** in the hall"* | left out, as an empty name already was |
+  | a plan: a world, then a step with no `command` | *"a dungeon of a room, then&nbsp;"* | *"then a step"* |
+  | a plan: that step, then a sound `ORDER` | *"**&nbsp;**and an order to send someone to room 1"* | *"a step and an order..."* |
+  | every control (`hall`, `vault`, `lamp`, a sound plan) | - | **byte-identical** |
+
+  **WHERE IT CAME FROM, COUNTED RATHER THAN REMEMBERED.** Both the
+  article-carrying word and the raw hub name are **003's**, written at
+  `d6abe81` on 8 October - **127 commits** ago, `git rev-list --count`, and the
+  two lines read off `git show d6abe81:scripts/dungeon_module.gd` rather than
+  inferred. 095 widened WHICH values reach the word (absent was all 003
+  answered; `null`, `""` and `"   "` reach it since 095) and kept the word. So
+  *"a 10 m a room"* has been live for an absent name for 127 commits.
+
+  **AND THE LEAF HAD THE SAME ASYMMETRY, WHICH IS THE HALF THAT GENERALISES.**
+  `Readback.article()` and `Readback.the()` are the two readers of one fact,
+  `Readback.is_label()`. `the()` has read `replace("_", " ").strip_edges()`
+  before testing since 022 and `is_label()` since 031; **`article()` tested the
+  raw string**, so `article("   ")` returned *"a"* and four spaces where
+  `the("   ")` returned `""`. Reachable because both dungeon doors swapped
+  underscores for spaces **and then** asked whether the name says anything -
+  the wrong way round - so a room or thing named `"_"` arrived as a single
+  space. 102's sibling-door shape, at the leaf.
+
+  **AND 102'S OWN RULE ONE LEVEL IN.** 102 gave the PLAN door its word;
+  `_doing()`, the per-STEP door, answered `Readback.article()` on the command
+  token, which is `""` when the token says nothing. The sentence kept its
+  **connective** and lost the thing the connective joins - *"a dungeon of a
+  room, then "* - which reads as a finished sentence about a step that was
+  never named. Worse than the silence 102 fixed, for that reason.
+
+  **AND ONE SUITE WAS HOLDING THE FAULT IN PLACE, WHICH THE PREDICTION DID NOT
+  NAME AND THE FIRST FULL RUN FOUND (TRAPS 89).** `tests/shape_test.gd` -
+  `8f97f5c`, 13 October, **95 commits** ago - is the only suite in `tests/`
+  that drives the dungeon's hub clause, and it asserted
+  `contains("with four rooms off hall")`, **the raw article-less wording typed
+  in**. So the one suite that reached the sentence was the reason the sentence
+  could not be corrected without a failure. TRAPS 82 at a suite, over a
+  spelling that was wrong. Its expectation is now built from the room the
+  clause must name, through `Readback.the()`: measured **4/1** with the hub
+  naming its room raw again, and **4/0** with `the()` reworded to say *"yon"*,
+  which is the half a typed string had backwards.
+
+  **WHY `said_article_test` COULD NOT SEE IT, WHICH IS THE PART WORTH THE
+  COMMIT.** That file is 043's, written for this exact rule - *"every sentence
+  that names a room or a thing contains that name EXACTLY as `Readback.the()`
+  or `article()` renders it"* - 181 assertions, `abe38dc`, 16 October,
+  **66 commits**. Its dungeon fixture is **two rooms and one door**, which is a
+  CHAIN, and the hub clause only exists for a dungeon where one room carries
+  most of the doors: **the suite that holds the rule could not produce one of
+  the three sentences in its own subject**, for all 66 commits of its life. And
+  every name it was ever given is a real one, so the stand-in word never
+  entered a sentence it swept. TRAPS 6, in the file 043 wrote to answer TRAPS
+  6's question.
+
+  **AND TWO OF THIS COMMIT'S OWN NEW ASSERTIONS PASSED AN INJECTED FAULT
+  BEFORE THEY WERE STRENGTHENED, WHICH IS RECORDED RATHER THAN TIDIED.** The
+  first draft held the stand-in word by comparing *the readback of a nameless
+  room* with *the readback of a room the player called `UNNAMED_ROOM`* - both
+  sides built from the same constant, so with `"a room"` put back **both
+  sentences double the article and the equality is satisfied by the fault**:
+  234 assertions, failures=0, silent. The same draft's clause test asked only
+  whether a clause was empty, and *"a"* with four spaces **strips to "a", which
+  is not empty**, so the reverted leaf passed too. What replaced them states
+  the facts independently - the three article words typed in, the stand-in word
+  asserted not to BEGIN with one of them, and no clause of a plan readback
+  allowed to be an article on its own. **And the two-article screen's first
+  draft failed its own probe**, because `\b(a|an|the) (a|an|the)\b` does not
+  match *"a 10 m a room"*, whose two articles are four words apart - found
+  before the commit rather than after it.
+
+  **AND A SECOND, SMALLER FINDING FELL OUT OF READING THE NAME IN ONE PLACE,
+  MEASURED BOTH WAYS.** 095's `said_or()` returns a value that says something
+  **as it was sent, edges and all**, on the principle that a readback does not
+  tidy a player's words - and the EDGES are not the player's words, they are
+  whitespace. Measured on 102 and on this commit, in a copy of each:
+
+  | the room's `name` | 102 said | 103 says |
+  |---|---|---|
+  | `" hall "` | *"a 10 m&nbsp;&nbsp;hall&nbsp;"* | *"a 10 m hall"* |
+  | `"  great  hall  "` | *"a 10 m&nbsp;&nbsp;&nbsp;great&nbsp;&nbsp;hall&nbsp;&nbsp;"* | *"a 10 m great&nbsp;&nbsp;hall"* |
+  | `" room_1 "` | *"10 m&nbsp;&nbsp;room 1&nbsp;"* | *"10 m room 1"* |
+  | `"hall"` (control) | *"a 10 m hall"* | **unchanged** |
+
+  **The INSIDE of a name is untouched** - *"great  hall"* keeps its double
+  space, because that IS the player's spelling. Held in both directions, which
+  is the half a one-directional check would have got wrong: with the strip
+  removed `said_article_test` is **239 assertions, failures=33**, and with the
+  strip widened to collapse inner whitespace as well it is **239/2**.
+
+  **THE WORDS ARE THE OWNER'S AND THE SILENCE WAS NOT.** `UNNAMED_ROOM` and
+  `UNREAD_STEP_NOUN` are named constants with the reason beside them, and the
+  suites read the constants rather than spelling them: **measured, changing the
+  room noun to `"chamber"` and the step noun to `"instruction"` leaves all four
+  relevant suites green**, which is what makes them his to change. What cannot
+  stand is an article said twice, an article said not at all, and a connective
+  holding nothing.
+
 - Last commit at the time of writing: **102**, which took **the first live
   entry as of 101** - *`prompt_test` is checked by nothing* - and did the thing
   that entry said to do before anything else: **grepped for what the
@@ -6492,6 +6622,83 @@ than suites, leaving **78 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 78
 and are skipped without it.
+
+**103 ADDED NO FILE EITHER**, which is why the two numbers above did not
+move, and that was deliberate for the reason 101 and 102 both gave: a new
+suite would falsify `README.md`'s count, which is the open class 100 left and
+which 103 does not close. The new sections went into
+`tests/said_article_test.gd` (the hub clause, and a room nobody named) and
+`tests/says_nothing_test.gd` (section 9, a PLAN step's own command) - **both
+files already the standing check for what they were given** - and
+`tests/shape_test.gd` had its fourth expectation rebuilt rather than added to.
+Its baseline on the clean tree at `b3f4ff9`, `git status --porcelain` empty,
+was **BYTE-IDENTICAL to the md5 102 recorded, from a SIXTH independent
+container with its own Godot download** (4.7.1.stable.official.a13da4feb,
+`--version` read): `34ee308c632eac4e034d60215489f971`, 78 suites, 0 with
+something to look at. The container was fresh, so `user://` was empty rather
+than cleared. `ls tests/*.gd` 80, run reported 78.
+**THE PREDICTION WAS WRITTEN DOWN BEFORE ANY CODE WAS CHANGED AND IT WAS
+WRONG, WHICH IS THE POINT AND IS TRAPS 89.** It named two lines that would
+move and listed thirteen suites that would not, with a reason each.
+`shape_test` was in neither list, because the prediction was built from a grep
+for `"name": null`, `"name": ""` and `"name": "   "` over `tests/` - a grep for
+a NAME THAT SAYS NOTHING - and `shape_test`'s fourth case has a perfectly good
+name and asserts the WORDING of the clause around it. **RUN 1 CAME BACK
+`shape_test` 4 assertions, failures=1, and that is how the suite holding the
+fault in place was found.** The prediction's own "what I cannot predict"
+section said a count moving outside the UP list would be the answer and would
+be written down as one; it is written down here.
+**FOUR FULL `--all` RUNS AFTER THE CHANGE, AND THE TREES ARE NAMED INCLUDING
+THE PART THAT MOVED.** `user://` was cleared before each, every file's md5 was
+taken before each, and `md5sum -c` afterwards reported **nothing moved** every
+time except `.godot/editor/filesystem_cache10`, which is Godot's own gitignored
+cache and not a source file.
+**RUNS 2 AND 3 ARE RECORDED AND SUPERSEDED**, for the reason 102 recorded and
+discarded its own run 2: they measured a tree that no longer exists. Run 2 was
+on the settled code tree and run 3 on the complete tree with `docs/` in place,
+and the two were **byte-identical to each other**, md5
+`2454c2f71a62111b3498aaab3230947b`, 78 suites, 0 with something to look at,
+`said_article_test` **234**. **Then the padded-name pair was added to
+`said_article_test`** - the second finding below, which came out of reading the
+diff rather than out of a run - so the suite gained five assertions and those
+two md5s stopped describing this commit. They are left here rather than
+deleted, because a run on a tree that then moved is a measurement of a tree
+that no longer exists and saying so is the record.
+**RUNS 4 AND 5 ARE THE SETTLED TREE, CODE AND DOCS TOGETHER, AND ARE
+BYTE-IDENTICAL TO EACH OTHER**: md5 `62c0910451647a0287dfab514d81f714`, **78 suites, 0 with something
+to look at**. `diff` against the baseline is **TWO LINES** -
+`said_article_test` **181 -> 239** and `says_nothing_test` **380 -> 437** - and
+`shape_test` is back to 4/0 with its expectation read off `Readback.the()`
+instead of typed. **The md5 and the two numbers in this paragraph were written
+into this file AFTER the runs**, for the reason 093 through 102 all gave, and
+the circularity is the same one none of them escaped: the only edits after run
+5 are to `docs/HANDOVER.md` itself, and nothing in `tests/` reads `docs/`.
+**NINE FAULTS INJECTED, EACH ALONE IN ITS OWN THROWAWAY COPY WITH ITS OWN
+`config/name`, THE DIFF READ BEFORE EACH RUN**, against 234/0 and 437/0:
+`Readback.article()`'s emptiness test back to `word == ""` 437/3; the stand-in
+word back to `"a room"` 234/2; the hub clause naming its room raw 234/3 **and
+`shape_test` 4/1**; the room name's `strip_edges()` removed 234/12; the thing
+label's removed 234/3; `_doing()`'s word removed 437/6; `UNREAD_STEP_NOUN` set
+to three spaces 437/8; the room name's read put back through `said_or` with no
+strip 234/33 and the strip widened to collapse inner whitespace 234/2, which is
+the padded-name pair held in both directions. **AND TWO NEGATIVE CONTROLS, which are what make the
+words the owner's**: the room noun changed to `"chamber"` and the step noun to
+`"instruction"` - **0 failures in all four suites, both times**.
+**TWO MORE INTO THE SUITE ITSELF, and both passed before the assertions were
+strengthened** - the circular equality and the empty-clause-only test, both
+described in the 103 entry above and in TRAPS 103.
+**ALL THREE CHANGED SUITES RUN CLEAN WITH `--fixed-fps 120`, WITH 30 AND WITH
+NEITHER** (TRAPS 4) - nine runs, same three numbers every time, taken in a
+separate copy with its own `config/name` so the full run was not disturbed.
+**NEITHER RUNNER WAS TOUCHED AND NEITHER NEEDED TO BE** (TRAPS 4): no file was
+added or removed, so `tests/` keeps 80 `.gd` and 80 `.uid`, no list in either
+runner can be short one, and `README.md`'s suite count cannot have moved.
+`ai_interpreter.gd` is 0 lines of diff, so `PROMPT_FINGERPRINT` and
+`PROMPT_VERSION` cannot have moved. The whole diff grepped for `AIza`, api
+key, secret, token, bearer, `GEMINI`, netlify and `export_presets` returns six
+hits and **every one of them is the word "token" meaning the command token a
+plan step carries**, read one at a time. Nothing in `scenes/`, `netlify/`,
+`.github/`, `project.godot` or `export_presets.web.cfg` was touched.
 
 **102 ADDED NO FILE EITHER**, which is why the two numbers above did not
 move, and that was deliberate for the same reason 101 gave: a new suite would
@@ -13208,6 +13415,56 @@ entry with their results, each alone in its own throwaway copy with its own
 `config/name`, and the property they attribute is now
 `tests/field_type_test.gd` sections 5 to 7 rather than a table in a document.
 
+**NOTHING IS OWED FROM 103 EITHER.** Its baseline was byte-identical to the
+md5 102 recorded - from a **sixth** independent container with its own Godot
+download - it wrote its predicted diff down **before any code was changed and
+the prediction was WRONG**, missing `shape_test` entirely, which is recorded in
+"Run the tests first" rather than tidied away (TRAPS 89) and is how the suite
+holding the fault in place was found. It took its runs on the code tree and
+then on the complete tree with `docs/` in place, which is why there is no 103a.
+**Do not start by re-running on 103's behalf**; take your own baseline so you
+learn the record and the container still agree, and spend the time on the work
+below. **And do not re-take 103's measurements** - the nine injections, the two
+negative controls, the two self-caught circular assertions, the before/after
+readback tables and the `git rev-list` counts behind "since 003", "95 commits"
+and "66 commits" are all in the 103 entry and TRAPS 103 with their results,
+each injection alone in its own throwaway copy with its own `config/name`, and
+the property they attribute is now `said_article_test`, `says_nothing_test`
+section 9 and `shape_test` rather than a table in a document.
+
+**AND THE ENUMERATION 102 ASKED FOR IS DONE, SO DO NOT START IT AGAIN - WHAT
+IT FOUND AND WHAT IT LEFT IS HERE.** 102's first live entry asked: *where else
+in `scripts/` does a function answer the empty string and a caller treat it as
+an answer?* **142 `-> String` functions**, enumerated off the source with a
+script rather than by grepping for one idiom (TRAPS 99 points exactly this
+way), of which **30 carry a literal `return ""`** and **35 more return a join,
+a passthrough or an accumulation that can be empty without one** - 65 in all.
+**Every call site of those 65 inside `scripts/` was read one at a time**, and
+the verdicts are these:
+
+| what the caller does with `""` | members | verdict |
+|---|---|---|
+| branches on it as a documented sentinel | `LookTool.trouble_with`, `WorldModule.correction_feedback` (+ both overrides), `RefusalCheck.note`, `RefusalCheck._denial_in`, `RefusalCheck._first_of`, `SectionValidator._range_error`, `WorldRegistry.around_problem`, `Readback.said`, `Readback.size_of`, `ToolRegistry.readback`, `WorldRegistry._plan_readback`, `NpcGoals.readback` | **correct.** `""` means *nothing wrong / nothing to say* and the call site has its own branch, usually with the reason beside it |
+| filters it out of a list before joining | `BootsTool._compare`, `BootsTool._pace`, `CarTool._compare` | **correct** - `if p != ""` at the point the parts are collected, which is where the filter belongs |
+| concatenates it as an optional clause | `RacingModule._turn`, `_over`, `_above`, `_banked`, `_stepped`, `Readback._join` and its three wrappers, `DungeonModule._things_said` | **correct** - the clause is absent rather than empty, and the sentence reads without it |
+| answers an acknowledgement nobody is owed | `Understanding.reply` | **correct, and the reasoning is worth keeping**: `judge()` can return `ACCEPTED_BY_USE` and `ACCEPTED_BY_SILENCE`, which `reply()` has no case for - and neither owes the player a line, because the player did not address the readback. `main.gd:361` branches on it |
+| **passed on, or a line silently dropped** | `Readback.article`, `DungeonModule`'s room word and its three renderings, `WorldRegistry._doing` | **THE 103 FAULT. Fixed, as a class, in this commit** |
+| right only by the grace of the door in front of it | `NpcGoals._thing` (both call sites guard the name is non-empty, 054's two documented guards), `SessionReport.describe` (099 made `summarise()` unabandonable, so it cannot be handed a partial summary) | **named, not changed.** Kept as defence in depth, said out loud so a later session does not think 103 missed them - this is TRAPS 11's standing instruction and 099 left `describe()` the same way |
+| **latent: silently dropped, and nothing holds it** | `ToolModule.prompt_section` and `WorldModule.prompt_section` (the base stubs return `""`) | **NAMED AND LEFT, and it is a live entry below.** `ToolRegistry.prompt_sections()` and `WorldRegistry.prompt_sections()` both read `if section != "": parts.append(section)`, with WorldRegistry's own comment saying *"a module that returns nothing adds nothing, not even a blank line"* - which is deliberate and right as a rendering rule. What nothing holds is that **every registered tool and module HAS one**: a tool added without a `prompt_section()` is registered, validated and usable by hand-typed JSON while being **invisible to the AI**, with nothing failing. Measured: all three tools and all three modules override it today, so this is latent and not a fault |
+| never empty in any branch | the remaining 77, including every `command()`, `display_name()` and `name()` on a concrete module or tool | **correct** |
+
+**WHAT THE ENUMERATION DID NOT COVER, SAID SO THE EXCLUSION IS BOUNDED
+(TRAPS 90).** It is an enumeration of `scripts/`, which is the scope 102's
+entry named - **and TRAPS 98's rule is that a grep has a scope and a rule does
+not.** The same question asked of `tests/` was NOT asked: `tests/replay.gd` is
+a tool the owner runs by hand and the same class may hold there, which is
+exactly the shape TRAPS 98 was written about. **Nothing drove the 65
+functions**: the verdicts above come from reading each call site, and only the
+members of the 103 family were driven. `main.gd:290`'s `UNSUPPORTED` readback
+stays the measured, deliberate exclusion 102 recorded - there a readback has
+nothing HEARD to say back, which is a different thing from a subject it could
+not read.
+
 **NOTHING IS OWED FROM 102 EITHER.** Its baseline was byte-identical to the
 md5 101 recorded - from a **fifth** independent container with its own Godot
 download - it wrote its predicted diff down **before any code was changed**,
@@ -13326,9 +13583,33 @@ FOR A NARROWER REASON.** It still deletes `user://track_log.jsonl` on the path
 that works, which is the shared ledger four other suites read (TRAPS 50,
 TRAPS 97). What changed in 101 is only that a **refused** run no longer does.
 
-**THE FIRST LIVE ENTRY AS OF 102: THE FIVE REMAINING GROUPS OF
-`says_nothing_test`'s SWEEP STILL ASK THE PER-GROUP QUESTION, AND THE RULE
-102 FOUND MAY HAVE MEMBERS OUTSIDE THE READBACK.**
+**THE FIRST LIVE ENTRY AS OF 103, AND IT IS THE HALF OF 102'S FIRST ENTRY
+THAT 103 DID NOT TOUCH: THE FIVE VALIDATOR GROUPS OF `says_nothing_test`'s
+SWEEP STILL ASK THE PER-GROUP QUESTION.**
+103 took the OTHER half of 102's entry - *the wider class* - and the
+enumeration is above with its verdicts. **The five-group reading is untouched
+and is restated below exactly as 102 left it**, because it is a reading of
+five groups and one call site and 103 did not do it. One thing 103 learned
+that bears on it: the enumeration confirms 102's guess about group (c) -
+`ToolRegistry.readback()` has **exactly two callers in `scripts/`, both
+wrapped in `_said_or_unread("EQUIP", ...)`** (`world_registry.gd:260` and
+`:379`, re-grepped in 103), so the word is already added at every call site and
+**moving it into `ToolRegistry` would be a second place that says it**. That
+points at leaving group (c) as a floor rather than moving the word - but it is
+one more reading and not a measurement, and the other four groups have not
+been looked at at all.
+
+**~~AND THE WIDER CLASS IS NAMED RATHER THAN LEFT STANDING: where else in
+`scripts/` does a function answer the empty string and a caller treat it as an
+answer?~~ DONE IN 103, AND IT FOUND A FAMILY OF FOUR FAULTS A PLAYER MEETS.**
+The enumeration, its verdicts and what it deliberately did not cover are in
+"NOTHING IS OWED FROM 103" above. Struck rather than deleted, because the
+entry's own instruction - *"the honest next step on the class is the
+enumeration, which nothing has done"* - is the thing that paid, for the second
+commit running.
+
+**AND WHAT 102's ENTRY SAID ABOUT THE FIVE GROUPS, KEPT VERBATIM BECAUSE IT IS
+STILL THE WORK:**
 102 fixed the counting idiom at all eight sites - the question is asked of the
 CONTENT now rather than of the collection - and made group (f), the readback,
 ask it **per row**. **The five validator groups still ask it per GROUP, and
@@ -13343,17 +13624,68 @@ today and the right answer may be to move the word rather than the question.
 and it may come back "the floor is right in all five", which is a reason to
 read rather than to build (096's own words).
 
-**AND THE WIDER CLASS IS NAMED RATHER THAN LEFT STANDING (TRAPS 90): where
+**~~AND THE WIDER CLASS IS NAMED RATHER THAN LEFT STANDING (TRAPS 90): where
 else in `scripts/` does a function answer the empty string and a caller treat
-it as an answer?** 102 swept the eleven commands of **one** function,
-`WorldRegistry.readback()`. It did **not** sweep the other direction: every
-`-> String` in `scripts/` that can return `""`, against what its callers do
-with it. `main.gd:290`'s `UNSUPPORTED` readback is one that is **measured and
+it as an answer?~~ CLOSED IN 103 FOR `scripts/`, AND TRAPS 98'S QUESTION ABOUT
+THE SCOPE IS LEFT OPEN ABOVE.** 102 swept the eleven commands of **one**
+function, `WorldRegistry.readback()`. It did **not** sweep the other direction:
+every `-> String` in `scripts/` that can return `""`, against what its callers
+do with it. `main.gd:290`'s `UNSUPPORTED` readback is one that is **measured and
 deliberately not changed** - `str(parameters.get("understood", ""))` is empty
 when the model names nothing it understood, and there a readback has nothing
 heard to say back, which is a different thing from a subject it could not read.
 **It is named here so the exclusion is bounded**, and the honest next step on
 the class is the enumeration, which nothing has done.
+**(103: that last sentence is 102's and is now ANSWERED - the enumeration is
+in "NOTHING IS OWED FROM 103" above. It is left standing word for word because
+the entry is struck, not rewritten, and because the exclusion it bounds -
+`main.gd:290` - is still exactly as 102 measured it.)**
+
+**THE SECOND LIVE ENTRY AS OF 103, FOUND BY THE ENUMERATION AND LEFT
+DELIBERATELY: A TOOL OR A WORLD WITH NO `prompt_section()` IS REGISTERED,
+VALIDATED AND USABLE, AND INVISIBLE TO THE AI, AND NOTHING WOULD SAY SO.**
+`ToolRegistry.prompt_sections()` and `WorldRegistry.prompt_sections()` both
+read `if section != "": parts.append(section)`, and the base stubs
+`ToolModule.prompt_section()` and `WorldModule.prompt_section()` return `""`.
+**The RENDERING rule is right and is not the entry** - WorldRegistry's own
+comment says *"a module that returns nothing adds nothing, not even a blank
+line"*, which is the correct thing to do with an empty section. **What nothing
+holds is that every registered tool and module HAS one.** `ToolRegistry`'s
+header is the claim this falsifies: *"the one place that knows which tools
+exist: the AI's vocabulary and the validator both come from this list, so a
+tool cannot be half-added. If it is here, it can be asked for, checked and
+used; if it is not, the AI cannot reach it at all."* A tool with no
+`prompt_section()` is **exactly** half-added - the validator knows it, the
+whitelist admits hand-typed JSON for it, and the AI has never heard of it - and
+the sentence that says this cannot happen is a claim about the code with
+nothing behind it (TRAPS 14).
+**MEASURED AND LATENT: all three tools and all three modules override it
+today**, read one at a time, so this is not a fault a player meets. It is
+TRAPS 11's *"the class includes the world that does not exist yet"*, and the
+honest fix is small: assert off `ToolRegistry.tools()` and
+`WorldRegistry.modules()` that every member's `prompt_section()` says
+something, and that each one's text appears in `AIInterpreter.assembled_prompt()`.
+**`claim_field_test` and `prompt_numeral_test` already iterate both
+registries**, so one of them is the home and no new file is needed - which
+matters, because `README.md`'s count is still the open class 100 left.
+**NOT MEASURED: whether either of those suites would ALREADY fail** on a
+module whose section is empty. Both read the section and then assert things
+about its contents, and an empty string may simply satisfy fewer `contains()`
+checks without failing any. **Driving it is the first step and it is one
+injection**, not a reading: add a fourth tool with no `prompt_section()` to
+`ToolRegistry.tools()` in a throwaway copy and run the set.
+
+**THE THIRD LIVE ENTRY AS OF 103, AND IT IS TRAPS 98'S QUESTION ASKED OF 103'S
+OWN SCOPE: THE SAME ENUMERATION OVER `tests/`.**
+103 enumerated `scripts/`, which is the scope 102's entry named, and TRAPS 98
+exists because *a grep has a scope and a rule does not*. The rule here - a
+function answers the empty string and a caller treats it as an answer - says
+nothing about which directory the function is in. **`tests/replay.gd` is the
+member worth looking at first**: it is a tool the owner runs by hand, it builds
+an output file from strings, and TRAPS 98 and 99 are both about reads in that
+same file costing a **hang** rather than a wrong sentence. **Nothing in 103
+looked at it.** 101's bounded exclusion about its replay loop and output write
+stands as written and is the entry below.
 
 **THE SECOND LIVE ENTRY AS OF 102, AND IT IS WHAT IS LEFT OF 101's:
 `replay.gd`'s REPLAY LOOP AND OUTPUT WRITE ARE STILL HELD BY NOTHING.**
@@ -23419,3 +23751,52 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
 
     **If he is absent, LEAVE IT.** The player is told what Genesis heard, which
     is the part that was broken; nothing in the report is wrong, only wider.
+
+36. **The validator AUTO-NAMES a room whose name says nothing and KEEPS one
+    named with a bare underscore, and whether those two should be the same
+    answer is his call.** Raised by 103, which found it while fixing what the
+    readback DID with such a name and deliberately did not touch the
+    validator. **The first draft of this entry said the validator REFUSED an
+    empty name. It does not. The claim was replaced by the measurement below,
+    which is TRAPS 14 caught by driving the thing rather than reading it.**
+
+    **MEASURED**, by driving `DungeonModule.validate()` with a two-room
+    dungeon and spoiling the first room's name, in a throwaway copy with its
+    own `config/name`:
+
+    | `name` sent | `ok` | the name KEPT |
+    |---|---|---|
+    | `"hall"` | true | `hall` |
+    | `""` | true | **`room_1`** |
+    | `"   "` | true | **`room_1`** |
+    | `null` | true | **`room_1`** |
+    | `"_"` | true | **`_`** |
+    | `"__"` | true | **`__`** |
+
+    So a name that says nothing is **given one** - `room_1`, which
+    `Readback.is_label()` makes a LABEL, so it reads back as *"room 1"* with no
+    article, correctly - and a name that says nothing **only once the
+    underscores are spelled as spaces** is kept exactly as sent. The format
+    asks the model to write underscores where a sentence has spaces, so `"_"`
+    is a name a player sees as nothing at all.
+
+    **WHAT 103 DID AND DID NOT DO.** It fixed the SENTENCES: the readback runs
+    **before** anything is validated, by design, so it sees the raw request,
+    and a name that says nothing once spelled is now answered exactly as an
+    empty one already was - the room reads as the stand-in word and a thing is
+    left out. **Nothing about the validator was changed**, so `"_"` is still
+    accepted and still kept.
+
+    **THE QUESTION, AND IT IS ONE LINE EITHER WAY.** Should
+    `DungeonModule.validate()` treat a name that says nothing **once it is
+    spelled for a sentence** the way it already treats an empty one - that is,
+    auto-name it `room_N` - so the two cases agree? That is **a change to what
+    Genesis builds and stores from a request it accepts**, which is his and not
+    the assistant's (PROTOCOL 6), and it is the same reason 095 gave for
+    leaving the refusal wordings alone. Both answers are defensible: a name is
+    for telling two rooms apart and an underscore does not, or a player may
+    name a room whatever they like and Genesis should not have opinions about
+    it.
+
+    **If he is absent, LEAVE IT.** Nothing a player is told is wrong now; the
+    sentences read as if the room had no name, because it has not got one.

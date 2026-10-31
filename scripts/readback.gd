@@ -339,8 +339,23 @@ static func is_label(name: String) -> bool:
 	return str(words[words.size() - 1]).is_valid_int()
 
 
+# 103: THE TWO READERS OF THE SAME FACT ANSWERED A WORD THAT SAYS NOTHING
+# DIFFERENTLY. the() below has read `replace("_", " ").strip_edges()` before
+# testing since 022, and is_label() has read it since 031; this one tested the
+# raw string, so `article("   ")` returned "a    " - an article with nothing
+# after it - where `the("   ")` returned "". Measured, and reachable: a room or
+# a thing the model named "_" arrives here as a single space, because the two
+# dungeon readback doors swap underscores for spaces before they test whether
+# the name says anything (see DungeonModule).
+#
+# The EMPTINESS TEST is what moves and nothing else. A word that says something
+# is returned AS SENT, not as strip_edges() would tidy it, so every rendering
+# this function already produced is byte-identical - and the underscore swap is
+# deliberately NOT done here, because article() is also handed section types
+# like "left_hairpin", whose refusal wording is the owner's and is not this
+# commit's to respell.
 static func article(word: String) -> String:
-	if word == "":
+	if word.strip_edges() == "":
 		return ""
 	if is_label(word):
 		return word

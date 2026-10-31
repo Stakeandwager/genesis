@@ -39,6 +39,30 @@ const CORRIDOR := 4.0                    # corridor width
 const MAX_RING := 4                      # rings out a room may be placed
 const MAX_EXTENT := 1400.0               # metres across, either way
 
+# --- 103: the word for a room the request did not name, and why it is a NOUN ---
+#
+# 095 gave the readback a fallback for a room whose name says nothing - absent,
+# "", "   " or null - and the fallback it gave was "a room", a noun phrase with
+# the article already in it. THREE sentences in readback() render a room's
+# name and each one renders it differently, so two of the three said the
+# article twice and the third said it not at all. MEASURED, before anything was
+# changed, on a room whose name was a plain `null`:
+#
+#   entered through a 10 m a room          (_room_said -> Readback.article)
+#   with a lamp in the a room              (_things_said -> Readback.the)
+#   with five rooms off a room             (the hub clause, raw)
+#
+# and the hub clause was wrong for a REAL name too - "with five rooms off
+# vault" - which is 043's rule ("the article belongs in ONE function, not in
+# every sentence that needs it") missed at a fourth site in the file 043 fixed.
+#
+# So the fallback is the bare noun and every site puts its own article on it,
+# which is the only arrangement in which one word can be right in all three
+# sentences. The WORD is the owner's; what cannot stand is saying it twice.
+# said_article_test reads this constant rather than spelling it, so changing
+# the word moves the check with it.
+const UNNAMED_ROOM := "room"
+
 # Heights, following the farm so that nothing is ever buried inside
 # anything else. Each slab is drawn from the ground up, so a lower number
 # means a slab hidden inside a taller one.
@@ -1473,7 +1497,7 @@ func readback(parameters: Dictionary) -> String:
 	var sizes: Array = []
 	for entry in rooms:
 		if typeof(entry) != TYPE_DICTIONARY:
-			names.append("a room")
+			names.append(UNNAMED_ROOM)
 			sizes.append(0.0)
 			continue
 		var room: Dictionary = entry
@@ -1481,9 +1505,16 @@ func readback(parameters: Dictionary) -> String:
 		# reading the line should see "great hall", not "great_hall".
 		# 095: a readback runs before anything is validated, so this reads the
 		# RAW name. It said "entered through a 40 m " for an empty name and
-		# "a 40 m <null>" for a null one, both measured. said_or() gives the
-		# same "a room" the absent key already got.
-		names.append(Readback.said_or(room, "name", "a room").replace("_", " "))
+		# "a 40 m <null>" for a null one, both measured.
+		# 103: and the fallback it gave was "a room", which the three sentences
+		# below then put an article in front of, or none - see UNNAMED_ROOM.
+		# The swap is also done BEFORE the emptiness test now, not after it:
+		# a room named "_" became a single space and passed said_or()'s test,
+		# so it reached Readback.article() as whitespace and read back as
+		# "entered through a 10 m  ". One reading, in this order: what the
+		# player said, spelled for a sentence, and then asked whether it says
+		# anything at all.
+		names.append(_room_name(room))
 		# A side that is not a number leaves the room unmeasured rather than
 		# 0 m, and an unmeasured entrance is described without a size below.
 		# EITHER side, not both: size_of() draws the line in the same place
@@ -1567,7 +1598,15 @@ func readback(parameters: Dictionary) -> String:
 		if hub == 0:
 			shape = ", with %s off it" % off
 		else:
-			shape = ", with %s off %s" % [off, str(names[hub])]
+			# 103: this named the room RAW - "with five rooms off vault", and
+			# "off a room" when the name came from the fallback. It is the
+			# fourth sentence in this file to name a room by hand, and 043
+			# fixed the other three: the definite article lives in
+			# Readback.the() and every rendering reads it. said_article_test
+			# never saw it because its dungeon fixture is two rooms and one
+			# door, which is a CHAIN - this clause needs a hub, so the suite
+			# that holds this rule could not produce the sentence (TRAPS 6).
+			shape = ", with %s off %s" % [off, Readback.the(str(names[hub]))]
 
 	var loops := counted - rooms.size() + 1
 	var round_again := ""
@@ -1588,6 +1627,17 @@ func readback(parameters: Dictionary) -> String:
 # A size that is not a number leaves the room unmeasured rather than 0 m. A
 # readback that states a number the player never gave is trap 8, and the
 # refusal is the thing that names the missing field.
+# 103: the one reading of a room's name as a sentence says it. The underscore
+# swap comes first, because it is what the player will SEE, and the question
+# "does this say anything" is asked of that - which is the order the two tests
+# were in the wrong way round for. Returns the bare noun, never an empty string
+# and never a word with an article already on it, so each of the three
+# sentences that render a room can put its own article on.
+func _room_name(room: Dictionary) -> String:
+	var said := Readback.said(room, "name").replace("_", " ").strip_edges()
+	return UNNAMED_ROOM if said == "" else said
+
+
 func _room_said(name: String, size: float) -> String:
 	if is_nan(size) or size <= 0.0:
 		return Readback.article(name)
@@ -1623,7 +1673,13 @@ func _things_said(parameters: Dictionary, names: PackedStringArray) -> String:
 		var thing: Dictionary = entry
 		# 095: said() so a null name is skipped here exactly as an empty one
 		# is, which is what the validator does with both after 095.
-		var label := Readback.said(thing, "name").replace("_", " ")
+		# 103: .strip_edges() AFTER the swap, for the reason _room_name() gives
+		# above. A thing the model named "_" became a single space, passed this
+		# test, and read back as ", with a   in the hall" - an article, three
+		# spaces and the room. This comment's own policy - "a null name is
+		# skipped here exactly as an empty one is" - is what that broke, and
+		# the order of the two readings is the whole of it.
+		var label := Readback.said(thing, "name").replace("_", " ").strip_edges()
 		if label == "":
 			continue
 		# --- 044: the resolution, and what it said when it could not ---

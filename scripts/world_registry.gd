@@ -221,6 +221,38 @@ const UNREAD_SAID := {
 	"PLAN": "a plan",
 }
 
+# --- 103: 102'S OWN RULE, ONE LEVEL IN: A PLAN *STEP* THAT SAID NOTHING ---
+#
+# 102 gave the PLAN door its word, so a plan whose `steps` could not be read
+# says "a plan" instead of nothing. It did not ask the same question of a
+# single STEP inside a readable plan, and _doing()'s last line - the one for a
+# command this file has no sentence for - answered Readback.article() on the
+# command token, which is "" when the token says nothing.
+#
+# MEASURED, by driving WorldRegistry.readback("PLAN", ...) before anything was
+# changed, with the step's own `command` spoiled in the eight forms 102 used:
+#
+#   one step, command absent or ""        "a plan"   (102's door caught it)
+#   a sound world, then that step         "a dungeon of a room, then "
+#   that step, then a sound ORDER         " and an order to send someone to
+#                                          room 1"
+#   command "   "                         "a    " / "a     and an order ..."
+#
+# So the whole-readback case was covered and the per-step case was not: the
+# sentence kept its connective and lost the thing the connective joins. A
+# dangling "then" is worse than the silence 102 fixed, because it reads as a
+# complete sentence about a step that was never named.
+#
+# THE WORD IS NOT NEW AND IS NOT DERIVED FROM A COMMAND NAME, which is the
+# half UNREAD_SAID above could not supply - there is no command here to key
+# on. It is the noun this project already uses for the thing: every refusal
+# this step is about to get says "step %d: ...", plan_list() calls them steps,
+# and the prompt asks the model for steps. Rendered through
+# Readback.article(), the same mechanism the line below already used, so there
+# is no second spelling of it. The word is the owner's to change; the silence
+# is not his and was never anyone's decision.
+const UNREAD_STEP_NOUN := "step"
+
 
 # The word for a command whose subject could not be read at all.
 static func _unread_said(command: String) -> String:
@@ -393,7 +425,14 @@ static func _doing(command: String, parameters: Dictionary) -> String:
 	# that is about to be refused, and saying the word back is more use than
 	# saying nothing. Every whitelisted command has a case above, and
 	# plan_said_test fails if one is ever added without one.
-	return Readback.article(command.to_lower())
+	#
+	# 103: and when the token itself says nothing, there is no word to say
+	# back, so the step gets the noun for what it is rather than silence. See
+	# UNREAD_STEP_NOUN for the measurement and for why the word is not keyed
+	# on a command. Readback.article() answers a token of three spaces as ""
+	# since 103 as well, so one test covers all three forms.
+	var token := Readback.article(command.to_lower())
+	return token if token != "" else Readback.article(UNREAD_STEP_NOUN)
 
 
 # Everything the AI needs to know about the worlds it can ask for.

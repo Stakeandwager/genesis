@@ -87,11 +87,23 @@ extends SceneTree
 #
 # WHAT IT IS NOT. It is a fault-finder for the five sites above and a guard
 # against drift afterwards. It says nothing about whether the default WORD is
-# the right word - "a room" for a nameless room is the owner's wording, not
+# the right word - the word for a nameless room is the owner's wording, not
 # this file's - and nothing about the sites 095 measured and deliberately did
 # not change, which are named in HANDOVER: a value that says nothing and is
 # REFUSED either way, where the refusal quotes '<null>' back at the player.
 # Those are refusals, not kept names, and their wording is the owner's.
+#
+# 103: THAT SENTENCE QUOTED THE WORD AS "a room" AND IS AMENDED RATHER THAN
+# LEFT, because this commit changed it. The fallback is now the bare noun
+# DungeonModule.UNNAMED_ROOM and the article is put on by whichever of the
+# three sentences renders it: "a room" carried the article INSIDE the word, so
+# two of those three sentences said it twice ("entered through a 10 m a room",
+# "with a lamp in the a room") and the third said it not at all. Measured, and
+# reachable with a room name of plain null. NOTHING IN THIS FILE WOULD HAVE
+# FAILED ON ANY OF IT - the five said_or() assertions below pass "a room" as
+# their own argument and are about said_or, not about the dungeon's choice -
+# and the check that holds it now is in said_article_test, which is where
+# 043 put the article rule. TRAPS 14 in its smallest form.
 
 const CommandParser = preload("res://scripts/command_parser.gd")
 const DungeonModule = preload("res://scripts/dungeon_module.gd")
@@ -178,6 +190,11 @@ func _initialize() -> void:
 	_the_unsupported_reason()
 	_every_door_with_a_null_in_it()
 	_no_readback_says_nothing()
+	# 103: BEFORE the screen below, not after it. This section _record()s every
+	# sentence it drives, and section 6 is a screen over what the collectors
+	# have put in that collection - a section added after it would be screened
+	# by nothing and would look exactly like one that was.
+	_no_plan_step_says_nothing()
 	_no_engine_null_in_anything_said()
 	print("SAYS NOTHING %d assertions, failures=%d" % [asserted, bad])
 	quit(1 if bad > 0 else 0)
@@ -807,3 +824,108 @@ func _plant(into: Variant, path: PackedStringArray, at: int) -> void:
 			(into as Array)[int(step)] = null
 		else:
 			_plant((into as Array)[int(step)], path, at + 1)
+
+
+# --- 9. 103: A PLAN *STEP* THAT SAID NOTHING, WHICH SECTION 7 DRIVES PAST ---
+#
+# Section 7 spoils every TOP-LEVEL key of every command's request, and PLAN's
+# top-level key is `steps`. Spoil it in any of the eight forms and
+# _plan_readback() returns "" and 102's door answers "a plan", which is
+# exactly what section 7 asserts and it is correct. The STEP's own `command`
+# is one level further in, so nothing here reached it, and WorldRegistry's
+# _doing() answered Readback.article() on the token - "" when the token says
+# nothing. MEASURED on 102's code, before anything was changed:
+#
+#   one step, command absent or ""   "a plan"            section 7's catch
+#   a sound world, then that step    "a dungeon of a room, then "
+#   that step, then a sound ORDER    " and an order to send someone to room 1"
+#   command "   "                    "a    " / "a     and an order ..."
+#
+# So the half the readback kept was the CONNECTIVE and the half it lost was
+# the thing the connective joins, which reads as a finished sentence about a
+# step that was never named. That is why this section asks TWO questions and
+# not one: "it says something" is satisfied by the sound half of a plan, and
+# would have passed every row above that has a world in it.
+#
+# THE SECOND QUESTION IS ABOUT THE CLAUSES. The sentence is cut at the three
+# joins _plan_readback() and Readback._join() use - ", then ", " and " and
+# ", " - and no piece of it may be empty. That is the fault stated as a
+# property of the sentence rather than as a list of the four shapes above, so
+# a ninth form or a third position is covered without being enumerated here.
+#
+# NOT ASSERTED: the WORD. UNREAD_STEP_NOUN is the owner's, and what is held
+# here is that it says something and that it is reached - never its spelling.
+func _no_plan_step_says_nothing() -> void:
+	var sound_world := {"command": "CREATE_DUNGEON", "parameters": {
+		"rooms": [{"name": "hall", "width": 10, "depth": 10}], "doors": []}}
+	var sound_order := {"command": "ORDER", "parameters": {"goal": "go_to", "room": 1}}
+
+	var noun: String = WorldRegistry.UNREAD_STEP_NOUN
+	_check(noun.strip_edges() != "", "the word for a step that says nothing says something")
+	_check(Readback.article(noun).strip_edges() != "",
+		"and it survives the reader that renders it (article('%s') is '%s')" % [
+			noun, Readback.article(noun)])
+
+	# The controls first, so a sweep that silently stopped driving anything
+	# cannot pass on the strength of its own emptiness (TRAPS 75).
+	var driven := 0
+	for control in [[sound_world], [sound_world, sound_order], [sound_order]]:
+		var said := WorldRegistry.readback("PLAN", {"steps": control})
+		_record(said)
+		_check(said.strip_edges() != "", "a plan of sound steps says something ('%s')" % said)
+		_check(_no_empty_clause(said), "and no clause of it is empty ('%s')" % said)
+
+	for form in SPOIL:
+		var step := {"parameters": {}}
+		if form != "ABSENT":
+			step["command"] = _spoil(form)
+		# Alone, after a sound world, and before a sound order: the first is
+		# the only position 102's door can rescue, and the other two are where
+		# the connective was left holding nothing.
+		for place in [[step], [sound_world, step], [step, sound_order]]:
+			driven += 1
+			var said := WorldRegistry.readback("PLAN", {"steps": place})
+			_record(said)
+			_check(said.strip_edges() != "",
+				"a plan whose step command is %s says something (%d steps, got '%s')" % [
+					form, (place as Array).size(), said])
+			_check(_no_empty_clause(said),
+				"and no clause of it is empty (%s, %d steps, got '%s')" % [
+					form, (place as Array).size(), said])
+
+	_check(driven == SPOIL.size() * 3,
+		"every form was driven in every position (%d rows, expected %d)" % [
+			driven, SPOIL.size() * 3])
+
+
+# No piece of this sentence is empty OR nothing but an article, cut at the
+# joins the plan readback and Readback._join() actually use. A sentence that
+# kept its connective and lost what the connective joins is the 103 fault, and
+# it is invisible to "it said something" whenever any other part of the plan
+# could be read.
+#
+# THE SECOND HALF WAS ADDED BECAUSE THE FIRST HALF PASSED AN INJECTED FAULT
+# (TRAPS 6). With Readback.article()'s emptiness test put back to `word == ""`,
+# a step command of three spaces renders as "a" and four spaces, and
+# strip_edges() on that is "a" - not empty, so the clause test was satisfied by
+# an article with nothing after it. The article words are typed in as facts
+# about English, which is how this file holds its other such facts, and not
+# read back out of the function under test.
+const ARTICLES := ["a", "an", "the"]
+
+
+func _no_empty_clause(said: String) -> bool:
+	if said.strip_edges() == "":
+		return false
+	var pieces: Array = [said]
+	for join in [", then ", " and ", ", "]:
+		var next: Array = []
+		for piece in pieces:
+			for part in str(piece).split(join, true):
+				next.append(part)
+		pieces = next
+	for piece in pieces:
+		var clause := str(piece).strip_edges()
+		if clause == "" or clause.to_lower() in ARTICLES:
+			return false
+	return true

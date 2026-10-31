@@ -7962,3 +7962,168 @@ fault, in the one place in the repository that displays it.
   again.
 
 > It refused the request in a full sentence, and never said what it had heard.
+
+---
+
+## 103. The fallback with the article inside it, and the three sentences that each rendered it differently
+
+**The rule it produced: a word kept for a value the request did not give is a
+NOUN, because the sentences that use it put their own article on it — and the
+reader that puts the article on must answer a name that says nothing the way
+its sibling does. Where one fact has two readers, a value that says nothing is
+part of the fact, not an edge case either reader may answer on its own.**
+
+**Signature:** a readback reads *"entered through a 10 m a room"*. The word
+that stands in for a name the model did not give was written as a noun phrase
+with the article already in it, and the three sentences that render that name
+in the same function each render it a different way — one through
+`Readback.article()`, one through `Readback.the()`, one raw. Two of them say
+the article twice and the third says it not at all. The suite built for exactly
+this rule is green, because its fixture cannot produce two of the three
+sentences.
+
+**Cause.** `DungeonModule.readback()` has had a word to stand in for a room
+whose name it could not read since **003** — `str(room.get("name", "a room"))`,
+written at `d6abe81` on 8 October, **127 commits** ago, counted with
+`git rev-list --count` and read off `git show d6abe81:scripts/dungeon_module.gd`
+rather than remembered. The word it chose was `"a room"`. 095 then widened
+WHICH values reach it — absent was all it answered at 003; `null`, `""` and
+`"   "` reach it since 095 — and kept the word. **So the doubled article has
+been live for an absent name since 003 and for the other three since 095, and
+the word is 003's rather than 095's.**
+
+`readback()` renders a room's name in **three** sentences:
+
+| sentence | reader | said, with the fallback |
+|---|---|---|
+| `", entered through %s"` | `_room_said` → `Readback.article` | **"a 10 m a room"** |
+| `", with a lamp in %s"` | `_things_said` → `Readback.the` | **"in the a room"** |
+| `", with five rooms off %s"` | **none — the name raw** | **"off a room"** |
+
+and the third was wrong for a REAL name too — *"with five rooms off vault"* —
+which is 043's rule (*"the article belongs in ONE function, not in every
+sentence that needs it"*) missed at a fourth site **in the file 043 fixed**.
+
+**AND THE LEAF HAD THE SAME ASYMMETRY, which is the half that generalises.**
+`Readback.article()` and `Readback.the()` are the two readers of
+`Readback.is_label()`, which is one fact. `the()` has read
+`replace("_", " ").strip_edges()` before testing since 022, and `is_label()`
+since 031; `article()` tested the raw string. So `article("   ")` returned
+**"a" and four spaces** where `the("   ")` returned `""`. Reachable, because
+both dungeon doors swap underscores for spaces **and then** ask whether the
+name says anything — the wrong way round — so a room or a thing the model
+named `"_"` arrived at the leaf as a single space:
+
+```
+a room named "_"    "entered through a 10 m  "
+a thing named "_"   ", with a   in the hall"
+```
+
+**AND THE SAME SILENCE ONE LEVEL INTO A PLAN.** 102 gave the PLAN door its
+word, so a plan whose `steps` cannot be read says *"a plan"*. It did not ask
+the question of a single STEP inside a readable plan, and `_doing()`'s last
+line answered `Readback.article()` on the command token, which is `""` when the
+token says nothing. Measured, before anything was changed:
+
+| plan | said |
+|---|---|
+| one step, `command` absent or `""` | *"a plan"* — 102's door caught it |
+| a sound world, then that step | **"a dungeon of a room, then "** |
+| that step, then a sound `ORDER` | **" and an order to send someone to room 1"** |
+| `command` of three spaces | **"a    "**, **"a     and an order ..."** |
+
+The half the sentence kept was the **connective** and the half it lost was the
+thing the connective joins, which reads as a finished sentence about a step
+that was never named.
+
+**Why no suite saw any of it.** `said_article_test` is 043's file for this
+exact rule, written at `abe38dc` on 16 October — **66 commits** ago, counted
+rather than remembered — and it holds 181 assertions about it. Its dungeon
+fixture is **two rooms and one door**, which is a CHAIN — and the hub clause only exists for a
+dungeon where one room carries most of the doors, so **the suite that holds
+this rule could not produce the sentence**. Every name it was ever given is a
+real one, so the fallback never entered a sentence it swept. `says_nothing_test`
+section 7 spoils every **top-level** key of every command, and a plan step's
+own `command` is one level further in. TRAPS 6, three times over: correct
+assertions fed the only inputs that could not make them fail.
+
+**AND ONE SUITE DID PRODUCE THE HUB SENTENCE AND HELD THE FAULT IN PLACE,
+WHICH THE PREDICTION FOR THIS COMMIT DID NOT NAME AND THE FIRST FULL RUN
+FOUND (TRAPS 89).** `tests/shape_test.gd`, written at `8f97f5c` on 13 October,
+95 commits ago, drives four dungeons for their shape clause and its fourth
+case is a hub part way along a chain. It asserted
+`line.contains("with four rooms off hall")` — **the raw, article-less wording,
+typed in** — so the one suite that reached the sentence was the reason the
+sentence could not be corrected without a failure, and the failure is how it
+was found. That is TRAPS 82 at a suite: a spelled-out expectation cannot tell
+a rewording from a regression, and this one had frozen a sentence that was
+wrong. Its expectation is now built from the room the clause must name,
+through `Readback.the()`. Measured both ways: with the hub naming its room raw
+again it is 4 assertions, failures=1; with `Readback.the()` reworded to say
+*"yon"* instead of *"the"* it is 4/0, which is the half a typed string got
+backwards.
+
+**Measured, each fault alone in its own throwaway copy with its own
+`config/name`, against 234/0 and 437/0:**
+
+```
+Readback.article() emptiness test back to `word == ""`     says_nothing   437/3
+the fallback put back to "a room"                          said_article   234/2
+the hub clause naming its room raw                         said_article   234/3
+the room name's strip_edges() removed                      said_article  234/12
+the thing label's strip_edges() removed                    said_article   234/3
+_doing()'s word removed                                    says_nothing   437/6
+UNREAD_STEP_NOUN set to three spaces                       says_nothing   437/8
+NEGATIVE CONTROL: the room noun changed to "chamber"       all four       0 fails
+NEGATIVE CONTROL: the step noun changed to "instruction"   all four       0 fails
+```
+
+**And two of 103's own new assertions passed an injected fault before they were
+strengthened, which is the part worth keeping.** The first draft held the
+fallback by comparing *"the readback of a nameless room"* with *"the readback of
+a room the player called `UNNAMED_ROOM`"*. Both sides are built from the same
+constant, so with `"a room"` put back **both sentences double the article and
+the equality is satisfied by the fault** — 234/0, silent. The same draft's
+clause test asked only whether a clause was empty, and `"a"` with four spaces
+after it **strips to `"a"`, which is not empty**, so the reverted leaf passed
+too. What replaced them does not read the function under test: the three
+article words are typed in as a fact about English, the fallback is asserted
+not to BEGIN with one of them, and no clause of a plan readback may be an
+article on its own. **The screen's first draft then failed its own probe** —
+`\b(a|an|the) (a|an|the)\b` does not match *"a 10 m a room"*, whose two
+articles are four words apart — which is how the optional size got into it
+before the commit rather than after.
+
+**Do:**
+
+- **A fallback for a value that says nothing is a NOUN.** The article belongs
+  to the sentence, which is the only arrangement in which one word can be
+  right in all three sentences that use it. Put it inside the word and every
+  site that reads a reader says it twice.
+- **Where one fact has two readers, they must agree about a value that says
+  nothing.** `the()` and `article()` read the same `is_label()`; only one of
+  them stripped. The emptiness test is part of the fact.
+- **Swap the spelling BEFORE asking whether it says anything, not after.** A
+  name is tested in the form the sentence will carry. `"_"` is not an empty
+  name until the underscore is a space, and then it is.
+- **An assertion built from the constant it is holding is not a check
+  (TRAPS 6).** If both sides of an equality are derived from the thing under
+  test, the fault moves both sides. Hold it against a fact stated
+  independently — here, the three article words, typed in.
+- **A screen gets a probe that must match, and one that must not.** Both
+  directions, on the exact sentence the fault produced.
+- **When a suite holds a rule and the fault is in its subject, ask what its
+  fixture cannot produce.** `said_article_test` could not make a hub, so one
+  of the three sentences in its own subject was outside it for all 66 commits
+  of its life, and the sentence itself had said the name raw since 003.
+
+Found in 103, by taking 102's own live entry — *where else in `scripts/` does a
+function answer the empty string and a caller treat it as an answer* — and
+enumerating the 142 `-> String` functions in `scripts/` rather than reasoning
+about them.
+**Nothing in `scenes/`, `netlify/`, `.github/`, either runner, `project.godot`
+or `export_presets.web.cfg` was touched.**
+
+> The word stood in for a name nobody gave, and it brought its own article to
+> three sentences that each supplied one.
+

@@ -108,6 +108,12 @@ extends SceneTree
 # is_label fact too, with the same shape of list, and the same one-character
 # fault passed it. Both are fixed.
 
+# 103: the three article words, typed in as a fact about English rather than
+# read out of Readback. Two of 103's own new assertions passed an injected
+# fault because they were built from the same constant they were holding, and
+# these are what replaced the circular half of them (TRAPS 6).
+const ARTICLE_WORDS := ["a", "an", "the"]
+
 const SPOKEN_AN := ["8", "11", "18", "80", "88", "800", "888", "8000", "11000", "18000"]
 const SPOKEN_A := ["1", "2", "4", "7", "9", "10", "12", "20", "40", "110", "180", "1100", "1800", "110000"]
 
@@ -224,6 +230,11 @@ func _initialize() -> void:
 	_the_sound_not_the_letter()
 	_an_errand()
 	_a_dungeon_readback()
+	# 103: both of these run BEFORE _sweep(), because they add sentences and
+	# names to the collections the sweep reads. A section added after it would
+	# be swept by nothing and would look exactly like one that was.
+	_the_hub_clause()
+	_a_room_nobody_named()
 	_a_sections_refusal()
 	_sweep()
 
@@ -514,6 +525,54 @@ func _sweep() -> void:
 	_check(dropped.is_empty(), "and no ordinary name loses the article it should have%s" % (
 		"" if dropped.is_empty() else " - %s" % "; ".join(PackedStringArray(dropped))))
 
+	# --- 103: TWO ARTICLES IN A ROW, over every sentence collected ---
+	#
+	# The two loops above read names_used, so they can only see a doubled
+	# article in front of a name a fixture registered. 095's fallback for a
+	# room nobody named was "a room" - the article inside the word - and the
+	# two sentences that render a room through a reader said it twice:
+	# "entered through a 10 m a room" and "with a lamp in the a room". Neither
+	# loop above could see it, because the name in play was the fallback and
+	# no fixture registers that.
+	#
+	# This is the narrower, more general question and it needs no name at all:
+	# an article immediately followed by another article is wrong in English
+	# wherever it appears. The words are typed in here as a fact (ARTICLE_WORDS)
+	# and not read out of Readback, which is what makes this hold a fallback
+	# built out of the same function.
+	# A SIZE MAY SIT BETWEEN THE TWO, which the first draft of this screen did
+	# not allow - and that draft failed its own probe below, which is how it
+	# was found rather than shipped. "entered through a 10 m a room" is the
+	# MEASURED half of the fault and its two articles are four words apart, so
+	# the optional size is read here exactly as the leading-article loop above
+	# reads it.
+	var doubled: Array = []
+	var pair := RegEx.new()
+	pair.compile("\\b(a|an|the) (?:[0-9.]+(?: by [0-9.]+)? m )?(a|an|the)\\b")
+	for sentence in said:
+		for raw in str(sentence).split("\n"):
+			var line := str(raw)
+			var hit := pair.search(line.to_lower())
+			if hit != null:
+				doubled.append("\"%s\" in: %s" % [hit.get_string(), line])
+	_check(doubled.is_empty(), "no sentence says two articles in a row%s" % (
+		"" if doubled.is_empty() else " - %s" % "; ".join(PackedStringArray(doubled))))
+	# And the fact the screen rests on, so a regex that stopped matching
+	# anything cannot pass as an absence (TRAPS 78).
+	for measured in ["entered through a 10 m a room", "with a lamp in the a room",
+			"along with a 80 by 20 m a room"]:
+		_check(pair.search(measured) != null,
+			"the two-article screen matches a sentence 095's fallback produced: %s" % measured)
+	for word in ARTICLE_WORDS:
+		_check(pair.search("%s %s x" % [word, word]) != null,
+			"and it matches '%s %s'" % [word, word])
+	# And the other direction, so a screen that matched everything would be
+	# caught too: a size after ONE article is ordinary and must not match.
+	for sound in ["entered through a 10 m hall", "with a lamp in the vault",
+			"a dungeon of a room joined by 0 doors"]:
+		_check(pair.search(sound) == null,
+			"and it leaves an ordinary sentence alone: %s" % sound)
+
 	# ANTI-VACUITY, because both loops above are over a collection the
 	# suite fills itself: an empty names_used would pass them silently,
 	# which is 067's lesson about a scan whose class comes from the thing
@@ -533,3 +592,163 @@ func _sweep() -> void:
 		_check(bool(shapes[shape]),
 			"the sweep was given a %s name to sweep (%d names in play)" % [
 				shape, names_used.size()])
+
+
+# --- 103: the two renderings of a room's name this suite could not produce ---
+#
+# 043 built this file to ask TRAPS 10 and 23's question - is the article in
+# ONE function, and does every sentence read it - and answered it for the
+# dungeon readback with a two-room, one-door fixture. That fixture is a
+# CHAIN, and readback()'s hub clause only exists for a dungeon where one room
+# carries most of the doors, so the sentence ", with five rooms off <name>"
+# was never produced here at all. It named its room RAW. Measured on 102's
+# code, before anything was changed:
+#
+#   with five rooms off vault          (a real name, no article)
+#   with five rooms off a room         (the 095 fallback, article inside it)
+#
+# and the fallback was a NOUN PHRASE WITH THE ARTICLE IN IT, so the two
+# sentences that DO read a function said it twice: "entered through a 10 m a
+# room" and "with a lamp in the a room". Every one of those is reachable with
+# a room name of plain `null`, which is one of the four forms 095 was written
+# for. TRAPS 6 in this suite's own shape: the assertions were right and the
+# fixture could not make them fail.
+#
+# WHAT THESE TWO SECTIONS ASSERT
+#  - the hub room is named exactly as Readback.the() renders it, both
+#    directions, numbered name and ordinary one, like every other room here.
+#  - a room the request did not name reads EXACTLY as it would if the player
+#    had written the fallback noun himself. That is the assertion that cannot
+#    be satisfied by rewording: whatever word DungeonModule.UNNAMED_ROOM
+#    holds, the nameless room must go through the same one reader as any other
+#    name, so the article is applied once. Reword the fallback and this still
+#    passes; put an article back inside it and all five forms fail.
+#
+# NOT ASSERTED. The fallback WORD is the owner's and nothing here has an
+# opinion on it. And the new sentences are handed to _remember() but the
+# fallback noun is deliberately NOT registered in names_used: "room" is an
+# ordinary English word in sentences this suite already collects - "is not in
+# any room" - and the sweep's dropped-article loop would read those as a name
+# with its article missing. The equality below is the stronger check anyway,
+# because it holds the whole sentence rather than one word of it.
+func _the_hub_clause() -> void:
+	# The hub must not be room 1: when it is, the clause says "off it" and
+	# names nothing, which is the branch that was already right.
+	for hub_name in ["vault", "vault_2", "great_vault_3"]:
+		var rooms: Array = [{"name": _use("entrance"), "width": 10, "depth": 10}]
+		rooms.append({"name": _use(hub_name), "width": 9, "depth": 9})
+		for i in range(2, 6):
+			rooms.append({"name": _use("r%d" % i), "width": 8, "depth": 8})
+		var doors: Array = [[2, 1], [2, 3], [2, 4], [2, 5], [2, 6]]
+		var text := DungeonModule.new().readback({"rooms": rooms, "doors": doors})
+		_remember([text])
+		var plain := str(hub_name).replace("_", " ")
+		var want := plain if Readback.is_label(plain) else Readback.the(plain)
+		_check(_says(text, "rooms off %s" % want),
+			"the hub room is named as the() renders it ('off %s'): %s" % [want, text])
+		_check(_named_as(text, want),
+			"and it carries no second article of its own ('%s'): %s" % [want, text])
+
+
+func _a_room_nobody_named() -> void:
+	var d := DungeonModule.new()
+	var noun: String = DungeonModule.UNNAMED_ROOM
+	_check(noun.strip_edges() != "", "the fallback for a room nobody named says something")
+	# THE ARTICLE IS NOT IN THE WORD. Asserted against the three article words
+	# typed in here as a fact about English, and NOT by re-reading the function
+	# under test: the equality below compares two sentences built from this same
+	# constant, so with "a room" back in it BOTH sides double the article and
+	# the equality is satisfied by the fault. That is TRAPS 6 in an assertion
+	# written to catch this very thing, found by injecting it.
+	_check(not str(noun.strip_edges().split(" ", false)[0]).to_lower() in ARTICLE_WORDS,
+		"and the article is not inside it ('%s' begins a sentence as '%s')" % [
+			noun, Readback.article(noun)])
+
+	# Absent, null, "", whitespace, and a name that becomes whitespace once the
+	# underscores the format asks for are spelled as spaces. The last is the
+	# one that reached Readback.article() as " " and read back as "a 10 m  ".
+	var forms: Array = ["ABSENT", null, "", "   ", "_", "__", " _ "]
+	for sized in [true, false]:
+		var side = 10 if sized else null
+		for form in forms:
+			var room := {"width": side, "depth": side}
+			if str(form) != "ABSENT":
+				room["name"] = form
+			var thing := {"name": "lamp", "in": 1}
+			var asked := {"rooms": [room], "doors": [], "things": [thing]}
+			var text := d.readback(asked)
+			var named := {"rooms": [{"name": noun, "width": side, "depth": side}],
+				"doors": [], "things": [thing]}
+			var want := d.readback(named)
+			_remember([text])
+			_check(text == want,
+				"a %s room named %s reads as one the player called '%s' would: '%s' vs '%s'" % [
+					"measured" if sized else "unmeasured",
+					"ABSENT" if str(form) == "ABSENT" else "'%s'" % str(form),
+					noun, text, want])
+			# And the thing's room is the same name through the OTHER reader,
+			# which is where the doubled definite article showed.
+			_check(_says(text, "in %s" % Readback.the(noun)),
+				"and the thing's room reads as the() renders it ('in %s'): %s" % [
+					Readback.the(noun), text])
+
+	# --- 103: the EDGES of a name that does say something ---
+	#
+	# A SECOND, SMALLER CHANGE FELL OUT OF READING THE NAME IN ONE PLACE, and
+	# it is asserted here rather than only recorded. 095's said_or() returned a
+	# value that says something AS IT WAS SENT, edges and all, on the principle
+	# that a readback does not tidy a player's words - and the edges are not the
+	# player's words, they are whitespace. MEASURED on 102: a room called
+	# " hall " read back as "entered through a 10 m  hall ", with the padding
+	# inside the sentence and the comma pushed out. It now reads exactly as the
+	# same name without the padding, which is what _room_name() stripping
+	# before the emptiness test gives for free.
+	#
+	# The INSIDE of a name is untouched - "great  hall" keeps its double space,
+	# because that IS the player's spelling and this function has no business
+	# with it. Driven, not argued: the pair below would fail if the strip were
+	# applied to the whole string.
+	for padded in [" hall ", "  hall", "hall  ", " room_1 "]:
+		var plain := str(padded).strip_edges()
+		var with_pad := d.readback({"rooms": [{"name": padded, "width": 10, "depth": 10}],
+			"doors": []})
+		var without := d.readback({"rooms": [{"name": plain, "width": 10, "depth": 10}],
+			"doors": []})
+		_remember([with_pad])
+		_check(with_pad == without,
+			"a room called '%s' reads exactly as one called '%s': '%s' vs '%s'" % [
+				padded, plain, with_pad, without])
+	# Registered with _use(), like every other name a fixture puts into play:
+	# the sweep below skips an occurrence of "hall" that is the inside of a
+	# LONGER registered name, and without this the inner "hall" of "great  hall"
+	# reads as an ordinary name with its article missing. Found by running it.
+	var inner := d.readback({"rooms": [{"name": _use("great  hall"), "width": 10, "depth": 10}],
+		"doors": []})
+	_remember([inner])
+	_check(inner.contains("great  hall"),
+		"and the double space INSIDE a name is the player's spelling and is kept: %s" % inner)
+
+	# --- and the THING's own name, which is the same two readings in the
+	#     other door of the same function ---
+	#
+	# _things_said() swaps underscores for spaces and then asks whether the
+	# name says anything, in that order, so a thing named "_" was a single
+	# space, was not skipped, and read back as ", with a   in the hall" - an
+	# article, three spaces, and the room it is in. Its own comment says the
+	# policy is that a name saying nothing is skipped exactly as an empty one
+	# is, so the assertion is that EQUALITY: a thing whose name says nothing
+	# leaves the sentence the dungeon would have had with no thing at all.
+	var bare := d.readback({"rooms": [{"name": "hall", "width": 10, "depth": 10}],
+		"doors": [], "things": []})
+	_remember([bare])
+	for form in ["ABSENT", null, "", "   ", "_", "__", " _ "]:
+		var thing_said := {}
+		if str(form) != "ABSENT":
+			thing_said["name"] = form
+		thing_said["in"] = 1
+		var text := d.readback({"rooms": [{"name": "hall", "width": 10, "depth": 10}],
+			"doors": [], "things": [thing_said]})
+		_remember([text])
+		_check(text == bare,
+			"a thing named %s is left out of the sentence, as an empty name is: '%s' vs '%s'" % [
+				"ABSENT" if str(form) == "ABSENT" else "'%s'" % str(form), text, bare])
