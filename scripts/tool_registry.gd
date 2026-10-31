@@ -8,6 +8,37 @@ class_name ToolRegistry
 # for, checked and used; if it is not, the AI cannot reach it at all.
 #
 # Adding a tool is one file and one entry below. Nothing else changes.
+#
+# --- 104: that last sentence is true of THIS DIRECTORY, and a reader may
+# take it wider than it is, so the measurement is here beside it ---
+#
+# DRIVEN, not reasoned: a COMPLETE fourth tool - its own file with name(),
+# prompt_section(), validate(), defaults() and readback(), half-added in no
+# respect - was registered in a throwaway copy and the full suite run. The
+# line above held for scripts/: the new file and the one entry below were the
+# whole diff, and nothing else in scripts/ needed a word. SIX SUITES WENT RED
+# ANYWAY, and they are worth separating, because they are not all the same
+# kind of thing:
+#
+#   prompt_bounds_test   PROMPT_FINGERPRINT must move. BY DESIGN - a new tool
+#                        changes the prompt, and that constant exists to say
+#                        the prompt is the one PROMPT_VERSION names.
+#   says_nothing_test    found a REAL fault in the injected tool's own
+#                        readback (an empty `tint` said as "a  lamp"). The
+#                        suite working correctly on a member that did not
+#                        exist when it was written. No edit owed.
+#   prompt_numeral_test  `contributors.size() == 8`, a typed count, and a
+#                        per-file row in a hand-written table.
+#   look_test            `ToolRegistry.free_kit().size() == 3`, a typed count.
+#   check_wiring_test    a row in the hand-written const DECLARED.
+#   intent_door_test     a request per door, listed by hand.
+#
+# So the honest width: adding a tool is one file and one entry HERE, plus
+# FOUR hand-typed sites in tests/ and the fingerprint. Those four are counted
+# and NOT changed - whether they should be read off the registry instead is a
+# reading of four suites and is a live entry in docs/HANDOVER.md, not a
+# change made on the way past (TRAPS 11 is about fixing the class, and the
+# class here is four suites that each chose a typed number deliberately).
 
 static func tools() -> Array:
 	return [CarTool.new(), BootsTool.new(), LookTool.new()]

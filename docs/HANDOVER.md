@@ -13,6 +13,187 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
+- Last commit at the time of writing: **104**, which took **the second live
+  entry as of 103** - *a tool or a world with no `prompt_section()` is
+  registered, validated and usable, and invisible to the AI, and nothing would
+  say so* - and **did the one injection that entry named as its first step**,
+  rather than acting on its premise. **The premise was WRONG IN BOTH HALVES,
+  which is the finding**, and 103 had flagged it honestly as *"NOT MEASURED"*.
+  New TRAPS **104**. No new file. `tests/claim_field_test.gd` **121 -> 134**
+  assertions; `scripts/tool_registry.gd` gains a comment and **0 lines of
+  behaviour**. No new "Human decision needed". One new live entry, counted and
+  not fixed.
+
+  **WHAT THE ENTRY ASSUMED, AND WHAT DRIVING IT SAID.** The entry's
+  prescription was *"assert off `ToolRegistry.tools()` and
+  `WorldRegistry.modules()` that every member's `prompt_section()` says
+  something"*, and its named first step was *"add a fourth tool with no
+  `prompt_section()` to `ToolRegistry.tools()` in a throwaway copy and run the
+  set"*. Four injections, each alone in its own copy with its own
+  `config/name`:
+
+  | injection | suites red |
+  |---|---|
+  | a fourth TOOL with no `prompt_section()` | **6** |
+  | an existing tool's section blanked (`LookTool`) | **6** |
+  | an existing module's section blanked (`FarmModule`) | **5** |
+  | a COMPLETE fourth tool, nothing half-added | **6** |
+
+  So *"nothing would say so"* is **false**. It was not held by nothing - and
+  it was not held by an assertion either, which is the part worth the commit.
+
+  **OF EVERY ROW THAT WENT RED, EXACTLY ONE WAS ASKED OFF THE REGISTRIES
+  ABOUT EVERY MEMBER WITHOUT NAMING THE MEMBER.** `prompt_numeral_test`'s
+  `prompt.contains(section)` - which belongs to 073's **numeral accounting**
+  and is not a statement about visibility at all. Every other row was
+  hand-typed per member, read one at a time rather than counted:
+  `formula_test` asserts *"the look section is in the assembled prompt"*,
+  `look_test` asserts *"the AI is told about it without the prompt being
+  edited"*, `prompt_bounds_test` names the farm's six zone types and five
+  crops individually, `claim_field_test`'s own worlds loop reaches
+  `CREATE_FARM` only because the farm **declares `lists()`**. A fourth
+  member - which no such row mentions - would have been held by that one
+  incidental assertion alone.
+
+  **AND THAT ASSERTION HOLDS IT BY AN ENGINE DETAIL, WHICH IS WHY THE ENTRY
+  IS CLOSED WITH A STATEMENT RATHER THAN LEFT STANDING.** `String.contains("")`
+  is **`false`** in Godot 4.7.1 - **measured with a four-line probe, not
+  assumed**, because the opposite is true in several languages a reader may be
+  arriving from (Python's `"" in s` is `True`). So `prompt.contains("")` fails
+  today and the rule survived on a behaviour **nothing in this repository
+  writes down**. An engine answering the other way would turn that row green
+  and leave the rule held by nothing, in silence. TRAPS 6 at a suite that was
+  never named for this rule.
+
+  **WHAT CHANGED, AND IT IS IN THE HOME THE ENTRY NAMED.** Four assertions in
+  `tests/claim_field_test.gd`, read off `ToolRegistry.tools()` and
+  `WorldRegistry.modules()`, so a fourth tool or a fourth world is asked the
+  same question **without that file being edited** (TRAPS 11: the class
+  includes the world that does not exist yet). **The two halves are
+  deliberately independent** - *the section says something*, with no
+  `contains()` in it and `strip_edges() != ""` rather than `!= ""` because
+  three spaces is not a section; and *its text is in the prompt the model
+  receives*, guarded by the first so an empty needle can never satisfy it
+  whichever way the engine answers. No new file, so `README.md`'s count class
+  (100's, still open) is untouched.
+
+  **AND A CLAIM IN `scripts/tool_registry.gd` WAS MEASURED RATHER THAN LEFT
+  TO BE READ WIDER THAN IT IS TRUE** (TRAPS 14's third rule). Its header says
+  *"Adding a tool is one file and one entry below. Nothing else changes."*
+  **That held for `scripts/`** - the complete fourth tool's whole diff there
+  was its own file and the one registry entry, and nothing else in `scripts/`
+  needed a word. **Six suites went red anyway, and they are three different
+  kinds of thing**, separated because reporting "six suites break" as one fact
+  would have been true and useless: `prompt_bounds_test`'s `PROMPT_FINGERPRINT`
+  must move, which is **by design**; `says_nothing_test` found a **real fault
+  in the injected tool's own readback** (an empty `tint` said as *"a  lamp"*) -
+  the suite working correctly on a member that did not exist when it was
+  written, and no edit owed; and **four** are typed numbers and hand-written
+  tables - `prompt_numeral_test`'s `contributors.size() == 8` and its per-file
+  row, `look_test`'s `free_kit().size() == 3`, `check_wiring_test`'s const
+  `DECLARED`, `intent_door_test`'s request-per-door list. **Those four are
+  counted and NOT changed**, and whether they should read off the registry
+  instead is the new live entry.
+
+  **VERIFIED:**
+  **BASELINE REPRODUCED 103's md5 BYTE-FOR-BYTE FROM A SEVENTH INDEPENDENT
+  CONTAINER** with its own Godot download (4.7.1.stable.official.a13da4feb,
+  `--version` read): `--all` on a clean `b155083`, `git status --porcelain`
+  empty, `user://` empty because the container was fresh -
+  `62c0910451647a0287dfab514d81f714`, **78 suites, 0 with something to look
+  at**. `ls tests/*.gd` 80, run reported 78.
+  **THE PREDICTION WAS WRITTEN DOWN BEFORE ANY CODE WAS CHANGED AND IT WAS
+  WRONG IN TWO OF ITS SEVEN NUMBERED CLAIMS, RECORDED RATHER THAN TIDIED**
+  (TRAPS 89). It predicted `prompt.contains("")` would **pass vacuously** -
+  it fails, which is the whole finding above - and it predicted
+  `claim_field_test` would **not** fire on a blanked module - it does, because
+  the farm declares `lists()`. It was right that the only general hold is in
+  `prompt_numeral_test` and right that `contributors.size() == 8` fires for
+  the wrong reason. **Its own "what I cannot predict" section named
+  `String.contains("")` as the thing to drive rather than assume, and that is
+  what paid.**
+  **THE POST-CHANGE PREDICTION HELD EXACTLY**: *one line moves,
+  `claim_field_test` 121 -> 134*. Written down before the run, including the
+  named risk that it might be wrong because **four suites do read `tests/`**
+  (`player_door_test`, `source_scan_test`, `scan_floor_test`, `formula_test`,
+  found by grepping for `res://tests` rather than assumed). `diff` against the
+  baseline is that **one line**: md5
+  `99fa58e38dd2f2711e1d0261dfed668c`, **78 suites, 0 with something to look at**.
+  **SIX INJECTIONS AGAINST THE NEW ASSERTIONS, each alone in its own throwaway
+  copy with its own `config/name`, the diff read before each run**, against
+  134/0:
+  `LookTool`'s section blanked **131/4**, naming *"EQUIP look: its
+  `prompt_section()` says something"*; the same section set to **three spaces**
+  **131/4**, byte-identical to the blank case, which is the half `!= ""` would
+  have accepted; `FarmModule`'s section blanked **133/2**; a fourth tool with
+  no section **139/3**, naming *"EQUIP ghost"* **off the registry, with that
+  file never edited**; and - the one that proves the two assertions are
+  independent - `ToolRegistry.prompt_sections()` made to **drop** one real
+  section on its way to the prompt, **134/1**, failing ONLY *"the text of its
+  section is in the prompt the model receives"* while *"says something"*
+  passed.
+  **AND A NEGATIVE CONTROL, which is what makes this a capability assertion
+  and not a wording one** (TRAPS 14's second rule): one line of `LookTool`'s
+  section genuinely **reworded** - *"Nothing here changes what the player can
+  do"* -> *"None of this changes what the player can do"* - **134/0, green**.
+  **The first draft of that control was a NO-OP and is recorded rather than
+  tidied**: its anchor string did not exist in the file, so it changed nothing
+  and passed, which is a control that controls for nothing. Caught by
+  `grep -c` returning 0 before the result was believed, and redone against a
+  string read out of the file.
+
+  **NOT DONE AND NOT VERIFIED:**
+  **THE FOUR HAND-TYPED SITES ARE COUNTED AND NOT CHANGED** (TRAPS 11): the
+  class is four suites that each chose a typed number deliberately, and
+  whether a registry read belongs in any of them is a reading of four suites,
+  not a change to make on the way past. New live entry below.
+  **NOTHING WAS ASSERTED ABOUT `NpcGoals`**, which contributes the third
+  section of the prompt and is **in neither registry**, so the new sweep
+  cannot reach it. Named in the suite's own comment rather than left to be
+  discovered.
+  **THE NEW ASSERTIONS DO NOT HOLD THAT A SECTION IS CORRECT**, complete, or
+  that it describes the fields the validator reads. For tools that is held by
+  the skeleton checks above them; **for a world it is held only where the
+  world declares `lists()`**, so *a world with no lists and a one-word section
+  passes everything in this file*. Said rather than discovered later.
+  **THE FIRST LIVE ENTRY AS OF 103 IS UNTOUCHED** - the five validator groups
+  of `says_nothing_test` still ask the per-group question. 104 did not do that
+  reading.
+  **THE THIRD LIVE ENTRY AS OF 103 IS UNTOUCHED** - the same enumeration over
+  `tests/`, with `tests/replay.gd` the member worth looking at first.
+  **NO LIVE PATH TO A MODEL WAS DRIVEN.** No model was asked anything, no
+  request left the container, there is no API key here, no browser ran, no web
+  export was made, `interpret.js` was not executed. `main.gd` was not driven;
+  the measurements came from driving `claim_field_test`, `prompt_numeral_test`,
+  `prompt_bounds_test`, `formula_test`, `look_test`, `check_wiring_test` and
+  `says_nothing_test` directly, and from a four-line probe of
+  `String.contains()`.
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is still **2026-10-16**, checked by grepping every
+  `OWNER, 2026-1[01]-*` marker in `HANDOVER.md` and `TRAPS.md` and every
+  `2026-1[01]-*` date in both; the later ones (10-17, 10-22, 10-23, 10-25,
+  10-29) are assistant commits, scheduling notes and overlap records, read one
+  at a time.
+  **064'S FINDING IS CARRIED FORWARD AND NOT RE-VERIFIED.**
+
+  **NOTHING IN `scenes/`, `netlify/`, `.github/`, `project.godot` OR
+  `export_presets.web.cfg` WAS TOUCHED, and NEITHER RUNNER WAS EITHER** - no
+  file was added or removed, so `tests/` keeps 80 `.gd` and 80 `.uid`, no list
+  in either runner can be short one (TRAPS 4), and `README.md`'s suite count
+  cannot have moved. **`ai_interpreter.gd` is 0 lines of diff, so
+  `PROMPT_FINGERPRINT` and `PROMPT_VERSION` cannot have moved** - and
+  `prompt_bounds_test` is green in run 2, which is the measurement of that
+  rather than the inference. `scripts/tool_registry.gd` changes by **comment
+  only**. Every probe and every injection was in a throwaway copy under the
+  scratch directory with its own `config/name`, never in the repository.
+
+  **AND WHAT CHANGED FOR ANYONE USING GENESIS: NOTHING TODAY, AND THAT IS
+  STATED PLAINLY.** All three tools and all three modules override
+  `prompt_section()`, so no player meets this. What changed is that the next
+  tool or world added to either registry **cannot be half-added in silence**:
+  a member the AI has never heard of now fails an assertion that names it, and
+  fails it for the reason it is wrong rather than because a typed count moved.
+
 - Last commit at the time of writing: **103**, which took **the first live
   entry as of 102** - *the wider class: where else in `scripts/` does a
   function answer the empty string and a caller treat it as an answer* - and
@@ -6622,6 +6803,49 @@ than suites, leaving **78 suites**, counted with `ls tests/*.gd` rather than
 remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 78
 and are skipped without it.
+
+**104 ADDED NO FILE EITHER**, which is why the two numbers above did not
+move, and that was deliberate for the reason 101, 102 and 103 all gave: a new
+suite would falsify `README.md`'s count, which is the open class 100 left and
+which 104 does not close. The four new assertions went into
+`tests/claim_field_test.gd` - **already the standing check for what the prompt
+claims about a tool's fields**, and the home 103's own entry named - and
+`scripts/tool_registry.gd` changed by **comment only**.
+Its baseline on the clean tree at `b155083`, `git status --porcelain` empty,
+was **BYTE-IDENTICAL to the md5 103 recorded, from a SEVENTH independent
+container with its own Godot download** (4.7.1.stable.official.a13da4feb,
+`--version` read): `62c0910451647a0287dfab514d81f714`, 78 suites, 0 with
+something to look at. The container was fresh, so `user://` was empty rather
+than cleared. `ls tests/*.gd` 80, run reported 78.
+**THE PREDICTION WAS WRITTEN DOWN BEFORE ANY CODE WAS CHANGED AND TWO OF ITS
+SEVEN NUMBERED CLAIMS WERE WRONG** (TRAPS 89), both recorded in the 104 entry
+rather than tidied: it predicted `prompt.contains("")` would pass vacuously
+(it fails - `String.contains("")` is `false`, probed) and predicted
+`claim_field_test` would not fire on a blanked module (it does, because the
+farm declares `lists()`). **Its own "what I cannot predict" section named
+`String.contains("")` as the thing to drive rather than assume, and that is
+the line that paid.**
+**THE POST-CHANGE PREDICTION HELD EXACTLY** - *one line moves,
+`claim_field_test` 121 -> 134* - and it was written with the named risk that
+**four suites do read `tests/`** (`player_door_test`, `source_scan_test`,
+`scan_floor_test`, `formula_test`, found by grepping `res://tests` rather than
+assumed), any of which could have moved a second number. None did.
+**RUN 2 IS THE CODE TREE**: `user://` cleared before it, md5
+`99fa58e38dd2f2711e1d0261dfed668c`, **78 suites, 0 with something to look at**,
+`diff` against the baseline **one line**.
+**SIX INJECTIONS AGAINST THE NEW ASSERTIONS, each alone in its own throwaway
+copy with its own `config/name`, the diff read before each run**, against
+134/0: `LookTool`'s section blanked **131/4**; the same set to three spaces
+**131/4**, identical to the blank case, which is the half `!= ""` would have
+accepted; `FarmModule`'s blanked **133/2**; a fourth tool with no section
+**139/3**, named off the registry with that file never edited; and
+`ToolRegistry.prompt_sections()` made to **drop** one real section on its way
+to the prompt **134/1**, failing only the containment half while the emptiness
+half passed - which is the measurement that the two assertions are
+independent. **AND A NEGATIVE CONTROL**: one line of `LookTool`'s section
+genuinely reworded, **134/0 green**. **Its first draft was a NO-OP whose
+anchor string was not in the file, and is recorded rather than tidied** -
+caught by `grep -c` returning 0 before the green was believed.
 
 **103 ADDED NO FILE EITHER**, which is why the two numbers above did not
 move, and that was deliberate for the reason 101 and 102 both gave: a new
@@ -13583,6 +13807,68 @@ FOR A NARROWER REASON.** It still deletes `user://track_log.jsonl` on the path
 that works, which is the shared ledger four other suites read (TRAPS 50,
 TRAPS 97). What changed in 101 is only that a **refused** run no longer does.
 
+**NOTHING IS OWED FROM 104 EITHER.** Its baseline **reproduced the md5 103
+recorded, byte-for-byte, from a seventh independent container with its own
+Godot download** (`62c0910451647a0287dfab514d81f714`, 78 suites, 0 with
+something to look at, `user://` empty because the container was fresh). It
+wrote its prediction down before changing anything and **two of its seven
+numbered claims were wrong**, which is recorded in the 104 entry rather than
+tidied (TRAPS 89); it wrote its post-change prediction down too and **that one
+held exactly** - one line, `claim_field_test` 121 -> 134. **Do not start by
+re-running on 104's behalf**; take your own baseline so you learn the record
+and the container still agree, and spend the time on the work below. **And do
+not re-take 104's six injections or its negative control** - they are in the
+104 entry with their counts, each was measured alone in its own copy with its
+own `config/name`, and the property they attribute is
+`tests/claim_field_test.gd` rather than a table in a document.
+
+**THE FIRST LIVE ENTRY AS OF 104, COUNTED AND DELIBERATELY NOT FIXED: FOUR
+SUITES HOLD THE REGISTRIES' MEMBERSHIP AS A TYPED NUMBER OR A HAND-WRITTEN
+TABLE, SO ADDING A COMPLETE TOOL TURNS THEM RED FOR A REASON THAT IS NOT
+ABOUT THE TOOL.**
+Measured in 104 by registering a **complete** fourth tool - its own file with
+`name()`, `prompt_section()`, `validate()`, `defaults()` and `readback()`,
+half-added in no respect - and running the full suite. Six suites went red, and
+**two of them should have**: `prompt_bounds_test`'s `PROMPT_FINGERPRINT` must
+move because the prompt genuinely changed, and `says_nothing_test` found a
+**real fault in the injected tool's own readback**, which is that suite doing
+its job on a member that did not exist when it was written. **The other four
+are the entry:**
+
+| suite | what it holds | how |
+|---|---|---|
+| `prompt_numeral_test` | `contributors.size() == 8` | a typed count |
+| `prompt_numeral_test` | a row per contributing file | a hand-written table |
+| `look_test` | `ToolRegistry.free_kit().size() == 3` | a typed count |
+| `check_wiring_test` | a row in `const DECLARED` | a hand-written table |
+| `intent_door_test` | a request per prompt door | listed by hand |
+
+**WHY THIS IS A READING AND NOT A CHORE, which is the reason 104 did not do
+it.** Each of those four chose a typed number **deliberately**, and at least
+one of them is right to: `prompt_numeral_test`'s count is the floor under its
+whole numeral accounting - *"all N numerals in the assembled prompt are inside
+the eight sections"* - and a count read off the registries would make that
+accounting a function of the thing it is auditing. `check_wiring_test`'s
+`DECLARED` is explicitly a **hand-written** record of which file defines which
+step, which is the point of it (055: the reflective version could not answer
+the question at all - TRAPS 51). So this may well come back *"three of the four
+are right as they are"*, which is a reason to read rather than to build -
+096's own words, and the same shape as the five-validator-groups entry above.
+**What is NOT yet asked of any of them is the cheap half: whether the
+assertion's MESSAGE says what a reader needs.** *"the free kit now has three
+tools"* fires on a correct fourth tool and tells its author nothing about what
+to do; `intent_door_test`'s *"there is a request for EQUIP lamp, which the
+prompt offers 'intent' at"* tells them exactly what to add. **That is a
+difference in the sentence, not in the check**, and it is the smallest useful
+next step on this entry.
+**NOT MEASURED, and said so rather than guessed** (TRAPS 104's own rule): what
+a complete fourth **WORLD MODULE** costs. 104 injected a complete fourth TOOL
+and a blanked existing module, never a complete fourth module, and a module
+has far more wiring than a tool - a command in the whitelist,
+`lists()`, `pieces()`, `metric_lines()`, the check table. **The number of
+hand-typed sites on that side is unknown and is not inferable from the tool
+side.** One injection answers it.
+
 **THE FIRST LIVE ENTRY AS OF 103, AND IT IS THE HALF OF 102'S FIRST ENTRY
 THAT 103 DID NOT TOUCH: THE FIVE VALIDATOR GROUPS OF `says_nothing_test`'s
 SWEEP STILL ASK THE PER-GROUP QUESTION.**
@@ -13641,9 +13927,29 @@ in "NOTHING IS OWED FROM 103" above. It is left standing word for word because
 the entry is struck, not rewritten, and because the exclusion it bounds -
 `main.gd:290` - is still exactly as 102 measured it.)**
 
-**THE SECOND LIVE ENTRY AS OF 103, FOUND BY THE ENUMERATION AND LEFT
+**~~THE SECOND LIVE ENTRY AS OF 103, FOUND BY THE ENUMERATION AND LEFT
 DELIBERATELY: A TOOL OR A WORLD WITH NO `prompt_section()` IS REGISTERED,
-VALIDATED AND USABLE, AND INVISIBLE TO THE AI, AND NOTHING WOULD SAY SO.**
+VALIDATED AND USABLE, AND INVISIBLE TO THE AI, AND NOTHING WOULD SAY SO.~~
+DONE IN 104, AND THE LAST CLAUSE WAS FALSE IN BOTH HALVES.** 104 did the one
+injection this entry named as its first step rather than acting on its
+premise, and *"nothing would say so"* does not survive it: blanking
+`LookTool`'s section turns **six** suites red and blanking `FarmModule`'s
+turns **five**. **But nothing ASSERTED the rule either** - of every row that
+went red, exactly one was asked off the registries about every member without
+naming the member (`prompt_numeral_test`'s `prompt.contains(section)`, which
+belongs to 073's numeral accounting), and it holds the rule only because
+**`String.contains("")` is `false` in Godot 4.7.1**, measured with a probe and
+written down nowhere in this repository until now. The entry's own
+prescription was right and is done: four assertions in
+`tests/claim_field_test.gd`, off both registries, with the emptiness asserted
+**separately** from the containment so the two are independent. See the 104
+entry and TRAPS 104. **Struck rather than deleted, because the record of an
+entry that was right about the gap and wrong about what held it is the useful
+part - and because its own `NOT MEASURED` line is the thing that paid, for
+the third commit running.**
+
+**AND THE ORIGINAL ENTRY, KEPT VERBATIM BECAUSE ITS READING OF THE CODE WAS
+EXACT AND ONLY ITS CLAIM ABOUT tests/ WAS WRONG:**
 `ToolRegistry.prompt_sections()` and `WorldRegistry.prompt_sections()` both
 read `if section != "": parts.append(section)`, and the base stubs
 `ToolModule.prompt_section()` and `WorldModule.prompt_section()` return `""`.
@@ -13674,6 +13980,14 @@ about its contents, and an empty string may simply satisfy fewer `contains()`
 checks without failing any. **Driving it is the first step and it is one
 injection**, not a reading: add a fourth tool with no `prompt_section()` to
 `ToolRegistry.tools()` in a throwaway copy and run the set.
+**(104: MEASURED, AND THE GUESS IN THIS PARAGRAPH WAS WRONG. An empty string
+does not "satisfy fewer `contains()` checks without failing any" - it fails
+`prompt.contains(section)` outright, because `String.contains("")` is `false`
+in Godot 4.7.1. Both suites already fail: `claim_field_test` 3 failures on a
+blanked `LookTool` and 1 on a blanked `FarmModule`, `prompt_numeral_test` 2 on
+each. The sentence is left standing word for word because the entry is struck,
+not rewritten, and because the instruction in its last clause - drive it, one
+injection - is exactly what produced the correction.)**
 
 **THE THIRD LIVE ENTRY AS OF 103, AND IT IS TRAPS 98'S QUESTION ASKED OF 103'S
 OWN SCOPE: THE SAME ENUMERATION OVER `tests/`.**

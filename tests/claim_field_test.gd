@@ -305,6 +305,74 @@ func _initialize() -> void:
 			_check(key in params,
 				"%s: the declared list '%s' is in the skeleton" % [module.command(), key])
 
+	# --- 104: every registered member is a member the AI has heard of ---
+	#
+	# 103 found this by enumeration and left it as a live entry with the
+	# honest note that it was NOT MEASURED whether anything already failed on
+	# it. It is measured now, and the entry's premise - "nothing would say
+	# so" - was WRONG in both halves. What was true is sharper and is the
+	# reason these four assertions exist rather than a fix.
+	#
+	# WHAT ALREADY HELD IT, DRIVEN RATHER THAN READ. Blanking LookTool's
+	# prompt_section() in a throwaway copy turns six suites red; blanking
+	# FarmModule's turns five. But of all those rows, exactly ONE is asked
+	# off the registries about every member without naming the member:
+	# prompt_numeral_test's `prompt.contains(section)`, which belongs to 073's
+	# NUMERAL accounting and is not a statement about visibility at all. The
+	# rest are hand-typed per member - formula_test names "the look section",
+	# look_test names the look tool, prompt_bounds_test names the farm's zone
+	# types one at a time - so a FOURTH member, which no such row mentions,
+	# would be held by that one incidental assertion alone.
+	#
+	# AND THAT ASSERTION HOLDS IT BY AN ENGINE DETAIL, WHICH IS WHY IT IS NOT
+	# ENOUGH. `String.contains("")` is FALSE in Godot 4.7.1 - measured with a
+	# four-line probe, not assumed, because the opposite is true in several
+	# languages a reader may be coming from (Python's `"" in s` is True). So
+	# `prompt.contains("")` fails today, and the rule survives on a behaviour
+	# nothing in this repository writes down. An engine that answered the
+	# other way would turn that row green and leave the rule held by nothing,
+	# in silence. TRAPS 6: a check that passes for a reason other than the one
+	# it is named for.
+	#
+	# SO THE EMPTINESS IS ASSERTED FIRST, AND SEPARATELY. The two assertions
+	# below are independent: the section must SAY SOMETHING, and its text must
+	# be IN the prompt. The first does not depend on contains() at all, and it
+	# is `strip_edges() != ""` rather than `!= ""` for the reason 103 found at
+	# the leaf - three spaces is not a section, and `!= ""` would accept it.
+	#
+	# WHAT THIS ASSERTS: that every member of both registries contributes
+	# text the model receives. It is read off ToolRegistry.tools() and
+	# WorldRegistry.modules(), so a fourth tool or a fourth world is asked the
+	# same question without this file being edited - TRAPS 11's "the class
+	# includes the world that does not exist yet".
+	#
+	# WHAT IT DOES NOT ASSERT, said rather than discovered later: that the
+	# section is CORRECT, or complete, or that it describes the fields the
+	# validator actually reads. The skeleton checks above hold that for tools;
+	# for a world it is held only where the world declares lists(), so a world
+	# with no lists and a one-word section passes everything here. And it says
+	# nothing about NpcGoals, which contributes a third section to the prompt
+	# and is in neither registry.
+	var contributing: Array = []
+	for t in tools:
+		var tool_mod: ToolModule = t
+		contributing.append(["EQUIP %s" % tool_mod.name(), tool_mod.prompt_section()])
+	for m in WorldRegistry.modules():
+		var module: WorldModule = m
+		contributing.append([module.command(), module.prompt_section()])
+	_check(contributing.size() == ToolRegistry.tools().size() + WorldRegistry.modules().size(),
+		"every registry member is asked (%d of them)" % contributing.size())
+	for c in contributing:
+		var who: String = (c as Array)[0]
+		var text: String = (c as Array)[1]
+		_check(text.strip_edges() != "",
+			"%s: its prompt_section() says something" % who)
+		# Guarded by the assertion above, so this cannot be satisfied by an
+		# empty needle whichever way the engine answers contains("").
+		if text.strip_edges() != "":
+			_check(prompt.contains(text),
+				"%s: the text of its section is in the prompt the model receives" % who)
+
 	# --- every bound the prompt states for a tool, at both ends ---
 	#
 	# 072: this used to loop over the fields and ask the prompt for each

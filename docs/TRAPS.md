@@ -8127,3 +8127,59 @@ or `export_presets.web.cfg` was touched.**
 > The word stood in for a name nobody gave, and it brought its own article to
 > three sentences that each supplied one.
 
+
+---
+
+## 104. The entry said nothing held the rule, and one assertion did — by an engine detail
+
+**Signature:** a live entry names a gap, says honestly that it has not been
+measured, and the measurement comes back the other way. The rule *was* held —
+by a check written for a different purpose, which holds it only because of a
+behaviour nobody in the repository had written down.
+
+**Cause:** 103's second live entry said *"a tool or a world with no
+`prompt_section()` is registered, validated and usable, and invisible to the
+AI, and **nothing would say so**"*, and flagged — correctly and in its own
+words — *"NOT MEASURED: whether either of those suites would ALREADY fail"*.
+Driven in 104, the premise was wrong in both halves: blanking `LookTool`'s
+section turns **six** suites red and blanking `FarmModule`'s turns **five**.
+
+But the reason is not that anything asserted the rule. Of every row that went
+red, exactly **one** was asked off the registries about every member without
+naming the member: `prompt_numeral_test`'s `prompt.contains(section)`, which
+belongs to 073's *numeral accounting* and is not a statement about visibility
+at all. Every other row was hand-typed per member — `formula_test` naming
+*"the look section"*, `look_test` naming the look tool, `prompt_bounds_test`
+naming the farm's zone types one at a time — so a **fourth** member, which no
+such row mentions, would have been held by that one incidental assertion
+alone.
+
+And that assertion holds it by an engine detail: **`String.contains("")` is
+`false` in Godot 4.7.1**, measured with a four-line probe rather than assumed,
+because the opposite is true in several languages a reader may be arriving
+from (Python's `"" in s` is `True`). An engine that answered the other way
+would have turned that row green and left the rule held by nothing, in
+silence.
+
+**Do:**
+
+- **An unmeasured claim in a live entry is still a claim about Genesis**
+  (TRAPS 14). "Nothing would say so" gets the same grep, and the same
+  injection, as "Genesis cannot X". Writing *"NOT MEASURED"* beside it is
+  honest and is not a substitute for measuring it — it is the instruction to.
+- When an injection goes red, **read which assertion fired before concluding
+  the rule is held.** A count of red suites is not evidence about the rule; it
+  is evidence that something noticed. Six suites went red here and none of
+  them stated the rule.
+- **A rule held only by a library's edge-case answer is held by nothing you
+  own.** Assert the precondition separately, so the two halves are
+  independent: *the section says something* (no `contains()` involved, and
+  `strip_edges() != ""` rather than `!= ""`, because three spaces is not a
+  section) and *its text is in the prompt*. Measured in both directions — a
+  registry that drops a real section fails only the second, a blank section
+  fails only the first.
+- **Separate "by design" from "hand-typed" when counting what a change
+  costs.** A complete fourth tool turns six suites red; one is a deliberate
+  prompt fingerprint, one is a suite correctly finding a fault in the new
+  tool, and four are typed numbers and tables. Reporting "six suites break" as
+  one fact would have been true and useless.
