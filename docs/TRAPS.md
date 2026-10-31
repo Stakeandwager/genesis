@@ -8520,3 +8520,76 @@ secrets three lines below were already passed the safe way, through the step's
   and two rows lighter. A floor was added and the same injection now fires by
   name at 55, failures=1. Writing a trap about silence is no protection
   against writing one.
+
+---
+
+## 110. Fourteen of eighteen reads were loud because the compiler caught the file, not because the read did
+
+**Signature:** a class of reads looks guarded. Remove any member's file and
+the suite goes red by name, every time, so the class reads as healthy — and
+the thing doing the catching is not in the class at all.
+
+**Cause.** 111 found `proxy_test.gd:226` silent: `if
+FileAccess.file_exists(preset):` with no `else` and no floor, so removing
+`export_presets.web.cfg` gave **56 assertions, failures=0** — green, one
+assertion gone without a word. It wrote the class up as *"ten sites across
+seven files"* from a crude reading (a literal `res://` path ending in a
+filename, on a line naming `FileAccess`) and left the enumeration as the next
+session's first step.
+
+112 settled it under one stated definition and the count was wrong in both
+directions:
+
+| | sites | why |
+|---|---|---|
+| the file's own carried figure, since 083 | 8 | under a definition never recorded |
+| 111's crude reading | 10, one a negative fixture | misses every path held in a variable, and every read through a helper |
+| 112, one stated definition | **24 real sites, 11 suites, 11 files** | resolves a `const`/`var` bound once to a literal, and one level of in-file helper |
+
+The two shapes the crude reading could not see were the ones that mattered:
+`record_type_test.gd:85` reads `scripts/session_report.gd` through a
+file-scope `const SOURCE`, and **seven** of `field_type_test`'s reads go
+through `_source_of(path)`, a helper, so the literal never appears on a line
+naming `FileAccess`. Both are TRAPS 106's shape exactly: a reading narrow in
+a way that is invisible from its own output.
+
+**And then the measurement said something the enumeration could not.** Each of
+the 18 (suite, file) pairs was measured by removing the file and running that
+suite alone in a throwaway copy with its own `config/name`. **Fourteen never
+reached an assertion.** Every file under `scripts/` carries a `class_name` the
+suite names, `tests/replay.gd` is `preload`ed, and `scripts/main.gd` is an
+`ext_resource` of `scenes/main.tscn` — so the file's absence is a Parse Error
+that `run_tests.sh` reports by name before the suite runs. (`main.gd` removed
+under `handler_wiring_test` is worse and is recorded as measured: no Parse
+Error, no quit, **nothing within 150 seconds** — the TRAPS 13 shape, which
+`run_tests.sh` would report as TIMED OUT after 600s.)
+
+**So the floor belongs to a four-member class, not a twenty-four-member one:**
+a named-file read needs a floor of its own exactly when its target is **not a
+compile-time dependency of the reading suite**. The four are
+`netlify/functions/interpret.js` (fires, 42/1), `export_presets.web.cfg`
+(was silent, 56/0), `tests/session_test.gd` read by `source_scan_test`
+(fires, 77/1) and `tests/prompt_test.gd` read by `field_type_test`
+(fires, 269/1). Three had a floor. One did not, and it is the one 111 found.
+
+**Do:**
+
+- **When every member of a class survives the same injection, find out what is
+  catching it before concluding the class is sound.** Fourteen green-by-name
+  results here were one fact about GDScript, not fourteen facts about the
+  reads. A class whose members all pass for a reason outside the class has not
+  been measured; its catcher has.
+- **A floor that cannot fail is not a fix.** Flooring all 24 would have been
+  twenty extra assertions that no legal change can make fire, and would have
+  read, in the count, exactly like twenty measurements (TRAPS 6).
+- **Say which sites are loud only by borrowed protection.** Three reads here
+  have no floor of their own and are caught solely by the compiler:
+  `agreement_test.gd:234`'s `_source()` returns `""` in silence, and
+  `player_door_test.gd:394`, `:415` and `view_frame_test.gd:382` use
+  `get_file_as_string`, which returns `""` for a missing file with no null to
+  check. They are correct today and would go silent the moment their target
+  stopped being a compile-time dependency. Named here rather than floored,
+  with the reason.
+- **Resolve one level of indirection before you believe a source count.** A
+  reading that only matches the call line misses every path held in a constant
+  and every read behind a helper. Here that was 14 of 24.

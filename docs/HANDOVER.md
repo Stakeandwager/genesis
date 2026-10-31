@@ -13,6 +13,93 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
+- Last commit at the time of writing: **112**, which took the first live
+  "Next action" as of 111 - *the named-file reads in `tests/` have no class
+  and at least one is silent* - and did its steps (1), (2) and (3).
+  `tests/proxy_test.gd` **57 -> 58** assertions, `docs/TRAPS.md` one new entry
+  (**110**). `scripts/` is **0 lines of diff** - no player meets any of this.
+  One live entry closed, one new. No new "Human decision needed"; the open
+  decision is step (4), which is written below and is deliberately not taken.
+
+  **THE ENUMERATION, SETTLED UNDER ONE STATED DEFINITION (TRAPS 108).** A
+  named-file read is a site in a `tests/*.gd` suite where a complete literal
+  `res://` path whose last segment has a file extension reaches a `FileAccess`
+  call - `open`, `file_exists`, `get_file_as_string`, `get_file_as_bytes` -
+  either directly, or through **one level of in-file helper** (a `func` that
+  passes one of its own parameters to such a call). The path may be inline, or
+  held in a `const`/`var` with exactly one literal assignment in the file.
+  Excluded, each with its reason stated in the reader's own docstring: a path
+  built from a non-literal (`"res://scripts/" + name`), which is the
+  **directory** class `scan_floor_test` already holds; a `user://` fixture the
+  suite writes itself; `preload`/`load`, resolved at compile time; a path read
+  off a live object's `resource_path`; and `replay.gd` and `prompt_test.gd`,
+  which are `run_tests.sh`'s `NOT_A_SUITE`. Comments are stripped **with
+  string awareness**, deliberately not the way `_code_of()` strips them -
+  copying that blindness is what made 109's count wrong (TRAPS 108).
+
+  **THE ANSWER IS 24 REAL SITES IN 11 SUITES OVER 11 FILES**, forming **18
+  (suite, file) pairs**, which is the unit a removal can measure.
+  `view_frame_test.gd:387` is excluded as the deliberate negative fixture it
+  has always been. **BOTH EARLIER COUNTS WERE WRONG AND THE DISAGREEMENT IS
+  RESOLVED RATHER THAN DROPPED** (TRAPS 108): this file's carried **eight**
+  was under a definition it never recorded, and 111's **ten** came from a
+  reading that matched only the call line - so it could not see
+  `record_type_test.gd:85`, whose path is a file-scope `const SOURCE`, nor the
+  **seven** `field_type_test` reads that go through the helper `_source_of()`.
+  Fourteen of the 24 are invisible to that reading.
+
+  **AND THE MEASUREMENT SAID SOMETHING THE ENUMERATION COULD NOT. 14 OF THE 18
+  PAIRS NEVER REACH AN ASSERTION.** Each pair was measured by removing the
+  file and running that suite alone in a throwaway copy with its own
+  `config/name`. Every file under `scripts/` carries a `class_name` the suite
+  names, `tests/replay.gd` is `preload`ed, and `scripts/main.gd` is an
+  `ext_resource` of `scenes/main.tscn` - so the absence is a **Parse Error**
+  that `run_tests.sh` reports by name before the suite runs. **The compiler
+  was doing the catching, not the reads.** One pair is worse and is recorded
+  as measured rather than smoothed over: `main.gd` removed under
+  `handler_wiring_test` gives no Parse Error, no quit and **nothing within 150
+  seconds** - the TRAPS 13 shape, which `run_tests.sh` reports as TIMED OUT
+  after 600s.
+
+  **SO THE CLASS THAT NEEDS A FLOOR HAS FOUR MEMBERS, NOT TWENTY-FOUR**, and
+  the rule is: *a named-file read needs a floor of its own exactly when its
+  target is **not a compile-time dependency** of the reading suite.*
+
+  | pair | removed | result | verdict |
+  |---|---|---|---|
+  | `proxy_test` <- `netlify/functions/interpret.js` | yes | **42/1** | fires by name (floor since 020) |
+  | `proxy_test` <- `export_presets.web.cfg` | yes | **56/0** | **SILENT - this commit's fix** |
+  | `source_scan_test` <- `tests/session_test.gd` | yes | **77/1** | fires by name, *"session_test.gd can be read"* |
+  | `field_type_test` <- `tests/prompt_test.gd` | yes | **269/1** | fires by name, *"res://tests/prompt_test.gd could be opened and read"* |
+
+  **THE FIX IS ONE FLOOR, AND FLOORING THE OTHER TWENTY WOULD HAVE BEEN TRAPS
+  6.** `proxy_test.gd:225` now reads `file_exists` into a named local,
+  `_check`s it, and then branches - the shape its sibling eight lines up has
+  had since 020. **Driven, not assumed**: the same removal that gave 56/0 now
+  gives **57 assertions, failures=1**, the failure naming the preset; the
+  unmodified copy gives **58/0**; and `interpret.js` removed still fires, now
+  at 43/1. Twenty more floors would have been twenty assertions no legal
+  change can make fail, counted in the total as if they were measurements.
+
+  **AND THREE READS ARE LOUD ONLY BY BORROWED PROTECTION, NAMED RATHER THAN
+  FLOORED.** `agreement_test.gd:234`'s `_source()` returns `""` in silence on
+  a null, and `player_door_test.gd:394`, `:415` and `view_frame_test.gd:382`
+  use `get_file_as_string`, which returns `""` for a missing file with no null
+  to check. All four are caught today by the compiler alone and would go
+  silent the day their target stopped being a compile-time dependency. Written
+  down with the reason instead of being given a floor that cannot fire.
+
+  **THE HARNESS WAS CHECKED AGAINST A MEASUREMENT IT DID NOT TAKE** (TRAPS
+  106's rule): 111 recorded `interpret.js` removed as **42/1** and
+  `export_presets.web.cfg` removed as **56/0**, in a different container with
+  a different harness. Both reproduce here exactly, before anything was
+  changed. That is why the other sixteen numbers are believed.
+
+  **WHAT CHANGED FOR ANYONE USING GENESIS: NOTHING, AND THAT IS STATED
+  PLAINLY.** `scripts/` is 0 lines of diff, the deploy still fails on two
+  unset secrets, and what a visitor sees is still commit `71b065f` from
+  2026-10-14.
+
 - Last commit at the time of writing: **111a**, which is **docs only** - 0
   lines of diff in `scripts/`, `tests/` and `.github/`, no new finding about
   Genesis, no new claim about its behaviour, no new live entry. It records one
@@ -5030,6 +5117,18 @@ that the owner has not ruled on.** Do not promote one to the other.
   084's own deliberate control reading a file that does not exist, and is
   excluded by name.
 
+  **CORRECTED IN 112, AND THE SENTENCE ABOVE IS LEFT STANDING SO THE
+  CORRECTION HAS SOMETHING TO POINT AT (TRAPS 14).** "All 8" was the whole
+  class under 085's definition, which matched a **literal `.gd` path on the
+  line of the read**. Under one written definition that also resolves a
+  `const`/`var` bound once to a literal and one level of in-file helper, there
+  are **24** named-file read sites, not eight - and the sixteen this sentence
+  could not see include every one of `field_type_test`'s seven, which go
+  through `_source_of()`, and `record_type_test.gd:85`, whose path is a
+  file-scope `const`. "Are now asked at the read" was true of the eight and
+  was read for twenty-nine commits as a statement about the class. See the 112
+  entry and `docs/TRAPS.md` 110.
+
   **NO NEW CONTROLS WERE WRITTEN BESIDE THE TWO STRING GUARDS, DELIBERATELY.**
   084 asserted the property that makes a post-stripper guard vacuous centrally,
   in `source_scan_test`'s section 4, over a copy of `_code_of()` that section 3
@@ -8028,6 +8127,45 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
+**112 ADDED NO FILE EITHER**, so the two numbers below did not move: `ls
+tests/*.gd` is **80** and the run reports **78** suites. It edited one file in
+`tests/` - `tests/proxy_test.gd` - plus `docs/TRAPS.md` and this file.
+`scripts/` is **0 lines of diff**.
+
+**BASELINE AT `de8effb`, CLEAN**: `git status --porcelain` empty, `--all`,
+`user://` cleared by **deleting `app_userdata/AI_Game_Builder`** rather than by
+renaming `config/name`, so `project.godot` was not edited to take the
+measurement. Godot 4.7.1.stable.official.a13da4feb, `--version` read.
+**`746aca59e51dc36634dfa599d50142c3`, 78 suites, 0 with something to look at**
+- byte-identical to the md5 111 recorded as its final run, from a **fifteenth**
+independent container with its own Godot download.
+
+**THE PREDICTED DIFF WAS WRITTEN TO A FILE BEFORE ANY REPOSITORY FILE WAS
+EDITED AND HELD EXACTLY, IN ALL FOUR CLAUSES** (TRAPS 89), the risk clause
+among them: *`proxy_test`'s new `_check` sits inside `_initialize`, which
+`scan_floor_test`'s table keys as `proxy_test.gd::_initialize` - if that table
+counted assertions rather than `DirAccess` sites it would go red demanding a
+row; it counts `DirAccess` sites, so it does not move.* After-run
+**`2aa79dbb0552aab084b3a1d146fed242`, 78 suites, 0 with something to look at**,
+`diff` against the baseline **that one line**: `proxy_test 57 -> 58
+assertions, failures=0`. `scan_floor_test` stayed **147** and
+`source_scan_test` stayed **79**, as predicted.
+
+**EIGHTEEN REMOVAL MEASUREMENTS AND ELEVEN NEGATIVE CONTROLS**, each in its
+own throwaway copy under the scratch directory with its own `config/name`,
+the suite run alone. Every control matched its line in the baseline run
+exactly. **Fourteen of the eighteen never reached an assertion** - thirteen
+Parse Errors naming the missing identifier or preload, and `main.gd` under
+`handler_wiring_test`, which produced no error and no quit within 150s. The
+four that reach assertions are the table in the 112 entry above:
+`interpret.js` **42/1**, `export_presets.web.cfg` **56/0 (SILENT)**,
+`tests/session_test.gd` **77/1**, `tests/prompt_test.gd` **269/1**.
+
+**AND THE FLOOR ADDED FOR THE SILENT ONE WAS DRIVEN**: the same removal now
+gives **57 assertions, failures=1**, the failure naming the preset by its
+assertion text; the unmodified copy gives **58/0**; `interpret.js` removed
+still fires, at **43/1**.
+
 **111 ADDED NO FILE EITHER**, so the two numbers below did not move: `ls
 tests/*.gd` is **80** and the run reports **78** suites. It edited three files
 - `.github/workflows/web.yml`, `tests/proxy_test.gd`, `tests/scan_floor_test.gd`
@@ -10023,8 +10161,26 @@ verified, and what remains uncertain.
   directory loop are covered IN SUBSTANCE and NOT BY MEASUREMENT.** The reason
   is that the loop's floor fires if the directory read produced no names. That
   is a reason, and TRAPS 78 is about reasons that balance; it is written here
-  as a limitation and the eight named-file reads are under "Next action" to be
-  measured one at a time.
+  as a limitation.
+  **THE NAMED-FILE HALF OF THIS IS NO LONGER OWED, AND THE "EIGHT" IN IT WAS
+  WRONG.** This line said *"the eight named-file reads are under Next action to
+  be measured one at a time"* from 083 until 112. 112 measured them. There are
+  **24** named-file read sites, not eight - the eight was counted under a
+  definition this file never recorded - and they form **18 (suite, file)
+  pairs**, every one of which is now measured. **14 of the 18 are caught by
+  the GDScript compiler before the suite runs**, because the target carries a
+  `class_name` the suite names, or is `preload`ed, or is a scene's
+  `ext_resource`. Of the four whose target is not a compile-time dependency,
+  three fired and one - `proxy_test.gd:226`, reading
+  `export_presets.web.cfg` - was **silent at 56 assertions, failures=0** and
+  now fires by name at 57/1. See the 112 entry for the table and
+  `docs/TRAPS.md` 110 for the rule. **What remains a limitation is narrower
+  and is stated as itself**: nothing in `tests/` *holds* that four-member
+  class, so a fifth non-compile-dependency read could arrive unfloored and
+  nothing would notice; and three reads
+  (`agreement_test.gd:234`, `player_door_test.gd:394` and `:415`,
+  `view_frame_test.gd:382`) have no floor of their own and are loud today only
+  by the compiler's doing.
 
 
 - **Nothing has been tested by anybody but the owner.** No stranger has used
@@ -15472,9 +15628,63 @@ their numbers, each injection alone in its own copy with its own
 `tests/source_scan_test.gd` sections 8 and 9 rather than a table in a
 document.
 
-**THE FIRST LIVE ENTRY AS OF 111, AND IT IS A MEASUREMENT PER SITE, NOT A
+**NOTHING IS OWED FROM 112 EITHER.** Its baseline was byte-identical to the
+md5 111 recorded, it wrote its predicted diff down before running and **the
+prediction held exactly, risk clause included**, and it took its runs on the
+code tree and then on the complete tree with `docs/` in place. **Do not start
+by re-running on 112's behalf**; take your own baseline so you learn the
+record and the container still agree, and spend the time on the work below.
+**And do not re-take 112's eighteen removal measurements** - they are in the
+112 entry with their counts, each was taken alone in its own copy, and the two
+that overlap 111's were reproduced exactly before anything was changed.
+
+**THE FIRST LIVE ENTRY AS OF 112, AND IT IS A DECISION WITH A REAL COST, NOT
+A MEASUREMENT: NOTHING HOLDS THE FOUR-MEMBER CLASS, AND WIDENING
+`scan_floor_test` TO REACH IT IS NOT FREE.**
+112 did steps (1), (2) and (3) of the entry below: the enumeration is settled
+under one written definition (**24 sites, 11 suites, 11 files, 18 pairs**),
+every pair is measured, and the one site measured silent has a floor that
+fires by name. **Step (4) is what is left and it is deliberately not taken.**
+The rule 112's measurement produced makes the decision much cheaper than it
+looked: the class that needs holding is **not** the 24 named-file reads, it is
+the **four** whose target is not a compile-time dependency of the reading
+suite. A holder for four members keyed by `file::line` is a small thing; a
+holder for 24 would be twenty rows attesting that the GDScript compiler works.
+**What a holder has to survive before it is believed (TRAPS 106's rule, and it
+is sharper here than usual):** it must find `proxy_test.gd:226` - the site this
+whole entry came from - **by file and line**, and it must find the two reads
+whose paths are variables (`proxy_test`'s `preset` and `path`) and the seven
+that go through `field_type_test`'s `_source_of()` helper, because a reading
+that matches only the call line misses **14 of the 24** and 111's did. **The
+part that is genuinely the owner's:** `scan_floor_test`'s table is keyed
+`file::function`, and a function holding several named-file reads would need
+the `#N` ordinal to behave - `proxy_test._initialize` alone holds six. That is
+an architecture question about what that table is for, and 112 did not answer
+it. **The cheap alternative is to state the rule and stop**, which is what 112
+did: the rule is in `tests/proxy_test.gd`'s own comment at the fixed site and
+in `docs/TRAPS.md` 110, so a session adding a fifth non-compile-dependency
+read meets it where the fourth one was fixed.
+**AND THREE SITES ARE NAMED AND NOT FIXED, ON PURPOSE**:
+`agreement_test.gd:234`'s `_source()` returns `""` in silence on a null, and
+`player_door_test.gd:394`, `:415` and `view_frame_test.gd:382` read through
+`get_file_as_string`, which returns `""` with no null to check. All are loud
+today only because the compiler catches their target first. A floor on any of
+them **cannot fail today** and would be TRAPS 6 - but each becomes a real gap
+the day its target stops being a compile-time dependency, which is why they
+are written down rather than left silent.
+
+**~~THE FIRST LIVE ENTRY AS OF 111, AND IT IS A MEASUREMENT PER SITE, NOT A
 SUITE TO WRITE: THE NAMED-FILE READS IN `tests/` HAVE NO CLASS AND AT LEAST
-ONE IS SILENT.**
+ONE IS SILENT.~~ STEPS (1), (2) AND (3) DONE IN 112. STEP (4) IS THE LIVE
+ENTRY ABOVE.** The entry's instruction was right in every part, including the
+order: the enumeration first, the measurement second, the floor only where the
+measurement said silent. It was wrong about the size of the class in both
+directions - **24 sites, not ten and not eight** - and the thing it could not
+have known is that **14 of the 18 pairs are caught by the compiler and not by
+the read**, which is what turns "give a floor to the silent ones" from twenty
+rows into one. Struck rather than deleted, because a reading that was right
+about the method and wrong about the number is the useful record.
+**The original text follows.**
 `scan_floor_test`'s class is **directory** reads - `DirAccess.open` and
 `get_files_at` on a `res://` path - which is why `proxy_test`'s two reads of
 single named files have never had a row, and why 111's new read needed one the

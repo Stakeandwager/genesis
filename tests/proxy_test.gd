@@ -222,8 +222,36 @@ func _initialize() -> void:
 		"and a status named only in a comment is not one the function returns")
 
 	# The web export must not carry a key even by accident.
+	#
+	# 112: THE FLOOR UNDER THIS READ, AND IT IS THE ONE SITE OF ITS CLASS THAT
+	# WAS MEASURED SILENT. For ninety-odd releases this read was
+	# `if FileAccess.file_exists(preset):` with no else and no floor, eight
+	# lines below a sibling that has had one since 020. The assertion it
+	# guards - "the web preset mentions no key" - is an ABSENCE, so it is at
+	# its greenest when nothing was read at all (TRAPS 75's direction).
+	# MEASURED, NOT ARGUED: export_presets.web.cfg removed, proxy_test run
+	# alone in a throwaway copy with its own config/name, gave
+	# **56 assertions, failures=0** - green, and one assertion gone without a
+	# word. The same injection now fires by name at 57/1.
+	#
+	# WHY THIS ONE AND NOT A FLOOR ON ALL 24 (TRAPS 6 AND TRAPS 11). 112
+	# enumerated every named-file read in tests/ - 24 sites in 11 suites over
+	# 11 files, forming 18 (suite, file) pairs - and removed each file with
+	# that suite run alone. **14 of the 18 are caught by the COMPILER, not by
+	# the read**: the target is GDScript whose class_name the suite names, or
+	# a preload, or a scene's ext_resource, so its absence is a Parse Error
+	# that run_tests.sh reports by name before a single assertion runs. A
+	# floor on those cannot fail and would be a guard against nothing.
+	# The reads that need one of their own are exactly those whose target is
+	# NOT a compile-time dependency of the reading suite, and there are four:
+	# interpret.js (fires, 42/1), THIS ONE (was silent), tests/session_test.gd
+	# read by source_scan_test (fires, 77/1) and tests/prompt_test.gd read by
+	# field_type_test (fires, 269/1). Three had a floor. This was the fourth.
+	# See docs/HANDOVER.md for the table and docs/TRAPS.md 110.
 	var preset := "res://export_presets.web.cfg"
-	if FileAccess.file_exists(preset):
+	var preset_exists := FileAccess.file_exists(preset)
+	_check(preset_exists, "the web export preset is in the repository, so the question below was asked of a file that was read")
+	if preset_exists:
 		var f := FileAccess.open(preset, FileAccess.READ)
 		var text := f.get_as_text()
 		f.close()
