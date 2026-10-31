@@ -319,8 +319,27 @@ func _initialize() -> void:
 	contributors.append([str(by_class.get("AIInterpreter", "")), AIInterpreter.SYSTEM_PROMPT])
 	contributors.append([str(by_class.get("NpcGoals", "")), NpcGoals.prompt_section()])
 
+	# 105: THE CHECK IS UNCHANGED AND DELIBERATELY SO. The typed 8 is the
+	# FLOOR under the numeral accounting below, and reading it off the
+	# registries would make that accounting a function of the thing it is
+	# auditing - HANDOVER's first live entry as of 104 says exactly this, and
+	# it is why the count stays typed.
+	#
+	# WHAT CHANGED IS THE SENTENCE, which is that entry's own "cheap half".
+	# It used to read "%d files contribute text to the prompt" % the MEASURED
+	# size, so a complete fourth world module printed
+	#   FAIL  9 files contribute text to the prompt
+	# - a TRUE sentence marked FAIL, naming neither what was expected nor what
+	# its author should do about it. Measured in 105 by injecting one. The
+	# shape below is asked_test's, which is this repository's own best example
+	# of a message a reader can act on.
 	_check(contributors.size() == 8,
-		"%d files contribute text to the prompt" % contributors.size())
+		("the prompt is built from 8 files - IF THIS FAILS, a contributor was "
+		+ "added or removed: the count is the FLOOR under the numeral "
+		+ "accounting below and is typed on purpose, so move it here and add "
+		+ "the new file's row to the table in this suite. Got %d: %s") % [
+			contributors.size(),
+			str(contributors.map(func(c): return str((c as Array)[0]).get_file()))])
 
 	var prompt := AIInterpreter.assembled_prompt()
 	var in_sections := 0
@@ -333,9 +352,14 @@ func _initialize() -> void:
 	# Nothing escapes the accounting: a numeral anywhere in the assembled
 	# prompt that is not inside one of the sections - in a registry's joining
 	# text, or in one of the three headings - fails here.
+	# 105: "the eight sections" was typed into this sentence while the count
+	# beside it was measured, so a ninth contributor made the message say
+	# "eight" about nine - a stale numeral in a message is TRAPS 14's shape
+	# one layer in. It reads off the list it is describing now. The CHECK is
+	# unchanged: it still compares the prompt's numerals against the sections'.
 	_check(_numerals_in(prompt) == in_sections,
-		"all %d numerals in the assembled prompt are inside the eight sections (%d counted there)" % [
-			_numerals_in(prompt), in_sections])
+		"all %d numerals in the assembled prompt are inside the %d sections (%d counted there)" % [
+			_numerals_in(prompt), contributors.size(), in_sections])
 	# And the prompt text holds neither of the two characters the template
 	# scan depends on, so stripping comments and fencing on a triple quote
 	# cannot cut a prompt short.

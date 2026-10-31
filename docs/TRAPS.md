@@ -8183,3 +8183,81 @@ silence.
   prompt fingerprint, one is a suite correctly finding a fault in the new
   tool, and four are typed numbers and tables. Reporting "six suites break" as
   one fact would have been true and useless.
+
+---
+
+## 105. The suite asserted the row was missing, then threw before it could say so
+
+**Signature:** a suite that should report a readable failure reports
+`SCRIPT ERROR` instead, takes the runner's full 600-second timeout, and prints
+none of the rows it had already found — including the one that names exactly
+what is wrong.
+
+**Cause:** `tests/command_schema_test.gd` keys a hand-written table on
+`CommandParser.allowed_commands()` and asserts, correctly and in both
+directions, that the two agree:
+
+```gdscript
+for command in whitelist:
+    _check(table.has(command), "there is a row for %s" % command)
+```
+
+Fourteen lines below that gate it read `var row: Dictionary = table[command]`,
+**by index rather than by `.get()` or behind a `has()` guard** — at two sites.
+An assertion in these suites RECORDS a failure and falls through; it does not
+stop the run. So a command on the whitelist with no row reached the index read,
+which **throws**, and a script error in a `SceneTree` abandons `_initialize`
+before `quit()`. The process then ran until `run_tests.sh` killed it.
+
+**The suite had already diagnosed the problem and destroyed its own diagnosis
+three lines later.** Both sites were present in the file's first commit, 036,
+and the gate was fourteen lines above them in that same commit — **76
+commits.** Latent only because every command had a row for all 76.
+
+Measured in 105, not reasoned. Registering a complete fourth world module:
+
+| | unfixed | fixed |
+|---|---|---|
+| wall clock | **600 s** (timeout) | **2 s** |
+| script errors | 1 | 0 |
+| `FAIL` lines printed | **0** | 2, naming `CREATE_GARDEN` |
+| verdict line | **none** | `188 assertions, failures=2` |
+
+And a negative control establishes it was never about a new module: cutting the
+row for **`OPEN`**, a command that has existed throughout, gives
+`Invalid access to property or key 'OPEN'`, **0 `FAIL` lines, 0 verdict lines,
+killed at the timeout** — and 2 seconds with two readable failures once guarded.
+
+**And the class had exactly one outlier, which is the part worth keeping.**
+Seven suites in `tests/` key a hand-written table on an enumerated whitelist or
+registry. **Six already guard it in the same shape** — assert `has()`, then
+`if not has(): continue` — `record_proposal_test` (045), `ledger_said_test`,
+`intent_door_test`, `plan_said_test`, `panel_refused_test` and
+`says_nothing_test`. `controller_reach_test`'s (097's) carries a `driven`
+counter and a floor as well. `command_schema_test` was the only one that did
+not, so the fix was to bring the last member into the form the other six had,
+not to invent a rule.
+
+**Do:**
+
+- **An assertion is not a gate.** `_check()` records and falls through. If the
+  code below it cannot run when the assertion fails, the guard has to be a
+  `continue` or a `return` as well — asserting the precondition is not
+  protecting against it. This is TRAPS 101's shape (the destructive act above
+  the gate) with the gate present and simply not gating.
+- **Never index a table by a key that came from somewhere else.** A registry,
+  a whitelist and a prompt scan all answer with members the table's author
+  never saw. `.get()` with a default, or `has()` and `continue`. TRAPS 100 is
+  the same read one directory along.
+- **A `continue` is how coverage goes missing quietly, so put a floor under
+  it** (TRAPS 6, 078). The guard stops the throw; nothing in the guard stops
+  the loop from running over fewer members than the list holds while every
+  assertion that did run passes. State the breadth in one line —
+  *"every command the whitelist admits was probed (11 of 12; not probed:
+  [CREATE_GARDEN])"* — so a reader never infers breadth from an absence of
+  failures. Measured firing at 11-of-12 and at 10-of-11.
+- **When a suite goes red, check that it could SAY so.** A count of red suites
+  is not the measurement (TRAPS 104); a suite that throws is not red, it is
+  silent, and silence from the harness reads as a hang rather than as a
+  finding. This is TRAPS 13's cause — a script error in a `SceneTree` looking
+  exactly like a hang — recurring 93 commits later in a different file.

@@ -459,6 +459,17 @@ func _run() -> void:
 	# SHAPE. A command that fails for the scene it is in (no Prototype 001
 	# ring to change) is not a schema failure and never was.
 	for command in whitelist:
+		# 105: GUARDED, and the guard is the point rather than a tidy.
+		# `table.has(command)` is asserted twenty lines up, and an assertion
+		# in this suite RECORDS a failure and falls through - it does not
+		# stop the run. So a command on the whitelist with no row here used
+		# to arrive at `table[command]`, which THROWS, and a script error in
+		# a SceneTree abandons _initialize before quit(): the process ran
+		# until run_tests.sh's 600-second timeout killed it and NONE of the
+		# rows this suite had already found were ever printed. Measured, not
+		# reasoned - see HANDOVER 105.
+		if not table.has(command):
+			continue
 		var row: Dictionary = table[command]
 		# A dungeon before each one, so no command is judged in the world the
 		# PREVIOUS command left. CLEAR_WORLD comes before ORDER on the
@@ -479,13 +490,33 @@ func _run() -> void:
 	await _type('{"command": "CREATE_DUNGEON", "parameters": {"rooms": [%s], "doors": [[1, 2]]}}' % ROOMS)
 
 	# --- assertions 1, 2 and 4: every unvalidated field, every non-number ---
+	var driven: Array = []
 	for command in whitelist:
+		# 105: the same guard, for the same reason, at the second of the two
+		# index reads. Fixing only the first would be the instance and not
+		# the class (TRAPS 11): either one throws on its own.
+		if not table.has(command):
+			continue
+		driven.append(command)
 		var row: Dictionary = table[command]
 		var probes: Dictionary = row["probe"]
 		for field in probes:
 			for bad in NOT_NUMBERS:
 				var text: String = str(probes[field]) % bad
 				await _probe("%s with '%s' = %s" % [command, field, bad], text, str(field))
+
+	# 105: THE FLOOR UNDER THE TWO GUARDS ABOVE, and it is here because a
+	# `continue` is how coverage goes missing quietly (TRAPS 6, and 078's
+	# floor on the stray-template scan). The guards stop a missing row from
+	# THROWING; nothing in them stops the probe loop from running over fewer
+	# commands than the whitelist holds while every assertion that did run
+	# passed. The gate twenty lines up names each missing command, and this
+	# says in one line how wide the sweep actually was - so a reader of the
+	# result never has to infer the breadth from an absence of failures.
+	_check(driven.size() == whitelist.size(),
+		"every command the whitelist admits was probed (%d of %d; not probed: %s)" % [
+			driven.size(), whitelist.size(),
+			str(whitelist.filter(func(c): return not driven.has(c)))])
 
 	# --- "around" specifically: refused for its SHAPE, naming the field ---
 	#

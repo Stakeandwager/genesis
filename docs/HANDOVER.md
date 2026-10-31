@@ -13,6 +13,210 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
+- Last commit at the time of writing: **105**, which took **the `NOT MEASURED`
+  half of the first live entry as of 104** - *what a complete fourth WORLD
+  MODULE costs; the number of hand-typed sites on that side is unknown and is
+  not inferable from the tool side; one injection answers it* - and **did that
+  one injection** rather than reasoning about it. **It cost 18 suites against
+  the tool side's 6**, and **one of the 18 was a real fault in the harness
+  that has been latent for 76 commits**, which is the finding. New TRAPS
+  **105**. No new file. `tests/command_schema_test.gd` **186 -> 187**
+  assertions (two guards and one floor); `tests/prompt_numeral_test.gd` **117
+  -> 117**, two MESSAGES and **0 changes to any check**. `scripts/` is **0
+  lines of diff** - no player meets anything 105 did. No new "Human decision
+  needed".
+
+  **THE FAULT: THE SUITE ASSERTED THE ROW WAS MISSING, THEN THREW BEFORE IT
+  COULD SAY SO.** `command_schema_test` keys a hand-written table on
+  `CommandParser.allowed_commands()` and asserts in both directions that the
+  two agree - *"there is a row for %s"*. **Fourteen lines below that gate it
+  read `table[command]` by index**, at two sites. An assertion in these suites
+  RECORDS a failure and falls through, so a whitelisted command with no row
+  reached the index read, which **throws**, and a script error in a
+  `SceneTree` abandons `_initialize` before `quit()`. The suite had already
+  found the answer and destroyed its own report three lines later.
+
+  | with a complete fourth module | unfixed | fixed |
+  |---|---|---|
+  | wall clock | **600 s**, the runner's timeout | **2 s** |
+  | script errors | 1 | **0** |
+  | `FAIL` lines printed | **0** | **2**, naming `CREATE_GARDEN` |
+  | verdict line | **none** | `188 assertions, failures=2` |
+
+  **AND IT WAS NEVER ABOUT A FOURTH MODULE, which the negative control is for.**
+  Cutting the row for **`OPEN`** - a command that has existed throughout, no
+  module injected - gives `Invalid access to property or key 'OPEN'`, **0
+  `FAIL` lines, 0 verdict lines, killed at the timeout**; and **2 seconds with
+  two readable failures** once guarded. Both index reads were in the file's
+  **first commit, 036**, with the gate fourteen lines above them in that same
+  commit - **76 commits**, `git rev-list --count`, read off
+  `git show 0780d5f:tests/command_schema_test.gd` rather than inferred. Latent
+  only because every command had a row for all 76.
+
+  **AND THE CLASS HAD EXACTLY ONE OUTLIER, WHICH IS WHY THE FIX IS TO THE
+  CLASS AND IS SMALL** (TRAPS 11). **Seven** suites in `tests/` key a
+  hand-written table on an enumerated whitelist or registry; **six already
+  guard it in the same shape** - assert `has()`, then `if not has():
+  continue` - `record_proposal_test` (045), `ledger_said_test`,
+  `intent_door_test`, `plan_said_test`, `panel_refused_test` and
+  `says_nothing_test`, each read one at a time. **`controller_reach_test`'s
+  (097's) carries a `driven` counter and a floor as well, and that is the
+  shape 105 wrote**, so this brings the last member into the form the other
+  six had rather than inventing a rule. **Measured rather than read**: of the
+  18 red suites, `command_schema_test` was the **only** one that reported a
+  script error instead of a verdict line.
+
+  **AND A FLOOR WENT UNDER THE GUARD, because a `continue` is how coverage
+  goes missing quietly** (TRAPS 6, 078's floor). The guards stop the throw;
+  nothing in them stops the probe loop running over fewer commands than the
+  whitelist holds while everything that did run passes. One line now says how
+  wide the sweep was - *"every command the whitelist admits was probed (11 of
+  12; not probed: ["CREATE_GARDEN"])"* - and it is **not a check that cannot
+  fail**: it was measured firing at **11 of 12** under the injection and at
+  **10 of 11** under the `OPEN` control.
+
+  **WHAT THE 18 ARE, SEPARATED, because "18 suites break" would be true and
+  useless** (TRAPS 104's last rule):
+  **BY DESIGN - 1.** `prompt_bounds_test`: `PROMPT_FINGERPRINT` must move,
+  and it names the exact fingerprint to set.
+  **A REAL HARNESS FAULT - 1.** `command_schema_test`, above, fixed here.
+  **HAND-TYPED FIXTURE OR TABLE SITES - 16**, each needing one entry:
+  `asked_test`, `built_count_test`, `check_wiring_test` (5 rows),
+  `controller_reach_test` (3), `intent_door_test`, `layout_key_test` (2),
+  `ledger_said_test` (2), `panel_built_test`, `panel_refused_test`,
+  `plan_said_test`, `procedure_test`, `prompt_numeral_test` (2),
+  `record_proposal_test` (2), `refusal_reach_test` (3), `says_nothing_test`
+  (4), `view_frame_test`.
+  **AND FIVE SUITES ADAPTED OFF THE REGISTRY AND STAYED GREEN**, which is
+  recorded because their comments claimed they would and this is the first
+  complete fourth module ever put to them: `claim_field_test` **134 -> 137**
+  (104's own new assertions fired on the garden and passed),
+  `container_door_test` **77 -> 88** (it built a request out of the garden's
+  own `sample`), `loadcheck` **39 -> 40**, `report_test` **28 -> 30**,
+  `record_type_test` **388** unchanged.
+
+  **AND THE ENTRY'S PREMISE ABOUT THE MESSAGES WAS WRONG IN A USEFUL
+  DIRECTION, WHICH IS TRAPS 104'S SHAPE AGAIN.** The entry's named *"smallest
+  useful next step"* was the *"cheap half: whether the assertion's MESSAGE
+  says what a reader needs"*. **Measured: 17 of the 18 already name the
+  member that is missing**, and most name the action too - `panel_refused_test`
+  *"(a new command needs one here)"*, `says_nothing_test` *"(a module with
+  none is not being driven)"*, `prompt_bounds_test` the fingerprint itself,
+  `asked_test` what to do if a command turns out to answer something.
+  **EXACTLY ONE was the defective shape the entry predicted**, and it was the
+  one the entry had quoted as an example of a GOOD check:
+  `prompt_numeral_test`'s contributor count printed
+  `FAIL  9 files contribute text to the prompt` - **a TRUE sentence marked
+  FAIL**, naming neither what was expected nor what to do. It now reads
+  *"the prompt is built from 8 files - IF THIS FAILS, a contributor was added
+  or removed: the count is the FLOOR under the numeral accounting below and is
+  typed on purpose, so move it here and add the new file's row to the table in
+  this suite. Got 9: [...garden_module.gd...]"*, in `asked_test`'s shape,
+  which is this repository's own best example.
+  **AND THE CHECK IS DELIBERATELY UNCHANGED.** The typed `8` stays typed: the
+  entry is explicit that reading it off the registries *"would make that
+  accounting a function of the thing it is auditing"*. **Held by a
+  measurement, not by intent** - `prompt_numeral_test` is **122 assertions,
+  failures=2 under the injection both before and after the edit**, so the
+  sentence moved and the check did not.
+  **AND ONE STALE NUMERAL IN A MESSAGE went with it**: *"all %d numerals ...
+  are inside the eight sections"* had **"eight" typed in beside a measured
+  count**, so a ninth contributor made it say "eight" about nine. It reads off
+  the list it describes now. TRAPS 14's shape one layer in, in a test message.
+
+  **VERIFIED:**
+  **BASELINE REPRODUCED 104's md5 BYTE-FOR-BYTE FROM AN EIGHTH INDEPENDENT
+  CONTAINER** with its own Godot download (4.7.1.stable.official.a13da4feb,
+  `--version` read): `--all` on a clean `b25d74b`, `git status --porcelain`
+  empty, `user://` empty because the container was fresh -
+  `99fa58e38dd2f2711e1d0261dfed668c`, **78 suites, 0 with something to look
+  at**. `ls tests/*.gd` 80, run reported 78.
+  **THE PRE-INJECTION PREDICTION WAS WRITTEN DOWN FIRST AND WAS RIGHT IN SIX
+  OF ITS SEVEN NUMBERED CLAIMS AND HONESTLY BLANK ON THE SEVENTH** (TRAPS 89).
+  It named `prompt_numeral_test`'s typed count and table row, `prompt_bounds_test`'s
+  fingerprint, `check_wiring_test`'s `DECLARED`, `intent_door_test`'s door
+  list, and that **`look_test` would NOT move** because `free_kit()` is tools
+  and no tool was added - `look_test` is absent from the diff, which is the
+  measurement of that. Claim 7 said *"`command_schema_test` goes red if the
+  per-command schema is hand-listed. UNSURE which way"*, and its *"what I
+  cannot predict"* section said the module-side count **was not being
+  inferred from the tool side** and would come from the run. **It came from
+  the run: 18, and the throw was not predicted at all.**
+  **THE POST-CHANGE PREDICTION HELD EXACTLY**: *one line moves,
+  `command_schema_test` 186 -> 187; `prompt_numeral_test` does not move.*
+  `diff` against the baseline is that **one line**, md5
+  `c69c26ebdb93e3fc472caadffaf9ee1d`, **78 suites, 0 with something to look
+  at**. It was written with the named risk that **four suites read
+  `res://tests`** (`player_door_test`, `source_scan_test`, `scan_floor_test`,
+  `formula_test` - **taken from 104's record rather than re-grepped this
+  session, and that is said rather than passed off as checked**) and that
+  105 adds COMMENTS to two files in `tests/`, so a scanner counting lines or
+  matching on a word in them would move a second number. **None moved.**
+  **AND THE WHOLE DIFFERENCE THE FIX MAKES ACROSS THE FULL INJECTED RUN IS
+  ONE LINE**: re-running the same injection on 105's tree, the only change is
+  `command_schema_test`'s `SCRIPT ERROR` becoming `188 assertions,
+  failures=2`. **Still 18 suites with something to look at** - the fix hides
+  nothing and closes none of the 16 hand-typed sites.
+
+  **NOT VERIFIED:**
+  **THE 16 HAND-TYPED SITES ARE COUNTED AND NOT CHANGED** (TRAPS 11): that is
+  16 suites' fixtures and tables, it is the live entry below, and it is not a
+  change to make on the way past.
+  **NO FOURTH WORLD MODULE WAS ADDED TO GENESIS AND NONE IS PROPOSED.**
+  `GardenModule` existed only in throwaway copies under the scratch
+  directory, each with its own `config/name`, and is **not in the repository**
+  - `scripts/` is 0 lines of diff. Whether Genesis should have a fourth world
+  is the owner's, not an engineering step.
+  **THE 18 IS A MEASUREMENT OF ONE MODULE, NOT OF EVERY POSSIBLE MODULE.**
+  `GardenModule` is shaped like the farm: a flat list of sized pieces, no
+  `pre_check()`, no `post_check()`, no `correction_feedback()`, nothing
+  drivable or walkable. **A module that is walkable, drivable, or declares
+  the optional steps would be asked more questions than this one was**, so 18
+  is a floor on the module side and is not stated as the number.
+  **`says_nothing_test` FOUND NO FAULT IN THE INJECTED MODULE'S OWN
+  READBACK**, unlike 104's tool injection, which found an empty `tint` said as
+  *"a  lamp"*. Its four rows here are all missing fixtures. Said because the
+  absence is weaker evidence than 104's presence was: the garden's readback was
+  **written this session by the same hand as the suite that would judge it**,
+  which is the standing caveat in this file arriving in the most literal form
+  available.
+  **THE GUARD'S FLOOR IS ASSERTED, THE OTHER SIX SUITES' GUARDS ARE NOT.**
+  Six suites guard correctly today, read one at a time; **nothing asserts that
+  they keep doing so**, and a source scan over `tests/` for an unguarded index
+  read of a whitelist-keyed table is a suite nobody has written. Named rather
+  than left to be rediscovered, and it is the second live entry below.
+  **NO LIVE PATH TO A MODEL WAS DRIVEN.** No model was asked anything, no
+  request left the container, there is no API key here, no browser ran, no web
+  export was made, `interpret.js` was not executed. The measurements came from
+  `run_tests.sh` and from driving `command_schema_test`,
+  `prompt_numeral_test`, `controller_reach_test`, `built_count_test`,
+  `says_nothing_test`, `check_wiring_test`, `layout_key_test`,
+  `ledger_said_test`, `panel_built_test`, `panel_refused_test`,
+  `plan_said_test`, `procedure_test`, `prompt_bounds_test`,
+  `record_proposal_test`, `refusal_reach_test`, `view_frame_test` and
+  `asked_test` directly.
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is still **2026-10-16**, checked by grepping every
+  `OWNER, 2026-1[01]-*` marker in `HANDOVER.md` and `TRAPS.md`.
+  **064'S FINDING IS CARRIED FORWARD AND NOT RE-VERIFIED.**
+
+  **NOTHING IN `scenes/`, `netlify/`, `.github/`, `project.godot`,
+  `export_presets.web.cfg` OR EITHER RUNNER WAS TOUCHED** - no file was added
+  or removed, so `tests/` keeps 80 `.gd` and 80 `.uid`, no list in either
+  runner can be short one (TRAPS 4), and `README.md`'s suite count cannot have
+  moved. `ai_interpreter.gd` is 0 lines of diff, so `PROMPT_FINGERPRINT` and
+  `PROMPT_VERSION` cannot have moved - and `prompt_bounds_test` is green on
+  the after-run, which is the measurement of that rather than the inference.
+  Every injection, probe and control was in a throwaway copy under the scratch
+  directory with its own `config/name`, never in the repository.
+
+  **AND WHAT CHANGED FOR ANYONE USING GENESIS: NOTHING, AND THAT IS STATED
+  PLAINLY.** `scripts/` is 0 lines of diff; no player meets any of this. What
+  changed is that **the next command added to the whitelist gets told what is
+  missing in two seconds instead of hanging the suite for ten minutes and
+  saying nothing** - and that was true for any missing row for 76 commits, not
+  only for a world nobody has built yet.
+
 - Last commit at the time of writing: **104**, which took **the second live
   entry as of 103** - *a tool or a world with no `prompt_section()` is
   registered, validated and usable, and invisible to the AI, and nothing would
@@ -6804,6 +7008,41 @@ remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 78
 and are skipped without it.
 
+**105 ADDED NO FILE EITHER**, which is why the two numbers above did not move,
+and that was deliberate for the reason 101 through 104 all gave: a new suite
+would falsify `README.md`'s count, which is the open class 100 left and which
+105 does not close. The two guards and the floor went into
+`tests/command_schema_test.gd`, **already the standing check for what the
+command whitelist admits**, and the two message rewrites into
+`tests/prompt_numeral_test.gd`, already the standing check for what the prompt
+is built from. **`scripts/` is 0 lines of diff.**
+Its baseline on the clean tree at `b25d74b`, `git status --porcelain` empty,
+was **BYTE-IDENTICAL to the md5 104 recorded, from an EIGHTH independent
+container with its own Godot download** (4.7.1.stable.official.a13da4feb,
+`--version` read): `99fa58e38dd2f2711e1d0261dfed668c`, 78 suites, 0 with
+something to look at. The container was fresh, so `user://` was empty rather
+than cleared. `ls tests/*.gd` 80, run reported 78.
+**THE POST-CHANGE PREDICTION HELD EXACTLY** - *one line moves,
+`command_schema_test` 186 -> 187, and `prompt_numeral_test` does not move* -
+written before the run with the named risk that four suites read `res://tests`
+and that 105 adds comments to two files there. `diff` against the baseline is
+that **one line**, md5 `c69c26ebdb93e3fc472caadffaf9ee1d`, **78 suites, 0 with
+something to look at**. The md5 was written in after the run, and the
+circularity is the one every commit since 093 has recorded: the only edits
+after it are to `docs/HANDOVER.md` and `docs/TRAPS.md`, and nothing in
+`tests/` reads `docs/`.
+**ONE INJECTION, TWO NEGATIVE CONTROLS AND A RE-RUN OF THE INJECTION ON THE
+FIXED TREE**, each alone in its own throwaway copy with its own `config/name`,
+the diff read before each run. The injection - a COMPLETE fourth world module,
+one file in `scripts/` plus one entry in `WorldRegistry.modules()` - turned
+**18** suites red against the tool side's 6, and `command_schema_test` **threw
+rather than reporting**: 600 s, 0 `FAIL` lines, no verdict. On 105's tree the
+same injection gives `188 assertions, failures=2` in **2 s**, and **still 18
+suites** - the fix hides nothing. The controls cut the row for **`OPEN`**, an
+existing command with no module injected: unfixed, `Invalid access to property
+or key 'OPEN'`, 0 `FAIL` lines, killed at the timeout; fixed, 2 s and two
+readable failures. **The floor was measured firing at 11-of-12 and 10-of-11**,
+so it is not a check that cannot fail (TRAPS 6).
 **104 ADDED NO FILE EITHER**, which is why the two numbers above did not
 move, and that was deliberate for the reason 101, 102 and 103 all gave: a new
 suite would falsify `README.md`'s count, which is the open class 100 left and
@@ -13833,6 +14072,87 @@ not re-take 104's six injections or its negative control** - they are in the
 own `config/name`, and the property they attribute is
 `tests/claim_field_test.gd` rather than a table in a document.
 
+**NOTHING IS OWED FROM 105 EITHER.** Its baseline **reproduced the md5 104
+recorded, byte-for-byte, from an EIGHTH independent container with its own
+Godot download** (`99fa58e38dd2f2711e1d0261dfed668c`, 78 suites, 0 with
+something to look at, `user://` empty because the container was fresh). It
+wrote its pre-injection prediction down before changing anything and was right
+in six of its seven numbered claims, with the seventh honestly blank and the
+module-side count deliberately **not** inferred from the tool side (TRAPS 89);
+it wrote its post-change prediction down too and **that one held exactly** -
+one line, `command_schema_test` 186 -> 187. **Do not start by re-running on
+105's behalf**; take your own baseline so you learn the record and the
+container still agree, and spend the time on the work below. **And do not
+re-take 105's injection, its two `OPEN` controls or its re-run of the
+injection on the fixed tree** - they are in the 105 entry with their counts
+and timings, each was measured alone in its own copy with its own
+`config/name`, and the property they attribute is
+`tests/command_schema_test.gd` rather than a table in a document.
+
+**THE FIRST LIVE ENTRY AS OF 105, COUNTED AND DELIBERATELY NOT FIXED: SIXTEEN
+SUITES NEED A HAND-TYPED FIXTURE OR TABLE ENTRY BEFORE A FOURTH WORLD MODULE
+CAN BE ADDED, AND THAT IS THE MEASURED PRICE OF A NEW WORLD.**
+Measured in 105 by registering a **complete** fourth world module - its own
+file with `command()`, `display_name()`, `prompt_section()`, `validate()`,
+`solve()`, `measure()`, `build()`, `lists()`, `pieces()`, `metric_lines()`,
+`readback()` and `extent()`, marking its pieces, half-added in no respect -
+and running the full suite. **18 suites red.** One was `prompt_bounds_test`'s
+fingerprint, **by design**. One was a real harness fault, **fixed in 105**.
+**The other 16 are this entry**, and each needs exactly one entry adding:
+`asked_test`, `built_count_test`, `check_wiring_test` (5 rows),
+`controller_reach_test` (3), `intent_door_test`, `layout_key_test` (2),
+`ledger_said_test` (2), `panel_built_test`, `panel_refused_test`,
+`plan_said_test`, `procedure_test`, `prompt_numeral_test` (2),
+`record_proposal_test` (2), `refusal_reach_test` (3), `says_nothing_test` (4),
+`view_frame_test`.
+**WHY THIS IS NOT A CHORE TO BATCH THROUGH, which is why 105 did not.** Every
+one of those 16 is a FIXTURE - a sound request for the new world, a poisoned
+one, a buildable one, a row in a wiring table - and **a fixture for a world
+that does not exist cannot be written.** They are not stale numbers to read off
+a registry; they are the per-world test data a new world's author supplies, and
+`check_wiring_test`'s `DECLARED` is deliberately hand-written (055, TRAPS 51).
+**So the honest reading of the 16 is that they are the cost of a new world and
+mostly RIGHT to be hand-typed** - which makes the useful question not "how do
+we remove them" but **"does a would-be author of a fourth world find out all
+16 at once, or one run at a time?"** `prompt_bounds_test` prints the exact
+fingerprint to set; nothing anywhere prints the list of 16. **A single page
+naming them - what each wants and why - is the smallest useful step, and it is
+documentation rather than a suite.**
+**NOT MEASURED, and said so rather than guessed:** 18 is a measurement of **one
+module shaped like the farm** - a flat list of sized pieces, no `pre_check()`,
+no `post_check()`, no `correction_feedback()`, nothing drivable or walkable. A
+walkable or drivable module, or one declaring the optional steps, would be
+asked more questions than this one was. **18 is a FLOOR on the module side,
+not the number**, and one injection of a walkable module answers it.
+
+**THE SECOND LIVE ENTRY AS OF 105, NAMED BECAUSE 105 RELIED ON IT AND NOTHING
+HOLDS IT: SIX SUITES GUARD THEIR WHITELIST-KEYED TABLE CORRECTLY TODAY, AND
+NOTHING ASSERTS THAT THEY KEEP DOING SO.**
+105's fix was small precisely because six of the seven members of the class
+already had the guard - `record_proposal_test` (045), `ledger_said_test`,
+`intent_door_test`, `plan_said_test`, `panel_refused_test`,
+`says_nothing_test`, with `controller_reach_test`'s (097's) carrying a counter
+and a floor as well. **That was established by reading the six, one at a
+time, and by the measurement that only `command_schema_test` reported a script
+error under the injection.** Neither is a standing check. A seventh suite
+written tomorrow, or a guard removed in a tidy, puts the 600-second silence
+back, and **the symptom is the one TRAPS 13 already cost this project once: a
+script error in a `SceneTree` abandons `_initialize` before `quit()` and looks
+exactly like a hang.**
+**WHAT WOULD HOLD IT, and why it is a reading rather than an obvious build.**
+A source scan over `tests/` for an index read of a table whose key came from
+an enumeration - `source_scan_test` and `scan_floor_test` are the precedent
+for scanning `tests/` from a suite, and `scan_floor_test` exists precisely
+because such a scan's breadth is the only thing its absences are worth (078,
+TRAPS 6). **The hard half is the pattern, not the scan**: `table[command]`
+inside a loop over the whitelist is the fault, and `specs[label]` inside a
+loop over `specs` own keys is correct and common, so a naive grep for
+`[identifier]` would report every safe site in the directory. **Whether that
+distinction is expressible in a scan is the reading, and it may come back
+"no, and a line in TRAPS is the right weight for this"** - which is a reason
+to read before building (096's words, and the same shape as the
+five-validator-groups entry).
+
 **THE FIRST LIVE ENTRY AS OF 104, COUNTED AND DELIBERATELY NOT FIXED: FOUR
 SUITES HOLD THE REGISTRIES' MEMBERSHIP AS A TYPED NUMBER OR A HAND-WRITTEN
 TABLE, SO ADDING A COMPLETE TOOL TURNS THEM RED FOR A REASON THAT IS NOT
@@ -13865,20 +14185,50 @@ step, which is the point of it (055: the reflective version could not answer
 the question at all - TRAPS 51). So this may well come back *"three of the four
 are right as they are"*, which is a reason to read rather than to build -
 096's own words, and the same shape as the five-validator-groups entry above.
-**What is NOT yet asked of any of them is the cheap half: whether the
-assertion's MESSAGE says what a reader needs.** *"the free kit now has three
-tools"* fires on a correct fourth tool and tells its author nothing about what
-to do; `intent_door_test`'s *"there is a request for EQUIP lamp, which the
-prompt offers 'intent' at"* tells them exactly what to add. **That is a
-difference in the sentence, not in the check**, and it is the smallest useful
-next step on this entry.
-**NOT MEASURED, and said so rather than guessed** (TRAPS 104's own rule): what
-a complete fourth **WORLD MODULE** costs. 104 injected a complete fourth TOOL
-and a blanked existing module, never a complete fourth module, and a module
-has far more wiring than a tool - a command in the whitelist,
-`lists()`, `pieces()`, `metric_lines()`, the check table. **The number of
-hand-typed sites on that side is unknown and is not inferable from the tool
-side.** One injection answers it.
+**~~What is NOT yet asked of any of them is the cheap half: whether the
+assertion's MESSAGE says what a reader needs.~~ ASKED IN 105 ON THE MODULE
+SIDE, AND THE PREMISE WAS MOSTLY WRONG - IN A USEFUL DIRECTION.** *"the free
+kit now has three tools"* fires on a correct fourth tool and tells its author
+nothing about what to do; `intent_door_test`'s *"there is a request for EQUIP
+lamp, which the prompt offers 'intent' at"* tells them exactly what to add.
+**That is a difference in the sentence, not in the check**, and it is the
+smallest useful next step on this entry.
+**(105: measured over the 18 suites a complete fourth WORLD MODULE turns red -
+`17 of the 18 ALREADY name the member that is missing`, and most name the
+action too: `panel_refused_test` adds *"(a new command needs one here)"*,
+`says_nothing_test` *"(a module with none is not being driven)"*,
+`prompt_bounds_test` prints the fingerprint to set. **Exactly one was the
+defective shape this entry predicted, and it was `prompt_numeral_test`'s
+contributor count** - `FAIL  9 files contribute text to the prompt`, a TRUE
+sentence marked FAIL - **fixed in 105 in `asked_test`'s shape, with the typed
+count left typed because this entry is right that reading it off the
+registries would make the accounting a function of what it audits.** Held by a
+measurement rather than by intent: 122 assertions, failures=2 under the
+injection both before and after the edit, so the sentence moved and the check
+did not. **The TOOL-side four are untouched** - `look_test`'s *"the free kit
+now has three tools"* still says exactly that - because 105 measured the
+module side and changing a tool-side sentence it had not driven would be the
+instance, and a claim about a run it did not take.)**
+**~~NOT MEASURED, and said so rather than guessed~~ (TRAPS 104's own rule):
+what a complete fourth WORLD MODULE costs. ~~The number of hand-typed sites on
+that side is unknown and is not inferable from the tool side.~~ One injection
+answers it. — DONE IN 105, AND THE ANSWER WAS 18 SUITES AGAINST THE TOOL
+SIDE'S 6, WITH A REAL HARNESS FAULT AMONG THEM.** 104 injected a complete
+fourth TOOL and a blanked existing module, never a complete fourth module, and
+a module has far more wiring than a tool - a command in the whitelist,
+`lists()`, `pieces()`, `metric_lines()`, the check table. **That reading was
+right, and the count was higher than "far more" suggested**: 18, of which one
+is the fingerprint by design, **one was `command_schema_test` throwing instead
+of reporting - the gate asserted the missing row and the index read fourteen
+lines below it destroyed the report, latent for 76 commits** - and 16 are
+per-world fixtures. The figures, the two `OPEN` controls and the separation are
+in "NOTHING IS OWED FROM 105" above and in TRAPS 105; what is left of the
+module side is **the first live entry as of 105**.
+**Struck rather than deleted, because this entry's own `One injection answers
+it` is the sentence that paid, for the fourth commit running** - and because
+105 found the fault only by doing the injection the entry named instead of
+reasoning from the tool side, which is TRAPS 104's rule applied to TRAPS 104's
+own entry.
 
 **THE FIRST LIVE ENTRY AS OF 103, AND IT IS THE HALF OF 102'S FIRST ENTRY
 THAT 103 DID NOT TOUCH: THE FIVE VALIDATOR GROUPS OF `says_nothing_test`'s
