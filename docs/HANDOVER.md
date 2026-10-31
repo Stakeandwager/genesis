@@ -13,6 +13,28 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
+- Last commit at the time of writing: **109a**, which is **docs only** - 0
+  lines of diff in `scripts/` and `tests/`, no new finding about Genesis, no
+  new claim, no new live entry. It records one measurement: **a fresh
+  `git clone` of the pushed commit `95dade5`**, into its own directory with
+  its own empty `user://`, **`git status --porcelain` EMPTY**, `--all` with
+  the same Godot (4.7.1.stable.official.a13da4feb, `--version` read):
+  **`d3de1b88811b8f0a2e94926dfd0ac0c2`, 78 suites, 0 with something to look at
+  - BYTE-IDENTICAL to the complete-tree run 109 recorded.** So the tree on the
+  remote is the tree that was measured, rather than what the working copy
+  happened to hold. **And the clone's `user://` was emptied by clearing
+  `app_userdata` rather than by renaming `config/name`**, so `project.godot` -
+  which four suites read - was not edited to take the measurement, and the
+  porcelain is empty rather than naming a throwaway file the way 104a through
+  108a each had to. Nothing else in 109 was re-measured: its baseline, its
+  predicted diff, its three-numbers-under-three-definitions reading and its
+  five injections are 109's and are not re-taken.
+  **AND THE md5 IN THE AMENDED PARAGRAPHS WAS WRITTEN IN AFTER THE RUN**, and
+  the circularity is the one every commit since 093 has recorded: the only
+  edits after it are to `docs/HANDOVER.md`, and nothing in `tests/` reads
+  `docs/` - checked this commit, not carried forward: every mention of
+  `HANDOVER`, `TRAPS.md` or `docs/` in `tests/*.gd` is in a comment, and no
+  `res://` path any suite reads begins with `docs`.
 - Last commit at the time of writing: **109**, which took **the first live
   entry as of 108** - *the shape section 8 holds is the local-counter form of
   a wider question, and 52 candidates for the wider one are unread* - and did
@@ -7659,6 +7681,19 @@ the same prefix injection on the new assertions (`146, failures=6`, naming
 each member), a `continue` skipping `CREATE_DUNGEON` (`143, failures=2`,
 naming it), and one module appended twice (`149, failures=1` - membership
 passes both ways and **the count** catches it).
+**AND RUN 4 IS A FRESH `git clone` OF THE PUSHED COMMIT** - `95dade5`, taken
+from the remote into its own directory with its own empty `user://` -
+**BYTE-IDENTICAL to runs 2 and 3**, md5 `d3de1b88811b8f0a2e94926dfd0ac0c2`,
+78 suites, 0 with something to look at, `ls tests/*.gd` 80. **And on this one
+`git status --porcelain` was EMPTY**, not naming a throwaway file: the clone's
+`user://` was emptied by clearing `app_userdata` rather than by renaming
+`config/name`, so `project.godot` - which four suites read - was not touched
+to take the measurement. So what is on the remote is what was measured, rather
+than what the working copy happened to hold. Recorded in 109a, a docs-only
+commit, for the reason 104a, 106a, 107a and 108a were: the alternative is a
+sound inference about the pushed tree in place of a measurement of it, which
+is TRAPS 14's shape applied to this file.
+
 **AND THE INDEPENDENT ROUTE DISAGREED WITH 108'S PROSE, WHICH IS THE OTHER
 HALF OF THE COMMIT.** 520 `_check` conditions contain an `==`, not 524; the
 sites are 34 per conjunct or 53 per whole condition, and 54 is neither. See
@@ -14857,19 +14892,21 @@ each was measured alone in its own copy with its own `config/name`, and the
 property they attribute is `tests/source_scan_test.gd` rather than a table in
 a document.
 
-**ONE THING IS OWED FROM 109 AND IT IS NAMED RATHER THAN LEFT TO BE
-NOTICED: THE FOURTH RUN ON A FRESH CLONE OF THE PUSHED COMMIT.** 109 took its
-baseline on the clean tree at `3aa6589` (byte-identical to the md5 108 and
-108a both recorded, twelfth independent container), wrote its predicted diff
-down before changing anything and it **held exactly**, and took its
-post-change run on the complete tree with `docs/` in place. **If a 109a stands
-below this line, that fourth run is taken and nothing is owed.** If it does
-not, the one thing to do on 109's behalf is: clone the pushed commit fresh,
-with its own `config/name` and its own `user://`, run `--all`, and write the
-md5 in - **not** re-run the five injections, which are in the 109 entry with
-their counts and whose property is now `tests/claim_field_test.gd` rather
-than a table in a document. **And do not re-read the 55 sites**; read the
-table.
+**NOTHING IS OWED FROM 109 EITHER.** Its baseline was byte-identical to the
+md5 108 and 108a both recorded, from a **twelfth** independent container with
+its own Godot download; its predicted diff was written down before anything
+was changed and **held exactly**; and it took three byte-identical `--all`
+runs - the second on the code tree, the third on the complete tree with
+`docs/` in place - **and a fourth on a fresh `git clone` of the pushed commit
+`95dade5` with `git status --porcelain` EMPTY, byte-identical to both**, so
+the tree on the remote is the tree that was measured. **109a is that
+measurement written in, a docs-only commit. Do not start by re-running on
+109's behalf**; take your own baseline so you learn the record and the
+container still agree, and spend the time on the work below. **And do not
+re-take 109's five injections** - they are in the 109 entry with their counts,
+each alone in its own throwaway copy with its own `config/name`, and the
+property they attribute is now `tests/claim_field_test.gd` rather than a table
+in a document. **And do not re-read the 55 sites**; read the table.
 **WHAT IS WORTH RE-TAKING, AND IT IS THE ONE THING 109 COULD NOT SETTLE:** a
 **third independent route** over `tests/` counting the `_check` conditions
 with an `==` and the sites with a container read on both sides. 109's reader
