@@ -8447,3 +8447,76 @@ control (failures=24, the control among them).
   Its blind spots are then correlated with exactly the code under audit, which
   is how the four assertions about comment blanking became the four the audit
   misread.
+
+---
+
+## 109. The CI log had a second fault in it, and eight commits of reading the tests never read the log
+
+**Signature:** the project's records say the deploy fails for a known reason
+that is the owner's to fix, so nobody reads past the first line of the log.
+A different fault is sitting four lines further down, in the same job, and has
+been there for a hundred runs.
+
+**Cause.** 064 read the Actions API, found that `web build` had failed on every
+push since run 28 because `NETLIFY_AUTH_TOKEN` and `NETLIFY_SITE_ID` are empty
+in the job environment, and wrote that down correctly: the Netlify CLI falls
+back to an interactive login, waits five minutes and exits 1. That is true and
+it is still true. It became the whole of what anybody knew about that job.
+
+The publish step also passed the commit message to the CLI like this:
+
+```yaml
+--message "${{ github.event.head_commit.message }}"
+```
+
+GitHub substitutes `${{ }}` into the **text of the script** before `bash` is
+started. So the commit message was not an argument, it was source code. Run
+133 of this workflow — commit `b433455`, pushed 2026-10-31 — logged:
+
+```
+line 1: file.gd:385: command not found
+line 1: :401: command not found
+```
+
+because 110's commit message quoted ``` `file.gd:385` ``` and ``` `:401` ```
+and the runner executed them. **25 of 176 commit messages on this branch
+contain a backtick.** The benign half is that the `--message` the CLI finally
+received had that text silently deleted out of the middle of it; the other
+half is that a commit message is a place where a backtick runs a command on
+the runner.
+
+**Nothing in the repository was wrong about this. Nothing had looked.** The two
+secrets three lines below were already passed the safe way, through the step's
+`env:`, so the pattern the message should have had was in the same step.
+
+**Do:**
+
+- **Read the whole log of a job you have written off, once.** "It fails for a
+  known reason" is a statement about one line of one step. The cost here was
+  not the five wasted minutes a push; it was that a hundred runs produced a
+  log nobody opened, and this fault would have arrived as a corrupted deploy
+  message on the day the owner set the secrets.
+- **A value a system substitutes into script text is code, not data.** This is
+  not specific to Actions: the question to ask of any templated command is
+  whether the value is interpolated before or after the shell parses. Before
+  means a backtick, a `$(`, a `;` and a newline in that value are all live.
+  The fix is to pass it through the environment and let the shell expand it,
+  which is also what the secrets beside it already did.
+- **Ask the question of every member of the directory, not of the file you
+  were looking at.** The assertion that now holds this reads
+  `.github/workflows/` off the directory, so a second workflow is in the class
+  by arriving — and the rule it checks is *no `${{ }}` inside a `run:` block*,
+  not that one expression, because `github.event.*`, `inputs.*` and a secret
+  spliced into a script are the same fault.
+- **A measured number in a document goes stale and keeps reading as current.**
+  "46 consecutive failures" was measured off the API by 064 and was right.
+  Read again this commit: **107**. That is TRAPS 14's shape, and the form that
+  survives is the one with the run number and the date in it, which is how it
+  is now written.
+- **And the section written to hold all this had the vacuous shape within
+  twenty minutes.** Both `--message` rows sat behind `if argument != ""`, so
+  deleting the `--message` line made them vanish rather than fail — measured,
+  proxy_test alone in a throwaway copy: **54 assertions, failures=0**, green
+  and two rows lighter. A floor was added and the same injection now fires by
+  name at 55, failures=1. Writing a trap about silence is no protection
+  against writing one.

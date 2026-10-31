@@ -64,15 +64,32 @@ jobs:
       # link each time, because the point of this is a place the owner can
       # revisit and complain about. When there is a stranger-facing link to
       # protect, this becomes a preview and the live URL moves deliberately.
+      # 111: THE COMMIT MESSAGE REACHES THE CLI AS DATA, THROUGH THE
+      # ENVIRONMENT, AND IS NEVER INTERPOLATED INTO THIS SCRIPT.
+      #
+      # ${{ }} is substituted by GitHub into the TEXT of the script before
+      # bash is started, so a commit message carrying a backtick or a $( had
+      # the shell run whatever was inside it. That is not a hypothetical:
+      # run 133 (commit b433455, pushed 2026-10-31) logged
+      #   line 1: file.gd:385: command not found
+      #   line 1: :401: command not found
+      # because 110's message quoted `file.gd:385`, `:401` - and the string
+      # the CLI then received had that text silently deleted from it. 25 of
+      # 176 commit messages on this branch contain a backtick.
+      #
+      # The two secrets below were already passed this way and were always
+      # right. The message was the one of the three that was not; the pattern
+      # it should have had was three lines underneath it.
       - name: Publish to Netlify
         run: |
           npx --yes netlify-cli@17 deploy \
             --prod \
             --dir build \
             --functions netlify/functions \
-            --message "${{ github.event.head_commit.message }}" \
+            --message "$COMMIT_MESSAGE" \
             --auth "$NETLIFY_AUTH_TOKEN" \
             --site "$NETLIFY_SITE_ID"
         env:
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}

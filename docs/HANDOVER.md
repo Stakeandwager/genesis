@@ -13,6 +13,168 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
+- Last commit at the time of writing: **111**, and it is the first commit
+  since 102 whose finding is not about `tests/`. **A commit message was being
+  executed on the CI runner, and it had been for a hundred runs.**
+  `.github/workflows/web.yml` **1 line changed** (plus a comment block),
+  `tests/proxy_test.gd` **44 -> 57** assertions, `tests/scan_floor_test.gd`
+  **143 -> 147** (one `FLOORS` row), `docs/TRAPS.md` one new entry (**109**).
+  `scripts/` is **0 lines of diff**. One live entry closed, one new. One new
+  "Human decision needed", **37**.
+
+  **THE FAULT.** The publish step passed the commit message to the Netlify CLI
+  as `--message "${{ github.event.head_commit.message }}"`. GitHub substitutes
+  `${{ }}` into the **text of the script** before `bash` starts, so the commit
+  message was source code and not an argument. **Measured off the Actions API,
+  not reasoned about**: run **133** (commit `b433455`, 110, pushed
+  2026-10-31T13:46:47Z) logged
+
+  ```
+  line 1: file.gd:385: command not found
+  line 1: :401: command not found
+  ```
+
+  because 110's own commit message quoted `` `file.gd:385` `` and `` `:401` ``.
+  The runner executed them. **25 of 176 commit messages on this branch contain
+  a backtick**, counted with `git log`, so the reachable half of this is not
+  rare - and the benign half is that the string the CLI finally received had
+  that text **deleted out of the middle of it**, so the deploy message was
+  wrong as well as the mechanism.
+
+  **THE MECHANISM WAS REPRODUCED IN THIS CONTAINER BEFORE ANYTHING WAS
+  CHANGED**, and it reproduces the CI log character for character: a local
+  `bash` handed the same interpolation prints the same two `command not found`
+  lines, and the argument that survives is
+  `110: including its , shorthand`. Passed through the environment instead,
+  the same message arrives intact, backticks and all.
+
+  **WHY NOBODY HAD SEEN IT, which is the part worth keeping.** 064 read this
+  job's log, found that `NETLIFY_AUTH_TOKEN` and `NETLIFY_SITE_ID` are empty
+  and that the CLI therefore waits five minutes on an interactive login, and
+  wrote that down correctly. It became the whole of what was known about the
+  job: "it fails for a known reason that is the owner's". Nobody read the four
+  lines above it for a hundred runs. That is **TRAPS 109**.
+
+  **THE FIX IS THE PATTERN THAT WAS ALREADY THREE LINES BELOW IT.** The two
+  secrets were always passed through the step's `env:`, where a template value
+  is data. The message now goes the same way: `COMMIT_MESSAGE` in `env:`,
+  `--message "$COMMIT_MESSAGE"` in the script. **No step was added or removed,
+  no flag changed, no secret touched, `--prod` and the deploy target are
+  untouched** - deliberately, because deployment settings are the owner's
+  (see "Human decision needed" 19 and the new 37).
+
+  **WHAT CHANGED IN THE TESTS: THE CLASS, NOT THE LINE (TRAPS 11).** The class
+  was enumerated first and has **three members** - every `${{ }}` in the one
+  workflow - of which **two were already right** and one was not.
+  `proxy_test.gd` is the home because it is already the suite that reads the
+  deployment path's non-Godot files, and because a new file in `tests/` would
+  falsify `README.md`'s suite count (the open class 100 left). The question is
+  asked of **every file in `.github/workflows/`, read off the directory**, so
+  a second workflow is in the class by arriving; and the rule is *no `${{ }}`
+  inside a `run:` block*, not that one expression, because `github.event.*`,
+  `inputs.*` and a secret spliced into a script are the same fault.
+
+  **EVERY NEW ASSERTION WAS DRIVEN, each alone in its own throwaway copy with
+  its own `config/name`, proxy_test run alone:**
+
+  | injection | result |
+  |---|---|
+  | the spliced form restored | **57, failures=3** - the run-block row naming line 89, and both `--message` rows |
+  | `--message "$NOT_BOUND"` | **57, failures=1** - the binding row, by variable name |
+  | the `COMMIT_MESSAGE:` env line deleted | **57, failures=1** - the binding row, naming `COMMIT_MESSAGE` |
+  | `web.yml` renamed to `deploy.yml` | **57, failures=1** - the by-name floor, printing `["deploy.yml"]` |
+  | the workflow directory emptied | **53, failures=3** - the read floor, the by-name floor and the `--message` floor |
+  | negative control: unmodified | **57, failures=0** |
+
+  **AND THE SECTION WRITTEN TO HOLD ALL THIS HAD THE VACUOUS SHAPE WITHIN
+  TWENTY MINUTES, which is recorded rather than tidied away.** Both
+  `--message` rows sat behind `if argument != ""`, so deleting the `--message`
+  line made them **vanish instead of fail**: measured, not inferred -
+  **54 assertions, failures=0**, green and two rows lighter. A floor
+  (`carried_message >= 1`) was added and the same injection now fires by name
+  at **55, failures=1**. The predicted diff was amended for it **before the
+  second run and the amendment says so**; writing TRAPS 109 about unread
+  silence was no protection against producing some.
+
+  **AND THE NEW READ PUT THIS SUITE INTO `scan_floor_test`'s CLASS BY
+  ARRIVING, which is that class working.** `DirAccess.get_files_at` on a
+  `res://` path in `tests/` is a site, so `scan_floor_test` went red demanding
+  a row before anything else was run. It is the first site in that table that
+  reads neither `tests/` nor `scripts/`. One row added, `floor`
+  `workflow_files.size() >= 1`.
+
+  **VERIFIED:**
+  **BASELINE WAS THE CLEAN TREE AT THE PUSHED COMMIT `199bdc7`**,
+  `git status --porcelain` empty, `--all`, `user://` cleared by deleting
+  `app_userdata/AI_Game_Builder` so `project.godot` - which four suites read -
+  was NOT edited, same Godot (4.7.1.stable.official.a13da4feb, `--version`
+  read): **`a7dc209287e9f8cd30b7bf1deadc5d2e`, 78 suites, 0 with something to
+  look at - BYTE-IDENTICAL to the md5 110 and 110a both recorded, from a
+  FOURTEENTH independent container with its own Godot download.**
+  `ls tests/*.gd` 80, the run reported 78.
+  **THE PREDICTED DIFF WAS WRITTEN TO A FILE BEFORE ANY REPOSITORY FILE WAS
+  EDITED AND HELD EXACTLY, IN ALL FIVE CLAUSES** (TRAPS 89), including the one
+  with a real risk in it: *the new read makes this suite a member of
+  `scan_floor_test`'s derived class, so that suite turns red too, by +4 - one
+  in section 1, one in section 1 reversed, two in section 4 because
+  `proxy_test.gd` is a new tally key - and section 3 does NOT move because it
+  asks only sites of kind `open`.* First after-run
+  **`cc9c62f29bc7ca4152a7b443c7f1eb8e`**, proxy_test 44 -> 56,
+  scan_floor_test 143 -> 147, `diff` against the baseline **those two lines
+  and nothing else**. Then the floor was added, the prediction amended, and
+  the **final** run is **`746aca59e51dc36634dfa599d50142c3`, 78 suites, 0
+  with something to look at**, proxy_test **57**, scan_floor_test **147**,
+  `diff` against the baseline again **those two lines and nothing else**.
+  **THE CI MEASUREMENTS ARE READINGS OF THE ACTIONS API TAKEN THIS COMMIT**,
+  not carried forward: run 134 is the latest, 27 the last success, 28 the
+  first failure, **107 consecutive failures**, and run 133's log holds the two
+  `command not found` lines quoted above.
+
+  **NOT VERIFIED:**
+  **NO WORKFLOW WAS EXECUTED HERE AND THE FIX IS NOT CONFIRMED ON THE
+  RUNNER.** What is asserted is the YAML's shape - that the repository no
+  longer asks GitHub to build a script out of a value. Whether run 135
+  actually logs no `command not found` is a measurement this entry does not
+  have at the time of writing; it is the first thing the next session should
+  read, and **this commit's own message contains a backtick on purpose** so
+  that the run is a test of the fix rather than of a message that would have
+  been safe either way.
+  **THE DEPLOY STILL FAILS AND THIS CHANGES NOTHING ABOUT THAT.** The two
+  secrets are still empty, the publish step still waits five minutes on an
+  interactive login and still exits 1, and **what a visitor sees is still
+  commit `71b065f`** from 2026-10-14. Nothing here was expected to fix that
+  and nothing here did.
+  **THE RULE ASSERTED IS WIDER THAN THE FAULT, deliberately.** A
+  `${{ runner.os }}` in a `run:` block is safe and would fail this check. That
+  errs towards a false alarm rather than towards a silent splice, which is the
+  direction 083 chose for the same reason, and it is written beside the
+  assertion as a limitation rather than left to be discovered.
+  **THE READER IS NOT A YAML PARSER.** A `run:` inside a quoted string or a
+  comment would open a block for it. That can only ADD sites and never hide
+  one, which is the safe direction for a question whose answer must be "none",
+  and it is stated in the code.
+  **`_message_argument()` AND `_bound_outside_run_blocks()` ARE HELD BY THE
+  INJECTIONS ABOVE AND BY NO PROBE OF THEIR OWN**, unlike
+  `_run_block_interpolations()`, which has six. Named rather than left as a
+  silence.
+  **NO LIVE PATH TO A MODEL WAS DRIVEN**, no request left the container, there
+  is no API key here, no browser ran, no web export was made,
+  `interpret.js` was not executed.
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is still **2026-10-14**, checked by grepping every
+  `OWNER, 2026-1[01]-*` marker in `HANDOVER.md` and `TRAPS.md` this commit.
+  **064'S FINDING IS CARRIED FORWARD AND IS RE-MEASURED RATHER THAN REPEATED**
+  - its cause is unchanged and its count was stale; see the corrected row
+  under "Limitations".
+
+  **AND WHAT CHANGED FOR ANYONE USING GENESIS: NOTHING YET, AND THAT IS STATED
+  PLAINLY.** `scripts/` is 0 lines of diff and the site is still eight days
+  stale behind two unset secrets. What changed is that the next successful
+  deploy will carry the commit message it was given instead of a mangled one,
+  that a backtick in a commit message is no longer a command on the runner,
+  and that the workflow directory is now read by a suite at all - it was
+  **0 lines of any test** before this commit.
+
 - Last commit at the time of writing: **110**, which took the one thing 109
   named as owed - *a third independent route over `tests/`, to settle whether
   108's 54 was a third definition or an arithmetic slip* - and the answer is
@@ -7828,6 +7990,49 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
+**111 ADDED NO FILE EITHER**, so the two numbers below did not move: `ls
+tests/*.gd` is **80** and the run reports **78** suites. It edited three files
+- `.github/workflows/web.yml`, `tests/proxy_test.gd`, `tests/scan_floor_test.gd`
+- and `scripts/` is **0 lines of diff**.
+
+**BASELINE AT `199bdc7`, CLEAN**: `git status --porcelain` empty, `--all`,
+`user://` cleared by **deleting `app_userdata/AI_Game_Builder`** rather than by
+renaming `config/name`, so `project.godot` was not edited to take the
+measurement. Godot 4.7.1.stable.official.a13da4feb, `--version` read.
+**`a7dc209287e9f8cd30b7bf1deadc5d2e`, 78 suites, 0 with something to look at**
+- byte-identical to the md5 110 and 110a both recorded, from a **fourteenth**
+independent container with its own Godot download.
+
+**THE PREDICTED DIFF WAS WRITTEN TO A FILE BEFORE ANY REPOSITORY FILE WAS
+EDITED AND HELD EXACTLY, IN ALL FIVE CLAUSES** (TRAPS 89), the risk clause
+among them: *the new `DirAccess.get_files_at` makes `proxy_test` a member of
+`scan_floor_test`'s derived class by arriving, so that suite goes red demanding
+a row, by +4 and not more - and its section 3 does not move, because it asks
+only sites of kind `open`.* First after-run
+**`cc9c62f29bc7ca4152a7b443c7f1eb8e`**, `diff` against the baseline two lines:
+`proxy_test 44 -> 56`, `scan_floor_test 143 -> 147`.
+
+**THEN A HOLE WAS FOUND IN THE NEW SECTION AND THE PREDICTION WAS AMENDED
+RATHER THAN PROTECTED.** Both `--message` rows sat behind `if argument != ""`,
+so deleting that line made them vanish: measured, proxy_test alone in a
+throwaway copy, **54 assertions, failures=0**. One floor added. The amendment
+is in the file with the reason, written before the second run. **FINAL RUN
+`746aca59e51dc36634dfa599d50142c3`, 78 suites, 0 with something to look at**,
+`proxy_test` **57**, `scan_floor_test` **147**, `diff` against the baseline
+those same two lines and nothing else.
+
+**SIX INJECTIONS AND A NEGATIVE CONTROL**, each alone in its own throwaway copy
+with its own `config/name`, proxy_test run alone: the spliced form restored
+**57/3**; `--message "$NOT_BOUND"` **57/1**; the `COMMIT_MESSAGE:` env line
+deleted **57/1**; `web.yml` renamed **57/1**; the workflow directory emptied
+**53/3**; `--message` deleted **55/1** (and **54/0**, silent, before the floor
+was added); unmodified **57/0**. Every one fires by name.
+
+**AND THE TWO OTHER REPOSITORY-FILE READS IN THAT SUITE WERE MEASURED WHILE THE
+HARNESS WAS SET UP**, which is where the new live entry comes from:
+`netlify/functions/interpret.js` removed fires by name (**42/1**),
+`export_presets.web.cfg` removed is **SILENT** (**56/0**).
+
 **110 ADDED NO FILE**, so the two numbers below did not move: `ls tests/*.gd`
 is **80**, the run reports **78** suites, and `replay` and `prompt_test` are
 the two that are tools rather than suites.
@@ -9811,15 +10016,23 @@ verified, and what remains uncertain.
   is a judgement the owner can make in a second in the editor, and is the
   "Next action" note under 062.
 - **AND THE LIVE SITE HAS NOT BEEN UPDATED SINCE 14 OCTOBER. The `web build`
-  workflow has FAILED ON EVERY PUSH SINCE RUN 28, which is 46 consecutive
-  failures**, and nothing in these documents said so until 064 went looking.
+  workflow has FAILED ON EVERY PUSH SINCE RUN 28**, and nothing in these
+  documents said so until 064 went looking.
   Read off the GitHub Actions API rather than remembered:
 
   | | |
   |---|---|
   | last successful run | **27**, commit `71b065f` (020), 2026-10-14 06:26 |
   | first failure | **28**, *"Deploy with the Netlify CLI, to one URL"*, 06:30 |
-  | failures since | **46**, every push, 044 through 063 among them |
+  | failures since | **107**, every push, runs 28 through 134 inclusive, read 2026-10-31 at run 134 (commit `199bdc7`, 110a) |
+
+  **THE COUNT IN THAT LAST ROW SAID 46 UNTIL 111, AND IT IS CORRECTED IN PLACE
+  RATHER THAN LEFT TO READ AS CURRENT.** 064 measured 46 off the API and was
+  right; 47 more pushes have failed since, and the sentence kept its number
+  while the world moved, which is TRAPS 14's shape in the paragraph that
+  reports it. The form written in now carries the **run number and the date
+  the reading was taken**, so the next session can tell a measurement from a
+  claim and re-take it in one call rather than inheriting it.
 
   **The export is not what fails.** On 063's own run (73) the steps *"Fetch
   Godot and its web export template"* and *"Import, then export"* both
@@ -15195,9 +15408,80 @@ their numbers, each injection alone in its own copy with its own
 `tests/source_scan_test.gd` sections 8 and 9 rather than a table in a
 document.
 
-**THE FIRST LIVE ENTRY AS OF 109, AND IT IS WHAT 109'S OWN READING DOES NOT
+**THE FIRST LIVE ENTRY AS OF 111, AND IT IS A MEASUREMENT PER SITE, NOT A
+SUITE TO WRITE: THE NAMED-FILE READS IN `tests/` HAVE NO CLASS AND AT LEAST
+ONE IS SILENT.**
+`scan_floor_test`'s class is **directory** reads - `DirAccess.open` and
+`get_files_at` on a `res://` path - which is why `proxy_test`'s two reads of
+single named files have never had a row, and why 111's new read needed one the
+moment it arrived. The named-file reads are a different class with **nothing
+holding it at all**, and this file has carried it as a limitation since 083:
+*"the eight named-file reads are under Next action to be measured one at a
+time."*
+
+**TWO OF THEM ARE NOW MEASURED, which is the whole of the progress and it is
+one suite's worth.** Each taken alone, in a throwaway copy with its own
+`config/name`, proxy_test run alone:
+
+| read | file removed | result |
+|---|---|---|
+| `netlify/functions/interpret.js` | yes | **42 assertions, failures=1** - fires by name, *"the function is in the repository"* |
+| `export_presets.web.cfg` | yes | **56 assertions, failures=0** - **SILENT**, one assertion gone without a word |
+
+The silent one is `proxy_test.gd:226`, `if FileAccess.file_exists(preset):`
+with no `else` and no floor - and the assertion it drops is *"the web preset
+mentions no key"*, an **absence**, at its greenest when nothing was read
+(TRAPS 75's direction). **Its sibling eight lines up has had a floor since 020**
+and they have sat side by side ever since.
+
+**IT IS DELIBERATELY NOT FIXED HERE, and the reason is TRAPS 11 and not
+tidiness.** A floor on that one line is an hour's work including its
+injection, and it would be **the instance**. The class is every named-file read
+in `tests/`, and a crude reading this commit - a literal `res://` path ending
+in a filename, on a line naming `FileAccess`, comments stripped the way
+`_code_of()` strips them - finds **ten sites across seven files**:
+`controller_reach_test.gd:893`, `handler_wiring_test.gd:387` and `:536`,
+`player_door_test.gd:394` and `:415`, `record_id_test.gd:464`,
+`retry_test.gd:183`, `source_scan_test.gd:522`, `view_frame_test.gd:382`, and
+`view_frame_test.gd:387` - **which is a deliberate negative fixture**
+(`A_FILE_GENESIS_DOES_NOT_HAVE.gd`) and is not a site. Plus `proxy_test`'s two,
+whose paths are variables and which that reading therefore misses entirely.
+
+**THAT COUNT DISAGREES WITH THIS FILE'S OWN "EIGHT" AND THE DISAGREEMENT IS
+LEFT STANDING** rather than either number being quietly adopted - which is
+TRAPS 108's instruction. 083 wrote eight under a definition it did not record;
+this reading gives nine real sites plus two it cannot see, under the definition
+written out above. **Settling that is the first step and it is a reading, not a
+build.**
+
+**WHAT TO DO, in the order that pays.** (1) Settle the enumeration under one
+stated definition, carrying the **sites** and not the total (TRAPS 108). (2)
+Measure each one by removing its named file and running that suite alone -
+nine or eleven runs of a few seconds each. (3) Give a floor only to the ones
+measured **silent**, because a read that already fires does not need one and a
+floor added without the measurement is a guard against nothing (TRAPS 6). (4)
+Then, and only then, decide whether the class belongs in `scan_floor_test`'s
+table beside the directory reads, which would mean widening `_reading_members()`
+to `FileAccess` - **a decision with a real cost**, since that table is keyed
+`file::function` and a function holding several named-file reads would need the
+`#N` ordinal to behave, and TRAPS 106's rule applies before any of it is
+believed: the widened scan must find `proxy_test.gd:226` by file and line, or
+it is not holding the class it claims.
+
+**AND THE CHEAP HALF IS ALREADY DONE AND SHOULD NOT BE REDONE**: the two
+measurements in the table above are this commit's, taken with the injection
+harness still set up, and they are the two that matter most because they are
+the reads of the **deployment path's** files.
+
+**~~THE FIRST LIVE ENTRY AS OF 109, AND IT IS WHAT 109'S OWN READING DOES NOT
 HOLD: 54 OF THE 55 VERDICTS ARE IN A DOCUMENT AND NOTHING ASSERTS ANY OF
-THEM.**
+THEM.~~ STILL OPEN AND UNTOUCHED BY 111, WHICH DELIBERATELY WENT ELSEWHERE.**
+111 chose a fault in `.github/` over the (a)-or-(b) choice below, on the
+grounds that eight consecutive commits had worked on `tests/` counting
+`tests/`, that the choice below is explicitly either *build machinery for a
+class whose verdict nothing can check* or *nothing, and say so*, and that a
+commit message being executed on the runner outranks both. The entry is
+unchanged and the choice is still the owner's or the next session's.
 109 read every site of 108's class, fixed the one that could not fail, and
 wrote the other 54 verdicts into the table in its entry above. **That table
 is a reading, and a list in this file is not the class** - which is TRAPS 66,
@@ -25864,3 +26148,45 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
 
     **If he is absent, LEAVE IT.** Nothing a player is told is wrong now; the
     sentences read as if the room had no name, because it has not got one.
+
+37. **Should the publish step FAIL FAST when the two Netlify secrets are
+    absent, instead of spending five minutes on an interactive login?**
+    Raised by 111, which found and fixed something else in that step and
+    deliberately changed nothing about this.
+
+    **MEASURED off the Actions API this commit**, not carried forward: runs 28
+    through 134 have all failed, **107 consecutive**, and run 134's log is the
+    whole story in four lines -
+
+    ```
+    NETLIFY_AUTH_TOKEN:
+    NETLIFY_SITE_ID:
+    Logging into your Netlify account...
+    - Waiting for authorization...
+    ```
+
+    then, exactly five minutes later, `Error: Timed out waiting for
+    authorization` and exit 1. Timed from the log: `13:51:46.63` to
+    `13:56:46.63`.
+
+    **THE QUESTION.** Three lines at the top of that step - if
+    `NETLIFY_AUTH_TOKEN` or `NETLIFY_SITE_ID` is empty, say so and exit -
+    would turn a six-minute job into a thirty-second one and put the real
+    reason on the first line of the log instead of the twentieth. **It is not
+    the assistant's call**, for two reasons stated rather than assumed: it
+    changes the **failure behaviour of the deployment step**, which is his
+    (the standing instruction for the unattended loop is explicit that
+    deployment settings are not the assistant's), and the choice between
+    *fail* and *skip* is a real one - a skip makes the job GREEN while the
+    site stays stale, which is the kind of green that hides exactly what 064
+    had to read the API to find.
+
+    **THE OTHER ANSWER IS THAT THIS ENTRY DISAPPEARS THE MOMENT HE SETS THE
+    SECRETS** (entry 19), which he may do sooner than he would act on this,
+    and then the five minutes become a successful deploy rather than a wasted
+    wait. That is the argument for leaving it alone, and it is why 111 only
+    wrote it down.
+
+    **If he is absent, LEAVE IT.** Nothing a player sees depends on it. The
+    cost is runner minutes and a log that buries its own headline - which has
+    now been read, and the fault it was hiding has been fixed.

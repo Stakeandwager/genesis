@@ -250,6 +250,14 @@ const FLOORS := {
 	# 108: the third read in that file, arriving with the counter-equality
 	# scan, and this suite named it on the run that added it - which is the
 	# class working rather than a chore.
+	# 111: the first read in this class that is not of tests/ or scripts/ -
+	# it reads .github/workflows/ to ask every workflow the same question -
+	# and this suite named it on the run that added it, which is the class
+	# working rather than a chore.
+	"proxy_test.gd::_initialize": {
+		"floor": "workflow_files.size() >= 1",
+		"why": "111: every assertion in that section comes out of this read, and all of them are ABSENCES - no template value inside a run: block - which is TRAPS 75's direction: at their greenest when the read has looked at no workflow at all. The by-name row beside it holds the narrower case of the one file being renamed",
+	},
 	"source_scan_test.gd::_counter_equality_class": {
 		"floor": "eq_sites.size() > 0",
 		"why": "108: section 8 asks a hand-written table to name the WHOLE class rather than a floor of it, and an empty read satisfies such a table trivially - every site it found has a row, because it found none. The breadth line is the only thing between that and a clean result",

@@ -229,6 +229,108 @@ func _initialize() -> void:
 		f.close()
 		_check(not text.contains("api_key"), "the web preset mentions no key")
 
+	# --- 111: the workflow that deploys it, and the one value it ran as code
+	#
+	# THE FAULT, MEASURED OFF THE ACTIONS API AND NOT REASONED ABOUT. The
+	# publish step passed the commit message to the Netlify CLI by letting
+	# GitHub substitute ${{ github.event.head_commit.message }} into the TEXT
+	# of the script. GitHub does that before bash is started, so the message
+	# is script and not data: a backtick in it is a command substitution and
+	# runs. Run 133 of this workflow (commit b433455, 2026-10-31) logged
+	# "line 1: file.gd:385: command not found" and "line 1: :401: command not
+	# found", because 110's commit message quoted two line numbers in
+	# backticks - and the --message the CLI finally got had that text deleted
+	# out of the middle of it. 25 of 176 commit messages on this branch carry
+	# a backtick, so the reachable half of this is not rare.
+	#
+	# WHY IT IS HERE AND NOT IN A NEW SUITE. This file is already the one that
+	# reads the deployment path's non-Godot files - interpret.js and
+	# export_presets.web.cfg - and asks what they would do. A new file in
+	# tests/ would falsify README.md's suite count, which is the open class
+	# 100 left (see docs/HANDOVER.md, "Run the tests first").
+	#
+	# THE CLASS AND NOT THE INSTANCE (TRAPS 11). The question is asked of
+	# EVERY file in the workflow directory, read off the directory rather than
+	# named, so a second workflow added tomorrow is in the class by arriving.
+	# And the class is every ${{ }} in a run: block, not that one expression:
+	# github.event.*, inputs.* and a secret spliced into a script are the same
+	# fault, and only the shape can be checked here.
+	#
+	# WHAT THIS DOES NOT PROVE. No workflow was executed here. What is read is
+	# the YAML's shape, so this holds that the repository no longer asks
+	# GitHub to build a script out of a value - it does not prove the deploy
+	# works, which needs the two secrets the owner has not set (see
+	# docs/HANDOVER.md, "Human decision needed" 19). And the rule is
+	# deliberately WIDER than the fault: a ${{ runner.os }} in a run: block is
+	# safe and would fail here. That errs towards a false alarm rather than
+	# towards a silent splice, which is the direction 083 chose for the same
+	# reason, and it is a limitation and not a check.
+	var workflow_dir := "res://.github/workflows"
+	var workflow_files := DirAccess.get_files_at(workflow_dir)
+	var carried_message := 0
+	# THE FLOOR. Every assertion below comes out of this read, so a read that
+	# finds nothing would leave this section green having looked at no
+	# workflow at all - TRAPS 6, and the shape scan_floor_test exists for.
+	# This site carries its row in that file.
+	_check(workflow_files.size() >= 1,
+		"the workflow directory was read and holds %d file(s)" % workflow_files.size())
+	# AND BY NAME, so renaming the file that does the deploying cannot empty
+	# this section quietly while the floor above still passes.
+	_check(Array(workflow_files).has("web.yml"),
+		"and web.yml is among them by name: %s" % str(workflow_files))
+	for raw_name in workflow_files:
+		var workflow_name := str(raw_name)
+		var wf := FileAccess.open(workflow_dir + "/" + workflow_name, FileAccess.READ)
+		var yaml := "" if wf == null else wf.get_as_text()
+		if wf != null:
+			wf.close()
+		_check(yaml.length() > 0, "%s was opened and is not empty" % workflow_name)
+		var spliced := _run_block_interpolations(yaml)
+		_check(spliced.is_empty(),
+			"%s builds no script out of a template value: %d ${{ }} inside a run: block %s" % [
+				workflow_name, spliced.size(), str(spliced)])
+		# AND THE MESSAGE IS STILL DELIVERED, which is the half that stops
+		# "delete --message" from being a passing fix. Asked of whichever
+		# workflow carries the flag, and of none if none does.
+		var argument := _message_argument(yaml)
+		if argument != "":
+			carried_message += 1
+			_check(argument.begins_with("$") and not argument.contains("${{"),
+				"%s passes --message as a shell variable and not as a template: %s" % [
+					workflow_name, argument])
+			var bound := argument.trim_prefix("$")
+			_check(_bound_outside_run_blocks(yaml, bound),
+				"and %s is bound to the commit message OUTSIDE the run: block, where it is data" % bound)
+
+	# AND A FLOOR UNDER THE TWO ABOVE, measured and not assumed. Both sit
+	# behind "if argument != \"\"", so DELETING the --message line made them
+	# vanish instead of fail: measured in a throwaway copy with its own
+	# config/name, proxy_test alone, 54 assertions, failures=0 - green, two
+	# assertions lighter, saying nothing. That is TRAPS 6's shape in a section
+	# written to hold a fault twenty minutes earlier, and it is why the floor
+	# is here rather than argued about. The commit message reaching the deploy
+	# is a small capability, but it is one, and it cannot now go quietly.
+	_check(carried_message >= 1,
+		"and %d workflow(s) carry a --message, so the two rows above were asked of something" % carried_message)
+
+	# THE READER HELD BY ITS OWN PROBES, on input whose answer is known, the
+	# way this file already holds _js_statuses() and _js_without_comments().
+	# A scan that reports "none" is at its greenest when it can see nothing
+	# (TRAPS 75), so three of the six must FIRE.
+	var block_scalar := "    steps:\n      - name: x\n        run: |\n          echo \"${{ github.event.head_commit.message }}\"\n"
+	_check(_run_block_interpolations(block_scalar).size() == 1,
+		"a template value inside a run: block scalar is a site")
+	_check(_run_block_interpolations("        run: echo \"${{ github.sha }}\"\n").size() == 1,
+		"and so is one on a single-line run:, which has no block scalar to be inside of")
+	_check(_run_block_interpolations("        run: |\n          if true; then\n            echo \"${{ github.sha }}\"\n          fi\n").size() == 1,
+		"and so is one nested deeper inside the block, so the rule is the indentation and not the first level of it")
+	_check(_run_block_interpolations("        run: |\n          echo \"$M\"\n        env:\n          M: ${{ github.event.head_commit.message }}\n").is_empty(),
+		"the same expression under env: is NOT a site, because there it is data")
+	_check(_run_block_interpolations("      - uses: a/b@v1\n        with:\n          m: ${{ github.event.head_commit.message }}\n").is_empty(),
+		"nor under with:")
+	_check(_run_block_interpolations("        run: |\n          echo hi\n        if: ${{ github.event_name == 'push' }}\n").is_empty(),
+		"and a template value after the block dedents is outside it, so the block END is found and not just its start")
+
 	# --- 057: the key decision, for BOTH builds ---
 	#
 	# One function answers it, and these four rows are the whole truth table.
@@ -425,3 +527,99 @@ static func _code_of(source: String) -> String:
 		var hash_at := line.find("#")
 		out += (line if hash_at < 0 else line.substr(0, hash_at)) + "\n"
 	return out
+
+
+# 111: every ${{ }} interpolation that sits INSIDE a run: block, as
+# "line N: text". GitHub substitutes these into the script's text before bash
+# starts, so such a value is code; the same expression under env:, with: or
+# if: is data and is not a site.
+#
+# THE BLOCK RULE IS YAML'S INDENTATION AND NOTHING CLEVERER: a run: key opens
+# a block, and every line indented FURTHER than that key is in it until a
+# non-blank line comes back to that indentation or less. The run: line itself
+# is checked too, because "run: echo ${{ ... }}" on one line is the same
+# fault with no block scalar.
+#
+# NOT A YAML PARSER, and the limit is stated rather than left to be found: a
+# "run:" appearing inside a quoted string or a comment would open a block
+# here. That can only ADD sites and never hide one, which is the safe
+# direction for a question whose answer must be "none".
+static func _run_block_interpolations(text: String) -> Array:
+	var found: Array = []
+	var lines := Array(text.split("\n"))
+	var run_indent := -1
+	for i in lines.size():
+		var line := str(lines[i])
+		var stripped := line.strip_edges()
+		if stripped == "":
+			continue
+		var indent := _indent_of(line)
+		if run_indent >= 0 and indent <= run_indent:
+			run_indent = -1
+		if run_indent >= 0:
+			if line.contains("${{"):
+				found.append("line %d: %s" % [i + 1, stripped])
+			continue
+		var key := stripped
+		if key.begins_with("- "):
+			key = key.substr(2)
+		if key.begins_with("run:"):
+			run_indent = indent
+			if line.contains("${{"):
+				found.append("line %d: %s" % [i + 1, stripped])
+	return found
+
+
+static func _indent_of(line: String) -> int:
+	var n := 0
+	while n < line.length() and line[n] == " ":
+		n += 1
+	return n
+
+
+# 111: what the --message flag is handed, with its quotes taken off, or "" if
+# no workflow line carries the flag. Read off the raw text: the question is
+# what the YAML SAYS, and a run: block's body is a string to YAML.
+static func _message_argument(text: String) -> String:
+	for raw in text.split("\n"):
+		var line := str(raw)
+		var at := line.find("--message")
+		if at < 0:
+			continue
+		var rest := line.substr(at + 9).strip_edges()
+		rest = rest.trim_suffix("\\").strip_edges()
+		if rest.begins_with("\""):
+			rest = rest.substr(1)
+			var close := rest.find("\"")
+			if close >= 0:
+				rest = rest.substr(0, close)
+		return rest.strip_edges()
+	return ""
+
+
+# 111: is NAME given a value somewhere that is NOT inside a run: block, and
+# does that value come from the commit message? An env: binding is the one
+# place a template value is data rather than script, so this is the positive
+# half of the rule above.
+static func _bound_outside_run_blocks(text: String, name: String) -> bool:
+	var lines := Array(text.split("\n"))
+	var run_indent := -1
+	for i in lines.size():
+		var line := str(lines[i])
+		var stripped := line.strip_edges()
+		if stripped == "":
+			continue
+		var indent := _indent_of(line)
+		if run_indent >= 0 and indent <= run_indent:
+			run_indent = -1
+		if run_indent >= 0:
+			continue
+		var key := stripped
+		if key.begins_with("- "):
+			key = key.substr(2)
+		if key.begins_with("run:"):
+			run_indent = indent
+			continue
+		if stripped.begins_with(name + ":") and stripped.contains("head_commit.message"):
+			return true
+	return false
