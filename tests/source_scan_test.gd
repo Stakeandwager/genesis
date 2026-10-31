@@ -442,6 +442,41 @@ func _run() -> void:
 	_check(_code_of("\tvar %s := 1\n" % needle).contains(needle),
 		"while a needle in a line of code is, so the three above are not passing by seeing nothing")
 
+	# AND THE ONE PLACE THIS READER IS WRONG, DRIVEN RATHER THAN DESCRIBED.
+	# It takes the FIRST `#` on the line and does not know whether that `#` is
+	# inside a string literal, so a line of real code whose own string holds a
+	# `#` is TRUNCATED at it. That is not hypothetical and it is not harmless
+	# in general: it is the mechanism that made 108 and 109 disagree about a
+	# count of this very directory (see the long note above _counter_equalities
+	# for the arithmetic). A reader that blanks comments THIS way reports 528
+	# `_check` conditions with an `==` in tests/; one that knows a `#` inside
+	# quotes is not a comment reports 524, and 524 is the number whose 54 sites
+	# match 109's hand read site for site.
+	#
+	# MEASURED, at this commit, over both directories: 77 lines in tests/ and
+	# 0 in scripts/ lose code to this. NONE of the 77 hides a needle any scan
+	# in tests/ looks for - checked by taking every discarded tail and
+	# searching it for the needles these suites use (res:// paths,
+	# DirAccess.open, get_files_at, FileAccess.open, get_file_as_string,
+	# _code_of, extends, preload, load, .size()); the only tails holding one
+	# are five deliberate comment-blanking fixtures, where the text after the
+	# `#` is the fixture and not code. So this is a property of the reader that
+	# is ASSERTED here rather than a fault that is left open.
+	#
+	# NO POPULATION LINE IS WRITTEN FOR THE 77, DELIBERATELY. It would move
+	# every time anyone wrote a `#` inside a string anywhere in tests/, with no
+	# fault behind the movement, and scripts/ - the directory where a hidden
+	# needle would actually cost something - is 0. A number that churns without
+	# a fault behind it is the motion this project is trying not to accumulate.
+	var in_quotes := "\tvar s := \"" + "#" + " %s\"\n" % needle
+	_check(not _code_of(in_quotes).contains(needle),
+		"a needle after a # INSIDE A DOUBLE-QUOTED STRING is discarded as well, because the reader cuts at the first # and does not know it is inside quotes")
+	var in_single := "\tvar s := '" + "#" + " %s'\n" % needle
+	_check(not _code_of(in_single).contains(needle),
+		"and the same inside a single-quoted string, so this is about the # and not about one quote style")
+	_check(_code_of("\tvar s := \"%s\"\n" % needle).contains(needle),
+		"while the same string with no # in it keeps the needle, so the two above are not passing by seeing nothing")
+
 	# AND THE ONE PROPERTY THAT MAKES A GUARD VACUOUS (084, TRAPS 81). An
 	# EMPTY source in - which is what `FileAccess.get_file_as_string()` returns
 	# for a path that is not there, and what `open()` cannot give because it
@@ -1107,19 +1142,40 @@ static func _masked(line: String) -> String:
 #   `refusal_reach_test.gd:1222` is the same shape, already labelled as such
 #   in 091, and a duplicate branch name does make it fire.
 #
-#   THE COUNT: 524 and 54 above are NOT REPRODUCIBLE, and the numbers are left
-#   standing rather than quietly corrected because the disagreement is the
-#   useful part (TRAPS 106). An independent reader over the same 80 files -
-#   comments blanked as `_code_of()` blanks them, each `_check(` condition
-#   read by depth over masked text - counts 520 conditions containing an `==`,
-#   not 524. For the sites, the sentence above has two readings and NEITHER
-#   gives 54: per CONJUNCT of the condition, 34; either side of the first `==`
-#   in the WHOLE condition, 53 (55 if comments are not blanked, 2 of those
-#   being comment text read as code). 54 sits between the readings, so what
-#   it counted cannot be told from the sentence describing it. ALL 55 SITES OF
-#   THE UNION OF EVERY READING WERE READ ANYWAY, by file and line, with the
-#   verdict on each written into docs/HANDOVER.md - so the question the live
-#   entry asked is answered whichever of the three numbers was meant.
+#   THE COUNT: 109 CALLED 524 AND 54 NOT REPRODUCIBLE. 110 RAN A THIRD ROUTE
+#   AND THEY BOTH REPRODUCE EXACTLY. The definition that gives them, stated so
+#   it can be re-derived rather than believed: a `#` starts a comment only
+#   OUTSIDE a string literal; a `_check(` condition is its first argument, read
+#   to the top-level comma by depth over string-masked text; a container read
+#   is `.size()` or ANY `[`; the sides are the text either side of the first
+#   top-level `==`. Under exactly that: 524 conditions with an `==`, and 54 of
+#   them with a container read on both sides - at 3aa6589, the tree 108 and 109
+#   both measured, AND at this commit.
+#
+#   AND THE PROOF IS NOT THE MATCHING NUMBER, WHICH COULD BE LUCK. It is that
+#   the 54 sites under that definition are IDENTICAL, site for site, to the 54
+#   that 109 read BY HAND and tabulated in docs/HANDOVER.md - 0 extra, 0
+#   missing, the comparison taken against the table parsed out of that file
+#   rather than retyped. 109 therefore held the independent enumeration that
+#   confirmed 108 and compared its scan against neither it nor 108's sites.
+#   That is TRAPS 108, and it is the inverse of TRAPS 106's shape.
+#
+#   WHAT DOES NOT REPRODUCE IS 109'S OWN THREE NUMBERS. 520, 34 and 53 are not
+#   produced by any of twelve definitions tried, INCLUDING the one 109 states
+#   it used: comments blanked the way `_code_of()` blanks them gives 528 and
+#   55, not 520 and 53. The reason that reading is wrong is `_code_of()`
+#   itself, and it is now asserted in section 9 part 4: it cuts at the first
+#   `#` on a line even inside a string literal, and the four conditions it
+#   corrupts in tests/ are - exactly - the four that test `_code_of()`'s own
+#   blindness to a `#`. A reader that blanks comments the way the suites do
+#   cannot read the assertions about the suites' blanking.
+#
+#   THE NUMBERS ARE LEFT STANDING AS 108 WROTE THEM, now confirmed rather than
+#   disputed. All 54 sites were read individually in 109, by file and line,
+#   with the verdict on each in docs/HANDOVER.md; the four in
+#   `claim_field_test.gd` have since shifted line (363 -> 421, 478 -> 537,
+#   554 -> 613, 640 -> 699) because 109 added lines above them, and the set is
+#   otherwise unchanged.
 #
 # Also outside this scan, and not counted by it either: a counter advanced by
 # anything but `+=`, and an equality between two counts of one collection that

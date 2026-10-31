@@ -13,6 +13,188 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
+- Last commit at the time of writing: **110**, which took the one thing 109
+  named as owed - *a third independent route over `tests/`, to settle whether
+  108's 54 was a third definition or an arithmetic slip* - and the answer is
+  **NEITHER: 108 WAS RIGHT, AND 109'S REFUTATION OF IT WAS WRONG.**
+  `tests/source_scan_test.gd` **76 -> 79** assertions, `docs/TRAPS.md` one new
+  entry (**108**). `scripts/` is **0 lines of diff** - no player meets any of
+  this. One live entry closed, one new "Human decision needed": none.
+
+  **BOTH OF 108'S NUMBERS REPRODUCE EXACTLY.** A third route, written in
+  Python without reading 108's or 109's reader, with every definitional choice
+  that could move a number exposed as a switch so a disagreement could be
+  attributed rather than guessed at. Under **one** coherent setting - a `#`
+  starts a comment only OUTSIDE a string literal; a `_check(` condition is its
+  first argument, read to the top-level comma by depth over string-masked
+  text; a container read is `.size()` or ANY `[`; the sides are the text
+  either side of the first top-level `==` - the count is **524 conditions and
+  54 sites**, at `3aa6589` (the tree 108 and 109 both measured, taken from a
+  `git worktree` of that commit) **and at `b2c8407`**.
+
+  **AND THE MATCHING NUMBER IS NOT THE EVIDENCE, BECAUSE A NUMBER CAN MATCH BY
+  LUCK. THE SITE SET IS.** The 54 sites under that definition are
+  **identical, site for site, 0 extra and 0 missing**, to the 54 that **109
+  itself read by hand** and tabulated in this file. The comparison was taken
+  against that table **parsed programmatically out of `HANDOVER.md`** -
+  including its `file.gd:385`, `:401` shorthand, resolved to the preceding
+  filename - rather than retyped, because retyping 55 identifiers is a worse
+  risk than the thing being measured. 56 tokens, 55 unique, minus the one
+  (`source_scan_test.gd:690`) that 109 itself says is not a site = **54**.
+
+  **SO 109 HELD THE ENUMERATION THAT CONFIRMED 108 AND COMPARED ITS SCAN
+  AGAINST NEITHER IT NOR 108'S SITES.** That is the new **TRAPS 108**, and it
+  is TRAPS 106's rule with the roles reversed: there the scan had no second
+  number to put beside it, here the second number was already on the page, in
+  the same commit, written by the same hand.
+
+  **WHAT DOES NOT REPRODUCE IS 109'S OWN THREE NUMBERS.** 520, 34 and 53 come
+  out of **none of twelve definitions tried** - three comment-blanking modes x
+  two container-read modes x three `==` readings, plus probes for excluding
+  the two non-suite files, excluding multi-line conditions, and deduplicating
+  condition text. The twelve totals are 524, 525, 528, 535, 526, 508, 512,
+  513, 500, 501, 504 - **520 is not among them**. This is stated as *"does not
+  reproduce under these twelve readings, listed"* and not as *"irreproducible"*,
+  which is the form TRAPS 108 says to use, and it is falsifiable by the next
+  session exactly as 109's was falsified by this one.
+
+  **AND THE MECHANISM IS THE READER THE SUITES SHARE, WHICH IS THE PART WORTH
+  KEEPING.** 109 blanked comments *"as `_code_of()` blanks them"*, and
+  `_code_of()` cuts at the **first `#` on a line without knowing whether that
+  `#` is inside a string literal**. Blanking that way gives **528**, not 520
+  or 524. **Driven in Godot 4.7.1**, in a throwaway copy with its own
+  `config/name`, by calling `source_scan_test._code_of()` directly:
+
+  | in | out | truncated |
+  |---|---|---|
+  | `\tvar s := "a # b"\n` | `\tvar s := "a ` | **YES** |
+  | `\tvar s := 'a # b'\n` | `\tvar s := 'a ` | **YES** |
+  | `\t_chk(_keys_for("a.gd") == ["a.gd::_same#1"])\n` | cut at `_same` | **YES** |
+  | `\tvar x := 1  # note\n` (control) | `\tvar x := 1  ` | yes, correctly |
+  | `\tvar s := "a b"\n` (control) | unchanged | **no** |
+
+  **AND THE FOUR CONDITIONS IT CORRUPTS IN `tests/` ARE EXACTLY THE FOUR THAT
+  TEST `_code_of()`'S OWN BLINDNESS TO A `#`** - `agreement_test.gd:452`,
+  `check_wiring_test.gd:622`, `proxy_test.gd:284`,
+  `record_type_test.gd:131` (line numbers at `3aa6589`). A reader that blanks
+  comments the way the suites do **cannot read the assertions about the
+  suites' blanking**, and those four are the entire difference between 528 and
+  524. They are also the four phantom sites in the naive reading: the `#`
+  leaves the string literal unterminated, the condition parse runs past the
+  comma and swallows the next line.
+
+  **WHAT CHANGED IN THE CODE: THREE ASSERTIONS, HOLDING THAT PROPERTY RATHER
+  THAN DESCRIBING IT.** `source_scan_test` section 9 part 4 now drives
+  `_code_of()` with a `#` inside a double-quoted string, inside a
+  single-quoted string, and with a no-`#` string as the control. **Two
+  injections, each in its own throwaway copy with its own `config/name`,
+  applied to all 18 copies of `_code_of()` so section 3's byte-identical
+  assertion stays green and only the new assertions move:**
+
+  | injection | result |
+  |---|---|
+  | `_code_of` made string-aware (no truncation on a line holding a quote) | **79 assertions, failures=2** - both truncation assertions, by name. Control passes |
+  | `_code_of` made to cut at the first `"` instead | **76 assertions, failures=24** - the **control fires by name**, and the class enumeration collapses with it |
+  | negative control: the unmodified tree, same command | **79 assertions, failures=0** |
+
+  **AND THE LIMITATION WAS MEASURED BEFORE IT WAS WRITTEN DOWN, RATHER THAN
+  ASSUMED HARMLESS.** `_code_of()` discards real code on **77 lines in
+  `tests/` and 0 in `scripts/`** (measured at `b2c8407`, before this commit's
+  own lines were added). **None of the 77 hides a needle any scan in `tests/`
+  looks for**: every discarded tail was searched for the needles these suites
+  use - `res://` paths, `DirAccess.open`, `get_files_at`, `FileAccess.open`,
+  `get_file_as_string`, `_code_of`, `extends`, `preload(`, `load(`, `.size()`
+  - and the only tails holding one are five deliberate comment-blanking
+  fixtures, where the text after the `#` **is** the fixture. So this is a
+  property of the reader, asserted, and **not** an open fault. Saying it hides
+  nothing without that search would have been TRAPS 14 in the file that holds
+  the rule against it.
+
+  **NO POPULATION LINE WAS WRITTEN FOR THE 77, DELIBERATELY, and the reason is
+  in the file beside the decision.** It would move every time anyone wrote a
+  `#` inside a string anywhere in `tests/`, with no fault behind the movement,
+  and `scripts/` - the directory where a hidden needle would actually cost
+  something - is **0**. That is the judgement 084 and 085 each made about
+  machinery for a class whose verdict nothing can check, and it is recorded as
+  a choice rather than left as a silence (TRAPS 90).
+
+  **VERIFIED:**
+  **BASELINE WAS THE CLEAN TREE AT THE PUSHED COMMIT `b2c8407`**,
+  `git status --porcelain` empty, `--all`, `user://` cleared by deleting
+  `app_userdata/AI_Game_Builder` so `project.godot` - which four suites read -
+  was NOT edited, same Godot (4.7.1.stable.official.a13da4feb, `--version`
+  read): **`d3de1b88811b8f0a2e94926dfd0ac0c2`, 78 suites, 0 with something to
+  look at - BYTE-IDENTICAL to the md5 109 and 109a both recorded, from a
+  THIRTEENTH independent container with its own Godot download.**
+  `ls tests/*.gd` 80, the run reported 78.
+  **THE PREDICTED DIFF WAS WRITTEN DOWN BEFORE ANY FILE WAS EDITED AND HELD
+  EXACTLY** (TRAPS 89): *`source_scan_test` 76 -> 79, three new assertions;
+  no other suite moves; and - the part that mattered - the new assertions use
+  `not ... .contains(...)` and `.contains(...)` so they add **no top-level
+  `==`**, therefore the third route must still report 524 and 54 after the
+  change, or the header numbers this commit confirms would be falsified by this
+  commit's own hand.* **All three held.** After-run md5
+  `a7dc209287e9f8cd30b7bf1deadc5d2e`, 78 suites, 0 with something to look at,
+  `diff` against the baseline **that one line**; and the third route on the
+  post-change tree reports **524 and 54**, site set unchanged.
+  **THE SITE-SET COMPARISON IS THE LOAD-BEARING MEASUREMENT** and it was taken
+  four ways: `string-aware/loose/first_eq` and `string-aware/loose/any_eq`
+  both give the 54 exactly, and the `no-blanking` variants of both give the
+  same 54 (with A=525). The `strict` variants miss exactly three -
+  `scan_floor_test.gd:889`, `:894`, `:896` - which are `== ["a.gd::_one"]`
+  against an **array literal**, and which 109's own table classifies among
+  *"the remaining 21, NOT COUNTING EQUALITIES AT ALL"*. So the two routes
+  agree about those three as well, including about why they are in the union.
+
+  **NOT VERIFIED:**
+  **WHAT 109'S READER ACTUALLY DID IS NOT ESTABLISHED AND CANNOT BE FROM THIS
+  REPOSITORY.** It was a throwaway and is not committed. What is established
+  is that 524 and 54 reproduce, that the 54 sites match 109's own hand read
+  site for site, and that 520/34/53 come out of none of twelve tried
+  definitions including 109's stated one. **No claim is made here about which
+  bug 109's reader had**, only that its conclusion was wrong and that the
+  evidence against it was already inside its own commit.
+  **THE THIRD ROUTE IS NOT COMMITTED EITHER** - it is a throwaway in the
+  scratch directory, like 106's prototype and 108's two enumerations. What is
+  committed is the resolution and the three assertions, and **nothing asserts
+  524 or 54**; they are a measurement in a comment, re-derivable from the
+  definition stated beside them. A fourth session's reader could disagree, and
+  the definition is written down so that disagreement would be locatable.
+  **THE 54 VERDICTS ARE STILL A HUMAN READING AND NOTHING ASSERTS THEM** -
+  109's open entry on that is untouched and still live below, and this commit
+  deliberately did not build the breadth line it offers as option (a).
+  **THE 77-LINE MEASUREMENT IS AT `b2c8407`** and this commit's own new lines
+  add to it, since they contain a `#` inside a string literal by design. The
+  number is dated rather than carried forward as current.
+  **NO LIVE PATH TO A MODEL WAS DRIVEN**, no model was asked anything, no
+  request left the container, there is no API key here, no browser ran, no web
+  export was made, `interpret.js` was not executed.
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is still **2026-10-14**, checked by grepping every
+  `OWNER, 2026-1[01]-*` marker in `HANDOVER.md` and `TRAPS.md` this commit -
+  five in `HANDOVER.md`, all `2026-10-14`, none in `TRAPS.md`.
+  **064'S FINDING IS CARRIED FORWARD AND NOT RE-VERIFIED.**
+
+  **NOTHING IN `scripts/`, `scenes/`, `netlify/`, `.github/`, `project.godot`,
+  `export_presets.web.cfg` OR EITHER RUNNER WAS TOUCHED** - no file was added
+  or removed, so `tests/` keeps **80** `.gd` and **80** `.uid` (counted with
+  `ls`), no list in either runner can be short one (TRAPS 4), and
+  `README.md`'s suite count cannot have moved. `ai_interpreter.gd` is 0 lines
+  of diff, so `PROMPT_FINGERPRINT` and `PROMPT_VERSION` cannot have moved -
+  and `prompt_bounds_test` is green on the after-run, which is the measurement
+  of that rather than the inference. Every injection and the `_code_of` probe
+  was in a throwaway copy under the scratch directory with its own
+  `config/name`, never in the repository; the `3aa6589` tree was a
+  `git worktree`, read only.
+
+  **AND WHAT CHANGED FOR ANYONE USING GENESIS: NOTHING, AND THAT IS STATED
+  PLAINLY.** `scripts/` is 0 lines of diff. What changed is that a false
+  sentence in a suite's header - *"524 and 54 are NOT REPRODUCIBLE"* - is now
+  the resolution with the definition written beside it, that the reader every
+  source-scanning suite shares has its one real blind spot asserted rather
+  than undiscovered, and that `docs/TRAPS.md` has the entry for the shape that
+  produced the false sentence.
+
 - Last commit at the time of writing: **109a**, which is **docs only** - 0
   lines of diff in `scripts/` and `tests/`, no new finding about Genesis, no
   new claim, no new live entry. It records one measurement: **a fresh
@@ -7637,6 +7819,44 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
+**110 ADDED NO FILE**, so the two numbers below did not move: `ls tests/*.gd`
+is **80**, the run reports **78** suites, and `replay` and `prompt_test` are
+the two that are tools rather than suites.
+
+**BASELINE AT `b2c8407`, CLEAN**: `git status --porcelain` empty, `--all`,
+`user://` cleared by **deleting `app_userdata/AI_Game_Builder`** rather than
+by renaming `config/name`, so `project.godot` was not edited to take the
+measurement. Godot 4.7.1.stable.official.a13da4feb, `--version` read.
+**`d3de1b88811b8f0a2e94926dfd0ac0c2`, 78 suites, 0 with something to look at**
+- byte-identical to the md5 109 and 109a both recorded, from a **thirteenth**
+independent container with its own Godot download.
+
+**THE PREDICTED DIFF WAS WRITTEN TO A FILE BEFORE ANY REPOSITORY FILE WAS
+EDITED AND HELD EXACTLY** (TRAPS 89), including its third clause, which was
+the one with a real risk in it: *`source_scan_test` 76 -> 79; no other suite
+moves; and the new assertions add no top-level `==`, so the third route must
+still report 524 and 54 afterwards - otherwise this commit falsifies the very
+header numbers it confirms.* After-run **`a7dc209287e9f8cd30b7bf1deadc5d2e`,
+78 suites, 0 with something to look at**, `diff` against the baseline **that
+one line**: `source_scan_test 76 -> 79 assertions, failures=0`. The third
+route on the post-change tree: **524 and 54, site set unchanged.**
+
+**TWO INJECTIONS AND A NEGATIVE CONTROL**, each in its own throwaway copy
+under the scratch directory with its own `config/name`, applied to **all 18
+copies** of `_code_of()` so section 3's byte-identical assertion stayed green
+and only the new assertions moved: `_code_of` made string-aware gives **79
+assertions, failures=2**, both truncation assertions by name, control passing;
+`_code_of` made to cut at the first `"` gives **76, failures=24** with the
+**control among them by name**; the unmodified tree under the same single-suite
+command gives **79, failures=0**.
+
+**AND `_code_of()` WAS DRIVEN DIRECTLY**, in a sixth throwaway copy, on five
+inputs - a `#` inside a double-quoted string, inside a single-quoted string,
+inside `scan_floor_test`'s own `"a.gd::_same#1"` ordinal key, a plain trailing
+comment, and a quoted string with no `#`. The first three truncate, the fourth
+truncates correctly, the fifth does not. The table is in the 110 entry.
+
+
 ```
 run_tests.bat "C:\path\to\Godot_v4.7.1-stable_win64.exe"      (Windows)
 ./run_tests.sh /path/to/Godot_v4.7.1-stable_linux.x86_64      (Linux)
@@ -14892,6 +15112,24 @@ each was measured alone in its own copy with its own `config/name`, and the
 property they attribute is `tests/source_scan_test.gd` rather than a table in
 a document.
 
+**NOTHING IS OWED FROM 110.** Its baseline was byte-identical to the md5 109
+and 109a both recorded, from a **thirteenth** independent container with its
+own Godot download; its predicted diff was written to a file before any
+repository file was edited and **held exactly, in all three clauses**; it took
+its runs on the code tree and then on the complete tree with `docs/` in place;
+and it drove its three new assertions with **two injections and a negative
+control**, each in its own throwaway copy with its own `config/name`. **Do not
+start by re-running on 110's behalf**; take your own baseline so you learn the
+record and the container still agree, and spend the time on the work below.
+**And do not re-take the third route.** Its result is in the 110 entry and in
+`source_scan_test`'s header with the definition written out: 524 conditions,
+54 sites, the site set identical to 109's hand read. **If you want to test it,
+test it by DISAGREEING with the stated definition, not by re-running the same
+one** - a fourth reader under the same definition tells you nothing the third
+did not. The thing a fourth route could still add is a reading that produces
+520, 34 or 53, which would locate 109's bug rather than only establish that it
+had one; 110 could not find such a reading in twelve tries and says so.
+
 **NOTHING IS OWED FROM 109 EITHER.** Its baseline was byte-identical to the
 md5 108 and 108a both recorded, from a **twelfth** independent container with
 its own Godot download; its predicted diff was written down before anything
@@ -14961,13 +15199,28 @@ So the choice is not scan-or-nothing, it is **which cheap half to hold**:
   (b) **nothing, and say so.** 55 sites over 80 files is one session's read,
       the population moves slowly, and machinery for a class whose verdict
       nothing can check is what 084 and 085 each weighed and declined.
-**AND THE PART THAT IS NOT A CHOICE: 108'S 524 AND 54 ARE STILL
-UNEXPLAINED.** 109 states three numbers under three stated definitions and
-**did not establish what 108's reader counted.** A third independent route
-over `tests/` would settle whether 54 was a third definition or an arithmetic
-slip, and it is cheap - the reader is forty lines in any language. Until then
-the count in `source_scan_test`'s header carries the disagreement beside it
-and should not be quoted as if it were settled.
+**~~AND THE PART THAT IS NOT A CHOICE: 108'S 524 AND 54 ARE STILL
+UNEXPLAINED.~~ DONE IN 110, AND THE ANSWER WAS NEITHER OF THE TWO THE ENTRY
+OFFERED: 108 WAS RIGHT.** The entry asked whether 54 was *"a third definition
+or an arithmetic slip"*. It was a third definition - one 109 had not tried -
+and **both** of 108's numbers reproduce exactly under it: 524 conditions and
+54 sites, at `3aa6589` and at `b2c8407`. The load-bearing evidence is not the
+matching number but the **site set**: the 54 are identical, site for site, 0
+extra and 0 missing, to the 54 **109 itself read by hand** into the table
+above, compared against that table parsed out of this file rather than
+retyped. **109 held the enumeration that confirmed 108 and compared its scan
+against neither it nor 108's sites - TRAPS 108.** 109's own 520, 34 and 53
+come out of none of twelve definitions tried, including the one 109 states it
+used; the cause is that `_code_of()` cuts at the first `#` even inside a
+string literal, which is now driven and asserted in `source_scan_test`
+section 9 part 4, with the two injections in the 110 entry. **The count in
+that header no longer carries a disagreement: it carries the resolution and
+the definition needed to re-derive it. Nothing asserts 524 or 54** - they are
+a measurement in a comment, and that is stated there.
+**WHAT IS STILL OPEN IS THE FIRST HALF OF THIS ENTRY, UNTOUCHED BY 110**: the
+54 verdicts are a human reading, nothing asserts them, and the (a)-or-(b)
+choice below is still the owner's or the next session's to make. 110
+deliberately did not build (a) on the way past.
 
 **~~THE FIRST LIVE ENTRY AS OF 108, COUNTED AND DELIBERATELY NOT CLOSED: THE
 SHAPE SECTION 8 HOLDS IS THE LOCAL-COUNTER FORM OF A WIDER QUESTION, AND 52

@@ -8382,3 +8382,68 @@ occurrence.
   fault sitting 380 lines below a fresh instance of it, in a file it had open.
   This is TRAPS 93 — the claim written in the same commit as the fix — with
   the claim and the fix the other way round.
+
+---
+
+## 108. The scan and the hand read were in the same commit, disagreed, and only the scan was written down
+
+**Signature:** a session sets out to check a previous session's count, writes a
+reader, gets a different number, and records the earlier number as *"not
+reproducible"* — while the same commit contains, in prose, an enumeration that
+matches the earlier number exactly.
+
+**Cause:** 108 counted the `_check` conditions in `tests/` with an `==` and the
+subset with a container read on both sides, and reported **524** and **54**.
+109 set out to verify them. It did two independent things and compared them to
+each other never once:
+
+| what 109 produced | what it said |
+|---|---|
+| a reader over the same 80 files | 520 conditions, and 34-or-53 sites |
+| a **hand read of every site, by file and line**, tabulated in `HANDOVER.md` | **54 rows** |
+
+It then wrote *"524 and 54 are NOT REPRODUCIBLE"* into
+`tests/source_scan_test.gd` and into `HANDOVER.md`, on the strength of the
+first and in contradiction of the second, which it had written itself.
+
+110 ran a third route. **Both of 108's numbers reproduce exactly** — 524 and
+54 — and the 54 sites are **identical, site for site, 0 extra and 0 missing**,
+to the 54 in 109's own table, compared against that table parsed out of
+`HANDOVER.md` rather than retyped. What does not reproduce is 109's three
+numbers: 520, 34 and 53 come out of none of twelve definitions tried,
+including the one 109 states it used.
+
+**And the reason 109's reader was wrong is the reader the suites share.**
+109 blanked comments *"as `_code_of()` blanks them"* — and `_code_of()` cuts
+at the first `#` on a line without knowing whether that `#` is inside a string
+literal. Blanking that way gives 528, not 520 or 524. The conditions it
+corrupts in `tests/` are **exactly the four that test `_code_of()`'s own
+blindness to a `#`**: a reader that blanks comments the way the suites do
+cannot read the assertions about the suites' blanking. That property is now
+driven and asserted in `source_scan_test` section 9 part 4, with two
+injections — a string-aware `#` fires both truncation assertions by name
+(79 assertions, failures=2); cutting at the first quote instead fires the
+control (failures=24, the control among them).
+
+**Do:**
+
+- **When you set out to refute a number and your own session also enumerates
+  the thing by hand, compare the two before you write either down.** 109 had
+  the independent enumeration TRAPS 106 asks for, produced it in the same
+  commit, and checked its scan against neither it nor 108's sites. This is
+  TRAPS 106's rule with the roles reversed: there the scan had no second
+  number beside it; here the second number was already on the page.
+- **"Not reproducible" is a claim about every definition you tried, so say
+  which ones.** 109's entry named three definitions and concluded about the
+  number rather than about the definitions. A count that reproduces under a
+  definition nobody tried is not irreproducible — and the honest form is
+  *"does not reproduce under these N readings, listed"*, which is falsifiable
+  by the next session and was what 110 falsified.
+- **Compare SETS, not totals.** Two counts agreeing is weak evidence and two
+  counts disagreeing says nothing about which is right. The thing that settled
+  this was 54 site identifiers matching 54 site identifiers. Where a count has
+  members, carry the members.
+- **A reader written to audit the suites must not borrow the suites' reader.**
+  Its blind spots are then correlated with exactly the code under audit, which
+  is how the four assertions about comment blanking became the four the audit
+  misread.
