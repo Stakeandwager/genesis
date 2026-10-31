@@ -14222,10 +14222,14 @@ from a NINTH independent container** (78 suites, 0 with something to look at) -
 the same md5 105 and 105a both recorded. It wrote its predicted diff down
 before running, took the after-run with `--all` and `user://` cleared, and
 `diff` against the baseline is the **two** lines it predicted
-(`45a3d1955464944401e7b5e1bb9c034c`). **There is no 106a**, because the
-after-run was taken on the complete tree, `docs/` included, and the only edits
-after it were to this file and `docs/TRAPS.md`, which nothing in `tests/`
-reads. **Do not start by re-running on 106's behalf**; take your own baseline
+(`45a3d1955464944401e7b5e1bb9c034c`). **AND THE PUSHED TREE WAS THEN MEASURED
+RATHER THAN ARGUED ABOUT**: a fresh `git clone` of `291c85a` from the remote,
+with its own `config/name` and its own empty `user://`, `git status
+--porcelain` naming that one throwaway file and nothing else, `--all` with the
+same Godot - **`45a3d1955464944401e7b5e1bb9c034c`, 78 suites, 0 with something
+to look at, BYTE-IDENTICAL to the complete-tree run**. So the tree on the
+remote is the tree that was measured. **That is why there is no 106a**, and it
+is a measurement and not the inference 104 made and had to add 104a for. **Do not start by re-running on 106's behalf**; take your own baseline
 so you learn the record and the container still agree, and spend the time on
 the work below. **And do not re-take 106's three guard-deletion injections or
 its two `OPEN`-row controls** - they are in the 106 entry with their counts,
