@@ -233,9 +233,12 @@ const FLOORS := {
 	},
 	# 106: two reads arrived with the registry-keyed sweep, and this suite
 	# named both of them on the run that added them - which is the class
-	# working rather than a chore. Each is in its own function on purpose: two
-	# reads in one function would share one key, and section 2's claim about
-	# that is weaker than it reads (see HANDOVER 106).
+	# working rather than a chore. Each is in its own function, which is tidy
+	# and is NOT load-bearing: 106 wrote here that "two reads in one function
+	# would share one key", and that is false - _keys_for() gives them
+	# "#1"/"#2" and section 1 then demands a row for each. It is the third
+	# copy of a sentence 078 wrote true, 083 made false and 106 repeated while
+	# writing the entry about it. Corrected in 107; see TRAPS 107.
 	"source_scan_test.gd::_registry_keyed_class": {
 		"floor": "keyed_sites > 0",
 		"why": "106: every assertion about a guard comes out of this sweep, so an empty read leaves section 6 with nothing to judge and its clean result would mean it had looked at no code at all",
@@ -512,20 +515,43 @@ func _scan() -> Dictionary:
 				"line": i + 1,
 				"body": _function_body(lines, i),
 			})
-		# the ordinal, per function, once the whole file is read
-		var per_function := {}
+		# the ordinal, per function, once the whole file is read. The
+		# arithmetic is _keys_for() so that section 6 can drive it on input
+		# whose answer is known, rather than only on whatever tests/ holds
+		# (107: section 2 could not fail, and said so about the wrong thing).
+		var function_names: Array = []
 		for site in found:
-			var f := str((site as Dictionary)["func"])
-			per_function[f] = int(per_function.get(f, 0)) + 1
-		var seen_so_far := {}
-		for site in found:
-			var row: Dictionary = site
-			var f := str(row["func"])
-			var n := int(seen_so_far.get(f, 0)) + 1
-			seen_so_far[f] = n
-			row["key"] = "%s::%s" % [file_name, f] if int(per_function[f]) == 1 else "%s::%s#%d" % [file_name, f, n]
+			function_names.append(str((site as Dictionary)["func"]))
+		var computed := _keys_for(file_name, function_names)
+		for i in found.size():
+			var row: Dictionary = found[i]
+			row["key"] = str(computed[i])
 			sites.append(row)
 	return {"sites": sites, "writes": writes, "unknown": unknown, "elsewhere": elsewhere}
+
+
+# The key for each read of one file, in source order: "file.gd::func" when the
+# function holds exactly one read, and "file.gd::func#N" when it holds more.
+#
+# ITS OWN FUNCTION BECAUSE IT IS THE THING SECTION 2 WAS SUPPOSED TO BE ABOUT.
+# A collision is not possible here - the ordinal is applied to every read of a
+# function that holds more than one - so an assertion that the keys _scan()
+# built do not collide is this arithmetic checked against itself, and section 2
+# said it was a property of tests/ instead. Driven on built input in section 6,
+# where removing the ordinal is a failure by name.
+static func _keys_for(file_name: String, functions: Array) -> Array:
+	var per_function := {}
+	for raw in functions:
+		var f := str(raw)
+		per_function[f] = int(per_function.get(f, 0)) + 1
+	var seen_so_far := {}
+	var out: Array = []
+	for raw in functions:
+		var f := str(raw)
+		var n := int(seen_so_far.get(f, 0)) + 1
+		seen_so_far[f] = n
+		out.append("%s::%s" % [file_name, f] if int(per_function[f]) == 1 else "%s::%s#%d" % [file_name, f, n])
+	return out
 
 
 func _occurrences(haystack: String, needle: String) -> int:
@@ -618,8 +644,40 @@ func _run() -> void:
 
 	# --- 2. a unique key per site, so a row cannot cover two reads at once ---
 	#
-	# Two opens in one function would collide, and the row would silently
-	# answer for whichever was asked first. Asserted rather than assumed.
+	# 107 REWROTE THIS SECTION, AND WHAT IT SAID BEFORE IS THE POINT. It
+	# printed "no function in tests/ opens two directories, so one row answers
+	# for one read" - which was true when 078 wrote it, was made FALSE by 083
+	# four commits later, and stayed on the screen for 23 more. Two functions
+	# in player_door_test hold two reads and three reads; this file says so
+	# itself, 170 lines above, in the comment on _scan()'s key. The sentence
+	# survived because the assertion under it CANNOT FAIL ON ANYTHING IN
+	# tests/: _keys_for() applies an ordinal to every read of a function that
+	# holds more than one, so `collided` is empty for every directory this
+	# suite could be pointed at. 106 measured that - a second DirAccess.open
+	# injected into one function, section 2 passing while three OTHER
+	# assertions failed - and then added a third copy of the same false belief
+	# to the FLOORS comment above. See TRAPS 107.
+	#
+	# SAID AT THE WIDTH IT IS TRUE (TRAPS 15): the check is not dead. It fails
+	# on a change to _keys_for() itself - measured in 107, with the ordinal
+	# deleted, where it names the three colliding keys. What it cannot do is
+	# fail on a property of tests/, which is the only thing its old message
+	# talked about.
+	#
+	# WHAT IS ASSERTED NOW, in three parts that fail for three reasons:
+	#   - the collision check is KEPT, with a message that says what it is:
+	#     _keys_for()'s arithmetic read back off the real scan. It is a guard
+	#     against a future change to that function, not a measurement of
+	#     tests/ (TRAPS 6 - worth keeping, worth labelling, not worth counting
+	#     as a measurement);
+	#   - the ordinal is EXERCISED by tests/ today, which is the claim the old
+	#     sentence had backwards and which fails the day player_door_test is
+	#     refactored to one read per function - the day the ordinal stops
+	#     being covered by anything but section 6;
+	#   - every read in such a function carries an ordinal, so a key that lost
+	#     its "#N" is named rather than merely colliding with nothing.
+	# The arithmetic itself is driven on built input in section 6, where
+	# deleting the ordinal is a failure by name.
 	var seen := {}
 	var collided: Array = []
 	for key in keys:
@@ -628,7 +686,29 @@ func _run() -> void:
 			collided.append(k)
 		seen[k] = true
 	_check(collided.is_empty(),
-		"no function in tests/ opens two directories, so one row answers for one read (%s)" % str(collided))
+		"the %d keys _keys_for() built for tests/ are distinct, which is that function's own ordinal read back rather than a property of tests/ (%s)" % [keys.size(), str(collided)])
+
+	var reads_per_function := {}
+	for site in sites:
+		var row: Dictionary = site
+		var fk := "%s::%s" % [str(row["file"]), str(row["func"])]
+		reads_per_function[fk] = int(reads_per_function.get(fk, 0)) + 1
+	var sharing: Array = []
+	var reads_in_shared := 0
+	for fk in reads_per_function:
+		if int(reads_per_function[fk]) > 1:
+			sharing.append("%s (%d reads)" % [str(fk), int(reads_per_function[fk])])
+			reads_in_shared += int(reads_per_function[fk])
+	_check(not sharing.is_empty(),
+		"%d function(s) in tests/ hold more than one directory read, so the ordinal is exercised by this directory and not only by section 6: %s" % [
+			sharing.size(), str(sharing)])
+	var with_ordinal := 0
+	for key in keys:
+		if str(key).contains("#"):
+			with_ordinal += 1
+	_check(with_ordinal == reads_in_shared,
+		"and every read in one of those functions carries an ordinal: %d key(s) with a #N against %d read(s) in a shared function" % [
+			with_ordinal, reads_in_shared])
 
 	# --- 3. the open is checked for null, in the function that opened it ---
 	#
@@ -782,6 +862,26 @@ func _run() -> void:
 
 	_check(_occurrences("a == 1 and a == 1", "a == 1") == 2, "a condition is counted, not merely found")
 	_check(_occurrences("scanned > 0", "loaded == 0") == 0, "and a condition that is absent counts zero")
+
+	# 107: the key arithmetic, on function lists whose answer is known. This
+	# is what section 2 was supposed to be - every one of these FAILS if the
+	# ordinal is deleted from _keys_for(), which is the change section 2 could
+	# not have noticed. Driven rather than read, for the reason section 6
+	# exists: these answer for the function and not for what is on disk.
+	_check(_keys_for("a.gd", ["_one"]) == ["a.gd::_one"],
+		"a function holding one read keeps a bare key, so fifteen rows do not acquire an ordinal nobody asked for")
+	var two_in_one := _keys_for("a.gd", ["_same", "_same"])
+	_check(two_in_one == ["a.gd::_same#1", "a.gd::_same#2"],
+		"two reads in ONE function get different keys, in source order: %s - if the ordinal is removed this is the assertion that fails" % str(two_in_one))
+	_check(_keys_for("a.gd", ["_same", "_same", "_same"]) == ["a.gd::_same#1", "a.gd::_same#2", "a.gd::_same#3"],
+		"and three do too, which is player_door_test._the_scene_has_no_floor's own shape")
+	_check(_keys_for("a.gd", ["_one", "_two"]) == ["a.gd::_one", "a.gd::_two"],
+		"two reads in two functions of one file are distinct WITHOUT an ordinal, so the ordinal is applied per function and not per file")
+	_check(_keys_for("a.gd", ["_same"]) != _keys_for("b.gd", ["_same"]),
+		"and the same function name in two files does not collide, because the file is in the key")
+	var mixed := _keys_for("a.gd", ["_one", "_same", "_same", "_two"])
+	_check(mixed == ["a.gd::_one", "a.gd::_same#1", "a.gd::_same#2", "a.gd::_two"],
+		"and one list can carry both shapes at once, each read keyed by its own function's count: %s" % str(mixed))
 
 	print("SCAN FLOOR %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)

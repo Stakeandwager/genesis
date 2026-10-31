@@ -8319,3 +8319,66 @@ and ten were then reconciled one site at a time, by file and line.
 - **Write the controls for the bugs you actually made, not for the bugs you
   imagined.** The two in `source_scan_test` section 7 that matter are the two
   shapes above, and they are there because the scan got them wrong first.
+
+---
+
+## 107. The sentence was true when it was written, false four commits later, and the assertion under it could not tell
+
+**Signature:** a suite prints a confident sentence about the directory it
+scans; the same file contradicts that sentence in a comment a hundred lines
+above; and the assertion the sentence is attached to has been green for 28
+commits because no input can make it fail.
+
+**Cause:** `scan_floor_test` section 2 printed *"no function in tests/ opens
+two directories, so one row answers for one read"*. Three dates, read off
+`git log -S` rather than remembered:
+
+| commit | what it did |
+|---|---|
+| 078 (`ce8f49c`) | wrote the sentence, and it was **true** — no function in `tests/` held two reads |
+| 083 (`f48c619`) | added the second and third reads to `player_door_test`, invented the `#N` ordinal to key them, **wrote the correction into the comment on `_scan()`'s key** — *"Until 083 no function in tests/ held two, and section 2 asserted it. Two now do"* — and left section 2's sentence standing 170 lines below |
+| 106 (`291c85a`) | found that section 2 cannot fail, measured it, wrote the entry about it — and added a **third** copy of the same false belief to the `FLOORS` comment: *"two reads in one function would share one key"* |
+
+Measured in 107 off the real scan: **22 directory reads in `tests/`, 2
+functions holding more than one** — `player_door_test.gd::_the_scene` (2) and
+`::_the_scene_has_no_floor` (3) — **5 keys carrying an ordinal**. The sentence
+is not merely untested. It is false, it is the opposite of the truth, and the
+file says so itself.
+
+**Why it survived.** `_keys_for()` applies the ordinal to *every* read of a
+function that holds more than one, so `collided` is empty for every directory
+the suite could be pointed at. The assertion is the ordinal's own arithmetic
+checked against itself. 106 established that by injection and still read the
+result as *"a false sentence over a working mechanism"* — which is right about
+the mechanism and understates the sentence, because the mechanism's existence
+is exactly what makes the sentence false.
+
+**And 083 is the sharper half.** 083 knew. It wrote the true version of the
+sentence into a comment in the same file in the same commit, and did not grep
+for the false one. That is TRAPS 11 in its cheapest possible form: the author
+had the correct rule in hand, in the same file, and applied it to one
+occurrence.
+
+**Do:**
+
+- **A sentence a suite prints is a claim, and it goes stale on the commit that
+  falsifies it, not on the commit that notices.** When a change makes a
+  previously-true statement false — 083 adding the second read — `grep` the
+  repository for the old statement in the same commit. One search over
+  `"two directories"` finds all three copies in two seconds; 107 ran it.
+- **When you record that an assertion cannot fail, ask what it would take to
+  make it fail, and write that down too.** "Cannot fail" is almost never
+  true at full width: this one fails on a change to `_keys_for()` — measured,
+  with the ordinal deleted, naming the three colliding keys. Keep it, label it
+  as a guard against a change to the suite's own code, and give the property
+  about the scanned directory its **own** assertion (TRAPS 6, TRAPS 15).
+- **The claim about the directory must be the one that can fail.** Section 2
+  now asserts that `tests/` holds at least one function with more than one
+  read — the opposite of the old sentence, measured at 2 functions and 5
+  ordinal keys — and it fires by name when the surplus reads are taken away.
+  That is the assertion the old one was impersonating.
+- **Write the entry and fix the sentence in the same commit, or the entry
+  becomes the next copy of it.** 106's entry is a correct description of this
+  fault sitting 380 lines below a fresh instance of it, in a file it had open.
+  This is TRAPS 93 — the claim written in the same commit as the fix — with
+  the claim and the fix the other way round.

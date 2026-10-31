@@ -13,6 +13,128 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
+- Last commit at the time of writing: **107**, which took **the first live
+  entry as of 106** - *`scan_floor_test`'s section 2 cannot fail, and its
+  message states a property of `tests/` that it does not test* - and found
+  that **the message does not merely fail to test that property: it states
+  the opposite of the truth, and has since 083.** New TRAPS **107**. No new
+  file. `tests/scan_floor_test.gd` **130 -> 138** assertions. `scripts/` is
+  **0 lines of diff** - no player meets any of this. Two new live entries,
+  both small. No new "Human decision needed".
+
+  **WHAT THE ENTRY GOT RIGHT AND WHAT IT UNDERSTATED.** 106 was right that
+  section 2 cannot fail and right that the coverage was not missing. It called
+  the result *"a false sentence over a working mechanism"*. **The sentence is
+  the opposite of the truth and the mechanism is why.** Section 2 printed *"no
+  function in tests/ opens two directories"*; measured off the real scan here:
+  **22 directory reads in `tests/`, 2 functions holding more than one** -
+  `player_door_test.gd::_the_scene` (2 reads) and
+  `::_the_scene_has_no_floor` (3) - **5 keys carrying an ordinal**.
+
+  **AND THE DATES WERE READ OFF `git log -S` RATHER THAN REMEMBERED.** 078
+  (`ce8f49c`) wrote the sentence and it was **true**. 083 (`f48c619`) made it
+  false by adding those reads, invented the `#N` ordinal to key them, **wrote
+  the correction into the comment on `_scan()`'s key 170 lines above** -
+  *"Until 083 no function in tests/ held two, and section 2 asserted it. Two
+  now do"* - and left the sentence standing. **And 106 added a THIRD copy of
+  the same false belief**, to the `FLOORS` comment it wrote that same commit:
+  *"two reads in one function would share one key"*. So the commit whose entry
+  is about this false sentence shipped a fresh instance of it, 380 lines above
+  the entry. That is the finding, and it is TRAPS 107.
+
+  **WHAT CHANGED, in one file.** The ordinal arithmetic came out of `_scan()`
+  into `static func _keys_for(file_name, functions)`, unchanged, so it can be
+  driven on input whose answer is known. Section 2 is now three assertions
+  that fail for three reasons: the collision check is **kept** with a message
+  saying what it is - `_keys_for()`'s own ordinal read back off the real scan,
+  a guard against a change to this suite's code and **not** a measurement of
+  `tests/` (TRAPS 6); a new assertion that `tests/` holds at least one
+  function with more than one read, which is the claim the old sentence had
+  backwards; and a new one that every read in such a function carries an
+  ordinal. Section 6 gained **six** controls driving `_keys_for()` on built
+  function lists. The third false copy in the `FLOORS` comment is corrected.
+
+  **VERIFIED:**
+  **BASELINE WAS THE CLEAN TREE AT THE PUSHED COMMIT `e6cffe1`**,
+  `git status --porcelain` empty, `--all`, same Godot
+  (4.7.1.stable.official.a13da4feb, `--version` read), `user://` empty because
+  the container was fresh: **`45a3d1955464944401e7b5e1bb9c034c`, 78 suites, 0
+  with something to look at - BYTE-IDENTICAL to the md5 106 recorded**, which
+  is the tenth independent container to reproduce it.
+  **THE AFTER-RUN MOVED EXACTLY ONE LINE**, `--all`, `user://` cleared before
+  it: `scan_floor_test` **130 -> 138**, **0 suites with something to look
+  at**, md5 `84fa64a327fa4d04e4cf9ad2f3c319b5`. `diff` against the baseline is
+  that one line and nothing else.
+  **THE NEW ASSERTIONS WERE PROVEN TO FIRE, THREE INJECTIONS, each alone in
+  its own throwaway copy with its own `config/name` and its own `user://`:**
+
+  | injection | result | what named it |
+  |---|---|---|
+  | the ordinal deleted from `_keys_for()` | `128 assertions, failures=15` | the collision check names the 3 colliding keys; the coverage check says `0 key(s) with a #N against 5 read(s)`; 3 of section 6's controls fail by name |
+  | the ordinal present but never advancing (`n := 1`) | `132 assertions, failures=9` | the collision check and the same 3 controls |
+  | the 3 surplus reads redirected at `user://`, so no function holds two | `125 assertions, failures=8` | **`0 function(s) in tests/ hold more than one directory read`**, by name |
+
+  **AND 106'S OWN INJECTION WAS RE-RUN ON THIS TREE AS A NEGATIVE CONTROL** -
+  a second `DirAccess.open` inside `source_scan_test._registry_keyed_class()`,
+  which is the shape 106 measured section 2 passing on: **`138 assertions,
+  failures=3`**, the same three section-1 failures 106 recorded, **and section
+  2's three parts all pass** - correctly, because the ordinal does its job and
+  the two new counts move with the injection without failing. **The fix hides
+  nothing and adds no false alarm.**
+  **AND THE CLASS WAS CLOSED BY GREP RATHER THAN BY EYE** (TRAPS 11). The
+  search for `"two directories"`, `"share one key"`, `"would collide"` over
+  `tests/`, `scripts/`, `docs/` and `README.md` returns **three code
+  instances, all in `tests/scan_floor_test.gd`** - lines 237, 621 and 631 as
+  they stood - **and all three are corrected here.** `player_door_test.gd:374`
+  and `scan_floor_test.gd:184` also match and are **true** statements about
+  two directories being read, left alone.
+  **AND THE CIRCULARITY EVERY COMMIT SINCE 093 HAS RECORDED WAS CHECKED, NOT
+  REPEATED.** Nothing in `tests/` reads `docs/`. `md5sum -c` on the changed
+  file after the after-run reported it unmoved.
+
+  **NOT VERIFIED:**
+  **THE PREDICTION WAS WRONG BY ONE AND IT IS WRITTEN DOWN RATHER THAN
+  TIDIED** (TRAPS 89). It said `scan_floor_test` **130 -> 137**; it is
+  **130 -> 138**, because the section 6 controls were written as six rather
+  than the five that were planned. The *"nothing else moves"* half held
+  exactly.
+  **NOTHING ASSERTS THAT THESE THREE ARE THE RIGHT THREE.** That the ordinal
+  is applied in SOURCE ORDER within a function is asserted only on built input
+  in section 6; no assertion reads it off `tests/`.
+  **SECTION 3 HOLDS A WEAKER VERSION OF THE SAME SHAPE AND IS NAMED, NOT
+  CHANGED - IT IS A LIVE ENTRY BELOW.**
+  **THE DUPLICATED COMMENT PARAGRAPH 106 LEFT IN `source_scan_test.gd` IS
+  NOTICED AND DELIBERATELY LEFT** - *"THE ACCESSORS FIRST, because a scan
+  whose needles have been renamed..."* appears twice, consecutively, around
+  line 461. Comment-only, zero behaviour; changing a second file would have
+  weakened this commit's predicted diff for no capability gain. It is a live
+  entry below so it is not rediscovered.
+  **NO LIVE PATH TO A MODEL WAS DRIVEN**, no model was asked anything, no
+  request left the container, there is no API key here, no browser ran, no web
+  export was made, `interpret.js` was not executed.
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is still **2026-10-14**, checked by grepping every
+  `OWNER, 2026-1[01]-*` marker in `HANDOVER.md` and `TRAPS.md` - the grep
+  returns five, all `2026-10-14`.
+  **064'S FINDING IS CARRIED FORWARD AND NOT RE-VERIFIED.**
+
+  **NOTHING IN `scripts/`, `scenes/`, `netlify/`, `.github/`, `project.godot`,
+  `export_presets.web.cfg` OR EITHER RUNNER WAS TOUCHED** - no file was added
+  or removed, so `tests/` keeps **80** `.gd` and **80** `.uid` (counted with
+  `ls`), no list in either runner can be short one (TRAPS 4), and
+  `README.md`'s suite count cannot have moved. `ai_interpreter.gd` is 0 lines
+  of diff, so `PROMPT_FINGERPRINT` and `PROMPT_VERSION` cannot have moved -
+  and `prompt_bounds_test` is green on the after-run, which is the measurement
+  of that rather than the inference. Every injection was in a throwaway copy
+  under the scratch directory with its own `config/name`, never in the
+  repository.
+
+  **AND WHAT CHANGED FOR ANYONE USING GENESIS: NOTHING, AND THAT IS STATED
+  PLAINLY.** `scripts/` is 0 lines of diff. What changed is that a suite has
+  stopped printing a false sentence about the directory it scans, and that the
+  arithmetic the sentence was impersonating is now held by six controls that
+  fail by name when it is removed.
+
 - Last commit at the time of writing: **106**, which took **the second live
   entry as of 105** - *six suites guard their whitelist-keyed table correctly
   today, and nothing asserts that they keep doing so* - and **built the scan
@@ -7140,6 +7262,44 @@ remembered, and since 024 every one of them runs — nothing is skipped as
 broken. `--all` adds the two slow racing suites, which are counted in the 78
 and are skipped without it.
 
+**107 ADDED NO FILE EITHER**, which is why the two numbers above did not
+move, and that was deliberate for the reason 101 through 106 all gave: a new
+suite would falsify `README.md`'s count, which is the open class 100 left and
+which 107 does not close. The eight new assertions went into
+`tests/scan_floor_test.gd`, **already the standing check for every directory
+read in `tests/`** and the file the fault was in. **`scripts/` is 0 lines of
+diff.**
+Its baseline on the clean tree at `e6cffe1`, `git status --porcelain` empty,
+was **BYTE-IDENTICAL to the md5 106 recorded, from a TENTH independent
+container with its own Godot download** (4.7.1.stable.official.a13da4feb,
+`--version` read): `45a3d1955464944401e7b5e1bb9c034c`, 78 suites, 0 with
+something to look at. The container was fresh, so `user://` was empty rather
+than cleared. `ls tests/*.gd` 80, run reported 78.
+**THE POST-CHANGE PREDICTION WAS WRONG BY ONE AND IS RECORDED RATHER THAN
+TIDIED** (TRAPS 89): it said *one line moves, `scan_floor_test` 130 -> 137*,
+and it is **130 -> 138** - six section-6 controls were written where five were
+planned. It was written with the named risk that **four suites read
+`res://tests`** (`player_door_test`, `source_scan_test`, `scan_floor_test`,
+`formula_test`), any of which could have moved a second number. **None did:**
+`user://` cleared, md5 `84fa64a327fa4d04e4cf9ad2f3c319b5`, **78 suites, 0 with
+something to look at**, `diff` against the baseline **that one line**.
+**THREE INJECTIONS AND ONE NEGATIVE CONTROL**, each alone in its own throwaway
+copy with its own `config/name`, the diff read before each run: the ordinal
+deleted (`128 assertions, failures=15`), the ordinal never advancing (`132`,
+`failures=9`), every shared-function read taken away (`125`, `failures=8`,
+naming the new coverage assertion), and **106's own second-`DirAccess.open`
+injection re-run on this tree** (`138 assertions, failures=3` - the same three
+section-1 failures 106 recorded, with section 2's three parts all correctly
+passing, so the fix hides nothing and raises no false alarm).
+**AND RUN 3 IS THE COMPLETE TREE WITH `docs/` IN PLACE AND IS BYTE-IDENTICAL
+TO RUN 2**, `user://` cleared before it, md5
+`84fa64a327fa4d04e4cf9ad2f3c319b5`, with each changed file's md5 taken before
+it and `md5sum -c` afterwards reporting **nothing moved**. The md5 itself was
+written into this file after that run, and the circularity is the one every
+commit since 093 has recorded: nothing in `tests/` reads `docs/`. **Run 4 is
+a fresh `git clone` of the pushed commit and is recorded in the 107a note
+below if it was taken.**
+
 **105 ADDED NO FILE EITHER**, which is why the two numbers above did not move,
 and that was deliberate for the reason 101 through 104 all gave: a new suite
 would falsify `README.md`'s count, which is the open class 100 left and which
@@ -14237,6 +14397,84 @@ each was measured alone in its own copy with its own `config/name`, and the
 property they attribute is `tests/source_scan_test.gd` rather than a table in
 a document.
 
+**NOTHING IS OWED FROM 106 EITHER.** Its baseline was byte-identical to the
+md5 105 recorded, and 106a then re-took its after-run on a fresh `git clone`
+of the pushed commit and reproduced it byte-for-byte, which is why 107's
+baseline had a number to be checked against. **Do not start by re-running on
+106's behalf**; take your own baseline so you learn the record and the
+container still agree, and spend the time on the work below. **And do not
+re-take 106's measurements** - its three guard-deletion injections, its two
+`OPEN` controls and its section-2 probe are in the 106 entry with their
+counts, each alone in its own copy with its own `config/name`, and the
+property they attribute is `source_scan_test` sections 6 and 7 rather than a
+table in a document.
+
+**THE FIRST LIVE ENTRY AS OF 107, SMALL, NAMED BECAUSE IT IS THE WEAKER HALF
+OF THE SHAPE 107 FIXED: `scan_floor_test`'s SECTION 3 ASSERTS AN EQUALITY
+BETWEEN TWO COUNTS OF THE SAME FIELD.**
+`_check(asked_for_null == open_kind and asked_for_null > 0, "and the null
+question was put to every site that has a handle to test: %d of %d")`.
+`open_kind` is counted in section 1a by walking `sites` for `kind == "open"`;
+`asked_for_null` is counted in section 3 by walking `sites` for the same
+thing. **The equality cannot fail.** The `> 0` half CAN and is load-bearing -
+it is what fires if the classifier ever calls every open a `get_files_at`,
+which is the silence section 3's own comment is about.
+**WHY IT IS NAMED AND NOT CHANGED, and the distinction is the whole of TRAPS
+107.** Unlike section 2's, this message makes **no false claim about
+`tests/`** - it describes the suite's own coverage, and it describes it
+correctly. So this is a vacuous conjunct, not a lie, and TRAPS 6's instruction
+applies rather than TRAPS 14's: worth keeping, worth labelling, not worth
+counting as a measurement. **The honest fix is one comment line saying which
+half of the `and` is the live one**, and it was not taken here because
+rewriting a second assertion in the file I was fixing is the companion of the
+instance-and-not-the-class mistake (TRAPS 11). One line, when somebody is next
+in this file.
+**AND THE GENERAL QUESTION IT RAISES IS THE USEFUL PART, AND IS NOT ANSWERED:**
+how many assertions across `tests/` are an equality between two counts the
+suite derived from one array? 107 read **every** `_check` in
+`scan_floor_test` (17 outside section 6) and in `source_scan_test` and found
+**two** of this shape - section 2's, fixed, and section 3's, named - plus
+`open_kind + files_at_kind == sites.size()`, which is vacuous only until a
+third reading idiom is added and so is a real guard against a real future
+change. **Two directories were not read**: the same question asked of the
+other 76 suites. That is a scan over `tests/` and it is the shape
+`source_scan_test` sections 6 and 7 already are, so it is buildable - and
+**TRAPS 106's rule applies before it is believed**: it must find section 3's
+instance, by file and line, or it does not hold the rule.
+
+**THE SECOND LIVE ENTRY AS OF 107, TINY AND RECORDED ONLY SO IT IS NOT
+REDISCOVERED: `source_scan_test.gd` CARRIES THE SAME COMMENT PARAGRAPH TWICE.**
+Around line 461, *"THE ACCESSORS FIRST, because a scan whose needles have been
+renamed finds nothing and finding nothing looks exactly like finding nothing
+wrong (TRAPS 6). Each name is read back out of `scripts/` as a declared
+function before the sweep is believed."* appears twice, consecutively, in two
+slightly different wordings. Added by 106. **Comment-only, no behaviour, and
+seven lines to delete.** Left here because changing a second file would have
+weakened 107's predicted diff for no capability gain - **not** because it is
+worth a cycle of its own. Delete it on the way past the next time
+`source_scan_test` is opened for a real reason.
+
+**~~THE FIRST LIVE ENTRY AS OF 106, MEASURED WHILE DOING SOMETHING ELSE AND
+DELIBERATELY NOT FIXED: `scan_floor_test`'s SECTION 2 CANNOT FAIL, AND ITS
+MESSAGE STATES A PROPERTY OF `tests/` THAT IT DOES NOT TEST.~~ DONE IN 107,
+AND THE MESSAGE WAS NOT MERELY UNTESTED - IT WAS THE OPPOSITE OF THE TRUTH,
+AND HAD BEEN SINCE 083.** The entry's reading of the mechanism was right, its
+measurement was right, and its two options were the right two: 107 took **both
+halves of (b)** - an assertion pointed at something that can fail, driven on
+built sources - **and kept the collision check with an honest message**, which
+is what (a) was reaching for. What the entry missed is that `tests/` has held
+two multi-read functions since 083, that 083 wrote the correction into the
+same file and left the sentence, and that **106 itself added a third copy of
+the false belief while writing this entry.** Measured: 22 reads, 2 shared
+functions, 5 ordinal keys. See TRAPS 107 and the 107 entry above. **Struck
+rather than deleted, because an entry that names a fault correctly and
+understates it by one step is the useful record here - and because its closing
+sentence, that rewriting a second suite's assertion on the way past is the
+instance-and-not-the-class mistake in reverse, is the rule 107's own first
+live entry above obeys.**
+
+**AND THE ORIGINAL ENTRY, KEPT VERBATIM BECAUSE ITS MEASUREMENT WAS RIGHT AND
+ITS TWO OPTIONS WERE THE RIGHT TWO:**
 **THE FIRST LIVE ENTRY AS OF 106, MEASURED WHILE DOING SOMETHING ELSE AND
 DELIBERATELY NOT FIXED: `scan_floor_test`'s SECTION 2 CANNOT FAIL, AND ITS
 MESSAGE STATES A PROPERTY OF `tests/` THAT IT DOES NOT TEST.**
