@@ -13,6 +13,29 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 - Branch: `prototype-002a`. `main` is a month-old Prototype 001 and is NOT the
   work — a shallow clone gets the wrong code (`docs/TRAPS.md`, trap 1).
+- Last commit at the time of writing: **112a**, which is **docs only** - 0
+  lines of diff in `scripts/`, `tests/` and `.github/`, no new finding about
+  Genesis, no new claim about its behaviour, no new live entry. It records one
+  measurement, the one 112's commit message left owed: **a fresh `git clone`
+  of the pushed commit `c89261d` runs byte-identical to the two runs 112
+  took** - `2aa79dbb0552aab084b3a1d146fed242`, 78 suites, 0 with something to
+  look at, `proxy_test` **58**, with `git status --porcelain` **empty both
+  before and after the run**, so `project.godot` was not edited to take the
+  measurement and `user://` was cleared by deleting
+  `app_userdata/AI_Game_Builder`. **And the enumeration was re-derived against
+  that clone**: 25 sites in 11 files (24 real plus
+  `view_frame_test.gd:387`'s negative fixture), 5 reader helpers - so the
+  numbers in the 112 entry are a property of the pushed tree, not of a working
+  copy. Written in for the reason 104a and 106a through 111a were each taken:
+  the alternative is a sound inference about the remote in place of a reading
+  of it, which is TRAPS 14's shape applied to this file. **NOTHING ELSE IN 112
+  WAS RE-MEASURED** - its baseline, its predicted diff, its eighteen removal
+  measurements, its eleven negative controls and its three floor injections
+  are 112's and are not re-taken. **No suite was run against a modified tree
+  by 112a**: the only edits since `c89261d` are to `docs/HANDOVER.md`, and
+  nothing in `tests/` reads `docs/`, checked this commit rather than carried
+  forward.
+
 - Last commit at the time of writing: **112**, which took the first live
   "Next action" as of 111 - *the named-file reads in `tests/` have no class
   and at least one is silent* - and did its steps (1), (2) and (3).
@@ -8166,6 +8189,18 @@ gives **57 assertions, failures=1**, the failure naming the preset by its
 assertion text; the unmodified copy gives **58/0**; `interpret.js` removed
 still fires, at **43/1**.
 
+**AND RUN 4 IS A FRESH `git clone` OF THE PUSHED COMMIT**, written in by 112a
+- `c89261d`, into its own directory, `git status --porcelain` **EMPTY both
+before and after the run** (so `project.godot` was not edited to take the
+measurement), `user://` cleared by deleting `app_userdata/AI_Game_Builder`,
+same Godot: **BYTE-IDENTICAL to runs 1 and 2**, md5
+`2aa79dbb0552aab084b3a1d146fed242`, 78 suites, 0 with something to look at,
+`proxy_test` **58 assertions, failures=0**. So the tree on the remote is the
+tree that was measured. **And the enumeration was re-derived against that
+clone**: 25 sites in 11 files and 5 reader helpers, unchanged - the 24 real
+sites and the 18 pairs are a property of the pushed tree. No suite was run
+against a modified tree by 112a.
+
 **111 ADDED NO FILE EITHER**, so the two numbers below did not move: `ls
 tests/*.gd` is **80** and the run reports **78** suites. It edited three files
 - `.github/workflows/web.yml`, `tests/proxy_test.gd`, `tests/scan_floor_test.gd`
@@ -15627,6 +15662,11 @@ their numbers, each injection alone in its own copy with its own
 `config/name`, and the property they attribute is now
 `tests/source_scan_test.gd` sections 8 and 9 rather than a table in a
 document.
+
+**AND 112 HAS NOW HAD ITS FOURTH RUN, SO THERE IS GENUINELY NOTHING OWED.**
+112a cloned the pushed `c89261d` and reproduced `2aa79dbb...` exactly, with
+porcelain empty on both sides, and re-derived the enumeration against that
+clone. **Do not start by re-running on 112a's behalf either.**
 
 **NOTHING IS OWED FROM 112 EITHER.** Its baseline was byte-identical to the
 md5 111 recorded, it wrote its predicted diff down before running and **the
