@@ -66,7 +66,27 @@ static func validate(parameters: Dictionary, rooms: Array, things: Array = []) -
 	var room := -1
 	var asked = parameters.get("room", null)
 	if asked == null:
-		errors.append("go_to needs a room (this dungeon has %s)" % ", ".join(names))
+		# 114: this said "go_to needs a room" on EVERY path that reaches it,
+		# and go_to is not the only goal that reaches it. A carry takes a room
+		# as well as a thing - the prompt's own shape is {"goal": "carry",
+		# "thing": THING, "room": ROOM} - so "take the red key to the vault"
+		# with the room left out was refused for a goal the player had not
+		# asked for, beside a second refusal that named the right one. Driven
+		# before it was changed; not one of the 19 carry orders in tests/
+		# omits a room, which is why 78 green suites never saw it.
+		# The goal is READ FROM THE REQUEST, which is what every other path
+		# name in a Genesis refusal already does - section_validator and
+		# farm_module interpolate the type they were given, and the eight
+		# other refusals in scripts/ that name a path by a literal all sit on
+		# a path that only that one name can reach (counted, 114). A goal this
+		# game has not got is already refused above and is named as NONE
+		# here, rather than as go_to and rather than as itself: quoting it
+		# back would put a goal Genesis does not have into a sentence that
+		# reads as though it did, and a null goal would be quoted as "null"
+		# (Readback.spelled()'s answer for it, measured in 114) in a sentence
+		# whose subject is what the player asked for.
+		errors.append("%s needs a room (this dungeon has %s)" % [
+			goal if GOALS.has(goal) else "an order", ", ".join(names)])
 	elif typeof(asked) == TYPE_INT or typeof(asked) == TYPE_FLOAT:
 		# 040: a fraction is not room 2. int() used to make it room 2 and say
 		# nothing - see Readback.ordinal_index() for the class this is one of.

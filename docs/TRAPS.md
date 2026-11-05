@@ -8674,3 +8674,84 @@ property of its unit rather than a hole in it.
   reaches either; stating the folding as well would be noise. Recorded here
   and in the suite instead, which is the place for a mechanism that no
   compliant request meets.
+
+
+## 112. The read that closed trap 111's class found nothing, and the useful finding was a refusal naming a goal nobody asked for
+
+**Signature:** an entry asks a question of 71 sites, every one of them
+answers "yes, the prompt states it", and the read looks like a read that was
+never done. A clean sweep and an unperformed sweep have the same shape at the
+bottom of a session, and only two things tell them apart: a calibration that
+reproduces a known answer, and whatever the read found that it was not
+looking for.
+
+**What the read was.** Trap 111 closed a four-member class in
+`dungeon_module.gd` and 113's handover entry left the wider one open: 71
+`errors.append` sites across seven files in `scripts/`, with the question
+asked once per site — *if this refusal fires, was the model ever told the
+rule it fires for?* 114 read all 71 against the assembled prompt and the
+answer was **71 of 71 stated**. The count reproduced exactly, file for file.
+
+**What made that answer believable, and it is not the answer itself.**
+
+- **A definition written before the read, not after.** A site is a GAP when
+  a model obeying every sentence in the prompt could still earn the refusal;
+  STATED when some sentence, if obeyed, makes it unreachable. So a type or
+  shape guard on a field whose shape the prompt gives is STATED, a bound
+  whose number the prompt names is STATED, and a necessary consequence of a
+  stated rule is STATED. Without that written down first, 71 verdicts are 71
+  separate judgement calls and the total means nothing.
+- **A calibration against a known answer** (trap 106). The same reading, run
+  against the prompt as 113 found it, must call the room-duplicate and
+  thing-duplicate refusals gaps and must NOT call the door-pair and
+  thing-named-after-a-room refusals gaps. It did — two of four, the right
+  two. A reading that cannot reproduce 113 is not reading this class.
+- **The prompt was DUMPED AND FINGERPRINTED, not read off the source.** The
+  71 were compared against `assembled_prompt()` written to a file, whose
+  sha256 was checked against `PROMPT_FINGERPRINT` first. Reading the three
+  `prompt_section()` functions separately would have been a reading of the
+  parts against a question about the whole.
+
+**What the read actually found, which was not a prompt gap.**
+`npc_goals.gd` said **`"go_to needs a room"` on every path that reaches
+it**, and `go_to` is not the only goal that reaches it. The room block is
+not gated on the goal, and a carry needs a room too — the prompt's own shape
+is `{"goal": "carry", "thing": THING, "room": ROOM}`. So "take the red key
+to the vault", with the room left out, was refused **for a goal the player
+had not asked for**, and in the two-error case beside a second refusal that
+named the right one, so the pair contradicted itself in one list.
+
+**Why 78 green suites never saw it.** Measured, not reasoned about: all
+**19** carry orders in `tests/` name a room. Not one probes carry without
+one. The string is quoted in a `controller_reach_test` comment, where the
+probe that produces it sends `go_to` — the one goal for which the sentence
+was true.
+
+**Do:**
+
+- **A refusal names the path it was reached by, read from the request.** Not
+  a literal that is right on one of the paths that reach it. Genesis already
+  does this nearly everywhere: `section_validator` and `farm_module`
+  interpolate the type they were given. Enumerated for this commit — nine
+  refusals in `scripts/` name a path by a literal, and eight of the nine sit
+  on a path only that name can reach. One did not, and that one was the
+  fault (trap 11, where the enumeration is what lets the single fix count as
+  a fix of the class).
+- **When the path has no legal name, name none.** A goal this game has not
+  got is already refused on its own line; the room sentence says "an order"
+  rather than quoting the invented goal back, which would put a goal Genesis
+  does not have into a sentence that reads as though it did.
+- **A clean sweep owes a calibration.** If a read of a class finds nothing,
+  the session has to show that the read could have found something. Run it
+  against the commit where the answer is known.
+- **Inject against the guard you just wrote, including the rows you are
+  sure of.** The first draft of 114's new test had a **vacuous row** and an
+  injection found it, not a re-read: it sent the string `"<null>"` and asked
+  whether the sentence contained `"<null>"`, but `Readback.spelled()`
+  answers `"null"` for both a real null and that string, so the row could
+  not fail however the sentence was written — and it passed against an
+  injection that quoted the goal straight back. Trap 6, in a guard written
+  the same hour as this entry warning about trap 6. The quote-back is asked
+  about the goal **as the code resolved it**, through the same reading
+  `validate()` does, and a real null is sent rather than a string that looks
+  like one.

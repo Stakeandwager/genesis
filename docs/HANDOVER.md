@@ -11,6 +11,148 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
+- Last commit at the time of writing: **114**, and it **closes the 71-member
+  class 113 opened**. The read found **71 of 71 stated** - every refusal in
+  `scripts/` has a sentence in the prompt behind it - and the useful finding
+  is not that answer but what the read turned up on the way: **a refusal that
+  named a goal the player had not asked for.**
+  `scripts/npc_goals.gd` **one refusal sentence**, `tests/order_test.gd`
+  **18 -> 25** assertions, `docs/TRAPS.md` one new entry (**112**), and this
+  file. `validate()` refuses exactly what it refused before: same condition,
+  same number of errors, same paths. **`prompt_section()` is 0 lines of diff
+  across every file, so the prompt did not move** and
+  `PROMPT_FINGERPRINT` is untouched. No new "Human decision needed".
+
+  **THE READ, AND WHY ITS ANSWER IS BELIEVABLE RATHER THAN JUST CLEAN.**
+  113's live entry asked one question of 71 `errors.append` sites across
+  seven files: *if this refusal fires, was the model ever told the rule it
+  fires for?* The count reproduced exactly, file for file - `dungeon_module`
+  23, `npc_goals` 13, `section_validator` 13, `farm_module` 10, `boots_tool`
+  5, `car_tool` 4, `look_tool` 3. **The answer is 71 of 71 STATED**, and a
+  clean sweep has the same shape as a sweep nobody performed, so three things
+  are recorded instead of the total:
+  - **The definition was written to a file BEFORE the read**, not fitted to
+    it afterwards: a site is a GAP when a model obeying every sentence in the
+    prompt could still earn the refusal, STATED when some sentence, if
+    obeyed, makes it unreachable. Shape guards on fields whose shape the
+    prompt gives, bounds whose numbers it names, and necessary consequences
+    of stated rules are therefore STATED, and that was settled before any
+    site was judged.
+  - **THE CALIBRATION 113 DEMANDED WAS RUN AND IT PASSES** (TRAPS 106). The
+    same reading, applied to the prompt as 113 found it at `85ba875`, calls
+    the room-duplicate and thing-duplicate refusals **gaps** and the
+    door-pair and thing-named-after-a-room refusals **stated** - two of four,
+    the right two, which is 113's own answer.
+  - **The prompt was DUMPED AND FINGERPRINTED, not read off the source.**
+    `assembled_prompt()` was written to a file, **16631 characters**, sha256
+    `ac8041cbe96a362bcef369e01e9861fb0668da19abc6d691218a0819b89f6b18` -
+    **equal to `PROMPT_FINGERPRINT`**, so the 71 were compared against the
+    prompt the model is actually sent rather than against three
+    `prompt_section()` functions read apart.
+
+  **THE FINDING, DRIVEN BEFORE ANYTHING WAS PREDICTED OR EDITED.**
+  `npc_goals.gd` said **`"go_to needs a room"` on every path that reaches
+  it**, and `go_to` is not the only goal that reaches it: the room block is
+  **not gated on the goal**, and a carry takes a room as well as a thing -
+  the prompt's own shape is `{"goal": "carry", "thing": THING, "room":
+  ROOM}`. So **"take the red key to the vault" with the room left out was
+  refused for a goal the player never asked for**, and in the
+  no-thing-and-no-room case beside a second refusal naming the right one, so
+  the pair contradicted itself inside one error list. Driven before it was
+  changed, five cases printed, including the control that a carry WITH a room
+  is accepted.
+
+  **WHY NO GREEN SUITE SAW IT, measured rather than reasoned about.** All
+  **19** carry orders in `tests/` name a room; **not one** probes a carry
+  without one. The sentence is quoted in a `controller_reach_test` comment,
+  and the probe that produces it (line 792) sends `go_to` - the one goal for
+  which the sentence was true.
+
+  **THE FIX READS THE GOAL FROM THE REQUEST, AND THE CLASS WAS ENUMERATED
+  BEFORE IT COUNTED AS A FIX** (TRAPS 11). Nine refusals in `scripts/` name
+  a path by a literal; **eight of the nine sit on a path only that name can
+  reach** - `boots_tool`'s two are in the boots validator, `farm_module`'s
+  two are inside `if type == "crop"`, `section_validator`'s two are inside
+  the `"chicane"` arm, `npc_goals`' other two are inside `if goal ==
+  "carry"`. **One was not, and that one was the fault.** So the single edit
+  is the fix of the class, with the enumeration behind that claim rather than
+  an assurance. A goal this game has not got is named as **none** - "an order
+  needs a room" - because quoting the invented goal back would put a goal
+  Genesis does not have into a sentence that reads as though it did, and
+  would carry `"null"` into the screen `says_nothing_test` section 5 keeps.
+
+  **VERIFIED:**
+  **BASELINE WAS THE CLEAN TREE AT THE PUSHED COMMIT `7965ca2`**,
+  `git status --porcelain` empty, `--all`, `user://` cleared by deleting
+  `app_userdata/AI_Game_Builder` so `project.godot` was NOT edited, same
+  Godot (4.7.1.stable.official.a13da4feb, `--version` read):
+  **`1a4164e18f2bc1ddad829fcd9d34b6b2`, 78 suites, 0 with something to look
+  at, `procedure_test` 299, `prompt_bounds_test` 72 - BYTE-IDENTICAL to the
+  md5 113 recorded as its final run and 113a reproduced from a fresh clone,
+  from a SEVENTEENTH independent container with its own Godot download.**
+  `ls tests/*.gd` 80, the run reported 78.
+  **THE PREDICTED DIFF WAS WRITTEN TO A FILE BEFORE ANY REPOSITORY FILE WAS
+  EDITED** (TRAPS 89) **and its risk clause held.** The clause with the real
+  risk in it: *`says_nothing_test` section (d) REACHES the changed line -
+  `_one_null_each` on the carry base produces a copy with `room` null, which
+  fires this very sentence with goal "carry" - and is predicted UNMOVED at
+  437 because section (d) asserts that the sweep said SOMETHING, not what.*
+  It stayed **437, failures=0**.
+  **FINAL RUN `20087573bcca168e7785f3e3f5a56c9d`, 78 suites, 0 with
+  something to look at**, and `diff` against the baseline run is **EXACTLY
+  ONE LINE**: `order_test 18 -> 25 assertions, failures=0`.
+  **EVERY NEW ASSERTION WAS DRIVEN, each injection alone in its own throwaway
+  copy with its own `config/name`, `order_test` run alone:**
+
+  | injection | predicted | result |
+  |---|---|---|
+  | negative control: unmodified copy | 25, failures=0 | **25, failures=0** |
+  | the fix fully reverted to the hard-coded `go_to` | 5 | **25, failures=5** - both carry rows and all three stray-goal rows, each quoting the wrong sentence |
+  | the unknown-goal arm quotes the goal back | 2 | **25, failures=2** - the `attack` row and the null row, AFTER the vacuous row was corrected; see below |
+
+  **NOT VERIFIED:**
+  **THE PREDICTION SAID `order_test` 18 -> 22 AND IT IS 25**, and the
+  prediction is amended here rather than read as having covered it (TRAPS 89
+  is about writing the prediction down, not about being right). The three
+  extra assertions are the stray-goal rows, added after the prediction was
+  written because the first version of the test did not reach the
+  unknown-goal path at all.
+  **AND ONE ROW OF THE NEW TEST WAS VACUOUS, FOUND BY AN INJECTION AND NOT
+  BY A READ.** Its first draft sent the **string** `"<null>"` and asked
+  whether the refusal contained `"<null>"` - but `Readback.spelled()` answers
+  `"null"` for both a real null and that string, so the row **could not fail
+  however the sentence was written**, and it passed against the
+  quote-the-goal-back injection. That is TRAPS 6 in a guard written the same
+  hour as a TRAPS entry warning about TRAPS 6, and it is recorded rather than
+  quietly corrected. The quote-back is now asked about the goal **as the code
+  resolved it**, through the same reading `validate()` does, and a real null
+  is sent instead of a string that looks like one; the same injection then
+  gave the 2 failures it should always have given.
+  **NO MODEL WAS ASKED FOR A CARRY WITH NO ROOM.** That a live model ever
+  omits the room is **not measured and is not claimed**: no live path to a
+  model was driven, no request left the container, there is no API key here.
+  What is measured is that Genesis, sent such a request, now names the goal
+  it was sent.
+  **THE 71-OF-71 ANSWER IS A READING AND NOT A SUITE.** Nothing in `tests/`
+  asserts it, and nothing will notice the 72nd refusal arriving unstated. The
+  machinery that would is option (b) of 113's entry, weighed and declined
+  again under "Next action".
+  **THE DEPLOY STILL FAILS**, both secrets are still empty, and what a
+  visitor sees is still commit `71b065f` from 2026-10-14. Nothing here
+  touched a deployment setting, a secret, a flag or a target.
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is still **2026-10-14**, checked this commit by
+  grepping every `OWNER, 2026-1[01]-*` marker in `HANDOVER.md` and
+  `TRAPS.md` (five, all 2026-10-14), by reading the branch's authors with
+  `git log` (the last non-assistant commit is `b144780`, 2026-10-10), and by
+  listing the repository's GitHub issues (**0, open or closed**).
+
+  **AND WHAT CHANGED FOR ANYONE USING GENESIS: one refusal tells the truth
+  about what was asked.** A player whose carry order lost its room used to be
+  told `go_to` needs a room. Genesis refuses exactly the same orders it
+  refused yesterday, builds exactly the same worlds, and the site is still
+  stale behind two unset secrets.
+
 - Last commit at the time of writing: **113a**, which is **docs only** - 0
   lines of diff in `scripts/`, `tests/` and `.github/`, no new finding about
   Genesis, no new claim about its behaviour, no new live entry. It records one
@@ -8347,6 +8489,67 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
+**114 ADDED NO FILE EITHER**, so the two numbers below did not move: `ls
+tests/*.gd` is **80** and the run reports **78** suites. It edited two files -
+`scripts/npc_goals.gd` (one refusal sentence) and `tests/order_test.gd` - plus
+`docs/TRAPS.md` and this file. **Every `prompt_section()` in the project is 0
+lines of diff**, so `assembled_prompt()` is byte-identical and
+`PROMPT_FINGERPRINT` was not moved.
+
+**BASELINE AT `7965ca2`, CLEAN**: `git status --porcelain` empty, `--all`,
+`user://` cleared by **deleting `app_userdata/AI_Game_Builder`** rather than by
+renaming `config/name`, so `project.godot` was not edited to take the
+measurement. Godot 4.7.1.stable.official.a13da4feb, `--version` read.
+**`1a4164e18f2bc1ddad829fcd9d34b6b2`, 78 suites, 0 with something to look at**
+- byte-identical to the md5 113 recorded as its final run and 113a reproduced
+from a fresh clone, from a **seventeenth** independent container with its own
+Godot download. `procedure_test` **299**, `prompt_bounds_test` **72**.
+
+**THE PROMPT WAS DUMPED AND FINGERPRINTED BEFORE THE READ THAT NEEDED IT.**
+`assembled_prompt()` written to a file: **16631 characters**, sha256
+`ac8041cbe96a362bcef369e01e9861fb0668da19abc6d691218a0819b89f6b18`, **equal to
+`PROMPT_FINGERPRINT`**. Taken in a throwaway copy with its own `config/name`,
+so no repository file was touched to take it. That is the artefact the 71
+refusals were read against; reading the three `prompt_section()` functions
+apart would have been a reading of the parts against a question about the
+whole.
+
+**THE PREDICTED DIFF WAS WRITTEN TO A FILE BEFORE ANY REPOSITORY FILE WAS
+EDITED** (TRAPS 89), including the clause with a real risk in it: *`says_nothing_test`
+section (d) REACHES the changed line, because `_one_null_each` on the carry
+base produces a copy with `room` null, and that copy fires this very sentence
+with goal "carry" - predicted UNMOVED at 437 because section (d) asserts that
+the sweep said SOMETHING rather than what it said.* It stayed **437,
+failures=0**. **The prediction was WRONG in one line and it is recorded as
+wrong**: it said `order_test` 18 -> 22 and the suite is **25**, because three
+stray-goal rows were added after the prediction was written.
+**AND THE OTHER "PREDICTED NOT TO MOVE" CLAUSES HELD**, each written with its
+reason: `prompt_bounds_test` 72 (no `prompt_section()` diff),
+`prompt_numeral_test` 117 (its table reads the `"""` template, not
+`validate()`, and no fence mark or digit was added),
+`controller_reach_test` 330 (its no-room ORDER probe sends `go_to`, whose
+wording is byte-identical), `carry_test` 21, `command_schema_test` 187,
+`limits_test` 78, `check_wiring_test` 217, `source_scan_test` 79,
+`scan_floor_test` 147, `agreement_test` 53, and `README.md`'s suite count.
+**FINAL RUN `20087573bcca168e7785f3e3f5a56c9d`, 78 suites, 0 with something to
+look at**, `diff` against the baseline **exactly one line**: `order_test
+18 -> 25 assertions, failures=0`. Each changed file's md5 was recorded before
+the run and `md5sum -c` afterwards reported **nothing moved**.
+
+**THREE INJECTIONS, each in its own throwaway copy under the scratch
+directory with its own `config/name`, `order_test` run alone**, and the
+negative control matched its baseline line exactly at **25, failures=0**:
+the fix fully reverted gave **25, failures=5** (both carry rows and all three
+stray-goal rows, each quoting the wrong sentence); the unknown-goal arm
+quoting the goal back gave **25, failures=2** (the `attack` row and the null
+row). **The second of those is recorded as an injection that first FAILED to
+be one**: against the test's first draft it gave only **1** failure, because
+the row sending the string `"<null>"` asked whether the sentence contained
+`"<null>"` while `Readback.spelled()` answers `"null"` - a row that could not
+fail however the sentence was written (TRAPS 6, in a guard written this
+commit). The row was corrected to ask about the goal as the code resolved it,
+and the same injection then gave 2.
+
 **113 ADDED NO FILE EITHER**, so the two numbers below did not move: `ls
 tests/*.gd` is **80** and the run reports **78** suites. It edited five files
 - `scripts/readback.gd`, `scripts/dungeon_module.gd`,
@@ -15960,9 +16163,100 @@ the final md5, and the one-line diff. That was a sound inference about the
 remote in place of a reading of it, which is exactly what 104a and 106a
 through 112a were each written to avoid, so the reading was taken instead.)
 
-**THE FIRST LIVE ENTRY AS OF 113, AND IT IS A READ RATHER THAN MACHINERY:
+**THE FIRST LIVE ENTRY AS OF 114, AND IT IS A COUNTING QUESTION BEFORE IT IS
+A BUILD: `grep errors.append` IS NOT THE CLASS OF REFUSALS, AND THE TEN SITES
+IT MISSES HAVE NEVER HAD THE PROMPT QUESTION ASKED OF THEM.**
+114 answered 113's question for all 71 `errors.append` sites. Then it asked
+TRAPS 11's question of its own enumeration rather than of the code, and the
+enumeration does not hold: a refusal does not have to be **accumulated** into
+an `errors` array to be a refusal. **Ten are returned directly**, counted this
+commit - `grep -n '"errors": \[' scripts/*.gd` with the empty-list and
+pass-through forms removed:
+
+| site | refusal | reachable by a request |
+|---|---|---|
+| `boots_tool.gd:201`, `car_tool.gd:85`, `look_tool.gd:63` | `spec_error()` - the spec is not an object | yes |
+| `dungeon_module.gd:189`, `:192` | `list_error()` - rooms / doors is not a list | yes |
+| `farm_module.gd:134` | `list_error()` - zones is not a list | yes |
+| `npc_goals.gd:232` | `a door joins two different rooms` | yes |
+| `npc_goals.gd:241` | `there is no door between X and Y` | yes |
+| `tool_module.gd:49`, `world_module.gd:119` | `this tool/module has no validator` | **no** - a base-class guard no request reaches |
+
+**AND A SECOND FAMILY BEYOND BOTH**, named so the next session does not think
+the table above closes it: the `category`/`reasons` refusals - the `FAILED_*`
+verdicts in `dungeon_module.gd`, `farm_module.gd`, `racing_module.gd`,
+`world_module.gd` and `feasibility_gate.gd`. Those refuse a request **after**
+validation, on geometry rather than on shape, and whether the prompt question
+even applies to them is part of the first step below, not something this entry
+decides.
+
+**THAT COUNT DISAGREES WITH 113'S "71" AND THE DISAGREEMENT IS LEFT STANDING**
+rather than either number being quietly adopted (TRAPS 108). 113 wrote 71
+under the definition *`errors.append` in `scripts/`*, which is a true count of
+what it defined and reproduced exactly this commit, file for file. It is not
+the count of refusals. **Settling that is a reading, not a build**, and the
+sites are what to carry forward rather than the total.
+
+**ONE CANDIDATE GAP IS ALREADY VISIBLE AND IS DELIBERATELY NOT FIXED HERE.**
+`npc_goals.gd:241`, *"there is no door between the hall and the vault"*: the
+prompt's SHUT/OPEN line says *"close or open a door of the dungeon that is
+standing, named by the two rooms it joins"* and **nowhere says the pair named
+must actually be joined**. A model that named two rooms that exist but have no
+door between them would obey every sentence in the prompt and earn this
+refusal - which is the exact shape of TRAPS 111. **It is a candidate and not
+a finding**, because this entry has read the prompt and has not driven the
+refusal, and 113's own rule is that the measurement comes before the claim.
+It is left for its own commit for a second reason worth stating: closing it
+means adding a clause to the prompt, which moves `PROMPT_FINGERPRINT` and
+makes `prompt_bounds_test` go red by one on purpose, and that belongs in a
+commit whose subject it is rather than bolted onto this one.
+
+**WHAT TO DO, in the order that pays.** (1) Settle the enumeration under one
+written definition, carrying the **sites** and not the total, and decide in
+writing whether the `category`/`reasons` family is in the class or is its own
+question. (2) **Drive `npc_goals.gd:241` first** - build a dungeon, ask to
+shut a door between two unjoined rooms, read what comes back - because if the
+refusal turns out to be unreachable or already explained the entry is over.
+(3) Ask the prompt question of the other seven reachable sites. (4) Only then
+decide whether anything is worth a prompt clause.
+**TRAPS 106'S RULE APPLIES BEFORE ANY OF IT IS BELIEVED, and it is sharper
+here than for the 71**: whatever reads this class must find
+`npc_goals.gd:241` by file and line, and must NOT report
+`tool_module.gd:49` or `world_module.gd:119`, which are base-class guards no
+request reaches. A reading that cannot separate those two groups is reading
+`grep` output rather than a class of refusals.
+**AND THE CHEAP HALF IS ALREADY DONE AND SHOULD NOT BE REDONE**: the 71 are
+read, the answer is 71 of 71 stated, the definition that produced it is in
+the 114 entry, and the calibration that makes it believable is recorded with
+the commit it reproduces.
+
+**~~THE FIRST LIVE ENTRY AS OF 113, AND IT IS A READ RATHER THAN MACHINERY:
 71 REFUSALS IN `scripts/`, AND NOBODY HAS ASKED OF ANY OF THEM WHETHER THE
-PROMPT STATES THE RULE.**
+PROMPT STATES THE RULE.~~ DONE IN 114, BY ROUTE (a), AND THE ANSWER IS 71 OF
+71 STATED.** The entry's instruction was right in every part - the
+definition first, the calibration before the answer is believed, route (a)
+over route (b) - and it was right that the read is one session's work. What
+it could not have known is that **the class has no gaps left in it**: 113
+closed the only two, and the remaining 67 each have a sentence. So the
+output is not the list of gaps the entry expected, and the useful finding is
+one the read was not looking for - **a refusal naming a goal the player had
+not asked for**, in `npc_goals.gd`. The calibration passed: run against the
+prompt at `85ba875` the reading gives 113's own two-of-four. See the 114
+entry, the definition recorded there, and TRAPS 112.
+**ROUTE (b) IS WEIGHED AGAIN AND DECLINED AGAIN**, and the reason is now
+stronger than when 113 wrote it: a breadth line requiring all 71 sites to
+carry a row would be 71 rows attesting a human reading whose verdict nothing
+can check, and with the class currently at 71-of-71 stated, every one of
+those rows would be green on arrival. It would hold **nothing that is true
+today** and would go stale the first time somebody added a refusal and a row
+in one edit. The thing worth holding is the ONE finding, and that is held as
+a fact in `order_test` rather than as a tally.
+**WHAT IS STILL NOT HELD, said plainly:** nothing notices the **72nd**
+refusal arriving unstated. 114's answer is a reading in this file, not an
+assertion in `tests/`, and it will be out of date the moment a new
+`errors.append` lands without its sentence. That is the cost of declining
+(b), stated rather than left implicit.
+**The original text follows.**
 113 found the four-member identity-collision class with two members enforced
 and unpublished, fixed both, and closed that class. **The class it belongs to
 is much wider and is entirely unread.** Counted this commit rather than

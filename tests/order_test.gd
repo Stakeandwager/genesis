@@ -86,6 +86,70 @@ func _run() -> void:
 	_check(bool(by_number["ok"]) and int(by_number["goal"]["room"]) == 1,
 		"a room may be named or numbered")
 
+	# --- 114: a missing room is refused for the goal that was ASKED FOR ---
+	#
+	# Not "the sentence says 'carry'", which would be a test of wording and
+	# would pass on a sentence that named carry while meaning go_to (TRAPS 6,
+	# TRAPS 14). What is asserted is the FACT a player meets: the refusal they
+	# get names the goal they asked for, and names no goal they did not.
+	# Derived off NpcGoals.GOALS on BOTH sides, so a third goal is covered by
+	# arriving rather than by somebody remembering to add a row - and so that
+	# the cross-check below grows with the list instead of staying at go_to
+	# versus carry.
+	# It cannot pass by measuring nothing: `said` starts empty and an empty
+	# string contains no goal name, so a path that stops refusing fails here
+	# rather than going quiet (TRAPS 75).
+	for g in NpcGoals.GOALS:
+		var missing_room := {"goal": g}
+		if g == "carry":
+			missing_room["thing"] = "lamp"
+		var missing: Dictionary = NpcGoals.validate(
+			missing_room, rooms, [{"name": "lamp"}])
+		var said := ""
+		for e in (missing["errors"] as Array):
+			if str(e).contains("needs a room"):
+				said = str(e)
+		_check(said != "" and said.contains(g),
+			"a missing room is refused for the goal asked: %s -> \"%s\"" % [g, said])
+		for other in NpcGoals.GOALS:
+			if other == g:
+				continue
+			_check(not said.contains(other),
+				"and a missing room on a %s does not name %s" % [g, other])
+
+	# And the path NEITHER loop above reaches: a goal this game has not got,
+	# with no room either. The goal is refused on its own line, so this
+	# sentence must name no goal at all - not go_to, and not the invented one
+	# quoted back as though Genesis had it. This is also the arm that keeps
+	# "<null>" out of the sentence, since a null goal lands here.
+	# 114: THE FIRST DRAFT OF THIS LOOP HAD A VACUOUS ROW AND AN INJECTION
+	# FOUND IT, NOT A READ. It sent the STRING "<null>" and then asked whether
+	# the sentence contained "<null>" - but Readback.spelled() answers "null"
+	# for both a real null and that string, so the row could not fail however
+	# the sentence was written, and it passed against an injection that quoted
+	# the goal straight back. TRAPS 6, in a guard written this commit.
+	# The quote-back is asked about the goal AS THE CODE RESOLVED IT, through
+	# the same reading validate() does, so the row cannot drift from the
+	# spelling again. A real null is sent rather than a string that looks like
+	# one, because a request carries the former.
+	for bad_goal in ["attack", "", null]:
+		var resolved := Readback.spelled(bad_goal).to_lower().strip_edges()
+		var stray: Dictionary = NpcGoals.validate({"goal": bad_goal}, rooms)
+		var stray_said := ""
+		for e in (stray["errors"] as Array):
+			if str(e).contains("needs a room"):
+				stray_said = str(e)
+		var named: Array = []
+		for g2 in NpcGoals.GOALS:
+			if stray_said.contains(g2):
+				named.append(g2)
+		# The empty goal is not quote-checked: every string contains "".
+		if resolved != "" and stray_said.contains(resolved):
+			named.append(resolved)
+		_check(stray_said != "" and named.is_empty(),
+			"a missing room on the goal %s, which this game has not got, names no goal: \"%s\"" % [
+				JSON.stringify(bad_goal), stray_said])
+
 	# --- nobody to order about ---
 	await _order("vault")
 	_check(main.npc == null, "an order before any dungeon is refused")
