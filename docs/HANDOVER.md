@@ -11,6 +11,43 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
+- Last commit at the time of writing: **115a**, which is **docs only** - 0
+  lines of diff in `scripts/`, `tests/` and `.github/`, no new finding about
+  Genesis, no new claim about its behaviour, no new live entry. It records the
+  one measurement 115's commit message left owed: **a fresh `git clone` of the
+  pushed commit `88d4809` runs byte-identical to the three runs 115 took** -
+  `c7da9e49dd5bead44e1d6e80d4fcb101`, 78 suites, 0 with something to look at,
+  `intent_door_test` **146, failures=0**, `order_test` **25, failures=0**,
+  `procedure_test` **299, failures=0**, `prompt_bounds_test` **72,
+  failures=0**, `says_nothing_test` **437, failures=0** - with `git status
+  --porcelain` **empty both before and after the run**, so `project.godot` was
+  not edited to take the measurement, and `user://` cleared by deleting
+  `app_userdata/AI_Game_Builder`. So the tree on the remote is the tree that
+  was measured.
+  **THE CLAUSE IT MATTERS MOST FOR IS `prompt_bounds_test` 72 ON THE CLONE.**
+  That suite's last assertion compares `assembled_prompt()`'s sha256 against
+  `PROMPT_FINGERPRINT`, so a green `prompt_bounds_test` against the REMOTE
+  tree is the reading behind 115's central claim - that **no prompt clause was
+  added** and the prompt did not move - rather than an inference from a
+  working copy. 115's whole finding was that a clause was not needed; this is
+  the measurement that the remote carries the unchanged prompt.
+  **AND `intent_door_test` 146 ON THE CLONE IS THE SECOND ONE THAT MATTERS**:
+  the section 115 added is the only thing in the project that reads
+  `AIInterpreter._with_world()`, and a green run of it against the remote tree
+  is the reading that the guard went up on the remote rather than only locally.
+  **NOTHING ELSE IN 115 WAS RE-MEASURED.** Its baseline, its predicted diff,
+  its six injections, its 7-of-7 read and the four drives (the no-door
+  refusal, the shut state, the already-open answer, the world block) are 115's
+  and are not re-taken.
+  **NO SUITE WAS RUN AGAINST A MODIFIED TREE BY 115a.** The only edits since
+  `88d4809` are to `docs/HANDOVER.md`, and nothing in `tests/` reads `docs/` -
+  checked in 115 this time by grepping `tests/*.gd` for `docs/` and reading
+  every one of the 22 hits, all comments or an assertion message.
+  **WHAT CHANGED FOR ANYONE USING GENESIS: NOTHING, AND THAT IS STATED
+  PLAINLY.** `scripts/` has been 0 lines of diff for two commits, the deploy
+  still fails on two unset secrets, and what a visitor sees is still commit
+  `71b065f` from 2026-10-14.
+
 - Last commit at the time of writing: **115**, and it **closes 114's live
   entry by measurement rather than by a prompt clause.** The candidate gap at
   `npc_goals.gd:241` was driven for the first time - it fires, for SHUT and
@@ -8683,6 +8720,21 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
+**AND RUN 4 IS A FRESH `git clone` OF THE PUSHED COMMIT**, written in by 115a
+- `88d4809`, into its own directory, `git status --porcelain` **EMPTY both
+before and after the run** (so `project.godot` was not edited to take the
+measurement), `user://` cleared by deleting `app_userdata/AI_Game_Builder`,
+same Godot: **BYTE-IDENTICAL to runs 1, 2 and 3**, md5
+`c7da9e49dd5bead44e1d6e80d4fcb101`, 78 suites, 0 with something to look at,
+`intent_door_test` **146, failures=0**, `prompt_bounds_test` **72,
+failures=0**. So the tree on the remote is the tree that was measured; the
+prompt the remote carries is the one `PROMPT_FINGERPRINT` names, which is the
+reading behind 115's claim that no clause was added; and the section that
+reads `_with_world()` is green against the remote rather than only locally.
+Taken for the reason 104a and 106a through 114a were each taken: the
+alternative is a sound inference about the remote in place of a reading of it,
+which is TRAPS 14's shape applied to this file.
+
 **115 ADDED NO FILE**, so the two numbers below did not move: `ls tests/*.gd`
 is **80** and the run reports **78** suites. It edited one file under
 `tests/` - `tests/intent_door_test.gd` - plus `docs/TRAPS.md` and this file.
@@ -15867,8 +15919,14 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
-**WHAT 115 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH CLONE OF
-THE PUSHED COMMIT.** 115 took its own baseline on the clean pushed tree
+**~~WHAT 115 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH CLONE
+OF THE PUSHED COMMIT.~~ TAKEN IN 115a, AND IT REPRODUCED BYTE-FOR-BYTE.**
+Struck rather than deleted because what it owed and why is the part a later
+session needs. **Do not start by re-running on 115's or 115a's behalf** - read
+the record under "Run the tests first", take your own baseline so you learn
+that the record and the container still agree today, and spend the time on the
+work below. The original sentence follows.
+**WHAT 115 OWED:** 115 took its own baseline on the clean pushed tree
 (byte-identical to the md5 114 recorded and 114a reproduced), wrote its
 predicted diff down before editing anything, and took three byte-identical
 `--all` runs on the changed tree - two of them on the complete tree with
