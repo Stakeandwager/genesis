@@ -11,6 +11,169 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
+- Last commit at the time of writing: **115**, and it **closes 114's live
+  entry by measurement rather than by a prompt clause.** The candidate gap at
+  `npc_goals.gd:241` was driven for the first time - it fires, for SHUT and
+  for OPEN, by name and by number - and it is **not a prompt gap**, because
+  the fact it reads is in the model's input. `tests/intent_door_test.gd`
+  **128 -> 146** assertions, `docs/TRAPS.md` one new entry (**113**), and this
+  file. **`scripts/` is 0 lines of diff**, so no prompt clause was added,
+  `PROMPT_FINGERPRINT` is untouched and `prompt_bounds_test` stayed at 72.
+  No new "Human decision needed"; one new live entry, and it is the owner's
+  to rule on.
+
+  **THE FINDING, AND IT IS ABOUT THE ARTEFACT RATHER THAN THE CODE.** 113 and
+  114 each asked *was the model ever told the rule this refusal fires for?*
+  against `AIInterpreter.assembled_prompt()`, dumped and fingerprinted first.
+  That artefact is the SYSTEM instructions and **it is not the model's
+  input**. When a world is standing, `main.gd:199-204` hands
+  `controller.last_build` to `interpret()`, which builds a second piece with
+  `AIInterpreter._with_world()` and sends it as the REQUEST - a block naming
+  the command the standing world was built from, parameters and all. So the
+  standing dungeon's `rooms`, `doors` and `things` are facts the model has,
+  and **the prompt question is not answerable against `assembled_prompt()`
+  alone for any refusal that reads the standing world.**
+
+  **AND NOTHING IN `tests/` READ `_with_world()` AT ALL.** Measured at the
+  baseline commit `8310e01` with `git grep`, not assumed: across all 80 files
+  in `tests/`, the function name, `last_prompt_text` and each of the block's
+  three headings each matched in **0 files**. After this commit the first is
+  one file, `tests/intent_door_test.gd`.
+  The function that decides what the model is told about the standing world
+  was held by nothing.
+
+  **WHAT 114'S CANDIDATE TURNED OUT TO BE.** Its reading of the prompt was
+  right - the SHUT line *"close or open a door of the dungeon that is
+  standing, named by the two rooms it joins"* nowhere says the pair must
+  actually be joined. Its conclusion was wrong: **which pairs are joined is
+  in the block**, so a model naming a pair the block does not list has
+  ignored something it was told. The entry had said closing it *"means adding
+  a clause to the prompt, which moves `PROMPT_FINGERPRINT` and makes
+  `prompt_bounds_test` go red by one on purpose"* - a prompt edit on every
+  live request, for a rule the model already has. That edit was not made.
+
+  **THE CLASS, ENUMERATED OFF THE CODE UNDER A DEFINITION WRITTEN FIRST**
+  (TRAPS 11). A refusal is a STANDING-WORLD refusal when the condition that
+  fires it reads the world already standing, rather than only the shape or
+  values of the request; a refusal whose condition is request-shape but whose
+  sentence LISTS the standing world is not one. **Fourteen**, by the fact each
+  one reads: whether a dungeon is standing **3** (the block's `command`); the
+  room count and room names **4** (`rooms`); the thing names or that there are
+  none **2** (`things`); which pairs have a door **1** (`doors`, and this is
+  114's candidate); **which doors are currently SHUT 2 - nowhere**; a node and
+  a thing's position at this instant **2 - nowhere**. So **ten of fourteen
+  rest on what the block carries**, which is why the guard is on the block
+  and not on the door.
+
+  **AND THE NUMBER WAS WRITTEN BEFORE IT WAS COUNTED, WHICH IS RECORDED
+  RATHER THAN TIDIED** (TRAPS 14, in this commit's own test header). The first
+  draft of that header said "fourteen" on an impression; the count taken
+  afterwards under the definition above came to twelve, then to fourteen once
+  the two `FAILED_UNWALKABLE` no-route refusals were read. The header now
+  carries the breakdown rather than the total.
+
+  **THE OTHER SEVEN REACHABLE SITES IN 114'S TABLE WERE READ, against the
+  dumped prompt and not against the source.** `assembled_prompt()` written to
+  a file, **16631 characters**, sha256
+  `ac8041cbe96a362bcef369e01e9861fb0668da19abc6d691218a0819b89f6b18`, **equal
+  to `PROMPT_FINGERPRINT`**. All **7 STATED**: the three `spec_error()` sites
+  (`boots_tool:201`, `car_tool:85`, `look_tool:63`) against the three EQUIP
+  skeletons, which write `"spec": {...}` as an object; the three
+  `list_error()` sites (`dungeon_module:189` and `:192`, `farm_module:134`)
+  against `"rooms": [ROOM, ROOM, ...]`, `"doors": [[A, B], ...]` and
+  `"zones": [ZONE, ZONE, ...]`; and `npc_goals`' *"a door joins two different
+  rooms"* against *"named by the two rooms it joins"*. **The two base-class
+  guards were NOT reported** (`tool_module:49`, `world_module:119`), which is
+  TRAPS 106's rule applied to this class: every tool and every module
+  overrides `validate()`, held by `check_wiring_test`'s `BASE_DEFAULT` rows.
+  **The grep reproduced exactly** - `grep -n '"errors": \[' scripts/*.gd`
+  with the empty-list forms removed is the same ten sites. One difference
+  worth a sentence and not a correction: the entry named `npc_goals.gd:232`
+  and `:241`, the lines of the `if`; the grep names `:233` and `:242`, the
+  lines of the `return`. Same two sites.
+
+  **WHAT IS NOW GUARDED, AND IT IS THE CLASS.** A new section in
+  `tests/intent_door_test.gd` - the file whose whole subject is *is every
+  field the prompt offers read where it is sent* - asserts, on a dungeon built
+  through the real scene: the block parses as one command object; it names the
+  command the standing world was built from and carries its parameters whole;
+  **the set of room pairs `SHUT` ACCEPTS is exactly the set the block names as
+  doors**, as two sets and not as a sentence; the no-door refusal fires for a
+  pair the block does not name; every room name and thing name the block
+  carries is one an ORDER takes and one it does not carry is refused; and the
+  block is not inside the instructions, the instructions are not inside the
+  block, and this dungeon's door pairs are in neither.
+
+  **VERIFIED:**
+  **BASELINE WAS THE CLEAN TREE AT THE PUSHED COMMIT `8310e01`**,
+  `git status --porcelain` empty before AND after, `--all`, `user://` cleared
+  by deleting `app_userdata/AI_Game_Builder` so `project.godot` was NOT
+  edited, same Godot (4.7.1.stable.official.a13da4feb, `--version` read):
+  **`20087573bcca168e7785f3e3f5a56c9d`, 78 suites, 0 with something to look
+  at, `order_test` 25, `procedure_test` 299, `prompt_bounds_test` 72,
+  `says_nothing_test` 437 - BYTE-IDENTICAL to the md5 114 recorded as its
+  final run and 114a reproduced from a fresh clone, from an EIGHTEENTH
+  independent container with its own Godot download.** `ls tests/*.gd` 80, the
+  run reported 78.
+  **THE PREDICTED DIFF WAS WRITTEN TO A FILE BEFORE ANY REPOSITORY FILE WAS
+  EDITED** (TRAPS 89), **and the clause with the real risk in it held**: that
+  `source_scan_test` 79 and `scan_floor_test` 147 both scan every file in
+  `tests/`, including the one being edited, and were predicted UNMOVED
+  because the new section uses no `FileAccess`, reads every dictionary through
+  `.get()` and compares no counter against a collection size. Both stayed.
+  **THE PREDICTION WAS WRONG IN ONE LINE AND IS RECORDED AS WRONG**: it said
+  `intent_door_test` 128 -> "about 144" and the suite is **146**.
+  **FINAL RUN `c7da9e49dd5bead44e1d6e80d4fcb101`, 78 suites, 0 with something
+  to look at**, and `diff` against the baseline run is **EXACTLY ONE LINE**:
+  `intent_door_test 128 -> 146 assertions, failures=0`.
+  **SIX INJECTIONS, each alone in its own throwaway copy outside the
+  repository with its own `config/name`, `intent_door_test` run alone:**
+
+  | injection | result |
+  |---|---|
+  | negative control: unmodified copy | **146, failures=0** |
+  | `_with_world` sends an EMPTY `parameters` object | **142, failures=5** - and the set comparison PASSED, caught only by the two non-vacuity rows |
+  | `_with_world` carries the parameters but erases `doors` | **146, failures=4** |
+  | `validate_door`'s no-door refusal removed | **146, failures=2** - the set comparison and the driven refusal, which is the pair that holds 114's candidate |
+  | the dungeon prompt made to carry this dungeon's door pairs | **146, failures=1** |
+  | the fixture's dungeon joins EVERY pair | **146, failures=2** - both non-vacuity rows, and nothing threw |
+
+  **THE SHUT STATE WAS DRIVEN** (`layout.shut` is `[(1, 2)]` after a SHUT
+  while `last_build.parameters` is byte-identical and the block does not
+  contain the word "shut"), and so was the refusal that reads it: an ORDER to
+  the sealed-off room gives `FAILED_UNWALKABLE`.
+
+  **NOT VERIFIED:**
+  **NO MODEL WAS SENT ANYTHING.** That a live model READS the block is not
+  measured and is not claimed: no request left the container, there is no API
+  key here. What is measured is what it is told.
+  **THE `category`/`reasons` FAMILY WAS NOT READ**, and 114's entry left
+  deciding whether it is in the class as step (1). It is decided in writing
+  here and not measured: those refuse a request on the GEOMETRY of the world
+  it proposes, which the model specified in full, so the model has every fact
+  behind them and they are not standing-world refusals. That is a reading,
+  not a sweep, and the sites are not enumerated.
+  **THE TEN-OF-FOURTEEN SPLIT IS A READING AND NOT A SUITE.** The new section
+  asserts three of the four facts the ten rest on; nothing asserts the
+  enumeration itself, and nothing will notice a fifteenth arriving.
+  **THE FOUR THAT REST ON NOTHING ARE NAMED AND NOT ADDRESSED** - the live
+  entry below is what they became.
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is still **2026-10-14**, checked this commit by
+  grepping every `OWNER, 2026-1[012]-*` marker in `HANDOVER.md` and `TRAPS.md`
+  (one match, 2026-10-14), by reading the branch's authors with `git log`
+  (every commit in the last 40 is `Claude <noreply@anthropic.com>`), and by
+  listing the repository's GitHub issues (**0, open or closed**).
+  **THE DEPLOY STILL FAILS**, both secrets are still empty, and what a visitor
+  sees is still commit `71b065f` from 2026-10-14. Nothing here touched a
+  deployment setting, a secret, a flag or a target.
+
+  **AND WHAT CHANGED FOR ANYONE USING GENESIS: NOTHING, AND A PROMPT EDIT WAS
+  NOT MADE.** `scripts/` is 0 lines of diff. Genesis refuses exactly the
+  orders it refused yesterday and builds exactly the same worlds; what changed
+  is that the next session will not add a clause to the prompt for a rule the
+  model already has, and that `_with_world()` is now read by something.
+
 - Last commit at the time of writing: **114a**, which is **docs only** - 0
   lines of diff in `scripts/`, `tests/` and `.github/`, no new finding about
   Genesis, no new claim about its behaviour, no new live entry. It records one
@@ -8520,6 +8683,76 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
+**115 ADDED NO FILE**, so the two numbers below did not move: `ls tests/*.gd`
+is **80** and the run reports **78** suites. It edited one file under
+`tests/` - `tests/intent_door_test.gd` - plus `docs/TRAPS.md` and this file.
+**`scripts/` is 0 lines of diff**, so `assembled_prompt()` is byte-identical,
+`PROMPT_FINGERPRINT` was not moved and no prompt clause was added.
+
+**BASELINE AT `8310e01`, CLEAN**: `git status --porcelain` empty **before and
+after**, `--all`, `user://` cleared by **deleting `app_userdata/AI_Game_Builder`**
+rather than by renaming `config/name`, so `project.godot` was not edited to
+take the measurement. Godot 4.7.1.stable.official.a13da4feb, `--version` read.
+**`20087573bcca168e7785f3e3f5a56c9d`, 78 suites, 0 with something to look at**
+- byte-identical to the md5 114 recorded as its final run and 114a reproduced
+from a fresh clone, from an **eighteenth** independent container with its own
+Godot download. `order_test` **25**, `procedure_test` **299**,
+`prompt_bounds_test` **72**, `says_nothing_test` **437**.
+
+**THE PROMPT WAS DUMPED AND FINGERPRINTED BEFORE THE READ THAT NEEDED IT**
+(TRAPS 112's rule). `assembled_prompt()` written to a file: **16631
+characters**, sha256
+`ac8041cbe96a362bcef369e01e9861fb0668da19abc6d691218a0819b89f6b18`, **equal to
+`PROMPT_FINGERPRINT`**, taken in a throwaway copy with its own `config/name`
+so no repository file was touched. That is the artefact the seven remaining
+`"errors": [` sites were read against - and 115's finding is that for the
+eighth it is the WRONG artefact, because the standing world reaches the model
+in the request and not in the instructions.
+
+**THE PREDICTED DIFF WAS WRITTEN TO A FILE BEFORE ANY REPOSITORY FILE WAS
+EDITED** (TRAPS 89), with the clause that carried the real risk: *`source_scan_test`
+79 and `scan_floor_test` 147 BOTH scan every file in `tests/`, including the
+one about to be edited; predicted UNMOVED because the new section uses no
+`FileAccess`, reads every dictionary through `.get()` and compares no counter
+against a collection size - and if either moves, the move is the finding.*
+**Both stayed.** The prediction was **WRONG IN ONE LINE and is recorded as
+wrong**: it said `intent_door_test` 128 -> "about 144" and the suite is **146**.
+**The other "predicted not to move" clauses held**, each written with its
+reason: `prompt_bounds_test` 72 (no `prompt_section()` diff anywhere),
+`prompt_numeral_test` 117, `says_nothing_test` 437, `controller_reach_test`
+330, `order_test` 25, `procedure_test` 299, `field_type_test` 279,
+`check_wiring_test` 217, `command_schema_test` 187, `agreement_test` 53,
+`result_line_test`, `record_id_test`, and `README.md`'s suite count.
+
+**THREE BYTE-IDENTICAL `--all` RUNS ON THE CHANGED TREE -
+`c7da9e49dd5bead44e1d6e80d4fcb101`, 78 suites, 0 with something to look at** -
+the first on the code tree, the second and third on the complete tree with
+`docs/` in place, `user://` cleared by deleting `app_userdata/AI_Game_Builder`
+before each. `diff` against the baseline run is **exactly one line**:
+`intent_door_test 128 -> 146 assertions, failures=0`. Each changed file's md5
+was recorded before the final run and `md5sum -c` afterwards reported nothing
+moved. **NOTHING IN `tests/` READS `docs/`**, checked this commit rather than
+carried forward: `tests/*.gd` grepped for `docs/`, 22 hits, every one read -
+all of them comments or an assertion message, none a `FileAccess` read.
+
+**SIX INJECTIONS, each alone in its own throwaway copy under the scratch
+directory with its own `config/name`, `intent_door_test` run alone**, and the
+negative control matched its baseline line exactly at **146, failures=0**.
+The two that are worth reading rather than counting:
+- **`_with_world` sending an EMPTY `parameters` object gave 142, failures=5**
+  - and the set comparison **PASSED**, because an empty set of accepted pairs
+  equals an empty set of named ones. It was caught by the two non-vacuity
+  rows, which is why those rows exist and why they were written before this
+  injection rather than after it. The assertion count moves because three
+  room rows and one thing row are generated from the block.
+- **`validate_door`'s no-door refusal removed gave 146, failures=2** - the set
+  comparison and the driven refusal. That is the pair holding 114's candidate,
+  and it is the row this section was written for.
+The other four: erasing `doors` from the block **146, failures=4**; the
+dungeon prompt made to carry this dungeon's door pairs **146, failures=1**;
+the fixture's dungeon joining every pair **146, failures=2** (both
+non-vacuity rows, and **nothing threw** - TRAPS 105's guard working).
+
 **AND RUN 4 IS A FRESH `git clone` OF THE PUSHED COMMIT**, written in by 114a
 - `f06282d`, into its own directory, `git status --porcelain` **EMPTY both
 before and after the run** (so `project.godot` was not edited to take the
@@ -15634,6 +15867,21 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
+**WHAT 115 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH CLONE OF
+THE PUSHED COMMIT.** 115 took its own baseline on the clean pushed tree
+(byte-identical to the md5 114 recorded and 114a reproduced), wrote its
+predicted diff down before editing anything, and took three byte-identical
+`--all` runs on the changed tree - two of them on the complete tree with
+`docs/` in place. What it did NOT take is a run against a fresh `git clone` of
+its own pushed commit, which is the reading 104a and 106a through 114a each
+exist for: everything else here is an inference about the remote rather than a
+reading of it. **That is 115a's whole job and it is the only thing owed.**
+**Do not re-take 115's six injections** - they are in the 115 entry with their
+counts, each alone in its own throwaway copy with its own `config/name`, and
+the property they attribute is `tests/intent_door_test.gd`'s 115 section
+rather than a table in a document. **And do not re-run the 7-of-7 read** - it
+is in the 115 entry with the sites and the prompt sha256 it was taken against.
+
 **NOTHING IS OWED FROM 079 EITHER.** It took its own baseline (byte-identical
 to 078's recorded md5), two byte-identical runs on the final code tree and a
 **third on the clean pushed tree**, so there is no 079a. **Do not start by
@@ -16209,9 +16457,72 @@ the final md5, and the one-line diff. That was a sound inference about the
 remote in place of a reading of it, which is exactly what 104a and 106a
 through 112a were each written to avoid, so the reading was taken instead.)
 
-**THE FIRST LIVE ENTRY AS OF 114, AND IT IS A COUNTING QUESTION BEFORE IT IS
+**THE FIRST LIVE ENTRY AS OF 115, AND IT IS THE PART 115 MEASURED AND
+DELIBERATELY DID NOT CHANGE: FOUR OF THE FOURTEEN STANDING-WORLD REFUSALS
+READ A FACT THAT IS IN NO ARTEFACT, AND TWO OF THEM ARE THE SHUT STATE.**
+115's table splits fourteen refusals by the fact each one reads. Ten rest on
+what `_with_world()` carries and are now guarded. **Four do not**, and they
+are two different questions, not one:
+
+- **WHICH DOORS ARE CURRENTLY SHUT (2 refusals), AND THIS ONE IS DRIVEN.**
+  `last_build` is written when a world is BUILT and `_set_door` does not
+  touch it, so after a SHUT the layout's `shut` list holds the door
+  (`[(1, 2)]`, measured) while the block is **byte-identical** and does not
+  contain the word. Driven end to end: build three rooms in a line, shut the
+  door between the middle and the vault, then order a character to the vault
+  - `FAILED_UNWALKABLE`, *"There is no way through to the vault."* The model
+  was told that door exists and was never told it is shut.
+- **A NODE, AND A THING'S POSITION AT THIS INSTANT (2 refusals).** The two
+  `NpcGoals.missing_thing_line` sites in `game_controller.gd` (`:286`
+  "gone", `:302` "roomless"). `controller_reach_test` already holds both as
+  reachable and the second took physics to find. These are a race, not a
+  rule, and no artefact could carry them.
+
+**NEITHER IS TRAPS 111's SHAPE, AND THAT IS THE PART TO NOT GET WRONG.** Each
+is the world's answer to a legal request rather than a rule the model was
+never told, and the prompt already says both of the things that make that
+true: *"It ROUTES. A character finds its way room to room through doors that
+are actually passable"* and *"A saved world comes back as it was BUILT, not
+as it was LEFT."* So **this entry is not a prompt gap and must not be closed
+with a prompt clause.** It is a question about what the model SEES.
+
+**WHAT TO DO, in the order that pays.** (1) **Read before building**: the
+shut state is the only one of the four that could be carried, so ask first
+whether a model that knew it would answer any request differently - the
+obvious candidate is a player saying "open the door to the vault" when it is
+already open, which today is accepted and answered
+*"The door between the hall and the vault was already open."* rather than
+refused - **driven in 115, not reasoned about** - so the honest first step is to enumerate the requests whose
+ANSWER would change, not the refusals. (2) If any do, the smallest change is
+in `_with_world()` and nowhere else: it is the one function that decides what
+the model is told about the standing world, and it is now read by
+`intent_door_test`'s 115 section, so a change there is measured. (3) The two
+instant-facts are **not** work: name them as unreachable-by-any-artefact and
+leave them to `controller_reach_test`, which already holds them.
+
+**HUMAN DECISION NEEDED, and it is why 115 did not build this.** Carrying the
+world as LEFT rather than as BUILT changes what every live request sends to
+the model - a different prompt population in the ledger, a different number
+of tokens per request, and a model that can be told a door is shut can also
+be told a thing has moved. That is a product decision about what Genesis
+shows its interpreter, and it is the owner's. 115 measured the gap and wrote
+it down rather than closing it.
+
+**~~THE FIRST LIVE ENTRY AS OF 114, AND IT IS A COUNTING QUESTION BEFORE IT IS
 A BUILD: `grep errors.append` IS NOT THE CLASS OF REFUSALS, AND THE TEN SITES
-IT MISSES HAVE NEVER HAD THE PROMPT QUESTION ASKED OF THEM.**
+IT MISSES HAVE NEVER HAD THE PROMPT QUESTION ASKED OF THEM.~~ DONE IN 115.**
+Its four steps were all taken and the entry is struck rather than deleted
+because step (2) was right to come first and the reason it was right is the
+useful part. (1) The enumeration reproduced exactly - the same ten sites, and
+the `category`/`reasons` family is decided in writing as NOT in the class,
+since those refuse on the geometry of the world the request proposes, which
+the model specified in full. (2) `npc_goals.gd:241` was DRIVEN: it fires, for
+SHUT and for OPEN, by name and by number. (3) The other seven reachable sites
+are **7 of 7 STATED** against the dumped, fingerprinted prompt, and the two
+base-class guards were not reported. (4) **Nothing was worth a prompt clause,
+and the entry's own prediction that one would be needed is where it went
+wrong**: the pairs that are joined are in the model's input already, in the
+block `_with_world()` builds. See the 115 entry and TRAPS 113.
 114 answered 113's question for all 71 `errors.append` sites. Then it asked
 TRAPS 11's question of its own enumeration rather than of the code, and the
 enumeration does not hold: a refusal does not have to be **accumulated** into

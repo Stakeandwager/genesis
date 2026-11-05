@@ -8755,3 +8755,107 @@ was true.
   about the goal **as the code resolved it**, through the same reading
   `validate()` does, and a real null is sent rather than a string that looks
   like one.
+
+
+---
+
+## 113. The prompt question was asked of the system instructions, and the model's input has two parts
+
+**Signature:** a refusal fires on something the prompt does not state, you
+grep `assembled_prompt()` for the rule, you do not find it, and you write
+down a prompt gap. Nothing is wrong with the grep. The rule was never going
+to be in that string, because the fact the refusal reads is a fact about the
+world the player is already in, and that reaches the model in the REQUEST.
+
+**Cause.** Trap 111 and trap 112 both ask *was the model ever told the rule
+this refusal fires for?* and both answer it against
+`AIInterpreter.assembled_prompt()` — 16631 characters, fingerprinted, the
+artefact 113 and 114 each dumped before reading. That artefact is the SYSTEM
+instructions. It is not the model's input. When a world is standing,
+`main.gd:199-204` hands `controller.last_build` to `interpret()`, which
+builds a second piece with `AIInterpreter._with_world()` and sends it as the
+request:
+
+```
+THE WORLD THE PLAYER IS IN NOW
+The player asked for: "..."
+It was built from this command:
+{"command":"CREATE_DUNGEON","parameters":{"doors":[[1.0,2.0],[2.0,3.0]], ...}}
+```
+
+So the standing world's rooms, doors and things are facts the model has, and
+a refusal that fires on one of them is answerable only with that block
+beside the instructions. **Nothing in `tests/` read `_with_world()` at all** —
+`git grep` at the commit before this one for the function, for
+`last_prompt_text` and for each of the block's three headings matched 0 of
+the 80 files — so the function that decides what the
+model is told about the standing world was held by nothing.
+
+**What it cost, and it was nearly a prompt clause.** 114's live entry named
+`npc_goals.gd:241` — *"there is no door between the hall and the vault"* — as
+a candidate trap 111, on the reading that the SHUT line *"nowhere says the
+pair named must actually be joined"*. The reading of the prompt was correct.
+The conclusion was not: which pairs ARE joined is in the block, so a model
+that names a pair the block does not list has ignored something it was told.
+The entry said closing it *"means adding a clause to the prompt, which moves
+`PROMPT_FINGERPRINT` and makes `prompt_bounds_test` go red by one on
+purpose"* — a prompt edit, on every live request, for a rule the model
+already has.
+
+**And the class is fourteen refusals, not one.** Enumerated off `NpcGoals`
+and `GameController` under a definition written before the count: a refusal
+is a STANDING-WORLD refusal when the condition that fires it reads the world
+already standing, rather than only the shape or values of the request. A
+refusal whose condition is request-shape but whose sentence LISTS the
+standing world is not one.
+
+| the fact it reads | how many | where the model gets it |
+|---|---|---|
+| whether a dungeon is standing | 3 | the block's `command` |
+| the room count and the room names | 4 | the block's `rooms` |
+| the thing names, or that there are none | 2 | the block's `things` |
+| which pairs of rooms have a door | 1 | the block's `doors` |
+| which doors are currently SHUT | 2 | **nowhere** |
+| a node, and a thing's position this instant | 2 | **nowhere** |
+
+Ten of the fourteen rest on what the block carries. The other four do not,
+and **none of the four has trap 111's shape**: each is the world's answer to
+a legal request, not a rule the model was never told. The shut state was
+driven rather than inferred — `last_build` is written when a world is BUILT
+and `_set_door` does not touch it, so after a SHUT the layout's `shut` list
+holds the door while the block is byte-identical and does not contain the
+word.
+
+**Do:**
+
+- **Ask the prompt question of the model's INPUT, not of the system
+  instructions.** The input is `assembled_prompt()` plus, when a world is
+  standing, `_with_world(player_text, last_build)`. A read that dumps only
+  the first has the right method and the wrong artefact, and it will report
+  gaps that are not gaps for every refusal that reads the standing world.
+- **Separate "the prompt does not state this rule" from "this fact is not in
+  any artefact" from "this is the world's answer".** Only the first is trap
+  111 and only the first is worth a prompt clause. 114's candidate was the
+  first by its reading and the third by measurement.
+- **A limitation about the prompt is a claim about Genesis** (trap 14). Before
+  writing *"the prompt nowhere says X"*, grep the other half of the input for
+  X. The claim here would have been false about the only artefact that
+  mattered.
+- **Guard the class, not the door.** `intent_door_test`'s 115 section asserts
+  that the set of room pairs SHUT ACCEPTS is exactly the set the block names
+  as doors, and the same shape for room names and thing names — three facts,
+  ten refusals, one section. A guard on the no-door refusal alone would be
+  trap 11 again.
+- **Two non-vacuity rows before a set comparison.** The first draft of that
+  section passed with BOTH sets empty, because its JSON read took the
+  block's first `{`, which is inside the quoted request on an earlier line.
+  The rows that caught it are *the model is told at least one door* and
+  *there is at least one pair of rooms with no door*, and the injection that
+  empties the block is what showed the comparison passing on its own.
+- **Guard a row that reads what the row above it counted** (trap 105). Two
+  rows here read `unnamed[0]` and `JSON.stringify(parameters)`; both are
+  behind an `is_empty()` branch, because a suite that asserts a row is
+  missing and then throws before printing so has reported nothing. The
+  second was found by an injection too: an empty parameters object
+  stringifies to `{}`, which IS in the instructions, so the unguarded
+  version failed for a reason other than the one it stated.
