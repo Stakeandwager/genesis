@@ -11,6 +11,37 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
+- Last commit at the time of writing: **114a**, which is **docs only** - 0
+  lines of diff in `scripts/`, `tests/` and `.github/`, no new finding about
+  Genesis, no new claim about its behaviour, no new live entry. It records one
+  measurement, the one 114's commit message left owed: **a fresh `git clone`
+  of the pushed commit `f06282d` runs byte-identical to the three runs 114
+  took** - `20087573bcca168e7785f3e3f5a56c9d`, 78 suites, 0 with something to
+  look at, `order_test` **25, failures=0**, `procedure_test` **299,
+  failures=0**, `prompt_bounds_test` **72, failures=0**, `says_nothing_test`
+  **437, failures=0** - with `git status --porcelain` **empty both before and
+  after the run**, so `project.godot` was not edited to take the measurement,
+  and `user://` cleared by deleting `app_userdata/AI_Game_Builder`. So the
+  tree on the remote is the tree that was measured.
+  **THE CLAUSE IT MATTERS MOST FOR IS `prompt_bounds_test` 72, failures=0 ON
+  THE CLONE.** That suite's last assertion is the one that compares
+  `assembled_prompt()`'s sha256 against `PROMPT_FINGERPRINT`, so a green
+  `prompt_bounds_test` against the REMOTE tree is the reading behind 114's
+  central claim - that the prompt did not move - rather than an inference
+  from a working copy. 114 read the 71 refusals against a prompt it dumped
+  locally; this is the measurement that the remote carries that same prompt.
+  **NOTHING ELSE IN 114 WAS RE-MEASURED** - its baseline, its predicted diff,
+  its three injections and its 71-of-71 read are 114's and are not re-taken.
+  **No suite was run against a modified tree by 114a**: the only edits since
+  `f06282d` are to `docs/HANDOVER.md`, and nothing in `tests/` reads `docs/` -
+  checked this commit by grepping `tests/*.gd` for `docs/` and reading every
+  hit, all of which are comments or assertion messages, rather than carried
+  forward.
+  **WHAT CHANGED FOR ANYONE USING GENESIS: NOTHING, AND THAT IS STATED
+  PLAINLY.** `scripts/` is 0 lines of diff, the deploy still fails on two
+  unset secrets, and what a visitor sees is still commit `71b065f` from
+  2026-10-14.
+
 - Last commit at the time of writing: **114**, and it **closes the 71-member
   class 113 opened**. The read found **71 of 71 stated** - every refusal in
   `scripts/` has a sentence in the prompt behind it - and the useful finding
@@ -8488,6 +8519,21 @@ project whose thesis is *"never confuse an instruction with an
 accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
+
+**AND RUN 4 IS A FRESH `git clone` OF THE PUSHED COMMIT**, written in by 114a
+- `f06282d`, into its own directory, `git status --porcelain` **EMPTY both
+before and after the run** (so `project.godot` was not edited to take the
+measurement), `user://` cleared by deleting `app_userdata/AI_Game_Builder`,
+same Godot: **BYTE-IDENTICAL to runs 2, 3 and 4**, md5
+`20087573bcca168e7785f3e3f5a56c9d`, 78 suites, 0 with something to look at,
+`order_test` **25, failures=0**, `prompt_bounds_test` **72, failures=0**. So
+the tree on the remote is the tree that was measured, and - because
+`prompt_bounds_test`'s last assertion is the fingerprint comparison - the
+prompt the remote carries is the one `PROMPT_FINGERPRINT` names, which is the
+reading behind 114's claim that the prompt did not move. Taken for the reason
+104a and 106a through 113a were each taken: the alternative is a sound
+inference about the remote in place of a reading of it, which is TRAPS 14's
+shape applied to this file.
 
 **114 ADDED NO FILE EITHER**, so the two numbers below did not move: `ls
 tests/*.gd` is **80** and the run reports **78** suites. It edited two files -
