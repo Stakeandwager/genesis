@@ -865,9 +865,74 @@ func _describe_changes(before: Dictionary, after: Dictionary) -> String:
 		if m0.has(key) and m1.has(key) and absf(float(m1[key]) - float(m0[key])) >= 1.0:
 			var unit := " m2" if key == "enclosed_area" else ("" if key == "zone_count" else " m")
 			parts.append("%s %.0f -> %.0f%s" % [str(key).replace("_", " "), float(m0[key]), float(m1[key]), unit])
+	# 116: and every OTHER measurement, which is the half that was missing.
+	#
+	# The three circuit keys and the four farm keys above are a hand-written
+	# list, and the sentence under it claims a MEASURED FACT - "no measured
+	# difference in size or pieces". A dungeon has sixteen measurements and
+	# NOT ONE of them is in that list, so a dungeon edited from 12x12 rooms to
+	# 16x16 was told there was no measured difference while Genesis's own
+	# metrics block moved on seven keys: floor_area 432 -> 768, corridor_area
+	# 176 -> 208, corridor_length 36 -> 44, largest_room_area 144 -> 256,
+	# pitch 18 -> 22, width 48 -> 60, depth 12 -> 16. Measured, not reasoned
+	# about - see HANDOVER's 116 entry.
+	#
+	# The fix is to the list rather than to the dungeon (TRAPS 11): the keys
+	# the branches above already name are skipped here BY NAME, and everything
+	# else in the block is compared. A world type added tomorrow is named by
+	# this pass without anybody remembering to add a line, which is the
+	# property the hand-written list has never had.
+	for key in m0:
+		if NAMED_ABOVE.has(str(key)) or not m1.has(key):
+			continue
+		var was = m0[key]
+		var now = m1[key]
+		if _is_number(was) and _is_number(now):
+			# The same threshold the farm keys above use: a metric that moved
+			# by less than a metre is not a change a player asked for.
+			if absf(float(now) - float(was)) < 1.0:
+				continue
+			parts.append("%s %.0f -> %.0f%s" % [
+				str(key).replace("_", " "), float(was), float(now), _unit_of(str(key))])
+		elif str(was) != str(now):
+			# largest_room and deepest_room are room NAMES, and a dungeon
+			# whose largest room is now a different room has measurably
+			# changed. Said as it is read, with no article and no unit.
+			parts.append("%s %s -> %s" % [str(key).replace("_", " "), str(was), str(now)])
 	if parts.is_empty():
 		return "Changed the world, with no measured difference in size or pieces."
 	return "Changed: " + ", ".join(parts)
+
+
+# 116: the metric keys the branches above name themselves, so the general pass
+# does not say any of them twice. A name in this list and not in the function
+# above is a line that was deleted and left a key unnamed; a key named above
+# and missing here is said twice, which is why said_set_test reads this
+# constant against the function rather than trusting the pair to stay in step.
+const NAMED_ABOVE := [
+	"total_length", "minimum_radius", "longest_straight",
+	"counts",
+	"zone_count", "farm_width", "farm_depth", "enclosed_area",
+]
+
+
+# Is this metric a number? JSON brings every number back as a float, and a
+# metrics block read off a save file has been through JSON; a block straight
+# out of measure() has ints in it. Both are numbers and neither is a string.
+func _is_number(value: Variant) -> bool:
+	return typeof(value) == TYPE_INT or typeof(value) == TYPE_FLOAT
+
+
+# The unit of a measurement, from the name it is recorded under rather than
+# from a second list that can disagree with the first. Where the name does not
+# say, this says nothing: a metric with the wrong unit on it is a false claim
+# about the world, and a metric with no unit is only a less useful true one.
+func _unit_of(key: String) -> String:
+	if key.ends_with("_area"):
+		return " m2"
+	if key.ends_with("_length") or key == "width" or key == "depth" or key == "pitch":
+		return " m"
+	return ""
 
 
 # --- racing ---

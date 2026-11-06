@@ -11,6 +11,151 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
+- Last commit at the time of writing: **116**, and it is the first commit in
+  four with a **line of diff in `scripts/`**. It closes a false sentence a
+  player meets on an ordinary request, found by driving step (1) of 115's live
+  entry rather than by reading around it. `scripts/main.gd`
+  `_describe_changes()` **+65 lines**, `tests/said_set_test.gd` **31 -> 71**
+  assertions, `docs/TRAPS.md` one new entry (**114**), and this file. **No
+  `prompt_section()` is touched**, so `assembled_prompt()` is byte-identical,
+  `PROMPT_FINGERPRINT` did not move and `prompt_bounds_test` stayed at 72. One
+  new live entry; one new "Human decision needed", and it is 115's sharpened
+  rather than a second one.
+
+  **THE FAULT, AND IT IS A CLAIM ABOUT EVIDENCE THAT WAS COMPUTED RATHER THAN
+  COPIED.** `main._describe_changes()` is the play loop's answer to *what
+  changed* after an edit. It reads metrics **by name**: `total_length`,
+  `minimum_radius`, `longest_straight`, the `counts` sub-dictionary, and
+  `zone_count`, `farm_width`, `farm_depth`, `enclosed_area`. **A dungeon's
+  metrics block has sixteen keys and not one of them is any of those**, and it
+  has no `counts` key either, so for the world type the Verified Living World
+  direction is about, the function reached **no measurement at all** and fell
+  through to *"Changed the world, with no measured difference in size or
+  pieces."*
+  **MEASURED THROUGH THE REAL SCENE BEFORE ANYTHING WAS EDITED**, not reasoned
+  about: a dungeon of three 12x12 rooms edited to three 16x16 rooms moved
+  `floor_area` **432 -> 768**, `corridor_area` **176 -> 208**,
+  `corridor_length` **36 -> 44**, `largest_room_area` **144 -> 256**, `pitch`
+  **18 -> 22**, `width` **48 -> 60**, `depth` **12 -> 16** - seven of sixteen,
+  and three of the seven are the world's size. The sentence Genesis printed
+  contradicted the block Genesis had just written to its own ledger.
+  **AND THE FALLBACK IS NOT A HEDGE.** The line above it - *"Changed the
+  world."*, taken when either metrics block is empty - promises nothing and is
+  safe. *"with no measured difference in size or pieces"* is a statement about
+  what was measured, made by a function that had not looked. TRAPS 14's shape
+  with no document in it.
+
+  **WHAT HELD IT: ONE ASSERTION, ABOUT SOMETHING ELSE.** `said_set_test` is
+  the only suite in the project that calls the function - `grep
+  _describe_changes tests/*.gd` is one hit, line 332 - and that call hands in
+  hand-written metrics `{"minimum_radius": 50.0}` to check the word "corner"
+  is not used. The dungeon case was reachable by an ordinary player request
+  and was held by nothing.
+
+  **THE FIX IS TO THE LIST AND NOT TO THE DUNGEON** (TRAPS 11). The seven keys
+  the named branches cover are skipped **by name, through one constant**
+  (`NAMED_ABOVE`), and **every other key in the block is compared**: numbers at
+  the same 1.0 threshold the farm branch already used, and non-numeric metrics
+  as themselves. A world type added tomorrow is named by that pass without
+  anybody remembering to add a line. The unit is read off the key's own name -
+  `_area` -> m2, `_length`/`width`/`depth`/`pitch` -> m - and answers `""`
+  where the name does not say, because a metric wearing the wrong unit is a
+  false claim about the world and a metric with no unit is a less useful true
+  one.
+
+  **THE ROW THAT MATTERS MOST IS THE ONE NO NUMBER CAN SEE.** Two rooms of
+  20x20 and 12x12, then the same two sizes the other way round: **all sixteen
+  numbers identical, `largest_room` hall -> vault**. That world measurably
+  changed and no numeric comparison, old or new, can tell. It is a fixture in
+  the suite because it was measured, and the injection that disables the
+  non-numeric branch is what showed that row is the only thing holding it.
+
+  **VERIFIED:**
+  **BASELINE WAS THE CLEAN PUSHED TREE AT `1d83588`**, `git status
+  --porcelain` **empty before and after**, `--all`, `user://` cleared by
+  **deleting `app_userdata/AI_Game_Builder`** rather than by renaming
+  `config/name`, so `project.godot` was NOT edited to take the measurement.
+  Godot 4.7.1.stable.official.a13da4feb, `--version` read.
+  **`c7da9e49dd5bead44e1d6e80d4fcb101`, 78 suites, 0 with something to look
+  at** - **byte-identical to the md5 115 recorded as its final run and 115a
+  reproduced from a fresh clone**, from a nineteenth independent container
+  with its own Godot download.
+  **THE PREDICTED DIFF WAS WRITTEN TO A FILE BEFORE ANY REPOSITORY FILE WAS
+  EDITED** (TRAPS 89), and **every clause of it held**. The clauses that
+  carried the real risk, each with its reason: `drive_test` **24, predicted
+  unmoved** - its row is `_history().contains("Changed: length")` on a circuit
+  whose `total_length` moved 400 -> 500, and the general pass appends AFTER
+  the three circuit branches so that string still starts the line;
+  `player_door_test` **75, predicted unmoved** - its row is that a raw-JSON
+  request produces no `Changed:` line at all, which is about `editing_from`;
+  `source_scan_test` **79** and `scan_floor_test` **147**, both predicted
+  unmoved although both scan every file in `tests/` including the one edited;
+  `prompt_bounds_test` **72**, predicted unmoved because no `prompt_section()`
+  is touched. **The diff against the baseline run is EXACTLY ONE LINE**:
+  `said_set_test 31 -> 71 assertions, failures=0`.
+  **TWO FULL `--all` RUNS ON THE CHANGED TREE**, `user://` cleared before
+  each; each changed file's md5 was recorded before the final run and `md5sum
+  -c` afterwards reported nothing moved.
+  **FOUR INJECTIONS, each alone in its own throwaway copy under the scratch
+  directory with its own `config/name`, `said_set_test` run alone**, and the
+  **negative control matched at 71, failures=0**:
+  - **the general pass removed** (constant and helpers kept, so it fails
+    rather than throws): **27 failures**, every dungeon row and the hall ->
+    vault row, each printing the old sentence beside the metric it had just
+    measured as moved. This is the reading that the section fails against the
+    pre-116 behaviour.
+  - **`_unit_of` made to answer m2 for everything**: **2 failures**, the
+    length row and the no-unit row. A guessed unit is caught.
+  - **`NAMED_ABOVE` emptied**: **4 failures** - three farm keys said TWICE and
+    the row that notices the constant losing a name. The first draft of those
+    farm rows was gated on `NAMED_ABOVE.has()` and so could not see the
+    constant go empty; this injection is what moved them out from behind the
+    gate, which is recorded rather than tidied.
+  - **the non-numeric branch disabled**: **2 failures**, the hall -> vault
+    fixture and nothing else, which is the measurement that that fixture is
+    the only thing holding it.
+
+  **NOT VERIFIED:**
+  **NO MODEL ANSWERED ANYTHING.** Every request in the probes and every
+  fixture in the suite was typed by hand; a headless harness has no key. The
+  edit path was driven by setting `main.editing_from` from
+  `controller.last_build` and calling `_execute_json` - which is exactly what
+  `main.gd:200-205` and `_on_interpretation_ready` do either side of the model
+  - so what is measured is the path minus the model, and that is stated rather
+  than glossed.
+  **NO CIRCUIT WAS DRIVEN THROUGH THE EDIT PATH BY 116.** The three circuit
+  keys are unchanged and `drive_test`'s row covers them; the probe that tried
+  to build a circuit got `FAILED_CLOSURE` on a hand-made fixture and was not
+  pursued, so the CREATE_TRACK column of the class is **a reading of the
+  function and not a measurement**.
+  **`largest_zone` IS AN AREA WHOSE KEY DOES NOT SAY SO**, so it is now named
+  without its m2: *"largest zone 400 -> 900"*. Measured, recorded as a limit
+  of the unit rule rather than fixed - renaming a metrics key would move what
+  the ledger and every save file carry, which is not a change to make on the
+  way past.
+  **THE ORDER OF THE PARTS IS NOT ASSERTED**, nor the separator, nor any
+  wording of the three circuit branches, which `_the_tightest_radius` already
+  holds.
+  **THE SHUT-STATE HALF OF 115'S LIVE ENTRY IS MEASURED AND NOT BUILT** - see
+  the first live entry below. It is the owner's, and 116 sharpened the
+  question rather than answering it.
+  **THE DEPLOY STILL FAILS**, both secrets are still empty, and what a visitor
+  sees is still commit `71b065f` from 2026-10-14. Nothing here touched a
+  deployment setting, a secret, a flag or a target.
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is still **2026-10-14**, checked this commit by
+  grepping every `OWNER, 2026-1[012]-*` marker in `HANDOVER.md` and
+  `TRAPS.md`.
+
+  **AND WHAT CHANGED FOR ANYONE USING GENESIS, PLAINLY:** a player who edits a
+  dungeon is now told which of its measurements moved and by how much, instead
+  of being told there was no measured difference. A player who edits a farm is
+  told three more true things than before (`building_area`, `largest_zone`,
+  `fence_length`). A player who changes nothing is told the same sentence as
+  before, because there it is true. Nothing else about Genesis moved: the
+  prompt is byte-identical, every refusal is the refusal of yesterday, and the
+  same worlds build.
+
 - Last commit at the time of writing: **115a**, which is **docs only** - 0
   lines of diff in `scripts/`, `tests/` and `.github/`, no new finding about
   Genesis, no new claim about its behaviour, no new live entry. It records the
@@ -8720,6 +8865,54 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
+**116's RECORD, AND IT OWES ONE MEASUREMENT: A FRESH `git clone` OF ITS OWN
+PUSHED COMMIT.** 116 took its baseline on the clean pushed tree at `1d83588`
+(`c7da9e49dd5bead44e1d6e80d4fcb101`, byte-identical to the md5 115 recorded
+and 115a reproduced from a clone), wrote its predicted diff to a file before
+editing any repository file, and took **two byte-identical `--all` runs on the
+changed tree**. What it did NOT take is a run against a fresh `git clone` of
+the commit it pushed, which is the reading 104a and 106a through 115a each
+exist for. **That is 116a's whole job and it is the only thing owed.** Do not
+re-take 116's four injections - they are in the 116 entry with their counts,
+each alone in its own throwaway copy with its own `config/name`, and the
+property they attribute is `tests/said_set_test.gd`'s 116 section rather than
+a table in a document.
+
+**116 ADDED NO FILE**, so the two numbers below did not move: `ls tests/*.gd`
+is **80** and the run reports **78** suites. It edited two files -
+`scripts/main.gd` and `tests/said_set_test.gd` - plus `docs/TRAPS.md` and this
+file. **No `prompt_section()` is touched**, so `assembled_prompt()` is
+byte-identical, `PROMPT_FINGERPRINT` was not moved and no prompt clause was
+added.
+
+**BASELINE AT `1d83588`, CLEAN**: `git status --porcelain` empty **before and
+after**, `--all`, `user://` cleared by **deleting
+`app_userdata/AI_Game_Builder`** rather than by renaming `config/name`, so
+`project.godot` was not edited to take the measurement. Godot
+4.7.1.stable.official.a13da4feb, `--version` read.
+**`c7da9e49dd5bead44e1d6e80d4fcb101`, 78 suites, 0 with something to look at**
+- byte-identical to the md5 115 recorded as its final run and 115a reproduced
+from a fresh clone, from a **nineteenth** independent container with its own
+Godot download. `intent_door_test` **146**, `order_test` **25**,
+`procedure_test` **299**, `prompt_bounds_test` **72**, `says_nothing_test`
+**437**, `said_set_test` **31**.
+
+**TWO BYTE-IDENTICAL `--all` RUNS ON THE CHANGED TREE**, `user://` cleared
+before each. `diff` against the baseline run is **exactly one line**:
+`said_set_test 31 -> 71 assertions, failures=0`. Each changed file's md5 was
+recorded before the final run and `md5sum -c` afterwards reported nothing
+moved.
+
+**THE PREDICTED DIFF HELD IN EVERY CLAUSE** (TRAPS 89), which is worth one
+sentence because the clauses were written with their reasons: `drive_test`
+**24** unmoved because the general pass appends after the three circuit
+branches so `"Changed: length ..."` still starts the line; `player_door_test`
+**75** unmoved because its row is about `editing_from` and not about this
+function; `source_scan_test` **79** and `scan_floor_test` **147** unmoved
+although both scan the file that was edited; `prompt_bounds_test` **72**
+unmoved because no `prompt_section()` moved.
+
+
 **AND RUN 4 IS A FRESH `git clone` OF THE PUSHED COMMIT**, written in by 115a
 - `88d4809`, into its own directory, `git status --porcelain` **EMPTY both
 before and after the run** (so `project.godot` was not edited to take the
@@ -15919,6 +16112,20 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
+**WHAT 116 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH CLONE OF
+THE PUSHED COMMIT.** 116 took its own baseline on the clean pushed tree
+(byte-identical to the md5 115 recorded and 115a reproduced from a clone),
+wrote its predicted diff down before editing anything and had every clause of
+it hold, and took two byte-identical `--all` runs on the changed tree. What it
+did NOT take is a run against a fresh `git clone` of its own pushed commit,
+which is the reading 104a and 106a through 115a each exist for: everything
+else is an inference about the remote rather than a reading of it. **That is
+116a's whole job and it is the only thing owed.** Do not re-take 116's four
+injections - they are in the 116 entry with their counts. **And do not re-take
+the shut-state drive**: it is in the first live entry below with its
+measurements, and the part of it that is unmeasured is named there as step (1)
+rather than left to be rediscovered.
+
 **~~WHAT 115 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH CLONE
 OF THE PUSHED COMMIT.~~ TAKEN IN 115a, AND IT REPRODUCED BYTE-FOR-BYTE.**
 Struck rather than deleted because what it owed and why is the part a later
@@ -16515,6 +16722,78 @@ the final md5, and the one-line diff. That was a sound inference about the
 remote in place of a reading of it, which is exactly what 104a and 106a
 through 112a were each written to avoid, so the reading was taken instead.)
 
+**THE FIRST LIVE ENTRY AS OF 116, AND IT IS THE ONE THING 116 FOUND AND
+DELIBERATELY LEFT: THE EDIT PATH DROPS THE WORLD'S STATE AND SAYS NOTHING,
+AND THE ONE PLACE GENESIS NAMES THAT LOSS IS SCOPED TO `/load`.**
+115's live entry below set step (1) as *enumerate the requests whose ANSWER
+would change if the model knew the shut state*. 116 drove it and the useful
+finding is not about the model at all - it is about what Genesis tells the
+player. Measured, through the real scene, in this order:
+
+- **A SHUT really does survive nothing.** Build three rooms in a line, shut
+  the door between the middle and the vault: the layout's `shut` list holds
+  `[(1, 2)]` - the layout numbers rooms from **0**, which is what
+  `validate_door` resolves a request's 1-based `between` into, so that pair IS
+  middle-vault and there is no off-by-one here. An ORDER to the vault then
+  answers `FAILED_UNWALKABLE`. The block `_with_world()` sends is
+  **byte-identical before and after the SHUT and does not contain the word**,
+  which is 115's measurement re-taken.
+- **THEN THE EDIT PATH REOPENS IT IN SILENCE.** Set `editing_from` from
+  `last_build` and hand in a complete `CREATE_DUNGEON` with bigger rooms -
+  which is what `main.gd:200-205` and `_on_interpretation_ready` do either
+  side of the model - and the new layout has **no `shut` key at all**, the
+  ORDER to the vault succeeds again, and what the player is told is
+  `"CREATE_DUNGEON built 3 rooms joined by 2 doors, one way round"` plus the
+  `Changed:` line. **Neither mentions the door.**
+- **AND NO COMMAND COULD CARRY IT EVEN IF THE MODEL KNEW.** `CREATE_DUNGEON`'s
+  validator reads `rooms`, `doors` and `things` and nothing else;
+  a request carrying `"shut": [[2, 3]]` in its parameters **builds normally,
+  is not refused, and the field is dropped without a word** - measured. So
+  carrying the world as LEFT is not a change to `_with_world()` alone, as
+  115's step (2) supposed: it needs a field in a world command's schema.
+- **THE PROMPT PROMISES THE OPPOSITE, AND THIS IS THE SHARP PART.**
+  `_with_world()`'s own last line tells the model *"return the complete
+  command for the whole changed world, **keeping everything the player did not
+  ask to change**"*. Three kinds of state cannot be kept by any command there
+  is: the shut doors, where a thing has been carried to, and the equipment.
+  Genesis names exactly those three, by name, in `LoadCheck.NOT_SAVED` - and
+  says them **every time** a world is loaded, RESTORED included, on the
+  explicit reasoning (read in `load_check.gd:25-31`) that a silence there
+  becomes the next half-truth in `docs/TRAPS.md`. The edit path loses the same
+  three and says none of it.
+
+**WHAT IS NOT MEASURED, SAID SO THE NEXT SESSION DOES NOT INHERIT A GUESS.**
+Only the shut door was driven across the edit path. The carried thing and the
+equipment are **a reading of the code and not a measurement**: an EQUIP in the
+probe was refused `FAILED_SCHEMA` on a hand-made spec and was not pursued. **Do
+not write the three-way claim into anything until the other two are driven** -
+that is TRAPS 14's rule applied to this entry, and it is the first step below.
+
+**WHAT TO DO, in the order that pays.** (1) **Drive the other two.** Carry the
+red key to the vault, then edit the world, and read the thing's position off
+the world rather than off the record; the same for equipment. The answer
+bounds everything else here, and it is cheap. (2) **If the loss is real for
+all three, the honest change is at the PLAYER and not at the model**, and it
+is small: the edit path has `_describe_changes` for *what changed* and Genesis
+already owns the sentence and the list for *what was not kept*. A line said
+only when there is something to say - a door actually shut, a thing actually
+moved - is the same shape as the `/load` caveat and needs no prompt clause, no
+schema field and no new artefact. (3) **The prompt's "keeping everything the
+player did not ask to change" is a claim about Genesis and is false about
+three things.** It is one sentence in `_with_world()`, so editing it moves no
+`PROMPT_FINGERPRINT`, but it changes what every live request sends - which is
+why 116 did not touch it. **It is the owner's.**
+
+**HUMAN DECISION NEEDED, and it is 115's sharpened rather than a new one.**
+115 asked whether the model should be sent the world as LEFT rather than as
+BUILT. 116 adds the cost that question was missing: **there is no field for it
+in any world command**, so saying yes means a schema change, a validator, the
+ledger carrying it and a save file deciding whether to keep it - not a line in
+one function. Three choices, and none of them is the assistant's: carry the
+state and pay for the schema; leave it and say so at the edit path (step 2,
+which needs no decision about the model); or leave it and say nothing, which
+is what happens today and is the only one of the three that is a half-truth.
+
 **THE FIRST LIVE ENTRY AS OF 115, AND IT IS THE PART 115 MEASURED AND
 DELIBERATELY DID NOT CHANGE: FOUR OF THE FOURTEEN STANDING-WORLD REFUSALS
 READ A FACT THAT IS IN NO ARTEFACT, AND TWO OF THEM ARE THE SHUT STATE.**
@@ -16544,7 +16823,9 @@ are actually passable"* and *"A saved world comes back as it was BUILT, not
 as it was LEFT."* So **this entry is not a prompt gap and must not be closed
 with a prompt clause.** It is a question about what the model SEES.
 
-**WHAT TO DO, in the order that pays.** (1) **Read before building**: the
+**WHAT TO DO, in the order that pays. STEP (1) WAS TAKEN IN 116 - see the
+116 live entry above, which found that no world command has a field for the
+state at all, and do not start it again.** (1) **Read before building**: the
 shut state is the only one of the four that could be carried, so ask first
 whether a model that knew it would answer any request differently - the
 obvious candidate is a player saying "open the door to the vault" when it is

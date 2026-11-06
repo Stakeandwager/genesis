@@ -8859,3 +8859,69 @@ word.
   second was found by an injection too: an empty parameters object
   stringifies to `{}`, which IS in the instructions, so the unguarded
   version failed for a reason other than the one it stated.
+
+---
+
+## 114. A sentence that claims a measurement, over a hand-written list of keys that one whole world type is not in
+
+**Signature:** a player edits a dungeon, every room gets bigger, and the
+history panel says *"Changed the world, with no measured difference in size or
+pieces."* Nothing threw, no suite went red, and Genesis's own metrics block for
+that build had moved on seven keys.
+
+**Cause.** `main._describe_changes()` is the play loop's answer to *what
+changed*, and it reads metrics BY NAME: `total_length`, `minimum_radius` and
+`longest_straight` for a circuit, the `counts` sub-dictionary, and
+`zone_count`, `farm_width`, `farm_depth` and `enclosed_area` for a farm. A
+dungeon's metrics block has **sixteen** keys and **not one** of them is any of
+those - it has no `counts` key either, so that loop reads nothing - so for the
+one world type the current engineering direction is about, the function could
+reach no measurement at all and fell through to its own fallback sentence.
+
+Measured through the real scene before anything was changed: 12x12 rooms to
+16x16 rooms moved `floor_area` 432 -> 768, `corridor_area` 176 -> 208,
+`corridor_length` 36 -> 44, `largest_room_area` 144 -> 256, `pitch` 18 -> 22,
+`width` 48 -> 60, `depth` 12 -> 16. The sentence says *no measured difference
+in size*; three of those seven are the world's size.
+
+**And the fallback was not a hedge, it was a claim.** *"Changed the world."* -
+the line above it, taken when either metrics block is empty - promises nothing
+and is safe. *"with no measured difference in size or pieces"* is a statement
+about what Genesis measured, made by a function that had not looked. That is
+TRAPS 14's shape with no document in it: the false claim is computed, not
+copied.
+
+**What held it: one assertion, about a different thing.** `said_set_test` is
+the only suite that calls the function (grepped), and its one call hands in
+hand-written metrics `{"minimum_radius": 50.0}` to check that the word
+"corner" is not used. The dungeon case was reachable by an ordinary request
+and held by nothing.
+
+**Do:**
+
+- **A sentence that names a measurement is a claim about the evidence, and
+  gets checked like a refusal or a limitation.** "No measured difference" is
+  only sayable after comparing the measurements, not after failing to find the
+  keys you knew about.
+- **A per-type list of keys inside a general function goes stale by
+  addition.** The fix is to the list, not to the dungeon (trap 11): the keys
+  the named branches cover are skipped by name through one constant, and
+  every other key in the block is compared. A world type added tomorrow is
+  named without anybody remembering a line - which is the property the
+  hand-written list never had.
+- **Compare the non-numeric metrics too.** Two rooms of 20x20 and 12x12, then
+  the same sizes the other way round, moves `largest_room` hall -> vault and
+  leaves all sixteen numbers identical. That world measurably changed and no
+  numeric comparison, old or new, can see it. It is a row in the suite, and
+  the injection that disables the non-numeric branch is what showed the row
+  was the only thing holding it.
+- **Where a key's name does not say its unit, say no unit.** The unit is read
+  off the key (`_area` -> m2, `_length`/`width`/`depth`/`pitch` -> m) rather
+  than from a second list that can disagree with the first, and the rule
+  answers "" where it cannot tell. A metric wearing the wrong unit is a false
+  claim about the world; a metric with no unit is a less useful true one.
+  Measured limit: a farm's `largest_zone` IS an area and its key does not say
+  so, so it is named without its m2.
+- **Assert that the sentence is still said when it is TRUE.** The suite has a
+  row for a world whose metrics did not move, because a fix that made the
+  sentence unsayable would pass every other row.
