@@ -11,6 +11,144 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
+- Last commit at the time of writing: **117**, and it takes **step (1) of
+  116's live entry** - the one the entry called cheap and said bounds
+  everything else - and the answer **corrects 116's own claim**. The carried
+  thing and the equipment were driven across the edit path for the first time.
+  `tests/edit_state_test.gd` **new, 12 assertions**, `run_tests.sh` one word
+  (the new suite is TIMED), `docs/TRAPS.md` one new entry (**115**), and this
+  file. **`scripts/` is 0 lines of diff**, so no prompt clause was added,
+  `assembled_prompt()` is byte-identical, `PROMPT_FINGERPRINT` did not move and
+  `prompt_bounds_test` stayed at 72. One live entry's step (1) closed; **one new
+  live entry, and it is a false sentence a player meets on an ordinary
+  `/load`**; **one new "Human decision needed"**, narrow, plus the existing one
+  sharpened by a fact it was missing.
+
+  **AND THE NEW LIVE ENTRY IS THE MORE IMPORTANT OF THE TWO FINDINGS, SO IT IS
+  NAMED HERE RATHER THAN LEFT BELOW.** Applying 117's own new rule to the
+  sibling path - if `NOT_SAVED` is a measurement of `/load` and not of an edit,
+  is it a measurement of `/load`? - found that **it is not, for the same item**.
+  Driven: EQUIP boots at 400 N, `/save`, `/load`, and the kit and the body both
+  still hold **400.0** against a free kit of 240.0, while Genesis tells the
+  player *"none of equipment, which doors were shut and where things had been
+  carried to came back."* The prompt says it more flatly still
+  (`ai_interpreter.gd:198`, *"equipment goes back to the free kit"*). **Two
+  tests hold it in place** - `load_check_test.gd:236` asserts that the sentence
+  CONTAINS the word "equipment", and `log_023_test.gd:193` lists *"the boots go
+  back to the free pair"* as an example of an **HONEST** refusal in
+  `RefusalCheck`'s own fixture, so Genesis's lie-detector is calibrated to call
+  this lie honest. **117 fixed none of it and says so**: the measurement was
+  this commit's work, the fix needs the two tests changed before any sentence
+  moves, the prompt clause moves `PROMPT_FINGERPRINT`, and the wording question
+  is the owner's. Everything needed to act is in the live entry; nothing needs
+  re-driving.
+
+  **THE FINDING, AND IT IS THAT THE THREE-WAY CLAIM IS FALSE.** 116 drove the
+  shut door across the edit path, found it dropped in silence, and **read** -
+  recording plainly that it was reading and not measuring - that the other two
+  members of `LoadCheck.NOT_SAVED` went the same way. Driven:
+
+  | state | `/load` | an EDIT |
+  |---|---|---|
+  | which doors were shut | lost | lost (116, driven) |
+  | where a thing was carried to | lost | **lost** (117, driven) |
+  | equipment | lost | **KEPT** (117, driven) |
+
+  **AN EDIT LOSES TWO OF THE THREE, NOT THREE.** Measured through the real
+  scene, twice, byte-identical: build three 12x12 rooms with a lamp in the
+  store, ORDER it carried to the vault - the lamp is in **room 2**, read off
+  the world and not off the order's record - then edit to 16x16 rooms and the
+  lamp is in **room 1**, the room the command puts it in. The `Changed:` line
+  names seven measurements (floor area 432 -> 768 m2, corridor area 176 -> 208
+  m2, corridor length 36 -> 44 m, largest room area 144 -> 256 m2, pitch 18 ->
+  22 m, width 48 -> 60 m, depth 12 -> 16 m, which **independently reproduces
+  116's seven keys**) and says nothing about the lamp.
+
+  **AND THE EQUIPMENT IS KEPT, WHICH IS THE HALF THAT WAS WRONG.** EQUIP boots
+  at push 400 N while exploring: the kit carries it and the body carries it.
+  After the edit the kit still carries **400.0**, the body still carries
+  **400.0**, and stepping back out and in on foot - which re-equips from the
+  kit at `main.gd:761-762` - still gives **400.0** against the free kit's 240.
+  The reason is structural rather than lucky: `ToolRegistry.free_kit()` is
+  assigned to `kit` **exactly once**, where the controller is constructed, and
+  `_equip()` is the only other write in all of `scripts/` (grepped), so no
+  build of any kind can reset it. The carried position lives in the scene nodes
+  `_clear_world_node()` frees, which is why that one really is lost.
+
+  **WHY THIS MATTERED ENOUGH TO BE THE WHOLE COMMIT.** 116's step (2) proposed
+  a player-facing line naming what the edit did not keep, conditional on *"if
+  the loss is real for all three"*. Written from the reading, that line would
+  have told players Genesis had lost equipment it still had - TRAPS 14's exact
+  shape, and the thing 116's own *"do not write the three-way claim into
+  anything until the other two are driven"* existed to prevent. The warning is
+  the only reason this cost one session rather than becoming a half-truth in
+  the product. It is now TRAPS **115**.
+
+  **WHAT IS NOW A SUITE RATHER THAN A SENTENCE IN THIS FILE.**
+  `tests/edit_state_test.gd` asserts both capabilities, each read off the world
+  or off the body and never off a record: that an edit does **not** keep where
+  a thing was carried to, and that it **does** keep the equipment in the kit
+  and through a re-entry on foot. **It asserts no wording at all** - there is
+  no sentence at the edit path naming either kind of state today, and whether
+  there should be is the owner's (see "Human decision needed"). A test that
+  asserted the absence of a sentence would have to be deleted by whoever adds
+  it, which is a tripwire and not a guard.
+
+  **BOTH HALVES WERE SHOWN NON-VACUOUS BY INJECTION** (TRAPS 6), each alone in
+  its own throwaway copy with its own `config/name`:
+  - **Injection 1**, `_build_world()` made to put each thing back in the room
+    it stood in: the carried-position assertion flips to *"the lamp is in room
+    2"*, **failures=1**, and nothing else moves.
+  - **Injection 2**, `kit = ToolRegistry.free_kit()` added to the non-plan
+    branch of `_build_world()`: **failures=2** - the kit assertion and the
+    step-back-in-on-foot assertion, the latter reading **240.0** where it read
+    400.0.
+  - **AND INJECTION 2 IS WHY THE SUITE HAS THREE EQUIPMENT ROWS AND NOT ONE.**
+    The obvious assertion - the standing body still has push 400 - **passes
+    with the kit wiped**, because a build does not re-equip the standing
+    walker and it holds the last spec it was handed. That row is kept and its
+    own comment says it is weak; the row that catches a wiped kit is the
+    re-entry on foot. A suite with only the obvious row would have been green
+    against injection 2.
+  - **A THIRD INJECTION WAS WRITTEN AND WAS A NO-OP, RECORDED BECAUSE IT
+    LOOKED LIKE EVIDENCE.** The first attempt at injection 1 captured
+    positions *after* `_clear_world_node()`, which sets `standable = {}` at
+    `game_controller.gd:1265`, so it captured nothing and the suite stayed
+    green. A green suite under an injection that did not land says nothing
+    about the suite. Raw world coordinates would not have been the right thing
+    to preserve either: the rooms change size, so the same point falls in a
+    different room.
+
+  **NOT VERIFIED, AND THE LIST IS THE POINT.**
+  **ONLY THE DUNGEON PATH WAS DRIVEN.** A farm or a track edited with a thing
+  carried in it is not measured, and the suite does not cover it.
+  **ONLY `CREATE_DUNGEON` -> `CREATE_DUNGEON` WAS DRIVEN.** An edit that
+  changes world type is `_describe_changes`'s *"Built something new"* branch
+  and is not measured here.
+  **THE `look` AND `car` TOOLS WERE NOT DRIVEN**, only `boots`. The kit
+  argument above is structural and covers all three, but it is a **read of the
+  one assignment** plus a grep, not three measurements.
+  **NOTHING ABOUT WHAT THE PLAYER SHOULD BE TOLD WAS BUILT OR DECIDED.** 116's
+  step (2) is still open and is still the owner's, now with a corrected
+  premise.
+  **NO SUITE WAS RUN AGAINST A FRESH CLONE OF THIS COMMIT**, which is what a
+  117a owes - see "Next action".
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is still **2026-10-14**, checked this commit by
+  grepping every `OWNER, 2026-1[012]-*` marker in `HANDOVER.md` and
+  `TRAPS.md`.
+  **THE DEPLOY STILL FAILS**, both secrets are still empty, and what a visitor
+  sees is still commit `71b065f` from 2026-10-14. Nothing here touched a
+  deployment setting, a secret, a flag or a target.
+
+  **AND WHAT CHANGED FOR ANYONE USING GENESIS, PLAINLY: NOTHING, AND THAT IS
+  THE RIGHT ANSWER THIS TIME.** `scripts/` is 0 lines of diff. No player meets
+  a new sentence, no refusal moved, the prompt is byte-identical and the same
+  worlds build. What changed is that a sentence Genesis was one commit away
+  from saying - that an edit loses your equipment - is now known to be false
+  before it was said, and the two true halves are held by a suite instead of by
+  a paragraph.
+
 - Last commit at the time of writing: **116a**, which is **docs only** - 0
   lines of diff in `scripts/`, `tests/` and `.github/`, no new finding about
   Genesis, no new claim about its behaviour, no new live entry. It records the
@@ -8896,6 +9034,50 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
+**117's RECORD. ONE MEASUREMENT IS OWED - A FRESH `git clone` OF THE PUSHED
+COMMIT - AND THAT IS 117a's WHOLE JOB.** 117 took its own baseline on the
+clean pushed tree at `d231e99`, from a **twentieth** independent container with
+its own Godot download: `git status --porcelain` **empty before and after**,
+`--all`, `user://` cleared by **deleting `app_userdata/AI_Game_Builder`** rather
+than by renaming `config/name`, so `project.godot` was not edited to take the
+measurement. Godot 4.7.1.stable.official.a13da4feb, `--version` read.
+**`fbb9d80decbba3e681481935b51e8498`, 78 suites, 0 with something to look at** -
+**byte-identical to the md5 116 recorded and 116a reproduced from a clone.**
+
+**117 ADDED ONE FILE**, so both numbers moved: `ls tests/*.gd` is **81** and the
+run reports **79** suites. It added `tests/edit_state_test.gd`, added that name
+to `TIMED` in `run_tests.sh`, and edited `docs/TRAPS.md` and this file.
+**`scripts/` is 0 lines of diff**, so `assembled_prompt()` is byte-identical,
+`PROMPT_FINGERPRINT` was not moved and no prompt clause was added.
+
+**THREE BYTE-IDENTICAL `--all` RUNS ON THE CHANGED TREE**, `user://` cleared
+before each by deleting `app_userdata/AI_Game_Builder`, the **last two on the
+complete tree with `docs/` in place**: md5
+**`a456c26dce4d38acf76b987d0e1a30d0`**, **79 suites, 0 with something to look
+at**, `edit_state_test` **12, failures=0**, `result_line_test` **346,
+failures=0**, `prompt_bounds_test` **72, failures=0**. Each changed file's md5
+was recorded before the final run and `md5sum -c` afterwards reported nothing
+moved. **`diff` against the baseline run is exactly two lines** - the new
+suite's line, and `result_line_test` 342 -> 346.
+
+**THE PREDICTED DIFF WAS WRITTEN TO A FILE BEFORE ANY REPOSITORY FILE WAS
+EDITED, AND IT WAS WRONG IN ONE CLAUSE - RECORDED, NOT TIDIED (TRAPS 89).**
+What held: the one new line `edit_state_test   EDIT STATE 12 assertions,
+failures=0`, the count **12** exactly, `suites with something to look at: 0`,
+and every suite that reads `scripts/` unmoved - `prompt_bounds_test` **72**,
+`said_set_test` **71**, `carry_test`, `player_door_test` **75**.
+**WHAT WAS WRONG:** the prediction named `source_scan_test` and
+`scan_floor_test` as the file-scanning suites a new file under `tests/` might
+move. **Neither moved.** The suite that moved is **`result_line_test` 342 ->
+346**, and it moved for the best possible reason: it enumerates `tests/` from
+`dir.get_files()` and makes four assertions per member about whether a result
+line can report a loss, so it **read the new suite and passed it**. A new
+suite's result line being checked by the project's own reader, rather than by
+whoever remembers, is the property `result_line_test` exists for - 077 wrote it
+because a suite added without a count *"would be caught by nobody"*. The
+prediction was wrong about which suite derives from the directory listing; it
+was not wrong that one would.
+
 **AND RUN 3 IS A FRESH `git clone` OF THE PUSHED COMMIT**, written in by 116a
 - `ad82ff0`, cloned into its own directory, `git status --porcelain` **EMPTY
 both before and after the run** (so `project.godot` was not edited to take the
@@ -16164,6 +16346,31 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
+**WHAT 117 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH CLONE OF
+THE PUSHED COMMIT.** 117 took its own baseline on the clean pushed tree
+(byte-identical to the md5 116 recorded and 116a reproduced from a clone),
+wrote its predicted diff to a file before editing any repository file - and
+**one clause of it was wrong, which is recorded under "Run the tests first"
+rather than tidied (TRAPS 89)** - and took two byte-identical `--all` runs on
+the changed tree, the second on the complete tree with `docs/` in place. What
+it did NOT take is a run against a fresh `git clone` of its own pushed commit,
+which is the reading 104a and 106a through 116a each exist for: everything
+else is an inference about the remote rather than a reading of it. **That is
+117a's whole job and it is the only thing owed.** **Do not re-take 117's three
+injections** - they are in the 117 entry with their counts, each alone in its
+own throwaway copy with its own `config/name`, including the one that was a
+**no-op** and is recorded because a green suite under an injection that did
+not land says nothing. **And do not re-drive the carried thing or the
+equipment**: both are in the 117 entry with their numbers and are now
+`tests/edit_state_test.gd` rather than a table in a document.
+**THE CLAUSE 117a MATTERS MOST FOR IS `edit_state_test` 12 ON THE CLONE.** It
+is a new file, so a green run against the REMOTE tree is the reading that the
+suite went up on the remote at all - and it is the only thing in the project
+that reads what an edit keeps. **AND `result_line_test` 346 ON THE CLONE IS
+THE SECOND ONE**: it derives its members from `tests/` on disk, so its count
+on the clone is the reading that the remote's `tests/` holds the file this
+commit says it does.
+
 **~~WHAT 116 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH CLONE
 OF THE PUSHED COMMIT.~~ TAKEN IN 116a, AND IT REPRODUCED BYTE-FOR-BYTE.**
 Struck rather than deleted because what it owed and why is the part a later
@@ -16779,6 +16986,101 @@ the final md5, and the one-line diff. That was a sound inference about the
 remote in place of a reading of it, which is exactly what 104a and 106a
 through 112a were each written to avoid, so the reading was taken instead.)
 
+**THE FIRST LIVE ENTRY AS OF 117, AND IT IS A FALSE SENTENCE A PLAYER MEETS
+ON AN ORDINARY `/load`, PLUS THE PROMPT CLAUSE THAT TELLS THE MODEL TO SAY IT,
+PLUS THE TWO TESTS THAT HOLD IT IN PLACE: GENESIS SAYS THE EQUIPMENT DID NOT
+COME BACK, AND THE PLAYER STILL HAS IT.**
+Found by applying 117's own new rule (TRAPS 115) to the sibling path: if
+`NOT_SAVED` is a measurement of `/load` and not of an edit, then it is worth
+asking whether it is a measurement of `/load` either. It is not, for one of
+its three items. **Driven through the real scene, and these are measurements:**
+
+- **EQUIP boots at push 400 N, `/save`, `/load`. After the load the kit still
+  holds 400.0, the body still holds 400.0, and stepping back out and in on
+  foot - which re-equips from the kit at `main.gd:761-762` - still gives
+  400.0.** The free kit is 240.0, so there is no ambiguity about what a reset
+  would have looked like.
+- **And what the player is told, verbatim, on that load:** *"RESTORED.
+  Measured it against the day it was saved: 16 of 16 measurements match. A
+  saved world is the description that made it, so none of equipment, which
+  doors were shut and where things had been carried to came back."*
+  The player has their boots. Genesis has just told them they do not.
+- **THE PROMPT SAYS IT MORE FLATLY THAN THE GAME DOES.**
+  `ai_interpreter.gd:198`: *"What is NOT saved is the state it was in:
+  **equipment goes back to the free kit**, every door is open again, and a
+  thing that had been carried somewhere is back where it started."* The
+  equipment clause is false. The other two clauses are true.
+- **WHY IT IS FALSE, AND IT IS STRUCTURAL.**
+  `ToolRegistry.free_kit()` is assigned to `kit` **exactly once**, where the
+  `GameController` is constructed, and `_equip()` is the only other write in
+  all of `scripts/` (grepped). A load does not construct a controller, so no
+  load can reset the kit. The same single assignment is why an edit keeps it.
+
+**AND TWO TESTS HOLD THE FALSE CLAIM IN PLACE, WHICH IS THE PART THAT MATTERS
+MORE THAN THE SENTENCE.**
+
+- **`tests/load_check_test.gd:236` asserts the WORDING:**
+  `_check(said.contains("equipment"), "... says equipment did not come back")`.
+  It is green, and it is green **because** the sentence is said - not because
+  anything it claims is true. A suite that asserts a sentence contains a word
+  cannot tell that the word is a lie. This is the shape the project's own rule
+  names: a test must assert the capability, not the wording.
+- **`tests/log_023_test.gd:193` LISTS THE FALSE STATEMENT AS AN EXAMPLE OF AN
+  HONEST REFUSAL**, inside `RefusalCheck`'s own fixture:
+  *"equipment is not kept with a saved world, so the boots go back to the free
+  pair"*, asserted to be a sentence `RefusalCheck.quarrel_with()` leaves
+  alone. **So Genesis's lie-detector is calibrated to call this lie honest**,
+  and a model refusal that tells a player their boots went back to the free
+  pair is flagged by nothing.
+- **AND THE COMMENT DIRECTLY ABOVE THAT LINE IS 025 DOING THIS EXACT FIX AND
+  STOPPING ONE ITEM SHORT.** It records that *"nothing persists, so a world
+  cannot be saved and reloaded"* was in the honest list, was false, was in the
+  prompt as well, and was moved to the lies - and says *"what is honest is the
+  narrower statement two lines down about the STATE not being kept."* Two
+  lines down are the door statement (true) and the equipment statement
+  (false). **TRAPS 11, in the one list in the project whose job is to catch
+  this.**
+
+**THE DISTINCTION THE FIX TURNS ON, AND IT IS REAL RATHER THAN A QUIBBLE.**
+*"The save file does not hold your equipment"* is **TRUE** - and it is true
+with consequences, because `kit` is session state: every probe run in this
+session started at 240.0, so quitting Genesis and loading the world tomorrow
+really does give you the free kit. *"On loading, the equipment goes back to
+the free kit"* is **FALSE** - in the session where the player is standing
+there, they keep it. The present code says the second thing in three places
+and means the first. So this is not simply a word to delete: the caveat has to
+say which of the two it is making, and `load_check.gd:25-31` writes down the
+reasoning for why it says all three every time, which is the reasoning that
+has to be re-read rather than worked around.
+
+**WHAT TO DO, in the order that pays. 117 DELIBERATELY DID NONE OF IT**, having
+spent its commit on the measurement; all four measurements above are in hand so
+none of this needs re-driving. (1) **Fix the two tests first, before any
+sentence changes.** `load_check_test` should assert the capability - equip,
+save, load, read the kit and the body - rather than that a string contains
+"equipment"; `log_023_test`'s honest list should lose the equipment line, and
+whether it moves to the lies fixture is the same question 025 answered for
+saving. Doing the tests first means the sentence change is measured by
+something that can tell. (2) **Then the sentence.** `LoadCheck.NOT_SAVED` and
+`_caveat()` are player-facing and the wording question above is a real one.
+(3) **Then the prompt clause**, which is the one with a cost attached: editing
+`ai_interpreter.gd:198` **moves `PROMPT_FINGERPRINT`** and `prompt_bounds_test`
+**72** asserts `assembled_prompt()`'s sha256 against it, so that suite must be
+updated in the same commit and the new fingerprint recorded. It also changes
+what every live request sends. **Grep before writing the replacement** - the
+rule that produced this entry - because the replacement is itself a claim
+about Genesis.
+
+**HUMAN DECISION NEEDED, and it is narrow and genuinely the owner's.** Not
+whether to fix it - a false sentence a player reads is not a matter of taste -
+but **what the caveat is FOR**. Two honest readings: *"the file does not hold
+this"* (a statement about the save format, true of all three items, and the
+one `load_check.gd:25-31` seems to intend) or *"you no longer have this"* (a
+statement about the player's situation, true of two items and false of the
+third). The first keeps all three items and rewords the sentence; the second
+drops equipment from the list. **They say different things to a player and
+117 did not choose.**
+
 **THE FIRST LIVE ENTRY AS OF 116, AND IT IS THE ONE THING 116 FOUND AND
 DELIBERATELY LEFT: THE EDIT PATH DROPS THE WORLD'S STATE AND SAYS NOTHING,
 AND THE ONE PLACE GENESIS NAMES THAT LOSS IS SCOPED TO `/load`.**
@@ -16819,17 +17121,31 @@ player. Measured, through the real scene, in this order:
   becomes the next half-truth in `docs/TRAPS.md`. The edit path loses the same
   three and says none of it.
 
-**WHAT IS NOT MEASURED, SAID SO THE NEXT SESSION DOES NOT INHERIT A GUESS.**
+**~~WHAT IS NOT MEASURED, SAID SO THE NEXT SESSION DOES NOT INHERIT A GUESS.
 Only the shut door was driven across the edit path. The carried thing and the
-equipment are **a reading of the code and not a measurement**: an EQUIP in the
-probe was refused `FAILED_SCHEMA` on a hand-made spec and was not pursued. **Do
-not write the three-way claim into anything until the other two are driven** -
-that is TRAPS 14's rule applied to this entry, and it is the first step below.
+equipment are a reading of the code and not a measurement.~~ DRIVEN IN 117,
+AND THE READING WAS WRONG IN A THIRD OF ITS CLAIM.** Struck rather than
+deleted, because a reading recorded AS a reading is the only reason this did
+not reach a player. **The edit path loses TWO of the three, not three:** the
+carried position is lost (lamp carried to room 2, back in room 1 after the
+edit, read off the world), and **the equipment is KEPT** - kit and body both
+still at push 400 N after the edit, and still 400 N after stepping back in on
+foot, against the free kit's 240. `ToolRegistry.free_kit()` is assigned to
+`kit` exactly once, where the controller is constructed, so no build can reset
+it. Both halves are now `tests/edit_state_test.gd`, shown non-vacuous by two
+injections. See the 117 entry and TRAPS **115**.
+**SO STEP (2) BELOW HAS LOST ITS PREMISE.** It reads *"if the loss is real for
+all three"*. It is real for two, and a line naming the equipment would be
+false. **Do not write the three-way sentence** - that was 116's instruction and
+it turned out to be load-bearing.
 
-**WHAT TO DO, in the order that pays.** (1) **Drive the other two.** Carry the
-red key to the vault, then edit the world, and read the thing's position off
-the world rather than off the record; the same for equipment. The answer
-bounds everything else here, and it is cheap. (2) **If the loss is real for
+**WHAT TO DO, in the order that pays.** ~~(1) **Drive the other two.** Carry
+the red key to the vault, then edit the world, and read the thing's position
+off the world rather than off the record; the same for equipment. The answer
+bounds everything else here, and it is cheap.~~ **TAKEN IN 117. The answer is
+two of three, not three - see above. Do not drive it again;** what is still
+unmeasured is named in the 117 entry's NOT VERIFIED block (farms and tracks,
+a world-type change, and the `look` and `car` tools). (2) **If the loss is real for
 all three, the honest change is at the PLAYER and not at the model**, and it
 is small: the edit path has `_describe_changes` for *what changed* and Genesis
 already owns the sentence and the list for *what was not kept*. A line said
@@ -16850,6 +17166,18 @@ one function. Three choices, and none of them is the assistant's: carry the
 state and pay for the schema; leave it and say so at the edit path (step 2,
 which needs no decision about the model); or leave it and say nothing, which
 is what happens today and is the only one of the three that is a half-truth.
+
+**UPDATED BY 117, AND THE DECISION IS NOW SMALLER THAN IT LOOKED.** The
+question was put over three kinds of state. **It is two.** The equipment is
+kept across an edit - driven, and held by `tests/edit_state_test.gd` - so
+whatever is decided, **the equipment must not be named in it**, because saying
+Genesis had lost it would be false. What an edit actually loses is the shut
+doors and where a thing was carried to. So the three choices stand as written,
+over two items rather than three, and the second is cheaper than 116 priced
+it: a line said only when a door was actually shut or a thing actually moved,
+naming those two. **117 did not write that line** - choosing among the three
+is the owner's, and 117's job was the measurement that tells the owner what
+the choice is actually about.
 
 **THE FIRST LIVE ENTRY AS OF 115, AND IT IS THE PART 115 MEASURED AND
 DELIBERATELY DID NOT CHANGE: FOUR OF THE FOURTEEN STANDING-WORLD REFUSALS

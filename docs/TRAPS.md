@@ -8925,3 +8925,75 @@ and held by nothing.
 - **Assert that the sentence is still said when it is TRUE.** The suite has a
   row for a world whose metrics did not move, because a fix that made the
   sentence unsayable would pass every other row.
+
+---
+
+## 115. A list that is true of one path, carried to a different path as though it were true there too
+
+**Signature:** a three-item list of what is lost, correct and well-sourced,
+about to be written into a sentence a player reads — and one of the three is
+not lost on the path the sentence is about. Nothing is red. The list is quoted
+from somewhere it really is true.
+
+**Cause.** `LoadCheck.NOT_SAVED` names three kinds of state a `/load` cannot
+bring back: **equipment**, **which doors were shut**, **where things had been
+carried to**. On the load path all three are true, said every load including
+RESTORED, on the reasoning written at `load_check.gd:25-31`.
+
+116 drove the **edit** path — a complete world command handed back for a world
+already standing — and found the shut state is dropped there too, in silence.
+It then reasoned that the other two went the same way, because they are the
+other two members of a list that is true next door, and recorded the
+three-way loss as the shape of the fault.
+
+Driven in 117, one of the three is **kept**:
+
+| state | `/load` | an EDIT |
+|---|---|---|
+| which doors were shut | lost | lost (116, driven) |
+| where a thing was carried to | lost | **lost** (117, driven) |
+| equipment | lost | **KEPT** (117, driven) |
+
+The two paths are not the same mechanism and there was no reason to expect
+them to agree. A load constructs a new `GameController`-side world from a file
+and the kit comes back to `ToolRegistry.free_kit()`. An edit is
+`_build_world()` on the controller that is already running: it calls
+`_clear_world_node()` and rebuilds the scene, and `kit` is not in the scene.
+`ToolRegistry.free_kit()` is assigned to `kit` **exactly once**, where the
+controller is constructed, and `_equip()` is the only other write — so no
+build of any kind can reset it. The carried position, by contrast, lives in
+the scene nodes the rebuild frees, which is why that one really is lost.
+
+**What stopped it being written down:** 116's own sentence — *"Do not write
+the three-way claim into anything until the other two are driven"* — and
+nothing else. The reading was careful, sourced, and wrong in a third of its
+claim. Had it gone into the player-facing line it proposed, Genesis would have
+told players it had lost equipment it still had, which is trap 14 exactly:
+Genesis telling players it could not save worlds it had been saving.
+
+**Do:**
+
+- **A list is evidence about the path it was measured on.** `NOT_SAVED` is a
+  measurement of `/load`. Quoting it about an edit makes three new claims
+  about a path nobody measured, and the quotation marks do not carry over.
+- **Measuring one member of a class and reading the rest is not measuring the
+  class.** This is trap 11 inverted: trap 11 is fixing one member and
+  shipping it as the class; this is measuring one member and *claiming* the
+  class. The fix is the same — ask the question of every member — and it was
+  cheap here: one probe, two reads, one run.
+- **Say which members were driven and which were read, in the entry
+  itself.** 116 did, naming the EQUIP that was refused `FAILED_SCHEMA` on a
+  hand-made spec and not pursued, and that sentence is the only reason this
+  cost one session instead of becoming a half-truth in the product. A
+  reading recorded as a reading is cheap; a reading recorded as a measurement
+  is trap 14.
+- **The EQUIP that gets refused is a spec problem, not a wall.** Every bound
+  is in `BootsTool`, and `handler_wiring_test`'s `BOOTS` constant is a spec
+  that passes. Copy a known-good one rather than hand-making a spec and
+  concluding the path is unreachable.
+- **A guard on the body is not a guard on the kit.** The standing walker is
+  not re-equipped by a build, so it holds the last spec it was handed:
+  wiping `kit` leaves `walker.push` correct and the obvious assertion green.
+  What a player would feel is stepping back in on foot, which re-equips from
+  the kit (`main.gd:761-762`). Measured by injection, and it is the
+  assertion that moved from 400 N to the free kit's 240 N.
