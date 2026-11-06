@@ -62,6 +62,39 @@ extends SceneTree
 # comments discuss `_steer`. The helper below is that rule, and the scan rows
 # have a can-it-fail row saying the read was not empty.
 #
+# 122 - AND THE SAME QUESTION ASKED OF THE OTHER HALT REASONS, BECAUSE ONE
+# MEMBER OF A CLASS IS NOT THE CLASS (TRAPS 11)
+# 121 read the body at ONE halt reason and left three. `halt()` is called with
+# "stopped walking" (npc.gd:216, the arrival), "gave up" (npc.gd:183, the
+# 90 s cap) and "stopped making progress" (npc.gd:227, the stall), and
+# `stopped_walking` is emitted a FOURTH time with "nowhere to go"
+# (npc.gd:107) without going through `halt()` at all. 121 read the stall and
+# used the arrival as its control. The two it did not read are the two below,
+# and the answer at the cap is the OPPOSITE of the answer at the stall:
+#
+#   at the stall  count 1, on_wall true,  speed 0.0000  -> an obstacle, named
+#   at the cap    count 0, on_wall false, speed 4.4776  -> nothing to name
+#
+# THE BODY IS TOUCHING NOTHING AT THE CAP BECAUSE THERE IS NOTHING TO TOUCH.
+# A body that stops making progress is halted by the stall timer after
+# STALL_SECONDS, so the only errand that can still be going at MAX_SECONDS is
+# one that was still closing on its waypoint - and the one that reaches the cap
+# is walking at full speed, 394 m into a 598 m route. So a fix that named the
+# collider would leave this halt reason exactly as silent as it is now, and
+# this halt reason is REACHABLE: the fixture below is a legal CREATE_DUNGEON.
+# What the body does know at the cap is how far along how long a route it got,
+# which is a different fact in a different place, and the rows below assert
+# that those numbers are in hand. WHAT A PLAYER SHOULD BE TOLD IS STILL NOT
+# ASSERTED ANYWHERE - that is "Human decision needed" 38 and it is the
+# owner's; this suite only widens what any answer to it would stand on.
+#
+# AND "nowhere to go" IS A GUARD NO ORDER CAN REACH, WHICH IS LABELLED AS ONE
+# TRAPS 6: a check no legal input can fail is worth keeping and worth
+# labelling, and is not a measurement. The guard works when driven directly -
+# the rows below drive it - but no ORDER reaches it, and the last section
+# asserts each leg of that rather than asserting it in prose, so the day one of
+# the legs moves this suite says so.
+#
 # AND THE READING IS ONE FRAME OLD, WHICH IS WRITTEN DOWN RATHER THAN HIDDEN
 # `Npc._physics_process` calls `_steer(delta)` and THEN
 # `super._physics_process(delta)`, which is where `move_and_slide()` is. So
@@ -90,6 +123,8 @@ const VAULT := 2
 var at_stall := {}
 var at_arrival := {}
 var mid_walk := {}
+var at_cap := {}
+var at_nowhere := {}
 
 
 func _check(ok: bool, what: String) -> void:
@@ -184,13 +219,22 @@ func _source(path: String) -> String:
 	return _code_of(file.get_as_text())
 
 
-func _on_stopped(why: String, _at: Vector3, _seconds: float, _travelled: float) -> void:
+func _on_stopped(why: String, _at: Vector3, seconds: float, travelled: float) -> void:
 	var r := _reading(main.npc)
 	r["why"] = why
+	r["seconds"] = seconds
+	r["travelled"] = travelled
+	r["mark"] = main.npc.mark
+	r["marks"] = main.npc.marks.size()
+	r["attempts"] = main.npc.attempts.size()
 	if why == "stopped making progress":
 		at_stall = r
 	elif why == "stopped walking":
 		at_arrival = r
+	elif why == "gave up":
+		at_cap = r
+	elif why == "nowhere to go":
+		at_nowhere = r
 
 
 func _settle() -> void:
@@ -304,6 +348,187 @@ func _stall_section() -> void:
 	await _drop_main()
 
 
+# --- 122: the 90 s cap, on the longest errand the module allows ---
+# The fixture is derived from `DungeonModule.MAX_ROOMS` rather than written
+# out, so the day somebody changes that constant this suite says whether the
+# cap is still reachable instead of quietly timing out. It is a legal
+# CREATE_DUNGEON: a chain of the largest allowed number of rooms, each 20 m,
+# joined one to the next, with the errand sent to the far end.
+func _cap_section() -> void:
+	at_cap = {}
+	_make_main()
+	await process_frame
+	var rooms: Array = []
+	var doors: Array = []
+	for i in DungeonModule.MAX_ROOMS:
+		rooms.append('{"name": "r%d", "width": 20, "depth": 20}' % i)
+		if i > 0:
+			doors.append("[%d, %d]" % [i, i + 1])
+	await _type('{"command": "CREATE_DUNGEON", "parameters": {"rooms": [%s], "doors": [%s]}}' % [
+		", ".join(rooms), ", ".join(doors)])
+	var far := DungeonModule.MAX_ROOMS - 1
+	await _type('{"command": "ORDER", "parameters": {"goal": "go_to", "room": "r%d"}}' % far)
+	_check(main.npc != null, "an errand to the far end of the longest legal chain starts")
+	if main.npc == null:
+		await _drop_main()
+		return
+	main.npc.stopped_walking.connect(_on_stopped)
+
+	# The route, measured off the module rather than assumed, so the rows below
+	# can say the errand ran out of TIME and not out of route.
+	var module := DungeonModule.new()
+	var layout: Dictionary = main.controller.standable["layout"]
+	var path: Array = module.route(layout, 0, far)
+	var route_length := 0.0
+	for i in range(1, path.size()):
+		route_length += (path[i] as Vector2).distance_to(path[i - 1] as Vector2)
+	_check(path.size() > 100 and route_length > 100.0,
+		"and the route really is the long one - %d marks, %.0f m (the fixture is derived from MAX_ROOMS=%d, not written out)" % [
+			path.size(), route_length, DungeonModule.MAX_ROOMS])
+
+	await _settle()
+	_check(not at_cap.is_empty(),
+		"THE CAP IS REACHABLE BY A LEGAL REQUEST: the errand ends on \"gave up\", not on arrival and not on the stall timer")
+	if at_cap.is_empty():
+		await _drop_main()
+		return
+
+	# The reading, at the moment halt() emits - the same function that read 1
+	# at the stall, in the same suite run.
+	_check(int(at_cap["count"]) == 0 and not bool(at_cap["on_wall"]),
+		"AND THE BODY IS TOUCHING NOTHING AT THE CAP: get_slide_collision_count()=%d on_wall=%s - the OPPOSITE of the stall, so a collider does not name THIS failure. Says nothing about every body that could ever reach the cap: one that slid along a wall while still closing on its waypoint is not driven anywhere and is in HANDOVER as NOT VERIFIED" % [
+			int(at_cap["count"]), at_cap["on_wall"]])
+	# THE ROW THAT MAKES THE 0 MEAN SOMETHING (TRAPS 6). The same `_reading()`
+	# read 1 at the stall earlier in this same run, so an empty reading here
+	# cannot be a reader that never reads anything.
+	_check(not at_stall.is_empty() and int(at_stall["count"]) >= 1 and int(at_cap["count"]) == 0,
+		"AND THE SAME READER READ %d AT THE STALL EARLIER IN THIS RUN - so the 0 at the cap is the world and not a broken reading" % (
+			int(at_stall["count"]) if not at_stall.is_empty() else -1))
+	_check(float(at_cap["speed"]) > 1.0,
+		"AND IT IS STILL WALKING AT THE TIME - %.4f m/s, which is what makes the 0 above \"no obstacle\" and not \"stopped and resting against nothing\"" % float(at_cap["speed"]))
+	_check(int(at_cap["mark"]) < int(at_cap["marks"]),
+		"and it is a FAILURE and not an arrival - it stopped at waypoint %d of %d" % [
+			int(at_cap["mark"]), int(at_cap["marks"])])
+	_check(float(at_cap["seconds"]) >= NpcGoals.MAX_SECONDS,
+		"and what halted it is the cap itself - %.1f s against NpcGoals.MAX_SECONDS=%.1f, read from the constant that enforces it" % [
+			float(at_cap["seconds"]), NpcGoals.MAX_SECONDS])
+	_check(float(at_cap["travelled"]) > 0.0 and float(at_cap["travelled"]) < route_length,
+		"AND THE NUMBERS THAT DO NAME IT ARE IN HAND: %.0f m travelled of a %.0f m route - it ran out of time, not out of route" % [
+			float(at_cap["travelled"]), route_length])
+	_check(int(at_cap["attempts"]) == 0,
+		"and a plain go_to has nothing in `attempts` at the cap either - %d entries" % int(at_cap["attempts"]))
+	await _drop_main()
+
+
+# --- 122: the fourth reason, and it never goes through halt() ---
+# `follow([])` emits `stopped_walking` directly at npc.gd:107. Driven here
+# because a guard that is never reached is still a guard, and the next section
+# is what says no ORDER reaches it.
+func _nowhere_section() -> void:
+	at_nowhere = {}
+	_make_main()
+	await process_frame
+	await _type(DUNGEON % ROOMS)
+	await _type(ORDER)
+	_check(main.npc != null, "a character exists to be given an empty route")
+	if main.npc == null:
+		await _drop_main()
+		return
+	main.npc.halt("stopped walking")
+	for i in 20:
+		await physics_frame
+	main.npc.stopped_walking.connect(_on_stopped)
+	main.npc.follow([])
+	for i in 10:
+		await physics_frame
+	_check(not at_nowhere.is_empty(),
+		"an empty route stops with \"nowhere to go\" - the fourth reason, and the only one that does not go through halt()")
+	if at_nowhere.is_empty():
+		await _drop_main()
+		return
+	_check(main.npc.state == Npc.STOPPED, "and the body is left STOPPED rather than walking")
+	_check(int(at_nowhere["count"]) == 0 and not bool(at_nowhere["on_wall"]),
+		"and there is nothing to name here either - count=%d on_wall=%s" % [
+			int(at_nowhere["count"]), at_nowhere["on_wall"]])
+	_check(float(at_nowhere["speed"]) < 0.01 and float(at_nowhere["travelled"]) == 0.0,
+		"and correctly so: nothing was attempted - %.4f m/s, %.1f m travelled, %d waypoints" % [
+			float(at_nowhere["speed"]), float(at_nowhere["travelled"]), int(at_nowhere["marks"])])
+	await _drop_main()
+
+
+# --- 122: and no ORDER reaches it, asserted by its legs ---
+# LABELLED AS A GUARD AND NOT A MEASUREMENT (TRAPS 6). Every row here passes
+# today and no legal input can fail it; what it is for is the day one of the
+# legs moves. The legs: NpcGoals.validate refuses any room that does not
+# resolve into range, so `goal["room"]` is always a real index; `from_room`
+# starts at 0 and only moves to a `room_of` result that is >= 0, so it is in
+# range too; DungeonModule.route with both indices in range and EQUAL returns
+# the room's own centre rather than nothing; with them unequal and the route
+# empty the controller refuses FAILED_UNWALKABLE before `ordered.emit`; and
+# the list validate counts is the same array route indexes.
+func _unreachable_section() -> void:
+	_make_main()
+	await process_frame
+	await _type(DUNGEON % ROOMS)
+	var module := DungeonModule.new()
+	var layout: Dictionary = main.controller.standable["layout"]
+	var layout_rooms: Array = layout["rooms"]
+	var standable_rooms: Array = main.controller.standable["rooms"]
+	_check(standable_rooms.size() == layout_rooms.size() and standable_rooms.size() > 0,
+		"GUARD: the room list NpcGoals.validate counts is the one route() indexes - %d and %d" % [
+			standable_rooms.size(), layout_rooms.size()])
+
+	# Every room, not the one that happens to be first (TRAPS 11).
+	var same_room_empty := 0
+	for i in layout_rooms.size():
+		if (module.route(layout, i, i) as Array).is_empty():
+			same_room_empty += 1
+	_check(same_room_empty == 0,
+		"GUARD: route(i, i) returns the room's own centre for all %d rooms, so a same-room errand is never an empty route - %d empty" % [
+			layout_rooms.size(), same_room_empty])
+
+	var bad: Dictionary = NpcGoals.validate({"goal": "go_to", "room": "no_such_room"}, standable_rooms)
+	_check(not bool(bad["ok"]),
+		"GUARD: validate refuses a room that does not exist, so goal[\"room\"] is never out of range")
+	var good: Dictionary = NpcGoals.validate({"goal": "go_to", "room": "vault"}, standable_rooms)
+	_check(bool(good["ok"]) and int((good["goal"] as Dictionary)["room"]) >= 0 \
+			and int((good["goal"] as Dictionary)["room"]) < layout_rooms.size(),
+		"GUARD: and it resolves a real name into range - room %d of %d" % [
+			int((good["goal"] as Dictionary)["room"]) if bool(good["ok"]) else -1, layout_rooms.size()])
+
+	# And the one that is a reading rather than a guard: a same-room ORDER is
+	# the nearest thing a player can type to an empty route, and it arrives.
+	await _type('{"command": "ORDER", "parameters": {"goal": "go_to", "room": "entrance"}}')
+	_check(main.npc != null and main.npc.marks.size() == 1,
+		"a same-room ORDER - the nearest a player gets to an empty route - is given ONE waypoint, the room's centre")
+	# READ OFF `npc.why` AND NOT OFF THE SIGNAL, AND THAT IS THE POINT. The
+	# first draft of this row connected `stopped_walking` after sending the
+	# order and asserted the handler had not fired. `follow()` emits "nowhere
+	# to go" synchronously, INSIDE the order, before any handler written here
+	# could be attached - so the row passed because nothing could ever have
+	# set it, which is TRAPS 6 in a row written to guard against TRAPS 6.
+	# Caught by injection D: route(i, i) made empty, which really does send
+	# this errand down the empty-route path, and the row went on passing.
+	# `why` is set by `follow()` and survives, so it can be read afterwards.
+	if main.npc != null:
+		_check(str(main.npc.why) != "nowhere to go",
+			"and it does NOT go down the empty-route path - npc.why is \"%s\" immediately after the order" % str(main.npc.why))
+		await _settle()
+		_check(str(main.npc.why) == "stopped walking",
+			"and it walks to that waypoint and arrives - npc.why is \"%s\" at the end" % str(main.npc.why))
+
+	# Read off the source, comment-stripped (TRAPS 63): the emit that is not
+	# halt()'s lives in follow(), which is why halt()'s bookkeeping is skipped
+	# on that path.
+	var src := _source("res://scripts/npc.gd")
+	var in_follow := src.find("func follow(")
+	var in_put_down := src.find("func _put_down(")
+	var emit_at := src.find("stopped_walking.emit")
+	_check(in_follow >= 0 and in_put_down > in_follow and emit_at > in_follow and emit_at < in_put_down,
+		"GUARD: and the first stopped_walking.emit in npc.gd is inside follow() and not inside halt(), which is why halt()'s own bookkeeping is skipped on that path")
+	await _drop_main()
+
+
 # --- why the reading is one frame old, read off the source ---
 # Not a style check. If a later change moves `_steer` after the parent call,
 # the handler would read THIS frame's collisions, which at a stall is the
@@ -336,6 +561,9 @@ func _ordering_section() -> void:
 func _run() -> void:
 	await _arrival_section()
 	await _stall_section()
+	await _cap_section()
+	await _nowhere_section()
+	await _unreachable_section()
 	_ordering_section()
 	print("")
 	for l in lines:

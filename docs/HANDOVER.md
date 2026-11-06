@@ -11,6 +11,171 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
+- Last commit at the time of writing: **122**, and it is **TRAPS 11 applied to
+  121's own work**: 121 read what the body knows at ONE halt reason and left
+  three. `tests/halt_cause_test.gd` **20 -> 43 assertions**, and **`scripts/`,
+  `run_tests.sh` and `.github/` are 0 lines of diff** - one file changed, 229
+  insertions and 1 deletion - so `PROMPT_FINGERPRINT` cannot have moved and
+  `prompt_bounds_test` stayed at **72**, which is a reading of the run and not
+  an argument from the diff.
+
+  **THE CLASS, READ OFF `npc.gd` RATHER THAN ASSUMED.** `stopped_walking` is
+  emitted at **four** reasons, not three: `"stopped walking"` (`npc.gd:216`,
+  waypoints exhausted), `"gave up"` (`npc.gd:183`, the `MAX_SECONDS` cap),
+  `"stopped making progress"` (`npc.gd:227`, the stall) and `"nowhere to go"`
+  (`npc.gd:106-107`) - **and the fourth does not go through `halt()` at all**, so
+  `halt()`'s own bookkeeping is skipped on that path. 121 measured the stall
+  and used the arrival as its control. The two it left are measured here.
+
+  **AND THE ANSWER AT THE CAP IS THE OPPOSITE OF THE ANSWER AT THE STALL.**
+  Driven on a legal `CREATE_DUNGEON`: a chain of **24 rooms** (`MAX_ROOMS`) of
+  20 m, `ORDER` to the far end, a **598 m route of 1242 marks**.
+
+  | halt reason | count | `is_on_wall()` | flat speed | an obstacle to name? |
+  |---|---|---|---|---|
+  | `"stopped making progress"` (121) | **1** | true | 0.0000 m/s | **yes - `Door_2_3`** |
+  | `"gave up"` (this commit) | **0** | false | **4.4776 m/s** | **no - nothing is touched** |
+  | `"nowhere to go"` (this commit) | 0 | false | 0.0000 m/s | no, and nothing was attempted |
+  | `"stopped walking"` (121's control) | 0 | false | ~0 | n/a |
+
+  **THE BODY AT THE CAP IS TOUCHING NOTHING BECAUSE THERE IS NOTHING TO
+  TOUCH**, and that is structural rather than lucky: a body that stops making
+  progress is halted by the stall timer after `STALL_SECONDS`, so the only
+  errand still going at `MAX_SECONDS` is one that was still closing on its
+  waypoint. The one that reaches the cap is at **full walking speed, 394.1 m
+  into a 598 m route, at waypoint 821 of 1242, 90.0 s**. Controls at 20 / 40 /
+  60 / 80 s read count **0**, on_wall **false**, speed **4.48** - it walks
+  freely the whole way. **So a fix that reported `get_collider()` would leave
+  this halt reason exactly as silent as it is now, and this halt reason is
+  REACHABLE by a legal request.**
+
+  **WHICH MAKES "Human decision needed" 38 NARROWER AND CHEAPER, AND DOES NOT
+  ANSWER IT.** What the body does know at the cap is how far along how long a
+  route it got, and the sentence a player already reads carries both numbers:
+  ***"Gave up on the r23 after 90 seconds and 394 m."*** (read off
+  `status_label`, two trials). That is a causal sentence already. The stall's
+  is not: ***"Could not get to the vault: stopped making progress after
+  5 m."*** So **of the two reachable failures, one needs the collider and the
+  other does not**, and 38 is a decision about one halt reason rather than
+  about failed errands in general.
+
+  **AND A CARRY THAT GIVES UP DOES PUT ONE THING IN THE RECORD.** Same chain,
+  a `red_key` in r23, `carry` to r0: identical numbers (**90.0 s, 394.1 m,
+  waypoint 821 of 2474, `pickup_at` 1231**), count **0**, and
+  `attempts` = `[{"action": "pick_up", "result": "never_reached_it", "at":
+  [-393.8, 0.0], "seconds": 90.0}]`, which reaches the outcome record's
+  `carrier.attempted`. Outcome `NOT_DELIVERED`, sentence ***"The red key did
+  not get to the r0. It is in the r23."*** So the record at the cap is empty
+  on the `go_to` path and not on the `carry` path, and what is in it is not the
+  obstacle.
+
+  **`"nowhere to go"` IS A GUARD NO `ORDER` REACHES, AND IT IS LABELLED AS ONE
+  (TRAPS 6).** Driven directly with `follow([])`: it fires, the body is left
+  `STOPPED`, count **0**, 0.0000 m/s, 0.0 m, 0 waypoints, 0 attempts. Then the
+  five legs that put it out of reach, each **asserted mechanically rather than
+  in prose**, so the day one of them moves the suite says so: `NpcGoals.validate`
+  refuses a room that does not resolve into range (`npc_goals.gd:113`), so
+  `goal["room"]` is always a real index; `from_room` starts at 0 and only moves
+  to a `room_of` result `>= 0` (`game_controller.gd:262-267`), so it is in range
+  too; `DungeonModule.route` with both indices in range and **equal** returns
+  the room's own centre - checked for **every** room, not the first (TRAPS 11);
+  with them unequal and the route empty the controller refuses
+  `FAILED_UNWALKABLE` before `ordered.emit` (`game_controller.gd:341-346`, and the carry leg at 307-309); and
+  `standable["rooms"]` **is** `layout["rooms"]` (`dungeon_module.gd:1276`, where the local is `layout["rooms"]`),
+  so the list `validate` counts is the array `route` indexes. The thing path
+  cannot produce an empty route either: `to_thing.append(here)` runs
+  unconditionally (`game_controller.gd:330`).
+
+  **SEVEN INJECTIONS, EACH ALONE IN ITS OWN THROWAWAY COPY** with its own
+  `config/name` and its own cleared `user://`, every anchor counted before
+  patching and required to be found **exactly once**.
+  - **A**, `MAX_SECONDS` 90 -> 10000: **failures=1**, the reachability row, and
+    the suite drops to 35 on its early return - so the cap rows are not vacuous.
+  - **B**, `MAX_ROOMS` 24 -> 4: **failures=2**, the fixture row (162 marks,
+    78 m) and the reachability row - so the fixture really is derived from the
+    constant rather than written out.
+  - **C**, the `"nowhere to go"` emit replaced by `pass`: **failures=2**, the
+    drive row and the source row.
+  - **D**, `route(i, i)` made empty: **failures=4** - and two of those four are
+    the catch described below.
+  - **E**, `validate`'s `if room < 0:` made `if false:`: **failures=1**, the
+    row that says an unknown room cannot get through.
+  - **F**, a `stopped_walking.emit` added before `follow()`: **failures=1**,
+    the row that says the first emit is in `follow()` - so that row reads real
+    positions. **F did not land on the first attempt and that is recorded
+    rather than tidied**: the harness counted its anchor with `grep -cF`, which
+    is line-based, so a two-line anchor was reported as present twice and the
+    injection was refused. Re-run with the count taken on the whole file, it
+    landed.
+  - **G**, `MAX_SECONDS` 90 -> 0.05: **failures=6**, among them the speed row
+    at **0.0261 m/s** - which is the can-it-fail row for the clause that makes
+    the `0` at the cap mean "no obstacle" rather than "resting against
+    nothing". It wrecks three earlier sections too, as a cap of 0.05 s would.
+
+  **AND INJECTION D CAUGHT A VACUOUS ROW THIS COMMIT HAD JUST WRITTEN, WHICH
+  IS WORTH MORE THAN THE ROW.** The first draft of the same-room row connected
+  `stopped_walking` after sending the order and asserted the handler had not
+  fired. `follow()` emits `"nowhere to go"` **synchronously, inside the
+  order**, before any handler written in the suite can be attached - so the row
+  passed because nothing could ever have set it. That is **TRAPS 6 inside a row
+  written to guard against TRAPS 6**, and only D exposed it: with `route(i, i)`
+  empty the errand really does go down the empty-route path and the row went on
+  passing. Fixed by reading `npc.why`, which `follow()` sets and which
+  survives; under D the two rows now read `npc.why` is `"nowhere to go"` and
+  fail. **Every new row in this commit has a named injection that fails it,
+  except the ones labelled GUARD**, which TRAPS 6 says are worth keeping and
+  worth labelling and are not measurements.
+
+  **AND THE PREDICTED DIFF WAS WRONG IN ONE PLACE (TRAPS 89).** Written to a
+  file before any repository file was edited. It said `halt_cause_test` would
+  go **20 -> 34** and it went **20 -> 43**: the prediction was written before
+  the sections were designed and under-counted the guard rows. What held, and
+  was predicted: `scripts/` **0 lines of diff**, no new file, suites **83 ->
+  83**, `result_line_test` **362** unmoved, `prompt_bounds_test` **72**,
+  `source_scan_test` **79**, `left_body_test` **16**, `interference_test`
+  **16**, and **the diff against the baseline run is exactly ONE line**.
+
+  **FOUR BYTE-IDENTICAL `--all` RUNS ON THE CHANGED TREE**, `user://` cleared
+  before each by deleting `app_userdata/AI_Game_Builder`, **the last two on the
+  complete tree with `docs/` in place and therefore on the tree that was
+  pushed, bar this paragraph**: md5
+  **`5055fad3202f078f6fe41fed6e58c32b`**, **83 suites, 0 with something to look
+  at**, `halt_cause_test` **43, failures=0**. `git status --porcelain` named
+  `docs/HANDOVER.md` and `tests/halt_cause_test.gd` and nothing else, before
+  and after.
+
+  **A READING OF THE CODE THAT IS NOT DRIVEN AND IS FLAGGED AS SUCH.**
+  `game_controller.gd:375` is `var outcome := "GAVE_UP" if why == "gave up"
+  else "BLOCKED"`, and `ARRIVED` is written over it only when the body is in
+  the destination room (`game_controller.gd:414-415`). So **`BLOCKED` - and
+  therefore the sentence "stopped making progress" - is what three of the four
+  halt reasons resolve to**: the stall, `"nowhere to go"`, and
+  `"stopped walking"` when the waypoints ran out somewhere other than the
+  destination room. The first names the obstacle nowhere; the second is out of
+  reach; **the third has not been driven and is the next thing on the list**.
+  This is a read of two lines, not a measurement, and nothing asserts it.
+
+  **NOT VERIFIED.**
+  **NO FIX WAS MADE AND NOTHING A PLAYER SEES CHANGED.** `scripts/` is 0 lines
+  of diff. The stall's sentence still names nothing, 38 is still open, and all
+  three live entries are still live and still wait on the owner.
+  **WHETHER A BODY CAN REACH THE CAP WHILE TOUCHING SOMETHING.** One that slid
+  along a wall while still closing on its waypoint would read count `>= 1` at
+  the cap. It is not driven anywhere, the suite's wording was narrowed to say
+  so, and the claim made is only that the collider does not name **this**
+  failure, on the path that reaches the cap.
+  **WHETHER A `"stopped walking"` THAT IS NOT AN ARRIVAL IS REACHABLE.** The
+  reading above says what its sentence would be if it is; it is not driven.
+  **NO SUITE WAS RUN AGAINST A FRESH `git clone` OF THIS COMMIT**, which is
+  what a 122a owes - see "Next action".
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is still **2026-10-14**, checked this commit by
+  grepping every `OWNER, 2026-[0-9][0-9]-[0-9][0-9]` marker in `HANDOVER.md`
+  and `TRAPS.md`: five of them, all that one date.
+  **THE DEPLOY STILL FAILS**, both secrets are still empty, and what a visitor
+  sees is still commit `71b065f` from 2026-10-14. Nothing here touched a
+  deployment setting, a secret, a flag or a target.
+
 - Last commit at the time of writing: **121a**, which is **docs only** - 0
   lines of diff in `scripts/`, `tests/` and `.github/`, no new finding about
   Genesis, no new claim about its behaviour, no new live entry. It records the
@@ -9636,6 +9801,54 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
+**122's RECORD. ONE MEASUREMENT IS OWED - A FRESH `git clone` OF THE PUSHED
+COMMIT - AND THAT IS 122a's WHOLE JOB.** 122 took its own baseline on the
+clean pushed tree at `cb841a1`, in its own container with its own Godot
+download: `git status --porcelain` **empty before and after**, `--all`,
+`user://` cleared by **deleting `app_userdata/AI_Game_Builder`** rather than
+by renaming `config/name`, so `project.godot` was not edited to take the
+measurement. Godot **4.7.1.stable.official.a13da4feb**, `--version` read.
+**`9f43a14b3fc45d1361399402cf0c9fc6`, 83 suites, 0 with something to look
+at** - **byte-identical to the md5 121 recorded and 121a reproduced from a
+clone** - with `halt_cause_test` **20**, `source_scan_test` **79**,
+`result_line_test` **362**, `prompt_bounds_test` **72**, `left_body_test`
+**16**, `interference_test` **16**. So the record and the container still
+agree today.
+
+**122 CHANGED ONE FILE AND `scripts/` IS 0 LINES OF DIFF.**
+`tests/halt_cause_test.gd`, 229 insertions and 1 deletion, and this file.
+`run_tests.sh` is 0 lines of diff because `halt_cause_test` was already in
+`TIMED`.
+
+**FOUR BYTE-IDENTICAL `--all` RUNS ON THE CHANGED TREE**, `user://` cleared
+before each by deleting `app_userdata/AI_Game_Builder`, **the last two on the
+complete tree with `docs/` in place and therefore on the tree that was pushed,
+bar this paragraph**: md5
+**`5055fad3202f078f6fe41fed6e58c32b`**, **83 suites, 0 with something to look
+at**, `halt_cause_test` **43, failures=0**, `result_line_test` **362,
+failures=0**, `prompt_bounds_test` **72, failures=0**, `source_scan_test`
+**79, failures=0**, `left_body_test` **16, failures=0**,
+`interference_test` **16, failures=0**.
+
+**`diff` AGAINST THE BASELINE RUN IS EXACTLY ONE LINE** - `halt_cause_test`
+20 -> 43. Every other suite is unmoved, `prompt_bounds_test` 72 among them,
+which is the reading behind the claim that no prompt clause moved, and
+`result_line_test` 362 among them, which is the reading that no file was added
+to `tests/`.
+
+**THE SEVEN INJECTIONS ARE IN THE 122 ENTRY ABOVE WITH THEIR COUNTS**, each
+alone in its own throwaway copy with its own `config/name`, including the two
+whose result is the interesting part: **F did not land on the first attempt**
+because the harness counted a two-line anchor with line-based `grep -cF` and
+refused the injection, and **D exposed a vacuous row this commit had just
+written** - a row that could not have failed, inside a section written about
+TRAPS 6. Both are recorded there rather than tidied away.
+
+**AND THE PREDICTED DIFF WAS WRONG IN ONE PLACE (TRAPS 89)**, which is in the
+122 entry above: it said `halt_cause_test` would reach 34 assertions and it
+reached 43. The clause that held and is worth having predicted is that the
+diff against the baseline would be exactly one line.
+
 **AND RUN 8 IS A FRESH `git clone` OF THE PUSHED COMMIT**, written in by 121a
 - `4891dfc`, cloned into its own directory, `git status --porcelain` **EMPTY
 both before and after the run** (so `project.godot` was not edited to take the
@@ -17314,6 +17527,67 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
+**WHAT 122 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
+clone` OF THE PUSHED COMMIT.** 122 took its own baseline on the clean pushed
+tree at `cb841a1` and reproduced the md5 121 recorded and 121a reproduced from
+a clone - `9f43a14b3fc45d1361399402cf0c9fc6`, 83 suites, 0 with something to
+look at - wrote its predicted diff to a file before editing any repository
+file (**and one of its numbers was wrong, which is recorded under "Run the
+tests first" rather than tidied, TRAPS 89**), and took four byte-identical
+`--all` runs on the changed tree. What it did NOT take is a run against a
+fresh `git clone` of its own pushed commit, which is the reading 104a and 106a
+through 121a each exist for. **That is 122a's whole job and it is the only
+thing owed.**
+**THE CLAUSE IT MATTERS MOST FOR IS `halt_cause_test` 43 ON THE CLONE.** It is
+the only thing in the project that reads what the body knows at the moment it
+stops, and this commit took it from one halt reason to all four, so a green run
+against the REMOTE tree is the reading that the widened suite went up on the
+remote rather than only existing locally. **`result_line_test` 362 ON THE CLONE
+IS THE SECOND**: it derives its members from `tests/` on disk via
+`dir.get_files()`, so that count unmoved is the reading that this commit added
+no file - taken by the project's own reader rather than by `ls`. **AND
+`prompt_bounds_test` 72 IS THE THIRD**: it matters less than usual because
+`scripts/` is 0 lines of diff, but it is the reading behind that claim rather
+than an argument from the diff.
+**DO NOT RE-TAKE 122's SEVEN INJECTIONS** - they are in the record with their
+counts, each alone in its own throwaway copy with its own `config/name`,
+including the two whose result is the interesting part: **F** did not land on
+its first attempt, and **D** exposed a row that could not have failed.
+**AND DO NOT RE-DRIVE THE CAP OR THE EMPTY ROUTE** - the cap is
+`tests/halt_cause_test.gd` and the carry-at-the-cap numbers are in the 122
+entry above, rather than a table to be re-measured.
+
+**THE WORK ITSELF, AFTER THAT, AND 122 MADE ONE THING CHEAPER AND FOUND ONE
+NEW THING.**
+**THE CHEAPER THING IS "Human decision needed" 38**, which is now a decision
+about ONE halt reason rather than about failed errands in general: of the two
+reachable failures, the stall has an obstacle it does not name, and the cap has
+no obstacle and a sentence that already carries its cause. It is still the
+owner's and 122 did not answer it.
+**THE NEW THING, AND IT IS THE CHEAPEST HONEST PIECE LEFT THAT NEEDS NOBODY:
+whether a `"stopped walking"` THAT IS NOT AN ARRIVAL IS REACHABLE.**
+`game_controller.gd:375` makes every non-`"gave up"` reason `BLOCKED` unless
+the body is in the destination room (`:414-415`), so a body that runs out of
+waypoints somewhere other than the destination would read the stall's sentence
+- ***"Could not get to X: stopped making progress after N m."*** - having done
+nothing of the kind. **That is a read of two lines and nothing drives it.** It
+is one probe: an errand whose last mark is not inside the destination room, if
+one can be built from a legal request. If it is reachable it is a false
+sentence a player meets, which is the shape of 117's finding, and it would be a
+live entry rather than a fix.
+**THE SECOND CHEAPEST, ALSO NEEDING NOBODY**, is still 121's other leftover:
+**whether the reading tells a shut DOOR from a WALL.** Both are `Solid` and
+only the parent's name tells them apart, which today rests on
+`dungeon_module.gd`'s naming rule being read rather than on an errand stalled
+against a wall.
+**AND ONE 122 DELIBERATELY DID NOT TAKE:** whether a body can reach the cap
+while touching something - sliding along a wall while still closing on its
+waypoint. It would weaken nothing above if it can; it would mean the cap's
+collider reading is sometimes non-empty, which is why the suite's wording was
+narrowed rather than left universal.
+**Do not take any of these as licence to change what a player is told: that is
+38, and it is his.**
+
 **~~WHAT 121 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
 clone` OF THE PUSHED COMMIT.~~ TAKEN IN 121a, AND IT REPRODUCED BYTE-FOR-BYTE
 - IT IS RUN 8 ABOVE.** Struck rather than deleted because what it owed and why
@@ -18297,9 +18571,23 @@ deliberately not a suite: whichever way the body question goes, a suite built
 on that body stalling an errand could stop being reachable. **Nothing about
 what a player should be TOLD is asserted anywhere** - that is "Human decision
 needed" 38, which this measurement exists to make cheap.
-**STILL NOT MEASURED:** whether the obstacle is readable at the OTHER halt
+~~**STILL NOT MEASURED:** whether the obstacle is readable at the OTHER halt
 reasons - `"gave up"` (the 90 s cap, `npc.gd:182-183`) and `"nowhere to go"`
-(`npc.gd:107`) - where the body may be touching nothing at all; whether the
+(`npc.gd:107`) - where the body may be touching nothing at all;~~
+**MEASURED IN 122, AND THE ANSWER IS NO AT BOTH, WHICH IS THE OPPOSITE OF THE
+ANSWER HERE.** Struck rather than deleted because "may be touching nothing at
+all" is the guess 122 replaced with a reading. At the cap, driven on a legal
+24-room chain, `get_slide_collision_count()` **0**, `is_on_wall()` **false**,
+flat speed **4.4776 m/s** - the body is at full walking speed 394.1 m into a
+598 m route, touching nothing, because a body that stops making progress is
+taken by the stall timer long before the cap. At `"nowhere to go"`, **0**,
+**false**, 0.0000 m/s, and no `ORDER` reaches it at all - five legs put it out
+of reach and `tests/halt_cause_test.gd` asserts each of them as a labelled
+GUARD. **So the collider answer covers the stall and nothing else**, which
+narrows "Human decision needed" 38 to one halt reason rather than answering
+it. `halt_cause_test` is **43 assertions** and holds all four reasons. The
+clause below about a DOOR and a WALL is still not measured. **STILL NOT
+MEASURED:** whether the
 reading distinguishes a shut DOOR from a WALL (both are `Solid`, and only the
 parent's name tells them apart, which is a reading of the names rather than of
 a stall against a wall); a shut door and a leftover body at once; the
