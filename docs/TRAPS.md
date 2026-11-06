@@ -9338,3 +9338,59 @@ a question.
 - Holding a fault in a suite is legitimate and must say so. Label the rows,
   name the decision number, and say which rows the answer deletes — otherwise
   the next session reads them as a specification.
+
+---
+
+## 121. A suite's fixture list is a coverage claim in prose, and nothing checks it
+
+**Signature:** a suite's header says it drives *every* X. It is green and has
+been for a hundred commits. The fault is in an X, and the suite has never
+built one — not because the member was chosen badly, but because the fixture
+list never had it.
+
+**Cause.** `walker_test.gd` exists to do exactly the thing that would have
+found "Human decision needed" 40: *"walks a real `CharacterBody3D` along every
+corridor and reports which rooms a moving body actually reaches. Where it
+disagrees with `walkable()`, the disagreement is the finding."* Its three
+shapes are **a row of five**, **four off a hall** and **two rooms**. All three
+seat every room in a slot orthogonally adjacent to its neighbour, so every
+corridor they build has **one leg**. `_corridor()` builds **four**-leg
+corridors as well, for any door between rooms the lattice could not seat side
+by side, and a body cannot walk one: it overshoots the bend, leaves the
+corridor, and cannot climb the 0.58 m step from the ground pad back onto it.
+**The disagreement the suite was written to report has been there since the
+lattice was, and the suite could not see it, because "every corridor" meant
+"every corridor in these three shapes".**
+
+"Four off a hall" is the near miss worth looking at. A hall with **five** off
+it is the smallest shape that produces the fault, because ring 1 holds four
+slots straight off a wall and the fifth neighbour has to take a corner one.
+The fixture list stopped one room short of the class.
+
+And the same header carried a false measurement for most of the project's
+life: *"corridors at `CORRIDOR_HEIGHT` 1.3, so every doorway is a 0.3 m step
+up"*. `CORRIDOR_HEIGHT` was raised to 1.58 precisely because of that step, and
+`dungeon_module.gd`'s own comment records what it cost. The sentence naming the
+hazard was left pointing at a hazard that had been fixed, while the same
+hazard at a **different boundary** — pad to corridor, 0.58 m — was never
+written down anywhere. This is trap 11 with a comment in place of a code
+change: the class was named, one member was repaired, and the note went stale
+over the member that was not.
+
+**Do:**
+
+- Read a suite's fixture list as a **claim** and check it against what the
+  module can actually produce. Here one reading would have done it: ask
+  `_corridor()` how many legs each door's corridor has, for each shape in the
+  list, and look at the set. It is `{1}`; the function's range is `{1, 4}`.
+- When a header says "every", find the enumeration it is quantifying over. If
+  the enumeration is a hand-written array in the same file, the word "every"
+  is about the array and not about the world.
+- Prefer the smallest shape that is one step past the one already in the list.
+  Four off a hall and five off a hall differ by one room and by the whole
+  finding.
+- A number in a comment that names a hazard is a claim about the code and
+  rots like any other (trap 14). When a constant is changed to remove a
+  hazard, grep for the old value before the commit that changes it is
+  finished — and then ask whether the hazard exists at any **other** boundary
+  the same constant touches.

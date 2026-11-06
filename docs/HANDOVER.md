@@ -11,7 +11,130 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
-- Last commit at the time of writing: **125**, and it is **0 LINES OF DIFF IN
+- Last commit at the time of writing: **126**, and it is **DOCS PLUS ONE
+  COMMENT**. `docs/HANDOVER.md`, `docs/TRAPS.md` (new entry **121**) and the
+  header of `tests/walker_test.gd`, which carried a false measurement.
+  **`scripts/`, `scenes/`, `netlify/`, `.github/`, `project.godot` and both
+  runners are 0 LINES OF DIFF, and so is every assertion in `tests/`** - not
+  one was added, removed or changed, and the suite is unmoved at **85 suites,
+  0 with something to look at**. **Nothing a player meets changed.**
+
+  **WHAT 125 ASKED FOR, AND BOTH HALVES WERE TAKEN.** Its "Next action" named
+  one owed measurement and one piece of work that needed nobody.
+
+  **(1) THE OWED MEASUREMENT IS TAKEN AND IT REPRODUCES.** A **fresh `git
+  clone` of the pushed commit `2147b48`** into its own directory, in a
+  container that had taken **none** of the measurements it was checking, with
+  its own Godot download - **4.7.1.stable.official.a13da4feb**, `--version`
+  read - `git status --porcelain` **EMPTY both before and after**, and `user://`
+  **genuinely absent rather than cleared** (`~/.local/share/godot/app_userdata/`
+  did not exist in this container, which is a stronger starting state than
+  deleting one directory out of it):
+  **`5ecc88b884184e5abe8c37b3c8354b59`, 85 suites, 0 with something to look
+  at**, `piece_name_test` **17**, `result_line_test` **370**,
+  `player_door_test` **75**, `halt_cause_test` **43**, `errand_outcome_test`
+  **44**, `source_scan_test` **80**, `prompt_bounds_test` **72**.
+  **BYTE-IDENTICAL to what 125 recorded on its own changed tree.** All three
+  clauses 125 said that run was for are green on the remote tree: the new
+  suite exists and passes there, `tests/` really holds the new file as the
+  project's own `dir.get_files()` reads it, and `player_door_test` is unmoved.
+  **There is no `126a` for this; nothing is owed.**
+
+  **(2) AND 121's LEFTOVER IS ANSWERED. IT IS NO, AND THE ANSWER CAME WITH A
+  FAULT NOBODY HAD RECORDED.** The question 125 left was *whether a stalled
+  errand's reading can be driven against a WALL at all* - the one piece of
+  121's door-versus-wall question that does not depend on HDN 24, because it is
+  about geometry and reachability rather than about names. Driven over **29
+  errands**: 14 over a corridor the lattice had to bend, 4 straight-chain
+  controls, 8 that turn a right angle INSIDE a room at five widths and two
+  aspect ratios, and 3 that are a second dungeon shape with its own control
+  and one `carry`. **11 of the 29 stalled. Not one of the 11 named a `Wall_*`
+  piece.** Every one of them named a **`Corridor_*`** piece, which is a name
+  no entry in this file had on the list.
+
+  **AND THAT IS "Human decision needed" 40: A `go_to` ERRAND CANNOT WALK A
+  CORRIDOR THE LATTICE HAD TO BEND, AT EVERY LEGAL ROOM SIZE FROM 11 m
+  UPWARDS.** Eight widths of twelve fail, the four that arrive are all 10 m and
+  under, `MAX_SIDE` is 40, and `walkable()` calls the door **usable** in every
+  one of the twelve. **`carry` fails the same way and the thing is left outside
+  every room.** It is not fixed: every fix is a placement rule, a geometry
+  change or a navigation change, so all three are his. See HDN 40 for the
+  table and for the mechanism, which is measured to the centimetre.
+
+  **THE MECHANISM IS A STEP THIS PROJECT ALREADY FIXED ONCE, AT THE OTHER
+  BOUNDARY (TRAPS 11).** The body overshoots the bend, leaves the corridor, and
+  lands on the **ground pad** - read off the tree rather than inferred: at the
+  halt the body's origin is at **y 1.901** and it rides **0.900** above
+  whatever it stands on, measured at an arrival on a room floor, so the surface
+  under it is **1.001** and `PAD_HEIGHT` is **1.00**. `CORRIDOR_HEIGHT` is
+  **1.58**. That is a **0.58 m** step and the body cannot climb it: put back on
+  the spot it stalled on and driven at full forward on **eight headings for
+  12 s each**, it never rose above the pad. **The corridor-to-room-floor step
+  is 0.02 m, and it is 0.02 m on purpose** - `dungeon_module.gd`'s comment at
+  `CORRIDOR_HEIGHT` records that the old 0.3 m version cost *"a walker reached
+  1 room in 5 while the geometric check still reported 5 of 5"*. The class was
+  named, one boundary was repaired, and the pad-to-corridor boundary was never
+  looked at.
+
+  **AND THE SUITE WRITTEN TO FIND EXACTLY THIS HAS NEVER BUILT THE SHAPE,
+  WHICH IS NEW TRAPS 121.** `walker_test.gd`'s header says it *"walks a real
+  `CharacterBody3D` along every corridor"* and that *"where it disagrees with
+  `walkable()`, the disagreement is the finding"*. Its three shapes are a row
+  of five, **four off a hall**, and two rooms - and all three seat every room
+  orthogonally adjacent to its neighbour, so every corridor they build has
+  **one leg**. The shape that shows the fault is **five** off a hall. The
+  fixture list stopped one room short of the class, and "every corridor" was a
+  claim about a hand-written array. **The shape is NOT added to that suite**,
+  deliberately: it would make it red against today's code for a decision that
+  is the owner's, which is a tripwire and not a guard (`halt_cause_test`'s
+  header makes the same argument, and 125 made the same choice for HDN 39).
+  What went into the file is a comment naming the uncovered member and HDN 40.
+
+  **AND THE HEADER IT WENT INTO WAS CARRYING A FALSE MEASUREMENT, FOUND BY
+  CHECKING A SENTENCE BEFORE REPEATING IT (TRAPS 14).** It said *"room floors
+  sit at `ROOM_HEIGHT` 1.6 and corridors at `CORRIDOR_HEIGHT` 1.3, so every
+  doorway is a 0.3 m step up"*. `CORRIDOR_HEIGHT` is 1.58; a doorway is a
+  0.02 m step and is not the hazard. **The sentence naming the hazard was left
+  pointing at the one that had been fixed while the live one had no sentence
+  anywhere.** Corrected in place, with what it used to say kept beside it.
+
+  **AND ONE CLAUSE OF 125's OWN IS STRUCK, BY THE SAME CHECK.** 125 wrote that
+  *"ten suites in `tests/` read `HANDOVER.md` or `TRAPS.md`"* and used it to
+  justify taking its third `--all` run after the documents were written. Those
+  ten **mention** the two documents in comments. **No file under `tests/` or
+  `scripts/` opens anything under `docs/`** - every `FileAccess.open` in
+  `tests/` targets `res://scripts/` or `res://tests/`, read off the files
+  rather than argued. So a docs-only edit cannot move a suite, and the extra
+  run 125 took for that reason was not needed for that reason. The strike is in
+  "Run the tests first". **126 still took two runs with `docs/` in place**, for
+  the ordinary reason rather than that one.
+
+  **AND ONE THING FOUND BY ACCIDENT WHILE CHECKING THE RUNS, RECORDED BECAUSE
+  THE NEXT SESSION WILL HIT IT: `player_door_test` HAS A ROW THAT FAILS WHEN
+  THE SUITE IS RUN BY HAND WITH `--fixed-fps`, AND IT IS NOT A REGRESSION.**
+  The row is `"and timed it"` (`tests/player_door_test.gd:592`), asserting
+  `checkpoint_tracker.last_lap_time > 0.0` after the car is teleported through
+  every checkpoint two frames apart. `CheckpointTracker` measures a lap with
+  **`Time.get_ticks_msec()`** - a **wall clock** (`:51`, `:63`) - so a lap
+  completed in under a millisecond reads **0.000 s** and the row fails.
+  **Counted rather than described: 8 runs alone at `--fixed-fps 120` read
+  failures=1 seven times and failures=0 once; 1 run alone with no
+  `--fixed-fps` read failures=0; and all 3 `--all` runs through
+  `run_tests.sh` read failures=0.** `player_door_test` is **not** in the
+  runner's `TIMED` list, so the runner never passes it `--fixed-fps` and no
+  committed number is affected by this - including **125's HDN 24 cost note of
+  `75, failures=2`**, which was taken through the runner. **It is not fixed
+  here**, and it is not nothing: the fix is either a suite row that asserts
+  something a wall clock can deliver, or a lap clock that is not a wall clock,
+  and the second touches `scripts/`. **It is the cheapest piece on the list
+  after the sweep named in "Next action".**
+
+  **WHAT THIS COMMIT DID NOT DO.** It did not touch where a thing is placed, it
+  did not add avoidance to the walker, it did not change a height, and it did
+  not apply HDN 24's patch - the three things 125's "Next action" told the next
+  session not to do. It changed no assertion, so no number in any suite moved.
+
+- Last commit before this one: **125**, and it is **0 LINES OF DIFF IN
   `scripts/`** on purpose, because the fix it measured turned out to be
   **"Human decision needed" 24** - which 060 reserved for the owner and which
   this session very nearly took for him. One new file,
@@ -10279,13 +10402,96 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
-**THE LATEST RUN IS 125's, ON ITS OWN CHANGED TREE**, `--all`, `user://`
+**THE LATEST RUN IS 126's, ON ITS OWN CHANGED TREE**, `--all`, `user://`
+cleared by deleting `app_userdata/AI_Game_Builder` before each,
+**TWO BYTE-IDENTICAL RUNS, both with `docs/` in place**: md5
+**`5ecc88b884184e5abe8c37b3c8354b59`**, **85 suites, 0 with something to look
+at**, `walker_test` **3, failures=0**, `piece_name_test` **17, failures=0**,
+`result_line_test` **370, failures=0**, `player_door_test` **75, failures=0**,
+`source_scan_test` **80, failures=0**, `halt_cause_test` **43, failures=0**,
+`errand_outcome_test` **44, failures=0**, `prompt_bounds_test` **72,
+failures=0**. `git status --porcelain` named **`docs/HANDOVER.md`,
+`docs/TRAPS.md` and `tests/walker_test.gd` and nothing else**, so
+`project.godot` was not edited to take the measurement and no `.uid` was added.
+
+**`diff` AGAINST THE BASELINE IS ZERO LINES, AND THAT WAS THE WHOLE
+PREDICTION.** This commit changed no assertion anywhere, so no result line
+could move, and none did. The md5 is the SAME md5 as the baseline, which is
+the strongest available reading that a commit touching only comments and
+documents is a commit that changed nothing a suite can see.
+
+**AND THE PREDICTED DIFF WAS RIGHT IN EVERY CLAUSE, INCLUDING THE COUNT, WHICH
+IS WHY IT IS WORTH SAYING THAT THAT PROVES LESS THAN USUAL.** It was written to
+a file before any repository file was edited (TRAPS 89). The count clause has
+been wrong in 121, 122, 124 and 125; it is right here because the commit adds
+no assertion, so predicting it took no reading. The clauses that DID take a
+reading are the two about what cannot move: that a comment edit to
+`tests/walker_test.gd` is invisible to the eight suites that open a file under
+`res://tests/`, because all of them define `_code_of()` and search the stripped
+text except `session_test.gd`, whose only use of that path is
+`extends "res://tests/drive_test.gd"` - and nothing reads `walker_test.gd` at
+all; and that a docs edit is invisible to everything, because **no file under
+`tests/` or `scripts/` opens anything under `docs/`**. Both were read off the
+files before the edits, and both held.
+
+**SO 126 DID NOT TAKE A THIRD RUN AFTER THE WRITING, AND THAT IS A CHANGE FROM
+125 WITH A REASON.** 125 took one because it believed ten suites read these two
+documents. They do not - see the struck clause below. This paragraph and the
+block above were written after both runs, and that is free for the reason just
+read off the files rather than for a reason nobody checked. **A later session
+that wants the stronger reading gets it for nothing by taking its own baseline
+on this commit.**
+
+**AND THE BASELINE IS BOTH 126's OWN AND THE MEASUREMENT 125a OWED.** A **fresh
+`git clone` of the pushed commit `2147b48`** into its own directory, in a
+container that had taken **none** of the measurements it was checking, with its
+own Godot download - **4.7.1.stable.official.a13da4feb**, `--version` read -
+`git status --porcelain` **EMPTY both before and after the run**, and `user://`
+**genuinely absent rather than cleared**: `~/.local/share/godot/app_userdata/`
+did not exist in this container, which is said plainly because it is a stronger
+starting state than deleting one directory out of it and a later session should
+not read it as the same act. **`5ecc88b884184e5abe8c37b3c8354b59`, 85 suites, 0
+with something to look at**, `piece_name_test` **17**, `result_line_test`
+**370**, `player_door_test` **75**, `halt_cause_test` **43**,
+`errand_outcome_test` **44**, `source_scan_test` **80**, `prompt_bounds_test`
+**72**, `controller_reach_test` **330**, `ledger_said_test` **48**.
+**BYTE-IDENTICAL to the md5 125 recorded on its own changed tree.** So the
+record, the remote and a second container all agree, and unlike 119a through
+122a this reading was **not** taken in the same session as the commit it
+measures. **All three clauses 125 said that run was for are green against the
+remote tree**: `piece_name_test` 17 is the reading that the new suite went up
+rather than only existing locally, `result_line_test` 370 is the reading that
+the remote's `tests/` really holds the new file taken by the project's own
+`dir.get_files()`, and `player_door_test` 75 unmoved is the reading behind
+"nothing a player meets changed".
+
+**WHAT THE RUNS DO NOT PROVE, AND IT IS THE SAME THING THEY NEVER PROVE.** The
+suite is green and it is green on a tree where a `go_to` errand cannot walk a
+corridor the lattice had to bend (HDN 40) and cannot cross a room with a thing
+in it (HDN 39). **Both faults were driven by hand, outside the suite, and
+neither is held by a row** - deliberately, in both cases. A green `--all` is
+necessary and never sufficient, and the count behind that is two separate
+counts rather than one: **eight faults the owner's own test sessions found and
+the assistant's suites did not** (recorded above), and now **two that a driven
+errand found inside a green run with nobody testing** - HDN 39 in 125 and
+HDN 40 here. The second pair is the more useful of the two kinds to read,
+because it says the suite can be green on a tree whose main verb does not work.
+
+**THE RUN BEFORE THIS ONE IS 125's, ON ITS OWN CHANGED TREE**, `--all`, `user://`
 cleared by deleting `app_userdata/AI_Game_Builder` before each,
 **THREE BYTE-IDENTICAL RUNS, all with `docs/` in place, and the THIRD was
 taken after every word of this file and of `TRAPS.md` was written, bar this
-paragraph, which was edited afterwards to say so** - which
+paragraph, which was edited afterwards to say so** - ~~which
 matters here because ten suites in `tests/` read one or both of those
-documents, so a docs-only edit is not automatically free: md5
+documents, so a docs-only edit is not automatically free~~. **STRUCK BY 126:
+THE TEN MENTION THOSE DOCUMENTS IN COMMENTS AND NONE OF THEM READS ONE.** No
+file under `tests/` or `scripts/` opens anything under `docs/`; every
+`FileAccess.open` in `tests/` targets `res://scripts/` or `res://tests/`,
+read off the files rather than argued. A docs-only edit cannot move a suite,
+so the third run was a good run taken for a reason that was not true. The
+clause is struck rather than deleted because it was used to justify a
+measurement, and a justification that went false is worth more as a record
+than as a tidy line (TRAPS 14). md5
 **`5ecc88b884184e5abe8c37b3c8354b59`**, **85 suites, 0 with something to look
 at**, `piece_name_test` **17, failures=0**, `result_line_test` **370,
 failures=0**, `halt_cause_test` **43, failures=0**, `player_door_test` **75,
@@ -18189,6 +18395,93 @@ and recorded because it is what made this commit's own suite vacuous.
   and it is a move rather than a fix. Left for whoever has a reason.
 
 ## Next action
+
+**WHAT 126 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
+clone` OF ITS OWN PUSHED COMMIT.** 126 took its baseline as a fresh clone of
+`2147b48` in a container that had taken none of 125's measurements, reproduced
+`5ecc88b884184e5abe8c37b3c8354b59` byte-for-byte, wrote its predicted diff to
+a file before editing any repository file, and took two byte-identical `--all`
+runs on the changed tree with `docs/` in place. What it did NOT take is a run
+against a fresh clone of **its own** push. **Take your own baseline on whatever
+this pushed as, which gets that for free, and then spend the cycle on the work
+below.** Do not spend the cycle on the measurement.
+**AND THE CLAUSE IT MATTERS FOR IS SHORT, BECAUSE THIS COMMIT CHANGED NO
+ASSERTION.** The whole prediction is that the diff against the baseline is
+**zero lines**. `walker_test`'s own line unmoved is the one worth reading,
+because that is the only file under `tests/` this commit touched;
+`result_line_test` **370** unmoved is the reading that no file was added or
+removed, taken by the project's own `dir.get_files()` rather than by `ls`.
+**AND NOTE WHAT 126 ESTABLISHED ABOUT DOCS RUNS:** no file under `tests/` or
+`scripts/` opens anything under `docs/`, so a docs-only edit cannot move a
+suite. A later docs-only commit does not need a run taken after the writing to
+prove that, and should say so rather than repeating 125's struck reason.
+**DO NOT RE-TAKE THE TABLE IN HDN 40** - twelve widths, their controls, the
+carry row, the two-orders-in-one-dungeon pair and the eight right-angle rows
+are all in that entry with their numbers, and three of them have been
+reproduced across separate processes.
+**AND DO NOT RE-MEASURE THE STEP.** Pad **1.00**, corridor **1.58**, room
+floor **1.60**; the two steps are **0.58** and **0.02**; the body rides
+**0.900** above what it stands on. All of it is in HDN 40, read off the
+constants and off the tree.
+
+**THE WORK ITSELF. 126 CLOSED THE ONLY ITEM ON THE LIST THAT NEEDED NOBODY,
+AND PUT A THIRD THING ON THE OWNER'S SIDE OF THE LINE.**
+
+**THE BIGGEST TWO THINGS ON THE LIST ARE BOTH HIS AND BOTH BREAK THE SAME
+MILESTONE. "Human decision needed" 39** - a `go_to` errand cannot cross or
+reach a room with a thing in it, 12 of 12 - **and now "Human decision needed"
+40** - a `go_to` errand cannot walk a corridor the lattice had to bend, 8 of
+12 widths, and `carry` leaves the thing outside every room. Together they are
+*objects created, carried and delivered by NPCs*, which is what
+`docs/PROTOCOL.md` section 2 names as the current direction. **If he has
+answered either, that is the work.** Until then: do not change where a thing
+is placed, do not change a height, do not widen a corridor slab, and do not
+add avoidance or turn-slowing to the walker.
+**HDN 24 IS STILL A COSTED DECISION AND STILL HIS.** Do not apply the patch.
+If he has answered it: applying it deletes sections 2, 3 and 4 of
+`tests/piece_name_test.gd` and rewrites `player_door_test` section 7's three
+alternation rows, and those two edits are the whole job on the test side.
+**"Human decision needed" 38 IS UNTOUCHED AND IS STILL HIS**, and HDN 40 makes
+it worse rather than narrower: the sentence *"Could not get to the r6: stopped
+making progress after 40 m"* now has a **third** cause behind it that names
+nothing, and this one happens on a dungeon with no obstruction in it at all.
+
+**THE CHEAPEST HONEST PIECE LEFT THAT NEEDS NOBODY, AND 126 LEAVES TWO. THE
+FIRST: whether any of the other 84 suites builds a bent corridor without
+reading what the body does in it.** This is TRAPS 119's second shape
+and TRAPS 121's first, asked of the whole suite rather than of `walker_test`:
+`ledger_said_test` and `controller_reach_test` were found that way under
+HDN 39 - fixtures that drive an errand and assert something else. The reading
+is mechanical and needs no decision: for every suite that calls
+`CREATE_DUNGEON`, count the legs `_corridor()` gives each door of the layout
+it builds, and list the suites whose dungeons contain a four-leg corridor.
+**A suite in that list that also orders an errand across it is a green suite
+driving HDN 40**, and that is worth knowing before the owner answers, because
+it tells him which rows move when he does. **126 did not take it**: it checked
+`walker_test` only, by hand, and says so.
+**AND THE SECOND, SMALLER AND ALSO NOBODY'S DECISION: `player_door_test`'s
+`"and timed it"` ROW MEASURES A LAP WITH A WALL CLOCK AND READS 0.000 s WHEN
+THE SUITE IS RUN BY HAND WITH `--fixed-fps`.** 8 runs at `--fixed-fps 120`,
+seven of them failures=1; green through `run_tests.sh`, which does not pass
+that flag to this suite. The entry above has the counts and the two lines in
+`scripts/checkpoint_tracker.gd` the clock comes from. **Read whether the row
+should assert something a wall clock can deliver, or whether a lap time
+measured off a wall clock is a defect in the tracker rather than in the
+suite** - the first is a test change and is the assistant's; the second
+touches `scripts/` and should be measured before it is written.
+**AND 121's ORIGINAL DOOR-VERSUS-WALL FORM IS STILL UNANSWERABLE** until
+HDN 24 is answered, for the reason 125 gave - a wall has no name to tell apart
+after a rebuild. What 126 adds is that **on a FIRST build nothing has lost its
+name yet**, which is why the stalls in HDN 40 read `Corridor_5_3` and
+`Corridor_5_4` rather than `@MeshInstance3D@N`: those dungeons were built once
+and never rebuilt. That does not reopen the question; it bounds 125's answer to
+the rebuild it was measured on.
+**AND ONE 122 DELIBERATELY DID NOT TAKE, STILL NOT TAKEN:** whether a body can
+reach the cap while touching something.
+
+**126 LEFT THE 125 TEXT BELOW IN PLACE, UNSTRUCK AND UNEDITED**, because what
+it owed and how it was closed is the part a later session reads. The 125 text
+follows.
 
 **WHAT 125 OWES, STATED PLAINLY: NOTHING IS OWED, AND THE REASON IS WORTH
 READING.** 125 took its own baseline on the pushed commit `c92dbe5` in a
@@ -31173,3 +31466,145 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     would have to be deleted by whoever fixes it, which is a tripwire rather
     than a guard (`halt_cause_test`'s own header makes that argument), and the
     table above is a better record than a row that has to die.
+
+40. **A `go_to` errand cannot walk a corridor the lattice had to bend, at
+    every legal room size from 11 m upwards.** Found in 126 while answering
+    121's leftover, driven rather than reasoned about, and **not fixed**,
+    because every fix is a placement rule, a geometry change or a navigation
+    change, and all three are his.
+
+    **WHAT "HAD TO BEND" MEANS, IN THE MODULE'S OWN TERMS.** `solve()` seats
+    rooms on a lattice. `_corridor()` builds **one** leg for a door between
+    slots that are orthogonally adjacent, and **four** for a door between any
+    other pair - out through the lane, along it, and back in. Ring 1 holds
+    four slots straight off a wall, so **the fifth room off one hall is the
+    first that has to take a corner slot**, and the corridor to it is the
+    four-leg kind. *"A dungeon with five rooms off a hall, then send someone to
+    the fifth"* is two legal requests and the errand fails.
+
+    **THE MEASUREMENT: TWELVE WIDTHS, A STRAIGHT-CHAIN CONTROL AT FOUR OF
+    THEM, AND IT IS EIGHT OF TWELVE.** One legal `CREATE_DUNGEON` of six rooms
+    joined `[[1,2],[1,3],[1,4],[1,5],[1,6]]`, **every door open and no `things`
+    anywhere** (so this is not HDN 39), one
+    `ORDER {"goal": "go_to", "room": "r6"}`. The only thing that changes down
+    the table is the size of the rooms:
+
+    | room | result | waypoint | travelled | pressed against |
+    |---|---|---|---|---|
+    | 6 m | arrives | 55/55 | 37.8 m | nothing |
+    | 7 m | arrives | 59/59 | 43.8 m | nothing |
+    | 8 m | arrives | 63/63 | 38.7 m | nothing |
+    | 10 m | arrives | 71/71 | 43.6 m | nothing |
+    | **11 m** | **fails** | 61/75 | 38.0 m | `Corridor_5_4` |
+    | **12 m** | **fails** | 64/79 | 40.2 m | `Corridor_5_4` |
+    | **14 m** | **fails** | 70/87 | 44.3 m | `Corridor_5_4` |
+    | **16 m** | **fails** | 75/95 | 47.6 m | `Corridor_5_3` |
+    | **20 m** | **fails** | 85/111 | 54.5 m | `Corridor_5_3` |
+    | **24 m** | **fails** | 98/127 | 59.9 m | `Corridor_5_3` |
+    | **30 m** | **fails** | 117/151 | 69.0 m | `Corridor_5_3` |
+    | **40 m** | **fails** | 146/191 | 84.8 m | `Corridor_5_4` |
+
+    `MIN_SIDE` is 4 and `MAX_SIDE` is 40, so **the band that fails is 11 m to
+    the legal maximum** and the band that arrives is everything below it. Every
+    failure is `"stopped making progress"`. **The straight-chain control
+    arrives at 6, 12, 20 and 40 m** (52/52, 76/76, 108/108, 188/188), so this
+    is not a harness that cannot walk a dungeon. **The 12 m row and the 6 m row
+    were each driven a second time in the same process and reproduced to the
+    decimetre**, and the 12 m row reproduced across three separate processes.
+
+    **AND `walkable()` CALLS THE DOOR USABLE IN ALL TWELVE.** Read off the
+    module, not assumed: for every one of the twelve, `walkable()` returns the
+    four-leg door in `usable_doors` and `blocked_why` is **empty**. So
+    `route()` plans a path over a door the function whose comment calls it
+    *"the doors a body CAN use"* has just certified, and the body cannot walk
+    it. `_first_blockage()` walks the corridor's **centre line** and asks only
+    whether each point is floored and clear of a wall; it is right about the
+    line and the body does not stay on the line.
+
+    **THE MECHANISM, MEASURED TO THE CENTIMETRE RATHER THAN INFERRED.** The
+    body overshoots the bend - at 12 m it ends at `x = -20.76` where the
+    corridor's edge is `x = -20.0` - and lands on the **ground pad**. That it
+    is on the pad is a reading: at the halt its origin is at **y 1.901**, and
+    it rides **0.900** above whatever it stands on, taken at an arrival on a
+    room floor whose top is `ROOM_HEIGHT` **1.60**. So the surface under it is
+    **1.001**, and `PAD_HEIGHT` is **1.00**. `CORRIDOR_HEIGHT` is **1.58**.
+    **It is standing 0.58 m below the corridor it fell off, and it cannot climb
+    back:** put back on the spot it stalled on and driven at full forward on
+    **eight headings for 12 s each**, the highest its origin ever reached was
+    **1.902**, which is the pad's own surface plus **two millimetres** and
+    **0.578 m short of the corridor**. Three of the eight headings walked it
+    off the pad's edge instead and it fell without end; three left it exactly
+    where it was; two moved it 3.6 m along the pad. **None of the eight got it
+    up.** `is_on_floor()` is true,
+    `is_on_wall()` is true, velocity is **0.0**, and the piece it names is the
+    corridor's own side.
+
+    **AND THIS STEP IS THE OTHER HALF OF A CLASS THIS PROJECT ALREADY FIXED
+    (TRAPS 11).** `dungeon_module.gd`'s comment at `CORRIDOR_HEIGHT` records
+    the first half: corridors used to sit 0.3 m below the room floors, *"and a
+    `CharacterBody3D` cannot climb a step: a walker reached 1 room in 5 while
+    the geometric check still reported 5 of 5"*. That boundary is now **0.02 m**
+    and is not the hazard. **The pad-to-corridor boundary is 0.58 m and was
+    never looked at.** The three surfaces and the two steps between them, read
+    off the constants: pad **1.00**, corridor **1.58**, room floor **1.60**;
+    pad to corridor **0.58**, corridor to room **0.02**.
+
+    **`carry` FAILS THE SAME WAY, AND THE THING IS LEFT OUTSIDE EVERY ROOM.**
+    Same dungeon at 12 m, a `key` placed in the **entrance** (the one placement
+    HDN 39 says is safe, so the failure is this one and not that one), ordered
+    carried to `r6`: **fails at 50.4 m, waypoint 63/80, pressed against
+    `Corridor_5_4`**, and the sentence the player reads is **"The key did not
+    get to the r6. It is not in any room."** That is the milestone
+    `docs/PROTOCOL.md` names as current - *objects created, carried and
+    delivered by NPCs* - failing on a dungeon with no obstruction in it.
+
+    **AND IT IS NOT ONE SHAPE. THE STRONGEST FORM IS TWO ORDERS IN THE SAME
+    DUNGEON.** Seven rooms, `[[1,2],[2,3],[2,4],[2,5],[2,6],[2,7]]`, so `r2`
+    is the hall and the lattice has to bend two of its corridors. **`go_to r6`
+    fails at 65.9 m, waypoint 101/117, against `Corridor_5_3`. `go_to r3` in
+    the same dungeon arrives, 76/76.** The only difference between the two
+    orders is whether the route crosses a bent corridor.
+
+    **WHAT IS MEASURED AND SAYS NO: A WALL.** This is 121's leftover, and the
+    answer is that **no stall in any of the 29 errands named a `Wall_*`
+    piece**. Eight errands turn a right angle INSIDE a room rather than in a
+    corridor - five widths from 6 m to 40 m, a 40x6 room, a 6x40 room, and a
+    4 m room whose pitch is set by a 40 m room elsewhere - and **all eight
+    arrive**. The overshoot that ends an errand in a corridor is recovered from
+    inside a room, because a room has floor either side of the line; and the
+    slot straight on from a turn is, on this lattice, always a slot the turning
+    room has a door to, so a body carrying straight through a turn goes out
+    through a doorway rather than into a wall. **That is the reason the driven
+    rows show, not a proof over all layouts.**
+
+    **WHAT IS NOT MEASURED, SAID PLAINLY.** Whether a body that has fallen onto
+    the pad can be stalled against a room's OUTER wall by some layout not tried
+    here - the wall question is answered **no** for 29 errands and is not
+    closed. Whether `/drive` or a player on the keyboard can cross a bent
+    corridor; only an errand was driven. Whether the pad is finite in a way that
+    matters: three of the eight hand-driven headings walked the body off the
+    pad's edge and it fell without end, which is a separate thing and is not
+    recorded anywhere else. Whether any **existing** suite's fixtures build a
+    bent corridor - `walker_test`'s three do not, which is TRAPS 121, but the
+    other 84 were not swept for it. And nothing about what the fix should be.
+
+    **THE OPTIONS, NOT CHOSEN.** Level the ground pad with the corridors, or
+    make the step climbable - which changes what the world looks like and what
+    `walkable()` and the walker measure. Widen or extend the slab at a bend so
+    an overshooting body stays floored - a geometry change with a visible
+    result. Slow the body before a turn, or move the waypoints to the inside of
+    the bend - a navigation change. Have `walkable()` refuse a door whose
+    corridor bends - which makes rooms unreachable and changes what a player is
+    refused. Or decide that a lattice which has to bend a corridor should not
+    be built at all, and seat rooms differently. **Each of those is
+    architecture, appearance or product direction, so 126 took none of them.**
+    What it did instead is drive the table above so the decision is not also a
+    measurement.
+
+    **If he is absent, LEAVE IT.** Nothing is broken by waiting that is not
+    already broken, and the measurement does not go stale. **No suite was
+    written to hold this finding, deliberately**, and the suite that already
+    exists to find it was **not** given the shape: `walker_test.gd` would go
+    red against today's code, and a suite asserting the fault has to be deleted
+    by whoever fixes it. The comment added to its header names the uncovered
+    member and points here.

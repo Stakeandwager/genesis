@@ -4,13 +4,46 @@ extends SceneTree
 #
 # sweep_test.gd showed that geometric reachability can never disagree with the
 # door graph: the tightest legal room leaves a body 0.8 m of slack. It also
-# showed why the two SHOULD eventually disagree - room floors sit at
-# ROOM_HEIGHT 1.6 and corridors at CORRIDOR_HEIGHT 1.3, so every doorway is a
-# 0.3 m step up, and a flat-rectangle checker cannot see height at all.
+# showed why the two SHOULD eventually disagree - a flat-rectangle checker
+# cannot see height at all, and the surfaces a body walks on are at different
+# heights.
+#
+# 126: and the two sentences that used to stand here were FALSE, and had been
+# for most of this project's life. They said "room floors sit at ROOM_HEIGHT
+# 1.6 and corridors at CORRIDOR_HEIGHT 1.3, so every doorway is a 0.3 m step
+# up". CORRIDOR_HEIGHT is 1.58, not 1.3 - it was raised for exactly this
+# reason, and dungeon_module.gd's own comment above that constant records what
+# the 0.3 m version cost: "a walker reached 1 room in 5 while the geometric
+# check still reported 5 of 5". A doorway is a 0.02 m step today and is not
+# the hazard. The hazard moved and nothing moved with it: the step from the
+# GROUND PAD up onto a corridor is PAD_HEIGHT 1.0 to CORRIDOR_HEIGHT 1.58,
+# which is 0.58 m, and a body that leaves the floored line cannot get back up
+# it. Measured, not reasoned: 126 drove a stalled carrier at that step on
+# eight headings for 12 s each and it never rose above the pad.
 #
 # This walks a real CharacterBody3D along every corridor and reports which
 # rooms a moving body actually reaches. Where it disagrees with walkable(),
 # the disagreement is the finding.
+#
+# 126: AND THE SHAPES BELOW DO NOT COVER THE CLASS, WHICH IS WHERE THE
+# DISAGREEMENT ACTUALLY IS. "every corridor" above is a claim about this
+# file's own fixture list, and nothing checks it. All three shapes - a row of
+# five, four off a hall, two rooms - place every room in a slot ORTHOGONALLY
+# ADJACENT to its neighbour, so every corridor they build has ONE leg.
+# _corridor() also builds FOUR-leg corridors, for any door between rooms the
+# lattice could not seat side by side, and a body cannot walk one: see
+# "Human decision needed" 40 in docs/HANDOVER.md for the table, which fails
+# at every room size from 11 m to the legal maximum of 40 m and arrives at
+# every size below. The shape that shows it is a fifth room off a hall - the
+# fifth neighbour is the one that has to take a ring-1 CORNER slot.
+#
+# IT IS NOT ADDED HERE, DELIBERATELY. Adding it would make this suite red
+# against today's code, and the fix is a placement rule, a geometry change or
+# a navigation change - all three of them the owner's. A suite asserting the
+# fault would have to be deleted by whoever fixes it, which is a tripwire and
+# not a guard (halt_cause_test's header makes the same argument). The
+# measurement is in HANDOVER; this note is here so the next session reading
+# "every corridor" knows what that does and does not mean.
 
 const SPEED := 6.0
 const GRAVITY := 20.0
