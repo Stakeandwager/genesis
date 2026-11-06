@@ -120,6 +120,13 @@ const KNOWN := [
 	"agreement_test.gd",
 	"check_wiring_test.gd",
 	"controller_reach_test.gd",
+	# 124: errand_outcome_test joined the class when its new vocabulary section
+	# started reading game_controller.gd and npc_goals.gd for the outcome names
+	# and the match arms they are handed to. 123 wrote that file deliberately
+	# source-free - "to stay out of source_scan_test's class, and that is the
+	# cost" - and the cost was exactly the question 124 asks, so the row is
+	# added in the commit that joins it rather than measured as missing later.
+	"errand_outcome_test.gd",
 	# 075: formula_test joined the class when its new rule-claim rows stopped
 	# asserting that a named suite's FILE exists and started reading that
 	# suite's CODE for the constant the rule is about. This suite caught it

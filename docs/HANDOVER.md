@@ -11,6 +11,107 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
+- Last commit at the time of writing: **124**, and it asks 123's own leftover
+  question of the CLASS rather than of the line 123 named, which turns it into
+  a different and better question. `tests/errand_outcome_test.gd` **25 -> 44
+  assertions** (one new section, not a new file), **one row added to
+  `source_scan_test`'s `KNOWN`** because this suite has now joined that class,
+  and this file. **`scripts/`, `scenes/`, `netlify/`, `.github/`,
+  `project.godot` and both runners are 0 LINES OF DIFF.** Nothing a player
+  meets changed, on purpose.
+
+  **WHAT 123 LEFT, AND WHY ASKING IT WIDER WAS WORTH THE DIFFERENCE.** 123's
+  entry wrote down what its three driven sections could not catch: *"nothing
+  here reads `game_controller.gd` to assert that `:375` is still the only place
+  an outcome is initialised; a second assignment added tomorrow is caught by no
+  row in this file."* Asked as written that is one line and one count. Asked of
+  the class (TRAPS 11) it is: **what names can an errand resolve to, and does
+  the sentence a player reads have an arm for each of them?** Measured off the
+  comment-stripped source rather than argued from a read:
+
+  | | |
+  |---|---|
+  | `finish_order` decides | `ARRIVED` `BLOCKED` `DELIVERED` `GAVE_UP` `INCONCLUSIVE` `NOT_DELIVERED` |
+  | ...inside `if carrying != "":` | `DELIVERED` `INCONCLUSIVE` `NOT_DELIVERED` |
+  | ...on the other path | `ARRIVED` `BLOCKED` `GAVE_UP` |
+  | `delivery_line` has arms for | `DELIVERED` `INCONCLUSIVE` `NOT_DELIVERED` |
+  | `outcome_line` has arms for | `ARRIVED` `BLOCKED` `GAVE_UP` `NO_ROUTE` |
+  | hand-called, never decided | `NO_ROUTE` |
+
+  **THE TWO SETS MATCH THE TWO BRANCHES EXACTLY, AND THAT IS THE FACT THE
+  SECTION HOLDS.** `finish_order` hands its name to ONE OF TWO functions -
+  `delivery_line` when the errand was carrying something, `outcome_line` when
+  it was not - and each is a `match` with a fall-through. **Both fall through to
+  the same sentence, read rather than assumed: `"Nothing happened."`** So an
+  outcome that reaches the wrong one of the two does not crash and does not
+  log: **a player whose delivery failed would read *"Nothing happened."* about
+  an errand that did something**, while the ledger still holds the real
+  outcome. That is PROTOCOL section 2's *missing evidence must not become
+  success*, at the sentence rather than at the record.
+
+  **AND THE INTERESTING INJECTION IS THE ONE THE THREE DRIVEN SECTIONS DO NOT
+  CATCH.** Seven injections, each alone in its own throwaway copy with its own
+  `config/name`, its own cleared `user://`, and `.git` and `docs/` removed:
+
+  | | what was injected | result |
+  |---|---|---|
+  | **A** | a seventh outcome, `ABANDONED`, with no arm | failures=**3** - and one of the three is a DRIVEN row |
+  | **B** | `BLOCKED` moved INSIDE the carrying branch | failures=**3**, **all three new rows, no driven row** |
+  | **C** | `outcome_line`'s `GAVE_UP` arm deleted | failures=**2** |
+  | **D** | a dead arm added to `delivery_line` | failures=**2** |
+  | **E** | `DELIVERED` given an arm in `outcome_line` too | failures=**2** |
+  | **F** | one fall-through reworded | failures=**1** |
+  | **G** | a second return at the function's own indentation | failures=**2** |
+
+  **B IS THE ONE WORTH READING.** It is the fault shape in one line - a
+  carrying errand resolving `BLOCKED`, handed to `delivery_line`, which has no
+  arm for it - and **the three sections 123 wrote read failures=0 on it.** The
+  new rows catch it three ways over: the carrying set no longer equals
+  `delivery_line`'s arms, the other path's no longer equals `outcome_line`'s,
+  and `INCONCLUSIVE` becomes an arm nothing produces.
+
+  **NO WORDING IS ASSERTED ANYWHERE (TRAPS 6, TRAPS 14).** Not one sentence is
+  typed into the file as an expected answer. Every row compares two sets read
+  out of this repository's own source, so a sentence reworded in a way that
+  keeps its arm does not fail, and an outcome that loses its sentence does.
+  **Nothing says what a player SHOULD be told - that is "Human decision
+  needed" 38 and it is untouched.**
+
+  **AND AN INJECTION THAT DID NOT LAND IS WRITTEN INTO THE SUITE RATHER THAN
+  TIDIED AWAY (TRAPS 89).** G's first attempt added `if outcome == "": return
+  ""` at two tabs and read **failures=0**. That is correct - a guarded early
+  return is not the arm an unmatched name takes - but it is a real bound on the
+  reader: it cannot answer anything about a fall-through that is itself
+  conditional, and the comment above `_base_returns()` now says so. G was
+  re-run at the function's own indentation and lands.
+
+  **THIS SUITE IS NOW A MEMBER OF `source_scan_test`'s CLASS, WHICH IS THE
+  COST 123 DECLINED TO PAY.** 123 kept the file source-free *"to stay out of
+  source_scan_test's class, and that is the cost"*. Paying it is what let this
+  question be asked at all. `_code_of()` is defined here and is
+  **byte-identical** to the reference copy - checked before the run and
+  asserted by `source_scan_test` after it - and its row in `KNOWN` was added in
+  the same commit that joined the class rather than left to be measured as
+  missing later, which is what 075, 079 and 092 each had to do.
+
+  **BASELINE: A FRESH `git clone` OF THE PUSHED COMMIT `2c6ff09`, WHICH IS
+  WHAT 123a OWED, AND FROM AN INDEPENDENT CONTAINER.** Cloned into its own
+  directory, `git status --porcelain` **empty both before and after the run**
+  (so `project.godot` was not edited to take the measurement), `user://`
+  genuinely absent rather than cleared - `app_userdata/` did not exist in this
+  container - Godot **4.7.1.stable.official.a13da4feb**, `--version` read:
+  **`be78554ebcd460a7da94530457e5cf71`, 84 suites, 0 with something to look
+  at**, `errand_outcome_test` **25**, `result_line_test` **366**,
+  `prompt_bounds_test` **72**, `source_scan_test` **79**, `halt_cause_test`
+  **43**, `left_body_test` **16**, `interference_test` **16**. **BYTE-IDENTICAL
+  to the md5 123 recorded on its own changed tree.** So the record, the remote
+  and a second container all agree, and **unlike 119a through 122a this clone
+  was NOT taken in the same session as the commit it measures** - which is the
+  stronger reading each of those entries said a later session would get for
+  free. **THERE IS NO SEPARATE `123a` COMMIT AND THAT IS DELIBERATE:** the only
+  thing 123a owed was this measurement, it is here with its numbers, and a
+  docs-only commit to carry it would have been motion rather than progress.
+
 - Last commit at the time of writing: **123**, and it takes the one thing 122
   left on its own list - **whether a `"stopped walking"` that is not an
   arrival is reachable** - and answers it **no, for every legal dungeon, by
@@ -10059,7 +10160,72 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
-**THE LATEST RUN IS 123's, ON ITS OWN CHANGED TREE**, `--all`, `user://`
+**THE LATEST RUN IS 124's, ON ITS OWN CHANGED TREE**, `--all`, `user://`
+cleared by deleting `app_userdata/AI_Game_Builder` before each,
+**TWO BYTE-IDENTICAL RUNS, both with `docs/` in place** and therefore on the
+tree that was pushed, bar this paragraph: md5
+**`201a93f3cc65bc5f585db3c30c9f8361`**, **84 suites, 0 with something to look
+at**, `errand_outcome_test` **44, failures=0**, `source_scan_test` **80,
+failures=0**, `result_line_test` **366, failures=0**, `prompt_bounds_test`
+**72, failures=0**, `halt_cause_test` **43, failures=0**, `left_body_test`
+**16, failures=0**, `interference_test` **16, failures=0**. **NO FRESH `git
+clone` OF `124` HAS BEEN RUN** - that is what a 124a owes.
+
+**`diff` AGAINST THE BASELINE RUN IS EXACTLY TWO LINES** - `errand_outcome_test`
+25 -> 44 and `source_scan_test` 79 -> 80. Every other suite is unmoved,
+`prompt_bounds_test` 72 among them, which is the reading behind the claim that
+no prompt clause moved rather than an argument from `scripts/` being 0 lines of
+diff, and `result_line_test` 366 among them, which is the reading that no file
+was added to `tests/` - taken by the project's own `dir.get_files()` rather
+than by `ls`.
+
+**AND 124's BASELINE IS BOTH ITS OWN BASELINE AND THE MEASUREMENT 123a OWED.**
+A **fresh `git clone` of the pushed commit `2c6ff09`** into its own directory,
+in a container that had **not** taken the measurement it was checking, with its
+own Godot download - **4.7.1.stable.official.a13da4feb**, `--version` read -
+`git status --porcelain` **EMPTY both before and after the run** (so
+`project.godot` was not edited to take it), and `user://` **genuinely absent
+rather than cleared**: `~/.local/share/godot/app_userdata/` did not exist in
+this container, which is said plainly because it is a stronger starting state
+than deleting one directory out of it and a later session should not read it as
+the same act. **`be78554ebcd460a7da94530457e5cf71`, 84 suites, 0 with something
+to look at**, `errand_outcome_test` **25**, `result_line_test` **366**,
+`prompt_bounds_test` **72**, `source_scan_test` **79**, `halt_cause_test`
+**43**, `left_body_test` **16**, `interference_test` **16**. **BYTE-IDENTICAL
+to the md5 123 recorded on its own changed tree.** So the record, the remote
+and a second container all agree, and **unlike 119a through 122a this reading
+was not taken in the same session as the commit it measures** - which is the
+stronger reading each of those entries said a later session would get for free.
+
+**AND THE PREDICTED DIFF WAS WRONG IN ONE PLACE (TRAPS 89)**, written to a file
+before any repository file was edited. It said `errand_outcome_test` would
+reach **45** assertions and it reached **44**. Every other clause held, and the
+ones worth having predicted are these: that `source_scan_test` would move by
+**exactly one** - because sections 2 and 3 of that suite are AGGREGATE
+assertions over a derived `members`, so a new member moves only the
+`for name in KNOWN` loop, which was read off that file rather than guessed -
+and that the diff against the baseline would be **exactly two lines**. The
+count is the clause that has now been wrong in 121, 122 and 124, and in all
+three the structural clauses held; a later session predicting a count should
+expect to miss it and predict it anyway.
+
+**THE DEPLOY STILL FAILS AND RUN 159 WAS READ RATHER THAN THE CLAIM CARRIED
+FORWARD (TRAPS 109).** `web build` run **159** on `2c6ff09` concluded
+**`failure`**, 14:55:09 to 15:00:50 - about **five and three-quarter minutes**
+of Actions time. **Six consecutive failures were read this commit**, runs
+**154 through 159**, covering 120a, 121, 121a, 122, 122a and 123, and every one of
+the six concluded `failure`. The run list reports 159 runs in all for this
+workflow on this branch, which is not the same claim as all 159 having failed
+and is not made here. The job log itself was NOT re-opened this commit -
+123 read it and recorded the cause (both secrets printing empty, the Netlify
+CLI falling through to an interactive login and timing out after five
+minutes), and that cause is carried forward on 123's authority rather than
+re-read. **What was re-taken is the conclusion and the consecutive count, which
+is what "Human decision needed" 37 is about.**
+
+**123's RECORD, AND THE RUN IT WAS TAKEN ON.**
+
+**THE RUN BEFORE THE ONE ABOVE IS 123's, ON ITS OWN CHANGED TREE**, `--all`, `user://`
 cleared by deleting `app_userdata/AI_Game_Builder` before each,
 **TWO BYTE-IDENTICAL RUNS, both with `docs/` in place** and therefore on the
 tree that was pushed: md5 **`be78554ebcd460a7da94530457e5cf71`**, **84 suites,
@@ -17821,8 +17987,73 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
-**WHAT 123 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
-clone` OF THE PUSHED COMMIT.** 123 took its own baseline on the clean pushed
+**WHAT 124 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
+clone` OF THE PUSHED COMMIT.** 124 took its baseline as a fresh clone of
+`2c6ff09` from a container that had not taken 123's measurement, reproduced
+`be78554ebcd460a7da94530457e5cf71` byte-for-byte, wrote its predicted diff to
+a file before editing any repository file (**and one clause of it was wrong,
+which is recorded under "Run the tests first" rather than tidied, TRAPS 89**),
+and took two byte-identical `--all` runs on the changed tree with `docs/` in
+place. What it did NOT take is a run against a fresh clone of **its own**
+pushed commit. **That is a 124a's whole job and it is the only thing owed.**
+**THE CLAUSE IT MATTERS MOST FOR IS `errand_outcome_test` 44 ON THE CLONE**,
+because this commit's section reads `scripts/` off disk through
+`FileAccess`: a green run against the REMOTE tree is the reading that the
+remote's `game_controller.gd` and `npc_goals.gd` are the files the sets above
+were read out of, rather than this container's copies. **`source_scan_test` 80
+IS THE SECOND, and it is the one that is new in kind**: its drift check reads
+every member's `_code_of()` verbatim off disk, so a green run on the clone is
+the reading that the copy that went up is byte-identical to the reference and
+not merely that this container's copy was. **AND `result_line_test` 366 IS THE
+THIRD**: it derives its members from `tests/` via `dir.get_files()`, so that
+count unmoved is the reading that 124 added no file, taken by the project's
+own reader rather than by `ls`.
+**DO NOT RE-TAKE 124's SEVEN INJECTIONS** - they are in the entry above with
+their counts, each alone in its own throwaway copy with its own `config/name`,
+including the two whose result is the interesting part: **B**, which the three
+sections 123 wrote read `failures=0` on, and **G**, which did not land on its
+first attempt and whose first attempt is now a written-down bound on the
+reader rather than a deleted experiment.
+**AND DO NOT RE-READ THE SETS** - they are printed verbatim by the suite on
+every `--all` run, so a table in this document would be a second copy of
+something the run already says.
+
+**THE WORK ITSELF, AFTER THAT. 124 CLOSED THE ITEM 123 NAMED AS ITS SECOND AND
+ADDED NOTHING NEW TO THE LIST.**
+**THE CHEAPEST HONEST PIECE LEFT THAT NEEDS NOBODY IS STILL 121's LEFTOVER,
+AND IT IS NOW THE ONLY ONE ON THE LIST: whether the reading tells a shut DOOR
+from a WALL.** Both are a `StaticBody3D` named `Solid` under a descriptively
+named mesh, and only the parent's name separates them - which today rests on
+`dungeon_module.gd`'s naming rule being READ rather than on an errand stalled
+against a wall. 124 did not touch it. **AND 124 MAKES ONE THING ABOUT IT
+CHEAPER TO SAY, counted while reading that file for something else: the naming
+rule has FOUR call sites and SIX name shapes, not two** - `_solid()` is called
+from `_wall_piece`, `_door_slab`, `_thing` and `_slab`
+(`dungeon_module.gd:1409, 1422, 1435, 1451`), and `_slab` alone is called
+three times, with `Ground`, `Corridor_%d_%d` and `Room_%d_%s`
+(`:1201, 1214, 1226`). So the question a
+future session should ask is not "door or wall" but **which of those six names
+a stalled errand can actually read**, which is TRAPS 11's form of 121's
+question and is a different piece of work from the one the old wording
+describes.
+**AND ONE 122 DELIBERATELY DID NOT TAKE, STILL NOT TAKEN:** whether a body can
+reach the cap while touching something.
+**"Human decision needed" 38 IS UNTOUCHED AND IS STILL THE OWNER'S.** 124
+asserted no wording anywhere and changed no sentence. **Do not take any of the
+above as licence to change what a player is told: that is 38, and it is his.**
+
+**~~WHAT 123 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
+clone` OF THE PUSHED COMMIT.~~ TAKEN AS 124's BASELINE, AND IT REPRODUCED
+BYTE-FOR-BYTE - FROM A CONTAINER THAT HAD NOT TAKEN THE MEASUREMENT IT WAS
+CHECKING, WHICH IS STRICTLY STRONGER THAN 119a THROUGH 122a GAVE.** Struck
+rather than deleted because what it owed and why is the part a later session
+needs. **There is no separate `123a` commit and that is deliberate**: the only
+thing owed was the measurement, it is in the 124 entry and under "Run the
+tests first" with its numbers, and a docs-only commit to carry it would have
+been motion rather than progress. **Do not start by re-running on 123's
+behalf** - read the record below, take your own baseline so you learn that the
+record and the container still agree today, and spend the time on the work
+above. The original sentence follows. 123 took its own baseline on the clean pushed
 tree at `606f780`, in its own container with its own Godot download, and
 reproduced the md5 122 recorded and 122a reproduced from a clone -
 `5055fad3202f078f6fe41fed6e58c32b`, 83 suites, 0 with something to look at -
@@ -28829,6 +29060,33 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     and that is still the owner's to answer. What the correction removes is
     only the claim that NOTHING player-facing had moved in a month, which is
     not what the numbers say.
+
+    **~~The streak as of 113 is seventeen, and it runs from `20426b9`.~~ FALSE
+    AGAIN SINCE 113, AND RE-TAKEN IN 124 BY THE SESSION THAT WAS ABOUT TO ADD
+    TO IT.** Kept rather than rewritten, because a number in this file going
+    stale twice is the thing (b) is about and TRAPS 14's whole shape. Counted
+    with `git rev-list` and a per-commit `git diff --name-only`, not estimated,
+    and the honest answer depends on which path list is used - so both are
+    given:
+
+    | reading | last commit to touch it | streak since | 124 makes it |
+    |---|---|---|---|
+    | `scripts/`, `scenes/`, `netlify/`, `project.godot` | **`d62f541` (120), 2026-11-06** | **6** | **7** |
+    | the same, plus both runners - (b)'s own list | **`2c6ff09` (123), 2026-11-06** - `run_tests.sh`, one word | **0** | **1** |
+
+    **SO "seventeen from `20426b9`" IS WRONG IN BOTH DIRECTIONS AT ONCE**: nine
+    commits since `20426b9` have touched one of those paths, including
+    `6be4cd5`, `f06282d`, `ad82ff0` and `d62f541` which touched `scripts/`
+    itself - so the streak is far shorter than seventeen - while the stretch
+    that reaches back from today is six and not nothing. **(b)'s question
+    survives this correction too, and is narrower for it:** the proportion is
+    still heavily `tests/` and `docs/`, and the second row shows why the
+    runner-inclusive count flatters it - a one-word edit adding a suite name to
+    `TIMED` is not a change a player meets, and counting it as one is how a
+    streak looks shorter than it is. `docs/TRAPS.md` is **9,249 lines**, and `docs/HANDOVER.md`
+    **30,700** - counted with this commit's own edits in place, which is
+    the only state a number in this file can honestly be of. **The question is
+    still the owner's and nothing was changed on account of it.**
 
     **This is not a complaint about the work, and the work is not busywork:**
     every one of those commits closed a measured hole in what the suite can

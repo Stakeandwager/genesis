@@ -368,11 +368,330 @@ func _unreachable_section() -> void:
 	await _drop_main()
 
 
+# --- 4. the vocabulary: every outcome an errand can resolve to, and whether
+#        the sentence a player reads has an arm for it ---
+#
+# WHERE THIS CAME FROM. 123 wrote the three sections above and then wrote down
+# what they could not catch: "nothing here reads `game_controller.gd` to assert
+# that :375 is still the only place an outcome is initialised; a second
+# assignment added tomorrow is caught by no row in this file." That is this
+# section, and asking it of the CLASS rather than of that one line (TRAPS 11)
+# turns out to be a different and better question than the one 123 named.
+#
+# THE SHAPE OF THE FAULT IT GUARDS. `finish_order` decides one of six names.
+# It then hands that name to ONE OF TWO functions - `delivery_line` when the
+# errand was carrying something, `outcome_line` when it was not - and each of
+# those is a `match` with a FALL-THROUGH: an unmatched name returns
+# "Nothing happened." So an outcome that reaches the wrong one of the two, or a
+# seventh outcome added with no arm, does not crash and does not log: a player
+# whose delivery failed reads "Nothing happened." about an errand that did
+# something, and the ledger still holds the real outcome. Missing evidence
+# becoming a sentence that says nothing is the shape PROTOCOL section 2 names.
+#
+# NOTHING ASSERTED THIS. Grepped before this section was written, and stated at
+# the width the grep supports: "Nothing happened." occurs nowhere in `tests/`,
+# no suite reads `npc_goals.gd` for these arms, and the three suites that touch
+# these names at all type them in by hand at one call apiece - `log_022_test`
+# and `said_article_test` pin WORDING, `carry_test` drives three deliveries.
+# None of them would notice a seventh name or a name on the wrong side.
+#
+# WHAT IS ASSERTED IS THE AGREEMENT AND NOT THE WORDING (TRAPS 6, TRAPS 14).
+# Not one sentence is typed into this file as an expected answer, and no row
+# says what a player SHOULD be told - that is "Human decision needed" 38 and
+# it is the owner's. Every row is a comparison between two sets read out of
+# this repository's own source, so a sentence reworded in a way that keeps its
+# arm does not fail here, and an outcome that loses its sentence does.
+#
+# AND THE SETS ARE READ OFF THE CODE, COMMENT-STRIPPED, because a question
+# about what the code DOES is answered from the code (TRAPS 63). The reader is
+# `_code_of()`, byte-identical to every other copy in `tests/`;
+# `source_scan_test` holds that class and this file is now a member of it,
+# which is the cost 123 declined to pay and the reason it could not ask this.
+
+
+const CONTROLLER := "res://scripts/game_controller.gd"
+const GOALS := "res://scripts/npc_goals.gd"
+# The one branch in finish_order that decides WHICH of the two sentence
+# functions is handed the outcome. Named once, and found below by its own text
+# and indentation rather than by a line number, so the block can move.
+const CARRY_BRANCH := "if carrying != \"\":"
+
+
+static func _code_of(source: String) -> String:
+	var out := ""
+	for raw in source.split("\n"):
+		var line := str(raw)
+		if line.strip_edges().begins_with("#"):
+			out += "\n"
+			continue
+		var hash_at := line.find("#")
+		out += (line if hash_at < 0 else line.substr(0, hash_at)) + "\n"
+	return out
+
+
+func _source(path: String) -> String:
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return ""
+	return _code_of(file.get_as_text())
+
+
+static func _sorted(set: Dictionary) -> Array:
+	var out: Array = []
+	for k in set.keys():
+		out.append(str(k))
+	out.sort()
+	return out
+
+
+static func _both_of(a: Array, b: Array) -> Array:
+	var out: Array = []
+	for n in a:
+		if b.has(n):
+			out.append(str(n))
+	out.sort()
+	return out
+
+
+static func _without(names: Array, taken: Array) -> Array:
+	var out: Array = []
+	for n in names:
+		if not taken.has(n):
+			out.append(str(n))
+	out.sort()
+	return out
+
+
+# The code of one function: from its header line to the next one that starts a
+# function at column 0. The header itself is dropped, so every line returned is
+# indented and the base indentation of the body is one tab.
+static func _body_of(code: String, header: String) -> String:
+	var out := ""
+	var inside := false
+	for raw in code.split("\n"):
+		var line := str(raw)
+		if line.begins_with(header):
+			inside = true
+			continue
+		if inside:
+			if line.begins_with("func ") or line.begins_with("static func "):
+				break
+			out += line + "\n"
+	return out
+
+
+# Every ALL-CAPS string literal this code assigns to a variable named
+# `outcome`. Taken from the whole right-hand side and not from the first match,
+# because the initialiser is a ternary that assigns two names on one line - so
+# a reader that stopped at the first would see GAVE_UP and miss BLOCKED.
+static func _assigned(code: String) -> Array:
+	var found: Dictionary = {}
+	var assign := RegEx.create_from_string("\\boutcome[ \t]*:?=[ \t]*(.+)$")
+	var literal := RegEx.create_from_string("\"([A-Z][A-Z_]*)\"")
+	for raw in code.split("\n"):
+		var m := assign.search(str(raw))
+		if m == null:
+			continue
+		for lit in literal.search_all(m.get_string(1)):
+			found[lit.get_string(1)] = true
+	return _sorted(found)
+
+
+# The same, restricted to one indented block: the lines below `opener` that are
+# indented deeper than it is.
+static func _assigned_in_block(body: String, opener: String) -> Array:
+	var lines := body.split("\n")
+	var start := -1
+	var indent := 0
+	for i in lines.size():
+		var line := str(lines[i])
+		if line.strip_edges() == opener:
+			start = i
+			indent = line.length() - line.lstrip("\t").length()
+			break
+	if start < 0:
+		return []
+	var inner := ""
+	for i in range(start + 1, lines.size()):
+		var line := str(lines[i])
+		if line.strip_edges() == "":
+			continue
+		if line.length() - line.lstrip("\t").length() <= indent:
+			break
+		inner += line + "\n"
+	return _assigned(inner)
+
+
+# Every arm of a `match`: a line that is nothing but an ALL-CAPS string
+# literal and a colon.
+static func _arms(body: String) -> Array:
+	var found: Dictionary = {}
+	var arm := RegEx.create_from_string("^[ \t]*\"([A-Z][A-Z_]*)\"[ \t]*:[ \t]*$")
+	for raw in body.split("\n"):
+		var m := arm.search(str(raw))
+		if m != null:
+			found[m.get_string(1)] = true
+	return _sorted(found)
+
+
+# Every ALL-CAPS literal handed to a named function at a call site.
+static func _hand_called(code: String, fn: String) -> Array:
+	var found: Dictionary = {}
+	var call := RegEx.create_from_string(fn + "\\([ \t]*\"([A-Z][A-Z_]*)\"")
+	for m in call.search_all(code):
+		found[m.get_string(1)] = true
+	return _sorted(found)
+
+
+# The returns at the function's OWN indentation - below the match, not inside
+# an arm. "The last return" would be an assumption about the layout; this is a
+# reading of it, and the row below asserts there is exactly one.
+#
+# AND WHAT IT DELIBERATELY DOES NOT SEE, found by an injection that did not
+# land and written down rather than tidied away (TRAPS 89). A return nested
+# inside a branch - `if outcome == "": return ""` at two tabs - is NOT counted,
+# and an injection that added one read failures=0. That is correct and is the
+# point: a guarded early return is not the arm an unmatched name takes. The
+# cost is that this reader cannot answer anything about a fall-through that is
+# itself conditional, and if one is ever written the row below will say there
+# are none rather than noticing the shape changed.
+static func _base_returns(body: String) -> Array:
+	var out: Array = []
+	var ret := RegEx.create_from_string("^\t?return[ \t]+(.+)$")
+	for raw in body.split("\n"):
+		var m := ret.search(str(raw))
+		if m != null:
+			out.append(m.get_string(1).strip_edges())
+	return out
+
+
+func _vocabulary_section() -> void:
+	var controller := _source(CONTROLLER)
+	var goals := _source(GOALS)
+	var finish := _body_of(controller, "func finish_order(")
+	var delivery := _body_of(goals, "static func delivery_line(")
+	var errand := _body_of(goals, "static func outcome_line(")
+
+	# Can this section fail at all? A scan that quietly read nothing would
+	# satisfy every emptiness test below it (TRAPS 6).
+	_check(finish != "" and delivery != "" and errand != "",
+		"finish_order, delivery_line and outcome_line were all read (%d/%d/%d lines)" % [
+			finish.split("\n").size(), delivery.split("\n").size(),
+			errand.split("\n").size()])
+
+	var produced := _assigned(finish)
+	var carried := _assigned_in_block(finish, CARRY_BRANCH)
+	var plain := _without(produced, carried)
+	var delivery_arms := _arms(delivery)
+	var errand_arms := _arms(errand)
+	var hand := _hand_called(controller, "outcome_line")
+	var arms_everywhere: Array = []
+	for n in delivery_arms:
+		arms_everywhere.append(str(n))
+	for n in errand_arms:
+		arms_everywhere.append(str(n))
+
+	lines.append("  finish_order decides:      %s" % str(produced))
+	lines.append("    carrying:                %s" % str(carried))
+	lines.append("    not carrying:            %s" % str(plain))
+	lines.append("  delivery_line arms:        %s" % str(delivery_arms))
+	lines.append("  outcome_line arms:         %s" % str(errand_arms))
+	lines.append("  hand-called, never decided: %s" % str(hand))
+
+	_check(produced.size() >= 2 and not delivery_arms.is_empty() \
+			and not errand_arms.is_empty(),
+		"the three sets were read and none is empty - %d outcomes, %d + %d arms" % [
+			produced.size(), delivery_arms.size(), errand_arms.size()])
+
+	# A. the seventh outcome, added tomorrow with no sentence.
+	_check(_without(produced, arms_everywhere).is_empty(),
+		"every outcome finish_order can decide has an arm in one of the two sentence functions (no arm for %s)" % str(
+			_without(produced, arms_everywhere)))
+
+	# B and C. the wrong side of the branch. These are the rows that make A
+	# more than a spelling check: an outcome CAN have an arm somewhere and
+	# still reach the function that does not have it.
+	_check(carried == delivery_arms,
+		"the outcomes decided inside `%s` are EXACTLY delivery_line's arms (%s against %s)" % [
+			CARRY_BRANCH, str(carried), str(delivery_arms)])
+	_check(plain == _without(errand_arms, hand),
+		"the outcomes decided on the other path are EXACTLY outcome_line's arms, less the ones only ever hand-called (%s against %s)" % [
+			str(plain), str(_without(errand_arms, hand))])
+
+	# D. no dead arm - the other direction, and controller_reach_test's rule
+	# applied to outcomes rather than to refusals.
+	_check(_without(arms_everywhere, produced + hand).is_empty(),
+		"every arm is produced somewhere: decided by finish_order, or handed in by name at a call site (orphan %s)" % str(
+			_without(arms_everywhere, produced + hand)))
+
+	# E. and no name can be ambiguous about which sentence it gets.
+	var both := _both_of(delivery_arms, errand_arms)
+	_check(both.is_empty(),
+		"the two arm sets are disjoint, so which function is handed a name decides its sentence (in both: %s)" % str(both))
+
+	# F. WHY ALL OF THE ABOVE MATTERS, read rather than argued: an unmatched
+	# name is answered, not refused. If these two returns ever became a crash
+	# or a refusal the rows above would still be worth having, but they would
+	# be guarding something loud instead of something silent.
+	var d_base := _base_returns(delivery)
+	var e_base := _base_returns(errand)
+	_check(d_base.size() == 1 and e_base.size() == 1,
+		"each sentence function has exactly one return below its match - the arm an unmatched outcome takes (%d, %d)" % [
+			d_base.size(), e_base.size()])
+	_check(d_base.size() == 1 and e_base.size() == 1 and d_base[0] == e_base[0],
+		"and both fall through to the same sentence, so neither tells a player nor this suite that a name was missed: %s" % str(d_base))
+
+	_vocabulary_controls()
+
+
+# CAN EACH ROW ABOVE FAIL? Every reader is fed text it must answer differently
+# about, so a row that passes because its reader sees nothing is caught here
+# rather than in the commit that breaks it.
+func _vocabulary_controls() -> void:
+	var seventh := "\tvar outcome := \"GAVE_UP\" if why == \"gave up\" else \"BLOCKED\"\n\toutcome = \"ABANDONED\"\n"
+	_check(_assigned(seventh) == ["ABANDONED", "BLOCKED", "GAVE_UP"],
+		"a seventh outcome added to finish_order is seen by the reader row A uses (%s)" % str(_assigned(seventh)))
+
+	var ternary := "\tvar outcome := \"GAVE_UP\" if why == \"gave up\" else \"BLOCKED\"\n"
+	_check(_assigned(ternary) == ["BLOCKED", "GAVE_UP"],
+		"and the initialiser's SECOND name is seen, which a reader that stopped at the first would miss (%s)" % str(
+			_assigned(ternary)))
+
+	var moved := "\tif carrying != \"\":\n\t\tif node == null:\n\t\t\toutcome = \"BLOCKED\"\n\telif module != null:\n\t\t\toutcome = \"ARRIVED\"\n"
+	_check(_assigned_in_block(moved, CARRY_BRANCH) == ["BLOCKED"],
+		"an outcome moved into the carrying branch is seen there and the one in the elif is not, which is what row B compares (%s)" % str(
+			_assigned_in_block(moved, CARRY_BRANCH)))
+
+	var two_arms := "\tmatch outcome:\n\t\t\"DELIVERED\":\n\t\t\treturn \"a\"\n\t\t\"INCONCLUSIVE\":\n\t\t\treturn \"b\"\n\treturn \"Nothing happened.\"\n"
+	_check(_arms(two_arms) == ["DELIVERED", "INCONCLUSIVE"],
+		"the arm reader finds the arms a match has (%s)" % str(_arms(two_arms)))
+	_check(_arms(two_arms.replace("\t\t\"INCONCLUSIVE\":\n\t\t\treturn \"b\"\n", "")) == ["DELIVERED"],
+		"and an arm removed from it stops being found, which is how row A fails")
+
+	# Prose in, nothing out. An arm that exists only in a comment must not
+	# answer a question about the code (TRAPS 63).
+	_check(_arms(_code_of("\t\t# \"ABANDONED\":\n")).is_empty(),
+		"an arm written in a COMMENT is not seen, so a comment cannot satisfy row A")
+	_check(_assigned(_code_of("\t# outcome = \"ABANDONED\"\n")).is_empty(),
+		"and neither is an assignment in a comment")
+	_check(not _assigned(_code_of("\toutcome = \"ABANDONED\"\n")).is_empty(),
+		"while the same two lines as CODE are both seen, so the two rows above are not passing on an empty read")
+
+	# The slice, and the one thing that would silently widen it.
+	var pair := "func finish_order(a: int) -> void:\n\toutcome = \"ARRIVED\"\n\n\nfunc _set_door(b: int) -> void:\n\toutcome = \"ABANDONED\"\n"
+	_check(_assigned(_body_of(pair, "func finish_order(")) == ["ARRIVED"],
+		"the slice stops at the next function, so a neighbour's assignment is not read as finish_order's (%s)" % str(
+			_assigned(_body_of(pair, "func finish_order("))))
+	_check(_base_returns(two_arms) == ["\"Nothing happened.\""],
+		"and the fall-through reader ignores the returns inside the arms (%s)" % str(_base_returns(two_arms)))
+
+
 func _run() -> void:
-	print("--- 123: what the errand resolves to at each halt reason ---")
+	print("--- 123/124: what the errand resolves to, and whether it has a sentence ---")
 	await _arrival_section()
 	await _blocked_section()
 	await _unreachable_section()
+	_vocabulary_section()
 
 	print("")
 	for l in lines:
