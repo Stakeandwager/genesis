@@ -8961,7 +8961,7 @@ Driven in 117, one of the three is **kept**:
 
 | state | `/load` | an EDIT |
 |---|---|---|
-| which doors were shut | lost (not driven) | lost (116, driven) |
+| which doors were shut | **lost** (119, driven) | lost (116, driven) |
 | where a thing was carried to | **lost** (118, driven) | **lost** (117, driven) |
 | equipment | **KEPT** (117 and 118, driven) | **KEPT** (117, driven) |
 
@@ -9094,3 +9094,80 @@ whose job is to catch this.
   true of the save format. `log_023_test` now holds *"equipment is not kept in
   a saved world's file"* in the honest list as the guard: widen the denial to
   the ambiguous clause and that assertion goes red. Measured by injection.
+
+---
+
+## 117. Four measurements that could not tell the two answers apart, in one session
+
+**Signature:** a probe, an injection or a suite row that reports the same
+thing whichever way the question goes. Nothing looks broken. The number comes
+back, it is plausible, and it is evidence of nothing.
+
+All four of these happened in 119, measuring one question — whether a `/load`
+keeps which doors were shut — and each was caught by a different accident
+rather than by a rule. They are one entry because they are one mistake.
+
+**(a) A `last_X` field read about a request that never reached the code that
+assigns it.** The first probe judged an errand off
+`main.controller.last_order_record`. That field is assigned **only on the
+VALID path** (`game_controller.gd:358`), so after an order refused
+`FAILED_UNWALKABLE` it still holds the **previous** order's record and reads
+back `VALID`. The probe printed `VALID` for all three of open door, shut door
+and after-load, and concluded nothing was happening. The same shape sits one
+layer along: `last_outcome_record` is assigned in `finish_order()`, which a
+refused order never reaches, so an absent outcome reads as the previous
+errand's `ARRIVED` — demonstrated by injection, which got exactly that.
+
+**(b) A baseline that already failed, so the thing under test could not be
+seen to fail it.** The first probe built its dungeon with a lamp in the middle
+room. A thing is solid and a thing placed *"in"* a room stands where the
+corridor runs, so the errand was `BLOCKED` with **every door open**. The
+shut-door run and the open-door run matched, and the match was read as "the
+shut door changes nothing".
+
+**(c) An injection that did not land, reporting `failures=0`.** The first
+attempt at injection A patched `_build_world` at its first line, **before**
+`_clear_world_node()` and before `standable` is assigned for the new world —
+so it set a key on a dictionary that was about to be thrown away. The suite
+ran green and said nothing. The second attempt found the anchor occurs
+**three** times in `game_controller.gd` and the patch had gone to the wrong
+one. 118 recorded the same experience with a tab-versus-space anchor; this is
+the second time in two commits.
+
+**(d) Two questions sharing one `Main`, measuring each other.** These rows
+were first written as a section of `tests/load_state_test.gd`. The character
+Main builds for an `ORDER` is parented to **Main**, not to the world, so it
+survives every rebuild — and `_clear_world_node()` sets `npc_at` back to
+`Vector3.INF`, which makes `_order()` plan from room 0 by default. Put the
+new rows first and `load_state_test`'s own carry row went red; put them last
+and they read the leftover body instead of the door. Neither order was
+measuring what it claimed.
+
+**Do:**
+
+- **Read a request's answer off the record that request produced.** The ORDER
+  record comes off `track_measured`, which `_finish_failed` and the valid path
+  both emit. Where a second record is needed and is not on the signal — the
+  outcome is appended to the ledger and emits nothing — read the field and
+  **guard it with its own `about`**, so an absent answer reads as absent and
+  not as the last one. Grep before trusting any `last_*`: ask which paths
+  assign it, not which paths you expect to take.
+- **Drive the negative case with the cause removed, first, and assert it.**
+  The open-doors row is in `load_shut_test` as a row, not as a belief. If the
+  baseline cannot be made to pass, the measurement is not ready to be taken.
+- **An injection is not evidence until the edit is shown to be in the running
+  file AND the suite is shown to move.** `grep` the patched line, count the
+  anchor's occurrences before patching, and treat `failures=0` under an
+  injection as a failed injection until proved otherwise.
+- **Two questions that share a process share its bodies.** A suite is a
+  process and a fresh `Main`; a section is not. When a new question needs a
+  world of its own, give it a file of its own rather than a position in
+  somebody else's suite.
+- **And where the interference is itself a finding, it does not belong in the
+  suite that tripped over it.** The rebuild that forgets where the character
+  is standing is a live entry in `HANDOVER` with its measurement — 34.9 m to
+  walk to the vault from the entrance, 85.8 m for the identical errand after
+  an identical rebuild with the body already in the vault — and a decision
+  attached that is the owner's. `load_shut_test` asserts none of it and says
+  so, because a suite that pinned today's answer would have to be deleted by
+  whoever changes it.

@@ -39,8 +39,11 @@ extends SceneTree
 #
 # WHAT IT DOES NOT MEASURE
 # The third member, which doors were shut, is not driven here. 116 drove it
-# across the EDIT path and found it lost; nothing has driven it across /load,
-# and this suite does not pretend to. Named so it is not mistaken for covered.
+# across the EDIT path and found it lost, and 119 drove it across /load and
+# found it lost there too - in tests/load_shut_test.gd, which is its own file
+# and not a section of this one on purpose: a character parented to Main
+# survives every rebuild, so two questions sharing one Main measure each
+# other's leftover body. See that suite's header and TRAPS 117.
 
 var main: Node3D
 var lines: Array = []

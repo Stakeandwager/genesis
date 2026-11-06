@@ -11,6 +11,98 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
+- Last commit at the time of writing: **119**, and it takes the measurement
+  118's record named as the cheap one that needs nobody: **the shut door
+  across `/load`**, the one cell of TRAPS 115's table that was still a reading.
+  `tests/load_shut_test.gd` **new, 16 assertions**, `run_tests.sh` one word
+  (the new suite is TIMED), `docs/TRAPS.md` one new entry (**117**), and this
+  file. **`scripts/` is 0 lines of diff**, so `assembled_prompt()` is
+  byte-identical, `PROMPT_FINGERPRINT` did not move and `prompt_bounds_test`
+  stayed at **72**. One live entry's named next measurement closed; **one new
+  live entry**, and it is a thing Genesis forgets about its own character.
+
+  **THE ANSWER, AND FOR THIS MEMBER THE SENTENCE IS TRUE.** All three members
+  of `LoadCheck.NOT_SAVED` are now driven across `/load` rather than two driven
+  and one read. Measured through the real scene, in three rooms in a line with
+  nothing in them: with every door open the character **walks to the vault and
+  ARRIVES**; with the store-vault door SHUT the identical errand is **refused
+  `FAILED_UNWALKABLE`** and nothing walks; the saved file carries **no shut
+  state in any field** (swept over every key but the player-chosen name); and
+  after the `/load` `is_shut` is **false**, `route()` has a way through again,
+  and the errand that was refused is **accepted**. So the loss is real and it
+  is felt, not merely absent from a list.
+
+  | state | `/load` | an EDIT |
+  |---|---|---|
+  | which doors were shut | **lost** (119, driven) | lost (116, driven) |
+  | where a thing was carried to | lost (118, driven) | lost (117, driven) |
+  | equipment | **KEPT** (118, driven) | **KEPT** (117, driven) |
+
+  **WHAT CHANGED FOR A PLAYER: NOTHING, AND THAT IS THE RIGHT ANSWER HERE.**
+  The clause of the caveat this commit is about turns out to be **true**, so
+  no sentence needed rewording and none was touched. `LoadCheck.NOT_SAVED`,
+  `_caveat()` and the prompt clause at `ai_interpreter.gd:198` are 0 lines of
+  diff - steps (2) and (3) of the first live entry, both still waiting on the
+  owner's question about what the caveat is FOR. The deploy still fails on two
+  unset secrets and what a visitor sees is still commit `71b065f` from
+  2026-10-14.
+
+  **FOUR INJECTIONS, EACH ALONE IN ITS OWN THROWAWAY COPY** with its own
+  `config/name` and its own cleared `user://` (TRAPS 6), and **the first
+  attempt at injection A did not land and reported `failures=0`** - it patched
+  `_build_world` before `_clear_world_node()`, where `standable` is about to be
+  thrown away, and the anchor turned out to occur three times in the file.
+  Recorded rather than tidied, because a green suite under an injection that
+  did not land says nothing.
+  - **A**, a build that leaves the store-vault door shut, patched at both
+    build sites: **failures=6**, the three rows that matter - `is_shut` false
+    after the load, the way through being back, and the errand being accepted
+    - all red, the last of them reading `FAILED/FAILED_UNWALKABLE`.
+  - **B**, `route()` made to walk `layout["doors"]` instead of
+    `walkable()["usable_doors"]`: **failures=3** - no way through, the refusal
+    row, and the nothing-walked row, which read **`BLOCKED`** because the body
+    walked into the slab instead of being refused. That is the difference the
+    row exists to hold.
+  - **C**, `_save_world` made to carry the standing layout's `shut` into the
+    saved parameters: **failures=1**, and the row **names the key it found**,
+    `["parameters"]`.
+  - **D**, the suite's own `about` guard removed: **failures=1**, reading
+    **`ARRIVED`** - the previous errand's outcome, which is exactly the stale
+    read the guard exists to stop.
+
+  **AND THE PREDICTED DIFF WAS WRONG IN ITS CENTRAL CLAUSE, WHICH IS WHERE THE
+  NEW LIVE ENTRY CAME FROM (TRAPS 89).** It was written to a file before any
+  repository file was edited and said: no new file, `load_state_test` **16 ->
+  24**, `result_line_test` unmoved at 350. What actually happened is that the
+  rows were written into `load_state_test` as predicted, and **that suite's own
+  carry row went red** - the two sections were measuring each other's leftover
+  body. The plan changed to a file of its own, so the real diff is
+  `load_shut_test` **new at 16** and `result_line_test` **350 -> 354**. The
+  clauses that held: `scripts/` 0 lines of diff, `prompt_bounds_test` **72**,
+  `load_check_test` **40**, `log_023_test` **88**, `suites with something to
+  look at: 0`, and that `result_line_test` would be the suite to move because
+  it enumerates `tests/` through `dir.get_files()`.
+
+  **NOT VERIFIED, AND THE LIST IS THE POINT.**
+  **ONLY THE DUNGEON PATH, ONE LAYOUT, ONE DOOR.** A farm or a circuit has no
+  doors to shut; a world type that grows them is covered by nothing here.
+  **THE ERRAND AFTER THE `/load` IS ASSERTED AS ACCEPTED AND NOT AS ARRIVED**,
+  deliberately. By then the body is standing in the destination room for the
+  reason in the new live entry, so an `ARRIVED` there would pass whether the
+  door came back open or not - a row that can pass for the wrong reason is
+  worse than no row (TRAPS 6). The suite's header says this.
+  **NOTHING ABOUT THE NEW LIVE ENTRY IS ASSERTED ANYWHERE.** It is measured
+  and written down; no suite pins it, because a suite that pinned today's
+  answer would have to be deleted by whoever changes it.
+  **NO SUITE WAS RUN AGAINST A FRESH CLONE OF THIS COMMIT**, which is what a
+  119a owes - see "Next action".
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is still **2026-10-14**, checked this commit by
+  grepping every `OWNER, 2026-[0-9][0-9]-[0-9][0-9]` marker in `HANDOVER.md`
+  and `TRAPS.md`: five of them, all that one date.
+  **THE DEPLOY STILL FAILS**, both secrets are still empty. Nothing here
+  touched a deployment setting, a secret, a flag or a target.
+
 - Last commit at the time of writing: **118a**, which is **docs only** - 0
   lines of diff in `scripts/`, `tests/` and `.github/`, no new finding about
   Genesis, no new claim about its behaviour, no new live entry. It records the
@@ -9171,6 +9263,76 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
+**119's RECORD. ONE MEASUREMENT IS OWED - A FRESH `git clone` OF THE PUSHED
+COMMIT - AND THAT IS 119a's WHOLE JOB.** 119 took its own baseline on the
+clean pushed tree at `a0cee0d`, from a **twenty-second** independent container
+with its own Godot download: `git status --porcelain` **empty before and
+after**, `--all`, `user://` cleared by **deleting
+`app_userdata/AI_Game_Builder`** rather than by renaming `config/name`, so
+`project.godot` was not edited to take the measurement. Godot
+**4.7.1.stable.official.a13da4feb**, `--version` read.
+**`331780b3eae154a3ab1a39d300a6a243`, 80 suites, 0 with something to look at**
+- **byte-identical to the md5 118 recorded and 118a reproduced from a clone.**
+So the record and the container still agree today.
+
+**119 ADDED ONE FILE**, so both numbers moved: the run reports **81** suites.
+It added `tests/load_shut_test.gd`, added that name to `TIMED` in
+`run_tests.sh`, and edited `docs/TRAPS.md` and this file. **`scripts/` is 0
+lines of diff.**
+
+**FIVE BYTE-IDENTICAL `--all` RUNS ON THE CHANGED TREE**, `user://` cleared
+before each by deleting `app_userdata/AI_Game_Builder`, **the last three on
+the complete tree with `docs/` in place**: md5
+**`1b6e8748b9da27ccfc85d7bbaca0504e`**, **81 suites, 0 with something to look
+at**, `load_shut_test` **16, failures=0**, `load_state_test` **16,
+failures=0**, `result_line_test` **354, failures=0**, `prompt_bounds_test`
+**72, failures=0**, `load_check_test` **40, failures=0**, `log_023_test` **88,
+failures=0**. Each changed file's md5 was recorded before the final run and
+`md5sum -c` afterwards reported **nothing moved**, and `git status
+--porcelain` was **identical before and after** that run - with the single
+exception of THIS FILE, which records the run and is therefore edited after
+it. Nothing in `tests/`, `scripts/` or `run_tests.sh` was touched after the
+final run, which is the part the md5 depends on.
+
+**`diff` AGAINST THE BASELINE RUN IS EXACTLY TWO LINES** - the new suite's
+line, and `result_line_test` 350 -> 354. **Every other suite is unmoved,
+`prompt_bounds_test` 72 among them**, which is the reading behind the claim
+that `scripts/` is 0 lines of diff and no prompt clause moved.
+
+**THE PREDICTED DIFF WAS WRONG IN ITS CENTRAL CLAUSE AND THAT IS WHERE THE NEW
+LIVE ENTRY CAME FROM (TRAPS 89).** It predicted no new file and
+`load_state_test` 16 -> 24. The rows were written there first and **that
+suite's carry row went red**, because a character parented to Main survives
+every rebuild while `_clear_world_node()` forgets where it is. The plan became
+a file of its own. What held: `scripts/` 0 lines of diff,
+`prompt_bounds_test` 72, `load_check_test` 40, `log_023_test` 88, `suites with
+something to look at: 0`, and that `result_line_test` would be the suite to
+move because it enumerates `tests/` through `dir.get_files()`.
+
+**AND THE FOUR INJECTIONS, EACH ALONE IN ITS OWN THROWAWAY COPY WITH ITS OWN
+`config/name` AND ITS OWN CLEARED `user://` (TRAPS 6).** The first attempt at
+injection A **did not land** - it patched `_build_world` at its first line,
+before `_clear_world_node()`, so it set a key on a dictionary about to be
+thrown away, and the anchor occurs **three** times in `game_controller.gd`.
+The suite ran green and said nothing. That is recorded because **a green suite
+under an injection that did not land says nothing**, and it is the second time
+in two commits (118's anchor had spaces where the file has tabs).
+- **Injection A**, `DungeonModule.set_shut(standable["layout"], 1, 2, true)`
+  added after `standable = report["standable"]` at **both** build sites - a
+  build that leaves the door shut, which is what the suite says a load does
+  not do: **failures=6**, including all three rows that matter and the last of
+  them reading `FAILED/FAILED_UNWALKABLE`.
+- **Injection B**, `route()` made to walk `layout["doors"]` instead of
+  `walkable()["usable_doors"]`: **failures=3** - no way through, the refusal
+  row, and the nothing-walked row, the last reading **`BLOCKED`** because the
+  body walked into the slab rather than being refused.
+- **Injection C**, `_save_world` made to carry the standing layout's `shut`
+  into the saved parameters: **failures=1**, and the row names the key,
+  `["parameters"]`.
+- **Injection D**, the suite's own `about` guard removed: **failures=1**,
+  reading **`ARRIVED`** - the previous errand's outcome, the stale read the
+  guard exists to stop.
+
 **AND RUN 5 IS A FRESH `git clone` OF THE PUSHED COMMIT**, written in by
 118a - `ae9176b`, cloned into its own directory, `git status --porcelain`
 **EMPTY both before and after the run** (so `project.godot` was not edited to
@@ -16598,6 +16760,43 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
+**WHAT 119 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
+clone` OF THE PUSHED COMMIT.** 119 took its own baseline on the clean pushed
+tree at `a0cee0d` and reproduced 118's md5 exactly, wrote its predicted diff
+to a file before editing any repository file - **and its central clause was
+wrong, which is recorded under "Run the tests first" rather than tidied
+(TRAPS 89)** - and took two byte-identical `--all` runs on the changed tree.
+What it did NOT take is a run against a fresh `git clone` of its own pushed
+commit, which is the reading 104a and 106a through 118a each exist for.
+**That is 119a's whole job and it is the only thing owed.**
+**THE CLAUSE IT MATTERS MOST FOR IS `load_shut_test` 16 ON THE CLONE.** It is
+a NEW FILE and the only thing in the project that reads what a `/load` does to
+a shut door, so a green run against the REMOTE tree is the reading that the
+suite went up on the remote rather than only existing locally.
+**AND `result_line_test` 354 ON THE CLONE IS THE SECOND**: it derives its
+members from `tests/` via `dir.get_files()`, so that count is the reading that
+the remote's `tests/` really holds the file this commit says it does, taken by
+the project's own reader rather than by `ls`. **AND `prompt_bounds_test` 72 ON
+THE CLONE IS THE THIRD**: it compares `assembled_prompt()`'s sha256 against
+`PROMPT_FINGERPRINT`, so a green run against the remote is the reading behind
+119's claim that `scripts/` is 0 lines of diff.
+**DO NOT RE-TAKE 119's FOUR INJECTIONS** - they are in the record with their
+counts, including the note that the first attempt at injection A did not land
+and reported `failures=0`.
+**AND DO NOT RE-DRIVE THE SHUT DOOR ACROSS `/load`** - it is
+`tests/load_shut_test.gd` rather than a table in a document.
+
+**THE WORK ITSELF, AFTER THAT.** The first live entry below is still the first
+live entry, and what is left of it is **steps (2) and (3)**: the player-facing
+caveat and the prompt clause. **Both still wait on the owner's question at the
+end of that entry** - what the caveat is FOR - and 119 did not answer it and
+should not have. **Do not guess it to make progress.** With the shut door now
+driven, the cheap measurement that needed nobody is **spent**; the next thing
+that needs nobody is the **new live entry below**, the rebuild that forgets
+where the character is standing. It is measured already (34.9 m against
+85.8 m); what it needs is the owner's answer to a narrow question, so read it
+before picking it up rather than choosing a side.
+
 **~~WHAT 118 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
 clone` OF THE PUSHED COMMIT.~~ TAKEN IN 118a, AND IT REPRODUCED BYTE-FOR-BYTE
 - IT IS RUN 5 ABOVE.** Struck rather than deleted because what it owed and why
@@ -17289,6 +17488,85 @@ the final md5, and the one-line diff. That was a sound inference about the
 remote in place of a reading of it, which is exactly what 104a and 106a
 through 112a were each written to avoid, so the reading was taken instead.)
 
+**THE FIRST LIVE ENTRY AS OF 119, AND IT IS A THING GENESIS FORGETS ABOUT ITS
+OWN CHARACTER: A REBUILD RESETS WHERE THE CONTROLLER THINKS THE CHARACTER IS,
+AND DOES NOT RESET THE CHARACTER.**
+Found while measuring the shut door, by the plan's own prediction being wrong
+rather than by looking for it. Not fixed, and the reason is at the end.
+
+**WHAT WAS DRIVEN, AND THE TWO NUMBERS ARE THE ENTRY.** Three 12x12 rooms in
+a line, nothing in them, no `/explore` at any point, so the player's own body
+is not in this measurement at all:
+
+- **An errand to the vault from the entrance walks 34.9 m and ARRIVES.** The
+  character is created on the first `ORDER` and `place_at()` puts it at the
+  entrance (`main.gd:655-661`). Its body finishes in **room 2**, read off
+  `room_of()` against the world rather than off the order's record.
+- **An identical `CREATE_DUNGEON` is then handed in - the same world, nothing
+  changed.** The body is still in **room 2**: it is parented to **Main**, not
+  to the world holder, so `_clear_world_node()` cannot touch it and nothing
+  re-places it after the frame it was created in.
+- **But `_clear_world_node()` sets `npc_at = Vector3.INF`**
+  (`game_controller.gd:1267`), and `_order()` then reads
+  `var from_room := 0` and only overwrites it if `npc_at != Vector3.INF`
+  (`game_controller.gd:262-267`). So the controller plans the next errand
+  **from the entrance** while the body stands in the vault.
+- **The identical errand to the vault then walks 85.8 m to arrive at the room
+  it was already in** - two and a half times the distance, because it is
+  walking a route whose first leg starts where it is not. Genesis says *"Got
+  to the vault. 85 m in 24 seconds"*, which is true and tells the player
+  nothing about why.
+
+**AND UNDER A DIFFERENT GEOMETRY IT DOES NOT ARRIVE AT ALL.** The same shape,
+measured while the rows were still inside `load_state_test`: an errand after a
+rebuild travelled **33.9 m and stopped**, `BLOCKED`, *"stopped making
+progress"*. So the consequence ranges from a nonsense route to a failed errand
+with a truthful-but-useless account of it, depending on where the body
+happens to be standing.
+
+**WHY IT IS NOT A ONE-LINE FIX, AND THIS IS THE PART THAT IS THE OWNER'S.**
+Two honest readings, and they are different products:
+- **The belief should follow the body.** Do not clear `npc_at` on a rebuild,
+  or recompute it from the character's actual position in the new world, so an
+  errand is planned from where the character is. This keeps the character
+  standing where the player last saw it.
+- **The body should follow the belief.** Re-place the character at the
+  entrance when a world is rebuilt, so the world and the controller agree and
+  every errand starts from a known place. This is what `_clear_world_node()`
+  clearing `npc_at` already assumes, and it would make the clearing correct
+  rather than half-done.
+**The first keeps continuity and the second keeps predictability, and which
+Genesis wants is product direction rather than engineering.** 119 did not
+choose. Note that the door path has already chosen the FIRST reading for its
+own case - `main.gd:681-686` keeps `npc_where` across a `door_changed` rebuild
+on purpose - so the two rebuild paths currently disagree with each other,
+which is an argument for the first but not a decision.
+
+**WHAT IS MEASURED AND WHAT IS NOT.**
+**MEASURED:** the two distances above, the body's room before and after the
+rebuild read off `room_of()`, `npc_at` being `INF` after a rebuild, and
+`route(0, 2)` being non-empty so the route is real and simply starts in the
+wrong place. Driven twice, in a container with no player body in the world.
+**NOT MEASURED:** whether the player's own leftover walker body ALSO blocks a
+character's errand. It looked that way first - `_stop_exploring()` sets only
+`visible = false`, so the body stays solid where the player left it - but the
+two probes that suggested it differed in the character's start position as
+well, so it is **confounded and is not claimed here**. It is a separate
+question and a cheap one: stand a dungeon up, drive the errand, then drive it
+again with the walker's body moved out of the world, holding the character's
+start position fixed.
+**NOT ASSERTED ANYWHERE:** no suite pins any of this. A suite that asserted
+today's answer would have to be deleted by whoever answers the question above,
+which is a tripwire and not a guard. `load_shut_test`'s header names the
+behaviour as the reason it is its own file and asserts nothing about it.
+
+**HOW TO PICK IT UP.** Nothing needs re-driving. The next step is the owner's
+answer; if it comes, the change is small and local (`_clear_world_node()` and
+`_order()`'s default, or `_build_world()` re-placing the character) and wants
+a suite that drives an errand across a rebuild and reads the body off the
+world. If it has not come, the unconfounded walker measurement above is the
+piece that needs nobody.
+
 **THE FIRST LIVE ENTRY AS OF 117, AND IT IS A FALSE SENTENCE A PLAYER MEETS
 ON AN ORDINARY `/load`, PLUS THE PROMPT CLAUSE THAT TELLS THE MODEL TO SAY IT,
 PLUS THE TWO TESTS THAT HOLD IT IN PLACE: GENESIS SAYS THE EQUIPMENT DID NOT
@@ -17395,11 +17673,17 @@ about Genesis.
 
 **AND DO NOT RE-DRIVE THE EQUIPMENT OR THE CARRIED LAMP ACROSS `/load`.**
 Both are `tests/load_state_test.gd` as of 118, with their numbers, read off the
-kit, the body and the world. **The one thing still undriven on this path is the
-shut door** - the third member of `NOT_SAVED`, and the one cell of TRAPS 115's
-table that is still a reading rather than a measurement. That is the cheap next
-measurement if anyone wants one, and `load_state_test`'s header names it as
-absent rather than letting the suite's name imply it.
+kit, the body and the world. ~~**The one thing still undriven on this path is
+the shut door** - the third member of `NOT_SAVED`, and the one cell of TRAPS
+115's table that is still a reading rather than a measurement. That is the
+cheap next measurement if anyone wants one.~~ **DRIVEN IN 119, AND FOR THAT
+MEMBER THE SENTENCE IS TRUE** - the shut door is lost across a `/load` and the
+loss is felt: the errand refused `FAILED_UNWALKABLE` with the door shut is
+accepted again after the load, and no field of the saved file carries the shut
+state. It is `tests/load_shut_test.gd`, 16 assertions, rather than a table in
+a document, so **do not re-drive it either**. Struck rather than deleted
+because which cell was open and why is the part a later session needs. All
+three cells of TRAPS 115's `/load` column are now measurements.
 
 **HUMAN DECISION NEEDED, and it is narrow and genuinely the owner's.** Not
 whether to fix it - a false sentence a player reads is not a matter of taste -
