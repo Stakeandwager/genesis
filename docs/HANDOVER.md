@@ -11,6 +11,213 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
+- Last commit at the time of writing: **123**, and it takes the one thing 122
+  left on its own list - **whether a `"stopped walking"` that is not an
+  arrival is reachable** - and answers it **no, for every legal dungeon, by
+  one comparison between two constants**. On the way it drives the outcome
+  that **nothing in this repository had ever produced by running an errand**.
+  `tests/errand_outcome_test.gd` **new, 25 assertions**, `run_tests.sh` one
+  word (the new suite is TIMED), and this file. **`scripts/` is 0 lines of
+  diff**, so `PROMPT_FINGERPRINT` cannot have moved and `prompt_bounds_test`
+  stayed at **72** - and that is a reading of the run, not an argument from
+  the diff.
+
+  **WHAT 122 LEFT, AND WHAT IT TURNED OUT TO BE.** 122a's entry read two
+  lines of `game_controller.gd` - `:375`, `var outcome := "GAVE_UP" if why ==
+  "gave up" else "BLOCKED"`, and `:414-415`, where `ARRIVED` is written over
+  it - and concluded that `BLOCKED`, and therefore the sentence *"Could not
+  get to X: stopped making progress after N m."*, is what **three of the four**
+  halt reasons resolve to. It said plainly that this was *"a read of two
+  lines, not a measurement, and nothing asserts it"*, and it flagged the
+  second of the three as out of reach. Measured now:
+
+  | halt reason | outcome | reachable by an ORDER? |
+  |---|---|---|
+  | `"stopped walking"` at the destination | **ARRIVED** | yes - driven, sections 1 and 3 |
+  | `"stopped making progress"` (the stall) | **BLOCKED** | yes - driven, section 2 |
+  | `"stopped walking"` NOT at the destination | would be BLOCKED | **no - 0.60 m of margin** |
+  | `"nowhere to go"` | would be BLOCKED | no - 122 proved it, leg by leg |
+  | `"gave up"` (the 90 s cap) | GAVE_UP | yes - **not driven here** |
+
+  **SO EXACTLY ONE REACHABLE HALT REASON RESOLVES TO `BLOCKED`, NOT THREE,
+  AND AT THAT ONE THE SENTENCE IS TRUE.** Driven: flat speed **0.0000 m/s**
+  at the moment it halts, `is_on_wall()` **true**, **1** slide collision, and
+  `room_of` puts the body in room **-1** - a corridor - against the room
+  **2** it was sent to. Every clause of *"could not get to the vault"* and of
+  *"stopped making progress"* is a fact about that body. **That narrows
+  "Human decision needed" 38 and does not answer it**: the sentence a player
+  reads when a plain errand fails is not false anywhere he can reach it, so
+  the question is the one 120's live entry actually asked - that it names no
+  obstacle - and not whether it is a lie. The wording is asserted nowhere;
+  both sentences are **printed verbatim** in the suite's own output for the
+  owner to read.
+
+  **AND THE THIRD ROW IS CLOSED OVER THE CONSTANTS RATHER THAN OVER ONE
+  DUNGEON (TRAPS 11).** `route()`'s last mark is the destination room's own
+  centre, and `_steer` retires a waypoint at `gap < Npc.ARRIVE`, so a body
+  that runs out of waypoints is within **1.40 m** of that centre - against a
+  `MIN_SIDE * 0.5` of **2.00 m**. **0.60 m of margin, for every dungeon the
+  schema allows**, which is a different kind of answer from one driven case.
+  The two layouts the suite does build are the readings that the two
+  constants are about the same thing: that the last mark really is the centre
+  (**0 elsewhere**, over 3 rooms and over 2), that it reads back into the
+  destination room **through the transform `finish_order` asks through**
+  (**0 did not**), and that **the tightest legal dungeon is walkable rather
+  than vacuously safe** - two 4 m rooms, driven, `"stopped walking"`,
+  **ARRIVED**, room 1. The body stopped **0.81 m** from that centre, which is
+  a throwaway probe's reading from this session and is **not** asserted by the
+  suite: the row asserts the halt reason, the outcome and the room, because
+  the distance is the thing the margin above already covers.
+
+  **THE OUTCOME NO SUITE HAD EVER ASSERTED FROM AN ERRAND, WHICH IS THE PART
+  WORTH READING.** Grepped before the file was written, and stated at the
+  width the grep supports. `BLOCKED` occurs in `tests/` **exactly once**
+  outside the new file: `log_022_test` calls
+  `NpcGoals.outcome_line("BLOCKED", ...)` with the string **typed in by
+  hand** - that pins the WORDING and reaches none of the code that decides
+  it. `load_shut_test` drives an `ARRIVED`. **`carry_test` does hand-call
+  `finish_order(..., "stopped making progress")`** - checked, because it was
+  the one thing that could have made this claim false - **but on a CARRYING
+  errand, which cannot reach `BLOCKED` at all**. The only `BLOCKED` anyone
+  had seen come out of a running errand arrived **by accident**, as 119's
+  injection B, and was written into this file as a surprise. So across 83
+  suites the one outcome a player meets when a plain errand fails was
+  asserted nowhere. It is now. `interference_test` shuts the same door
+  on a **carrying** errand, and a carrying errand cannot reach `BLOCKED` at
+  all: `finish_order` branches on `carrying != ""` and answers DELIVERED /
+  NOT_DELIVERED / INCONCLUSIVE from where the thing ended up. `BLOCKED` is
+  reachable only on a `go_to`, which is why that is what section 2 sends.
+
+  **AND INJECTION B FOUND A FALSE COMMENT IN THE SUITE THIS COMMIT HAD JUST
+  WRITTEN, WHICH IS WHY IT IS WORTH TAKING INJECTIONS AT ALL (TRAPS 22).**
+  The first draft read the body's room AFTER `_settle()` and said in a comment
+  that doing so *"cannot answer differently from the thing that decided the
+  outcome"*. Under B it did: the body halted in the corridor, `finish_order`
+  read no room and resolved `BLOCKED`, and the body then **slid forward into
+  the room over the frames that followed**, so the row read room 1 about an
+  errand the ledger had already called BLOCKED. Both readings were true of the
+  body at the moment each was taken. **The outcome is decided from the
+  position at the halt, so the room is now read inside the `stopped_walking`
+  handler** - the frame `finish_order` is reached on - and the comment now
+  says what B showed instead of what the draft assumed. The counts below are
+  from the corrected suite.
+
+  **FOUR INJECTIONS, EACH ALONE IN ITS OWN THROWAWAY COPY** with its own
+  `config/name` and its own cleared `user://` (TRAPS 6), `.git` and `docs/`
+  removed from each:
+  - **A**, the `ARRIVED` override at `:414-415` removed: **failures=2**, and
+    both red rows are the pairing rows - the arrival reading `BLOCKED` in
+    section 1 and again in section 3.
+  - **B**, `Npc.ARRIVE` widened from 1.4 to 2.5 - past half the smallest
+    legal room: **failures=3**, and **this is the injection worth reading**.
+    The constant row goes red naming its own arithmetic (*"-0.50 m of
+    margin"*), the tight layout's margin row goes red, and **the tightest
+    legal dungeon then produces exactly the fault 122 inferred**: a body that
+    walked the whole route, ran out of waypoints and resolved to **BLOCKED**,
+    reading **room -1 at the halt** - the corridor - while coming to rest in
+    room 1 a few frames later. So the guard is not a formality: the failure
+    mode it names is reachable the day either constant moves, and this is the
+    injection that found the false comment described above.
+  - **D**, `NpcGoals.STALL_SECONDS` pushed to 400 s: **failures=2** - the
+    errand runs to the 90 s cap instead, reading `"gave up"` and **GAVE_UP**.
+    Which is the cap's outcome seen under an injection and therefore **not** a
+    reading of Genesis as it stands; nothing here asserts it.
+  - **E**, `last_outcome_record = resolved` removed: **failures=3**, all
+    three outcome rows reading **`NONE`**, so they read the ledger rather
+    than inferring from the halt reason they just asserted.
+
+  **TWO BYTE-IDENTICAL `--all` RUNS ON THE CHANGED TREE**, `user://` cleared
+  before each by deleting `app_userdata/AI_Game_Builder`, **both on the
+  complete tree with `docs/` in place and therefore on the tree that was
+  pushed, bar this paragraph**: md5
+  **`be78554ebcd460a7da94530457e5cf71`**, **84 suites, 0 with something to
+  look at**, `errand_outcome_test` **25, failures=0**, `result_line_test`
+  **366, failures=0**, `prompt_bounds_test` **72, failures=0**,
+  `source_scan_test` **79, failures=0**, `halt_cause_test` **43,
+  failures=0**, `left_body_test` **16, failures=0**, `interference_test`
+  **16, failures=0**.
+
+  **`diff` AGAINST THE BASELINE RUN IS EXACTLY TWO LINES, AND BOTH WERE
+  WRITTEN DOWN BEFORE THE CHANGE** - `errand_outcome_test` new at 25, and
+  `result_line_test` **362 -> 366**. The predicted diff was written to a file
+  before any repository file was edited and held in every clause: new file,
+  one word in `run_tests.sh`, `scripts/` 0 lines of diff, `source_scan_test`
+  unmoved at 79 (the new suite reads no `.gd` source, deliberately, so it is
+  not a member of that class), `prompt_bounds_test` unmoved at 72,
+  `result_line_test` **+4 for one new file**, taken from 119's measurement of
+  the same move, and `suites with something to look at: 0`.
+
+  **AND THE BASELINE IS AN INDEPENDENT READING OF THE PUSHED TREE, WHICH IS
+  WHAT 122a SAID A LATER SESSION WOULD GET FOR FREE.** Taken in this
+  container, from its own Godot download - **4.7.1.stable.official.a13da4feb**,
+  `--version` read - on `606f780` with `git status --porcelain` **empty**:
+  **`5055fad3202f078f6fe41fed6e58c32b`, 83 suites, 0 with something to look
+  at**, `halt_cause_test` **43**, `source_scan_test` **79**,
+  `result_line_test` **362**, `prompt_bounds_test` **72**. **Byte-identical
+  to the md5 122 recorded and 122a reproduced**, and unlike 119a through 122a
+  this one is from a container that did not take the measurement it is
+  checking.
+
+  **NOT VERIFIED.**
+  **NO TRAPS ENTRY WAS ADDED, AND THAT IS A DECISION RATHER THAN AN
+  OVERSIGHT.** 122a's read was labelled as a read, flagged the member it
+  could not reach, and named the one it had not driven as the next thing on
+  the list - which is what a later session is supposed to be able to pick up.
+  Nothing went wrong in how the work was done, so writing a lesson into
+  `TRAPS.md` would be manufacturing one.
+  **THE 90 s CAP IS NOT DRIVEN HERE AND `GAVE_UP` IS ASSERTED NOWHERE IN THE
+  NEW SUITE.** `halt_cause_test` pays for that drive already - a 24-room
+  chain and a 598 m route - and what it costs is minutes. The only GAVE_UP
+  this commit saw was under injection D.
+  **NOTHING A PLAYER SEES CHANGED.** `scripts/` is 0 lines of diff. No
+  sentence was reworded, 38 is still open, and all three live entries are
+  still live and still wait on the owner. The car `/drive` parks on the
+  hidden body still moves 0.00 m against 4.90 m, the hidden body still blocks
+  a character's errand, and 119's rebuild still forgets where the character
+  is standing.
+  **THE UNREACHABILITY IS GEOMETRY, NOT A PROOF ABOUT THE CODE.** It holds
+  because of what `route()` returns and what `_steer` compares, both read and
+  both asserted against a built layout - but nothing here reads
+  `game_controller.gd` to assert that `:375` is still the only place an
+  outcome is initialised. A second assignment added tomorrow is caught by no
+  row in this file. The suite reads no `.gd` source at all, on purpose, to
+  stay out of `source_scan_test`'s class; that is the cost.
+  **ONLY THE DUNGEON PATH.** A farm or a circuit has no rooms to arrive in
+  and no doors to shut; `ORDER` reaches neither, and nothing here says what
+  would happen if it did.
+  **NO SUITE WAS RUN AGAINST A FRESH `git clone` OF THIS COMMIT**, which is
+  what a 123a owes - see "Next action".
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is still **2026-10-14**, checked this commit by
+  grepping every `OWNER, 2026-[0-9][0-9]-[0-9][0-9]` marker in `HANDOVER.md`
+  and `TRAPS.md`: **five in `HANDOVER.md` and none in `TRAPS.md`**, all that
+  one date.
+  **THE DEPLOY STILL FAILS, AND THIS TIME THE LOG WAS READ RATHER THAN THE
+  CLAIM CARRIED FORWARD (TRAPS 109).** `web build` run **158** on `606f780`
+  concluded **`failure`**, and its job log says why in its own words:
+  `NETLIFY_AUTH_TOKEN:` and `NETLIFY_SITE_ID:` are both printed **empty**, so
+  the Netlify CLI falls through to an INTERACTIVE login - *"Opening
+  https://app.netlify.com/authorize..."*, *"Waiting for authorization..."* -
+  and **times out after five minutes**: *"Timed out waiting for
+  authorization."*, exit code 1. **So every push spends about six minutes of
+  Actions time failing the same way**, which is the part worth saying out
+  loud. The two secrets being empty is now a reading of the log rather than a
+  sentence copied from the previous entry.
+  **AND THERE IS A SECOND THING IN THAT LOG, WHICH IS WHAT TRAPS 109 IS
+  ABOUT.** *"Node.js 20 is deprecated. The following actions target Node.js 20
+  but are being forced to run on Node.js 24: `actions/checkout@v4`."* A
+  warning today, not an error. **Nothing was changed about it**: `.github/` is
+  0 lines of diff, and bumping the action is a deployment change and therefore
+  the owner's.
+  **WHAT A VISITOR SEES IS CARRIED FORWARD AND NOT CHECKED.** The entries
+  below say commit `71b065f` from 2026-10-14; 123 did not fetch the site, so
+  that clause is repeated on their authority rather than read. It follows from
+  the deploy never having succeeded since - every `web build` conclusion the
+  run list shows on this branch is a failure - but the live page itself was
+  not looked at.
+  **Nothing here touched a deployment setting, a secret, a flag or a
+  target.**
+
 - Last commit at the time of writing: **122a**, which is **docs only** - 0
   lines of diff in `scripts/`, `tests/` and `.github/`, no new finding about
   Genesis, no new claim about its behaviour, no new live entry. It records the
@@ -204,8 +411,17 @@ that the owner has not ruled on.** Do not promote one to the other.
   the cap. It is not driven anywhere, the suite's wording was narrowed to say
   so, and the claim made is only that the collider does not name **this**
   failure, on the path that reaches the cap.
-  **WHETHER A `"stopped walking"` THAT IS NOT AN ARRIVAL IS REACHABLE.** The
-  reading above says what its sentence would be if it is; it is not driven.
+  ~~**WHETHER A `"stopped walking"` THAT IS NOT AN ARRIVAL IS REACHABLE.** The
+  reading above says what its sentence would be if it is; it is not driven.~~
+  **ANSWERED IN 123: NO, FOR EVERY LEGAL DUNGEON.** `route()`'s last mark is
+  the destination room's own centre and `_steer` retires a waypoint at
+  `gap < Npc.ARRIVE` - **1.40 m against a `MIN_SIDE * 0.5` of 2.00 m**, 0.60 m
+  of margin - so a body that runs out of waypoints is inside the room it was
+  sent to. Which makes **"three of the four halt reasons"** above **one**: the
+  stall is the only reachable producer of `BLOCKED`, and 123 drove it and
+  found every clause of its sentence true of that body. Struck rather than
+  deleted because what was owed, and the two lines it was inferred from, is
+  the part a later session needs. See the 123 entry at the top.
   ~~**NO SUITE WAS RUN AGAINST A FRESH `git clone` OF THIS COMMIT**, which is
   what a 122a owes - see "Next action".~~ **TAKEN IN 122a, AND IT REPRODUCED
   BYTE-FOR-BYTE** - see the 122a entry above. Struck rather than deleted
@@ -9843,8 +10059,30 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
-**AND THE LATEST RUN IS A FRESH `git clone` OF THE PUSHED COMMIT**, written in
-by 122a - `9f07cba`, cloned into its own directory, `git status --porcelain`
+**THE LATEST RUN IS 123's, ON ITS OWN CHANGED TREE**, `--all`, `user://`
+cleared by deleting `app_userdata/AI_Game_Builder` before each,
+**TWO BYTE-IDENTICAL RUNS, both with `docs/` in place** and therefore on the
+tree that was pushed: md5 **`be78554ebcd460a7da94530457e5cf71`**, **84 suites,
+0 with something to look at**, `errand_outcome_test` **25, failures=0**,
+`result_line_test` **366, failures=0**, `prompt_bounds_test` **72,
+failures=0**, `source_scan_test` **79, failures=0**, `halt_cause_test` **43,
+failures=0**. `diff` against 123's baseline is **exactly two lines**, both
+predicted before the change. **NO FRESH `git clone` OF `123` HAS BEEN RUN** -
+that is what a 123a owes.
+
+**AND 123's BASELINE IS THE INDEPENDENT READING OF `122a`'s PUSHED TREE THAT
+122a SAID A LATER SESSION WOULD GET FOR FREE.** Taken in 123's own container
+from its own Godot download - **4.7.1.stable.official.a13da4feb**, `--version`
+read - on `606f780`, `git status --porcelain` **empty before the run**:
+**`5055fad3202f078f6fe41fed6e58c32b`, 83 suites, 0 with something to look
+at**, `halt_cause_test` **43**, `source_scan_test` **79**, `result_line_test`
+**362**, `prompt_bounds_test` **72**. **Byte-identical to the md5 122 recorded
+and 122a reproduced from a clone**, and unlike 119a through 122a it is from a
+container that did not take the measurement it is checking. So the record, the
+remote and a second container all agree.
+
+**AND THE RUN BEFORE IT WAS A FRESH `git clone` OF THE PUSHED COMMIT**, written
+in by 122a - `9f07cba`, cloned into its own directory, `git status --porcelain`
 **EMPTY both before and after the run** (so `project.godot` was not edited to
 take the measurement), `user://` cleared by deleting
 `app_userdata/AI_Game_Builder`, same Godot: **BYTE-IDENTICAL to the four runs
@@ -17583,6 +17821,63 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
+**WHAT 123 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
+clone` OF THE PUSHED COMMIT.** 123 took its own baseline on the clean pushed
+tree at `606f780`, in its own container with its own Godot download, and
+reproduced the md5 122 recorded and 122a reproduced from a clone -
+`5055fad3202f078f6fe41fed6e58c32b`, 83 suites, 0 with something to look at -
+wrote its predicted diff to a file before editing any repository file (**and
+every clause of it held, which is said here so a later session can see that
+happens too, TRAPS 89**), and took two byte-identical `--all` runs on the
+changed tree, both with `docs/` in place. What it did NOT take is a run
+against a fresh `git clone` of its own pushed commit, which is the reading
+104a and 106a through 122a each exist for. **That is 123a's whole job and it
+is the only thing owed.**
+**THE CLAUSE IT MATTERS MOST FOR IS `errand_outcome_test` 25 ON THE CLONE.**
+It is a NEW FILE and the only thing in the project that reads what an ERRAND
+resolves to at a halt reason, so a green run against the REMOTE tree is the
+reading that the suite went up on the remote rather than only existing
+locally. **`result_line_test` 366 ON THE CLONE IS THE SECOND**: it derives its
+members from `tests/` on disk via `dir.get_files()`, so that count is the
+reading that the remote's `tests/` really holds the file 123 says it does,
+taken by the project's own reader rather than by `ls`. **AND
+`prompt_bounds_test` 72 IS THE THIRD**: `scripts/` is 0 lines of diff, and
+this is the reading behind that claim rather than an argument from the diff.
+**DO NOT RE-TAKE 123's FOUR INJECTIONS** - they are in the record with their
+counts, each alone in its own throwaway copy with its own `config/name`,
+including **B**, whose result is the interesting part: widening `Npc.ARRIVE`
+to 2.5 m really does produce the non-arrival the margin rules out, so the
+guard has teeth.
+**AND DO NOT RE-DRIVE THE STALL, THE ARRIVAL OR THE TIGHTEST DUNGEON** - all
+three are in `tests/errand_outcome_test.gd` and run on every `--all`.
+
+**THE WORK ITSELF, AFTER THAT. 123 CLOSED ITS OWN ITEM AND NARROWED 38; IT
+ADDED NOTHING NEW TO THE LIST, WHICH IS WORTH SAYING PLAINLY.**
+**"Human decision needed" 38 IS NARROWER AGAIN, AND IT IS THE OWNER'S.** It is
+now a decision about **one** reachable sentence, not three, and that sentence
+is **true** of the body that reads it: *"Could not get to the vault: stopped
+making progress after 26 m."* was driven against a body at 0.0000 m/s, pressed
+on the shut door, in a corridor rather than the vault. So 38 is the question
+120's live entry actually asked - the sentence names no obstacle, and one
+`get_parent()` away there is a name for it - and it is **not** a question about
+a false claim. **123 did not answer it and nothing in it asserts a wording.**
+**THE CHEAPEST HONEST PIECE LEFT THAT NEEDS NOBODY is still 121's leftover:
+whether the reading tells a shut DOOR from a WALL.** Both are `Solid` and only
+the parent's name tells them apart, which today rests on
+`dungeon_module.gd`'s naming rule being read rather than on an errand stalled
+against a wall. 123 did not touch it.
+**THE SECOND, AND 123 MADE IT CHEAPER WITHOUT MEANING TO: whether anything
+else can ever initialise an `outcome`.** The unreachability 123 proved is
+geometry - what `route()` returns against what `_steer` compares - and nothing
+in the new suite reads `game_controller.gd` to assert that `:375` is still the
+only place an outcome is decided. A second assignment added tomorrow is caught
+by no row in it. That read belongs in a suite that already defines
+`_code_of()` (`source_scan_test` holds that class), not in a new file.
+**AND ONE 122 DELIBERATELY DID NOT TAKE, STILL NOT TAKEN:** whether a body can
+reach the cap while touching something.
+**Do not take any of these as licence to change what a player is told: that is
+38, and it is his.**
+
 **~~WHAT 122 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
 clone` OF THE PUSHED COMMIT.~~ TAKEN IN 122a, AND IT REPRODUCED BYTE-FOR-BYTE.**
 Struck rather than deleted because what it owed and why is the part a later
@@ -17625,8 +17920,11 @@ about ONE halt reason rather than about failed errands in general: of the two
 reachable failures, the stall has an obstacle it does not name, and the cap has
 no obstacle and a sentence that already carries its cause. It is still the
 owner's and 122 did not answer it.
-**THE NEW THING, AND IT IS THE CHEAPEST HONEST PIECE LEFT THAT NEEDS NOBODY:
-whether a `"stopped walking"` THAT IS NOT AN ARRIVAL IS REACHABLE.**
+**~~THE NEW THING, AND IT IS THE CHEAPEST HONEST PIECE LEFT THAT NEEDS NOBODY:
+whether a `"stopped walking"` THAT IS NOT AN ARRIVAL IS REACHABLE.~~ TAKEN IN
+123: IT IS NOT, FOR ANY LEGAL DUNGEON - `tests/errand_outcome_test.gd`, and
+the paragraph that follows is 122's original and is kept because the two lines
+it reasons from are the part a later session needs.**
 `game_controller.gd:375` makes every non-`"gave up"` reason `BLOCKED` unless
 the body is in the destination room (`:414-415`), so a body that runs out of
 waypoints somewhere other than the destination would read the stall's sentence
@@ -30045,6 +30343,24 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     wait. That is the argument for leaving it alone, and it is why 111 only
     wrote it down.
 
+    **RE-READ IN 123, AND THE SHAPE OF IT HAS NOT CHANGED.** `web build` run
+    **158** on `606f780` concluded `failure`, and its log is the same four
+    lines - `NETLIFY_AUTH_TOKEN:` and `NETLIFY_SITE_ID:` both empty, the
+    interactive login, *"Waiting for authorization..."*, and
+    `13:04:57` -> `13:09:57` before *"Timed out waiting for authorization."*
+    and exit 1. **The consecutive count above is NOT re-taken**: 123 read the
+    five most recent runs and all five failed, which is a reading of five
+    rather than of the 131 between run 28 and run 158.
+
+    **AND 123 FOUND A SECOND THING IN THE SAME LOG, WHICH IS WHY TRAPS 109
+    EXISTS.** *"Node.js 20 is deprecated. The following actions target
+    Node.js 20 but are being forced to run on Node.js 24:
+    `actions/checkout@v4`."* A **warning** today and not the cause of this
+    failure, and nothing was changed about it - bumping the action is a change
+    to `.github/`, which the standing instruction puts on his side of the line
+    the same way this entry's three lines are. Written down so that the day it
+    becomes an error, it is already in the record rather than discovered then.
+
     **If he is absent, LEAVE IT.** Nothing a player sees depends on it. The
     cost is runner minutes and a log that buries its own headline - which has
     now been read, and the fault it was hiding has been fixed.
@@ -30055,6 +30371,27 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     player is told.** It is here rather than decided because it changes a
     sentence a player reads and the shape of a record in the ledger, and both
     of those are his.
+
+    **NARROWED AGAIN IN 123, AND THE NARROWING IS THE USEFUL PART. THE
+    SENTENCE HAS EXACTLY ONE REACHABLE PRODUCER, AND IT IS TRUE THERE.** 122's
+    entry read two lines of `game_controller.gd` and reported that `BLOCKED` -
+    and so this sentence - is what **three** of the four halt reasons resolve
+    to, which would have made this a question about a sentence that is also
+    sometimes FALSE. It is not. 123 drove it: `"nowhere to go"` is unreachable
+    by any `ORDER` (122, leg by leg), a `"stopped walking"` that is not an
+    arrival is unreachable for **every legal dungeon** (`Npc.ARRIVE` 1.40 m
+    against a `MIN_SIDE * 0.5` of 2.00 m - `tests/errand_outcome_test.gd`),
+    and the stall is the only reachable one left. **At the stall every clause
+    of the sentence is a fact about that body**: flat speed **0.0000 m/s**,
+    `is_on_wall()` **true**, 1 slide collision, and `room_of` reading **-1**
+    against the room **2** it was sent to - all driven in that suite, which
+    also prints the sentence verbatim and asserts no wording.
+
+    **SO THE DECISION IS SMALLER THAN IT LOOKED.** It is not *"stop Genesis
+    saying something false"* - it says nothing false here. It is *"should the
+    one true-but-unusable sentence a player meets carry the name that is one
+    `get_parent()` away"*, and the answer to that is still entirely his. 123
+    changed no sentence and asserted no wording.
 
     **WHAT A PLAYER GETS TODAY, verbatim:** *"Could not get to the vault:
     stopped making progress after 26 m."* True, and there is nothing in it to
