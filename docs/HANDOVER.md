@@ -11,6 +11,74 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
+- Last commit at the time of writing: **118**, and it takes **step (1) of
+  117's live entry** - the two tests that held a false sentence in place - and
+  then finds the same false claim in **two places the entry did not name**,
+  one of them player-facing. `tests/load_state_test.gd` **new, 16
+  assertions**, `run_tests.sh` one word (the new suite is TIMED),
+  `tests/load_check_test.gd` three assertions rewritten, `tests/log_023_test.gd`
+  one fixture line moved and one added, `scripts/refusal_check.gd` one denial
+  added and one false rebuttal corrected, `docs/TRAPS.md` one new entry (**116**)
+  and **three corrections to 115**, and this file. **`PROMPT_FINGERPRINT` did
+  not move and `prompt_bounds_test` stayed at 72**, because `refusal_check.gd`
+  is not part of `assembled_prompt()` - checked, not assumed.
+
+  **WHAT IS NOW MEASURED RATHER THAN QUOTED.** 117 measured the equipment
+  surviving a `/load` and recorded it in this file. 118 drove it again through
+  the real scene and it is now a suite: EQUIP boots at 400 N, carry a lamp to
+  the vault, `/save`, `/load`, and **the kit holds 400.0, the standing body
+  holds 400.0, and stepping back out and in on foot gives 400.0** against a
+  free kit of 240.0 - while **the carried lamp is back in room 1**, the room
+  the saved description puts it in. The same drive prints the false sentence
+  the player reads, verbatim, in its own output. **It asserts no wording at
+  all**: which way the caveat should be reworded is still the owner's and is
+  untouched below.
+
+  **AND THE TWO SITES 117'S ENTRY DID NOT NAME, WHICH IS THE PART WORTH
+  READING.** The entry said the code *"says the second thing in three
+  places"*. Grepping the class rather than the three (TRAPS 11) found a
+  fourth and a fifth:
+  - **`scripts/refusal_check.gd:258` - PLAYER-FACING, AND IT IS THE REBUTTAL
+    ITSELF.** The `but` Genesis prints *to correct a model that understates
+    it* said *"What it does not keep is the STATE it was left in - equipment,
+    shut doors, and where things had been carried to."* The check built to
+    catch Genesis lying about itself carried the same lie, in the same clause.
+    **Corrected**, and it now draws the distinction that is actually true: the
+    FILE does not hold the equipment, the SESSION does, and it is quitting
+    Genesis rather than loading a world that returns you to the free kit.
+    Nothing asserted its wording, so nothing was holding it.
+  - **`docs/TRAPS.md` 115 - THE TRAP ENTRY WRITTEN ABOUT THIS EXACT MISTAKE
+    MADE IT.** 115 warns against carrying a list to a path nobody measured,
+    and its own text said *"On the load path all three are true"* and *"A load
+    constructs a new `GameController`-side world from a file and the kit comes
+    back to `ToolRegistry.free_kit()`"*, and its table's `/load` column read
+    "lost, lost, lost". **A `/load` does not construct a controller** - it
+    calls `controller.execute()` on the saved description, the same door an
+    edit comes through. All three are **struck and corrected rather than
+    deleted**, and the table now marks which cells were driven and which are
+    still readings.
+
+  **WHAT CHANGED FOR A PLAYER: ONE SENTENCE, AND IT IS THE REBUTTAL, NOT THE
+  CAVEAT.** The `/load` caveat a player meets on every load is **byte-identical
+  to what 117 measured** - `LoadCheck.NOT_SAVED` and `_caveat()` are 0 lines of
+  diff - because changing it is step (2) and turns on the owner's open question
+  below. The deploy still fails on two unset secrets, and what a visitor sees
+  is still commit `71b065f` from 2026-10-14. Nothing here touched a deployment
+  setting, a secret, a flag or a target.
+
+  **WHAT 118 DID NOT DO, STATED PLAINLY.** It did not change the player-facing
+  caveat, `LoadCheck.NOT_SAVED`, or the prompt clause at
+  `ai_interpreter.gd:198` - steps (2) and (3), both still open below, both
+  turning on the owner's decision. **So Genesis still tells a player their
+  equipment did not come back, and still tells the model so.** What changed is
+  that nothing in the suite agrees with it any more: the test that asserted
+  the sentence now asserts a property that follows the constant, the
+  lie-detector's honest fixture no longer calls the lie honest, and a suite
+  reads the kit and the body. It also **did not drive the shut-door half of
+  `/load`** - the one cell of 115's table that is still a reading - and
+  `load_state_test`'s own header says so rather than letting the suite's name
+  imply coverage it does not have.
+
 - Last commit at the time of writing: **117a**, which is **docs only** - 0
   lines of diff in `scripts/`, `tests/` and `.github/`, no new finding about
   Genesis, no new claim about its behaviour, no new live entry. It records the
@@ -9073,6 +9141,80 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
+**118's RECORD. ONE MEASUREMENT IS OWED - A FRESH `git clone` OF THE PUSHED
+COMMIT - AND THAT IS 118a's WHOLE JOB.** 118 took its own baseline on the
+clean pushed tree at `2c1f09e`, from a **twenty-first** independent container
+with its own Godot download: `git status --porcelain` **empty before and
+after**, `--all`, `user://` cleared by **deleting `app_userdata/AI_Game_Builder`**
+rather than by renaming `config/name`, so `project.godot` was not edited to
+take the measurement. Godot **4.7.1.stable.official.a13da4feb**, `--version`
+read. **`a456c26dce4d38acf76b987d0e1a30d0`, 79 suites, 0 with something to
+look at** - **byte-identical to the md5 117 recorded and 117a reproduced from
+a clone.** So the record and the container still agree today.
+
+**118 ADDED ONE FILE**, so both numbers moved: the run reports **80** suites.
+It added `tests/load_state_test.gd`, added that name to `TIMED` in
+`run_tests.sh`, and edited two suites, `scripts/refusal_check.gd`,
+`docs/TRAPS.md` and this file.
+
+**TWO BYTE-IDENTICAL `--all` RUNS ON THE CHANGED TREE**, `user://` cleared
+before each by deleting `app_userdata/AI_Game_Builder`: md5
+**`331780b3eae154a3ab1a39d300a6a243`**, **80 suites, 0 with something to look
+at**, `load_state_test` **16, failures=0**, `log_023_test` **88, failures=0**,
+`load_check_test` **40, failures=0**, `result_line_test` **350, failures=0**,
+`prompt_bounds_test` **72, failures=0**.
+
+**`diff` AGAINST THE BASELINE RUN IS EXACTLY THREE LINES** - the new suite's
+line, `log_023_test` 87 -> 88, and `result_line_test` 346 -> 350. **Every other
+suite is unmoved, `prompt_bounds_test` 72 among them**, which is the reading
+behind the claim that `PROMPT_FINGERPRINT` did not move: `refusal_check.gd` is
+not one of the three things `assembled_prompt()` concatenates (`SYSTEM_PROMPT`
++ `WorldRegistry.prompt_sections()` + `ToolRegistry.prompt_sections()`),
+checked by reading `ai_interpreter.gd:232-237` before the file was edited.
+
+**THE PREDICTED DIFF WAS WRITTEN TO A FILE BEFORE ANY REPOSITORY FILE WAS
+EDITED, AND IT WAS WRONG IN ONE CLAUSE - RECORDED, NOT TIDIED (TRAPS 89).**
+What held: the new suite's line; `result_line_test` **346 -> 350** and the
+reason for it (it enumerates `tests/` via `dir.get_files()`, four assertions
+per member - the suite that actually moved in 117, named correctly this time);
+`load_check_test` **40 -> 40**; `prompt_bounds_test` **72**; `said_set_test`
+**71**; `asked_test`, `capability_test`, `check_wiring_test`,
+`source_scan_test` and `scan_floor_test` all unmoved; and `suites with
+something to look at: 0`.
+**WHAT WAS WRONG:** the prediction said `log_023_test` **87 -> 87**, reasoning
+that one `_check` would leave the honest loop and one would enter the lies
+loop. It is **88**. The cause is not a miscount - it is that the prediction was
+written before the change was finished, and the honest-fixture guard
+*"equipment is not kept in a saved world's file"* was added afterwards,
+deliberately, as the thing that keeps the new denial narrow. The prediction
+was right about the two it knew about and silent about an assertion that did
+not exist when it was written.
+
+**AND THE FOUR INJECTIONS, EACH ALONE IN ITS OWN THROWAWAY COPY WITH ITS OWN
+`config/name` AND ITS OWN CLEARED `user://` (TRAPS 6).** The first attempt at
+injection A **did not land** - the patch anchor was written with spaces where
+`game_controller.gd` has tabs, the suite ran unchanged and reported
+`failures=0`. That is recorded because **a green suite under an injection that
+did not land says nothing**, and the only reason it was caught is that the
+`grep` confirming the edit printed nothing.
+- **Injection A**, `kit = ToolRegistry.free_kit()` added after
+  `_clear_world_node()` in the non-plan branch of `_build_world()` - a build
+  that resets the kit, which is what the false sentence claims a load does:
+  **failures=2**, the kit assertion reading **240 N** where it read 400, and
+  the step-back-in-on-foot assertion. **The standing-body row did NOT fail**,
+  exactly as its own comment says it will not, which reproduces 117's
+  injection 2 independently.
+- **Injection B**, `"back to the free"` taken back out of `RefusalCheck`'s
+  denials: **failures=1**, `log_023_test`'s new lies row.
+- **Injection C**, `_caveat()` made to build its sentence from
+  `[NOT_SAVED[1], NOT_SAVED[2]]`: **failures=2** in `load_check_test`, one per
+  verdict, both naming `'equipment'` as the item the sentence stopped naming.
+  This is the row that replaced `said.contains("equipment")`.
+- **Injection D**, `"equipment is not kept"` ADDED to the denials - the
+  over-wideness the new honest guard exists to catch: **failures=1**, and it
+  is the guard row, *"left alone, it is true: 'equipment is not kept in a
+  saved world's file'"*.
+
 **AND RUN 4 IS A FRESH `git clone` OF THE PUSHED COMMIT**, written in by 117a
 - `2f87466`, cloned into its own directory, `git status --porcelain` **EMPTY
 both before and after the run** (so `project.godot` was not edited to take the
@@ -16402,6 +16544,45 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
+**WHAT 118 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
+clone` OF THE PUSHED COMMIT.** 118 took its own baseline on the clean pushed
+tree (byte-identical to the md5 117 recorded and 117a reproduced from a clone),
+wrote its predicted diff to a file before editing any repository file - and
+**one clause of it was wrong, which is recorded under "Run the tests first"
+rather than tidied (TRAPS 89)** - and took two byte-identical `--all` runs on
+the changed tree. What it did NOT take is a run against a fresh `git clone` of
+its own pushed commit, which is the reading 104a and 106a through 117a each
+exist for: everything else is an inference about the remote rather than a
+reading of it. **That is 118a's whole job and it is the only thing owed.**
+**THE CLAUSE IT MATTERS MOST FOR IS `load_state_test` 16 ON THE CLONE.** It is
+a NEW FILE and the only thing in the project that reads what a `/load` keeps,
+so a green run against the REMOTE tree is the reading that the suite went up on
+the remote rather than only existing locally. **AND `result_line_test` 350 ON
+THE CLONE IS THE SECOND**: it derives its members from `tests/` on disk via
+`dir.get_files()`, so that count is the reading that the remote's `tests/`
+really holds the file this commit says it does, taken by the project's own
+reader rather than by `ls`. **AND `prompt_bounds_test` 72 ON THE CLONE IS THE
+THIRD**: it compares `assembled_prompt()`'s sha256 against
+`PROMPT_FINGERPRINT`, so a green run against the remote is the reading behind
+118's claim that no prompt clause moved.
+**DO NOT RE-TAKE 118's FOUR INJECTIONS** - they are in the record with their
+counts, each alone in its own throwaway copy with its own `config/name`,
+including the note that **the first attempt at injection A did not land** and
+reported `failures=0` while changing nothing.
+**AND DO NOT RE-DRIVE THE `/load` EQUIPMENT OR THE CARRIED LAMP** - they are
+`tests/load_state_test.gd` rather than a table in a document.
+
+**THE WORK ITSELF, AFTER THAT.** The first live entry below is still the first
+live entry, and what is left of it is **steps (2) and (3)**: the player-facing
+caveat and the prompt clause. **Both wait on the owner's question at the end of
+that entry**, which 118 did not answer and should not have - it is a question
+about what the caveat is FOR, and the two honest readings say different things
+to a player. **Do not guess it to make progress.** If the owner has not
+answered when you arrive, the next useful measurement that needs nobody is the
+**shut door across `/load`** - the one cell of TRAPS 115's table that is still
+a reading, named as absent in `load_state_test`'s own header. It is one probe
+on a path already driven twice.
+
 **~~WHAT 117 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH CLONE OF
 THE PUSHED COMMIT.~~ TAKEN IN 117a, AND IT REPRODUCED BYTE-FOR-BYTE.** Struck
 rather than deleted because what it owed and why is the part a later session
@@ -17116,10 +17297,29 @@ say which of the two it is making, and `load_check.gd:25-31` writes down the
 reasoning for why it says all three every time, which is the reasoning that
 has to be re-read rather than worked around.
 
+**STEP (1) IS DONE IN 118, AND IT FOUND TWO MORE SITES. STEPS (2) AND (3) ARE
+STILL OPEN AND STILL TURN ON THE OWNER'S QUESTION BELOW.** What 118 did: both
+tests fixed (`load_check_test`'s three wording rows now assert that every
+member of `NOT_SAVED` is named in the sentence built from it, deriving from the
+constant so they follow the owner's answer instead of having to be deleted by
+whoever gives it; `log_023_test`'s honest fixture no longer calls the lie
+honest, the sentence has moved to the lies, and `RefusalCheck` has a narrow new
+denial - `"back to the free"`, the consequence clause - so it is actually
+caught); `tests/load_state_test.gd` new, **16 assertions**, driving `/save` and
+`/load` through the real scene and reading the kit and the body rather than a
+string. **And grepping the class rather than the three named sites found a
+fourth and a fifth: `refusal_check.gd:258`, the player-facing rebuttal, which
+carried the same false clause and is corrected; and `docs/TRAPS.md` 115, the
+trap entry about this exact mistake, which made it, and is struck and
+corrected.** See the 118 entry under "Starting state".
+**WHAT IS STILL TRUE OF THE PRODUCT, STATED PLAINLY: A PLAYER STILL READS THE
+FALSE SENTENCE ON EVERY `/load`, AND THE MODEL IS STILL TOLD IT.**
+`LoadCheck.NOT_SAVED`, `_caveat()` and `ai_interpreter.gd:198` are 0 lines of
+diff. Only step (1) was deliberately in scope. The original text follows.
 **WHAT TO DO, in the order that pays. 117 DELIBERATELY DID NONE OF IT**, having
 spent its commit on the measurement; all four measurements above are in hand so
-none of this needs re-driving. (1) **Fix the two tests first, before any
-sentence changes.** `load_check_test` should assert the capability - equip,
+none of this needs re-driving. ~~(1) **Fix the two tests first, before any
+sentence changes.**~~ **DONE IN 118.** `load_check_test` should assert the capability - equip,
 save, load, read the kit and the body - rather than that a string contains
 "equipment"; `log_023_test`'s honest list should lose the equipment line, and
 whether it moves to the lies fixture is the same question 025 answered for
@@ -17133,6 +17333,14 @@ updated in the same commit and the new fingerprint recorded. It also changes
 what every live request sends. **Grep before writing the replacement** - the
 rule that produced this entry - because the replacement is itself a claim
 about Genesis.
+
+**AND DO NOT RE-DRIVE THE EQUIPMENT OR THE CARRIED LAMP ACROSS `/load`.**
+Both are `tests/load_state_test.gd` as of 118, with their numbers, read off the
+kit, the body and the world. **The one thing still undriven on this path is the
+shut door** - the third member of `NOT_SAVED`, and the one cell of TRAPS 115's
+table that is still a reading rather than a measurement. That is the cheap next
+measurement if anyone wants one, and `load_state_test`'s header names it as
+absent rather than letting the suite's name imply it.
 
 **HUMAN DECISION NEEDED, and it is narrow and genuinely the owner's.** Not
 whether to fix it - a false sentence a player reads is not a matter of taste -

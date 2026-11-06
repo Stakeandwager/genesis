@@ -171,6 +171,11 @@ func _refusals_that_understate() -> void:
 		"nothing persists, so a world cannot be saved and reloaded",
 		"the game does not support saving or persistence of any kind",
 		"worlds cannot be saved, so the state cannot be reloaded after a restart",
+		# 118: moved out of the honest list above. The first clause is TRUE of
+		# the save FILE and would be left alone on its own; what makes the
+		# sentence a lie is the consequence - a load does not reset the kit,
+		# measured in tests/load_state_test.gd.
+		"equipment is not kept with a saved world, so the boots go back to the free pair",
 	]:
 		_check(not RefusalCheck.quarrel_with(persistence_lie).is_empty(),
 			"caught: '%s'" % persistence_lie)
@@ -190,7 +195,25 @@ func _refusals_that_are_honest() -> void:
 		# where it belongs; what is honest is the narrower statement two lines
 		# down about the STATE not being kept.
 		"the state a world was left in is not saved, so a door that was shut comes back open",
-		"equipment is not kept with a saved world, so the boots go back to the free pair",
+		# 118: "equipment is not kept with a saved world, so the boots go back
+		# to the free pair" was HERE, asserted to be an honest refusal that
+		# RefusalCheck leaves alone - so Genesis's lie-detector was calibrated
+		# to call this lie honest, and a model refusal telling a player their
+		# boots went back to the free pair was flagged by nothing. 117
+		# measured the consequence clause false (the kit and the body both
+		# still hold the equipped spec after a /load) and 118 drives it
+		# through the real scene in tests/load_state_test.gd. It has moved to
+		# the lies below, which is what the comment above this one says 025
+		# did for the saving claim - and the two statements it pointed at were
+		# the door (true, still here) and the equipment (false), of which only
+		# one was ever checked. TRAPS 11.
+		# 118: and the TRUE half of the sentence that moved to the lies, kept
+		# here on purpose. This is the guard that keeps 118's new denial
+		# narrow: the claim about the save FORMAT is true and must stay
+		# unflagged, and only the claim that a load RESETS the kit is false.
+		# Widen "back to the free" to something like "equipment is not kept"
+		# and this assertion goes red, which is the point of it.
+		"equipment is not kept in a saved world's file",
 		"no door is locked and no key unlocks anything",
 		"a character takes one order at a time, so a sequence of steps in order is not possible",
 		"one set of equipment exists at a time, so two cars cannot be compared side by side",

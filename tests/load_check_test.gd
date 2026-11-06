@@ -233,9 +233,31 @@ func _every_outcome_says_what_was_not_saved() -> void:
 		LoadCheck.compare({}, measured),
 	]:
 		var said := str((verdict as Dictionary)["said"])
-		_check(said.contains("equipment"), "%s says equipment did not come back" % str((verdict as Dictionary)["outcome"]))
-		_check(said.contains("doors were shut"), "and that shut doors did not")
-		_check(said.contains("carried"), "and that carried things did not")
+		# 118: these three were `said.contains("equipment")`, `"doors were
+		# shut"` and `"carried"` - the literal words, typed out here. That is
+		# the shape the project's own rule names, and it cost something real:
+		# the equipment clause is FALSE, 117 measured it false, and this
+		# assertion was green BECAUSE the sentence is said rather than because
+		# anything it claims is true. A suite that asserts a sentence contains
+		# a word cannot tell that the word is a lie.
+		#
+		# So what is asserted now is the PROPERTY that makes the caveat
+		# honest: every item LoadCheck claims is not saved is named in the
+		# sentence it says to the player, and the list is read from the
+		# constant rather than retyped. Whether "equipment" belongs in that
+		# constant is the owner's open question (HANDOVER, "Human decision
+		# needed"); when it is answered either way, this assertion follows the
+		# answer instead of having to be deleted by whoever makes it.
+		#
+		# WHAT THIS STILL DOES NOT DO, STATED SO IT IS NOT MISTAKEN FOR DONE:
+		# it does not check that any item in NOT_SAVED is TRULY not kept. That
+		# is a capability and cannot be read off a string at all. It is
+		# tests/load_state_test.gd, which drives /save and /load through the
+		# real scene and reads the kit and the body.
+		for item in LoadCheck.NOT_SAVED:
+			_check(said.contains(str(item)),
+				"%s names '%s', the item it says did not come back" % [
+					str((verdict as Dictionary)["outcome"]), str(item)])
 
 	# The prompt says the same thing to the AI, so it stops telling players
 	# that nothing persists - which it did, because 023 told it to.

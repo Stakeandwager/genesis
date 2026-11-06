@@ -8937,8 +8937,19 @@ from somewhere it really is true.
 
 **Cause.** `LoadCheck.NOT_SAVED` names three kinds of state a `/load` cannot
 bring back: **equipment**, **which doors were shut**, **where things had been
-carried to**. On the load path all three are true, said every load including
-RESTORED, on the reasoning written at `load_check.gd:25-31`.
+carried to**. ~~On the load path all three are true~~, said every load
+including RESTORED, on the reasoning written at `load_check.gd:25-31`.
+
+> **CORRECTED IN 118, AND THIS ENTRY HAD THE SAME FAULT IT WAS WRITTEN ABOUT.**
+> The struck clause is false and is left struck rather than deleted, because an
+> entry warning against assuming a list holds on a path nobody measured, which
+> assumed exactly that about the load path, is the useful part. **Equipment is
+> KEPT across a `/load` too**, in the session the player is standing in -
+> driven in 117 and driven again through the real scene in 118, where it is
+> `tests/load_state_test.gd` rather than a sentence in a document. The sentence
+> below beginning *"A load constructs a new `GameController`-side world from a
+> file and the kit comes back"* is false for the same reason and is struck
+> there. See entry 116.
 
 116 drove the **edit** path — a complete world command handed back for a world
 already standing — and found the shut state is dropped there too, in silence.
@@ -8950,13 +8961,22 @@ Driven in 117, one of the three is **kept**:
 
 | state | `/load` | an EDIT |
 |---|---|---|
-| which doors were shut | lost | lost (116, driven) |
-| where a thing was carried to | lost | **lost** (117, driven) |
-| equipment | lost | **KEPT** (117, driven) |
+| which doors were shut | lost (not driven) | lost (116, driven) |
+| where a thing was carried to | **lost** (118, driven) | **lost** (117, driven) |
+| equipment | **KEPT** (117 and 118, driven) | **KEPT** (117, driven) |
+
+The `/load` column read "lost, lost, lost" when this entry was written, from
+the same reasoning the entry exists to warn against. Two of its three cells
+have since been driven and one of them was wrong; the shut-door cell is still
+a reading and is now marked as one.
 
 The two paths are not the same mechanism and there was no reason to expect
-them to agree. A load constructs a new `GameController`-side world from a file
-and the kit comes back to `ToolRegistry.free_kit()`. An edit is
+them to agree. ~~A load constructs a new `GameController`-side world from a
+file and the kit comes back to `ToolRegistry.free_kit()`.~~ **False, corrected
+in 118: a `/load` does not construct a controller either.** It calls
+`controller.execute()` on the saved description (`main.gd:600`) - the same door
+an edit comes through - so the single assignment below is why the kit survives
+a load as well. An edit is
 `_build_world()` on the controller that is already running: it calls
 `_clear_world_node()` and rebuilds the scene, and `kit` is not in the scene.
 `ToolRegistry.free_kit()` is assigned to `kit` **exactly once**, where the
@@ -8997,3 +9017,80 @@ Genesis telling players it could not save worlds it had been saving.
   What a player would feel is stepping back in on foot, which re-equips from
   the kit (`main.gd:761-762`). Measured by injection, and it is the
   assertion that moved from 400 N to the free kit's 240 N.
+
+---
+
+## 116. A test that asserts the sentence is said, in place of asserting the thing the sentence claims
+
+**Signature:** a green suite, and a player reading a false sentence. The
+assertion that covers the sentence is `said.contains("<word>")`. It passes
+because the word is in the string, which is true, and says nothing whatever
+about whether the claim the word carries is true.
+
+**Cause.** `LoadCheck._caveat()` is said on every `/load` outcome, RESTORED
+included: *"A saved world is the description that made it, so none of
+equipment, which doors were shut and where things had been carried to came
+back."* The equipment clause is false — the kit is assigned
+`ToolRegistry.free_kit()` exactly once, where the `GameController` is
+constructed, `_equip()` is the only other write in all of `scripts/`, and a
+`/load` does not construct a controller — so the player still has the boots
+they equipped while Genesis tells them they do not.
+
+Three things held it in place, and the test was the load-bearing one:
+
+- **`load_check_test.gd:236`** asserted `said.contains("equipment")`. Green
+  **because** the sentence is said. A suite that reads a string for a word
+  cannot tell the word is a lie, so every session that ran a full suite got
+  evidence that the sentence was *present* and read it as evidence that it was
+  *right*.
+- **`log_023_test.gd:193`** listed *"equipment is not kept with a saved world,
+  so the boots go back to the free pair"* in `RefusalCheck`'s **HONEST**
+  fixture — so Genesis's own lie-detector was calibrated to call this lie
+  honest, and a model refusal telling a player their boots were gone was
+  flagged by nothing.
+- **`refusal_check.gd:258`** — the rebuttal Genesis *prints to the player to
+  correct a model that understates it* — itself said *"What it does not keep
+  is the STATE it was left in - equipment, shut doors, and where things had
+  been carried to."* The check written to catch Genesis lying about itself was
+  lying about itself, in the same clause, which is trap 14 arriving inside the
+  machinery built against it.
+
+And the comment directly above `log_023_test.gd:193` is **025 doing this exact
+fix and stopping one item short**: it records that *"nothing persists"* was in
+the honest list, was false, was in the prompt as well, and was moved to the
+lies — and says *"what is honest is the narrower statement two lines down
+about the STATE not being kept."* Two lines down were **two** statements, the
+door (true) and the equipment (false). Trap 11, in the one list in the project
+whose job is to catch this.
+
+**Do:**
+
+- **Assert the capability, or assert a property — never the wording.** The
+  replacement for `said.contains("equipment")` is not a better string match.
+  It is two things: a loop asserting that every member of `LoadCheck.NOT_SAVED`
+  is named in the sentence built from it (a property of the code, which
+  follows the constant instead of having to be deleted when it changes), and
+  `tests/load_state_test.gd`, which drives `/save` and `/load` through the
+  real scene and reads the kit and the body. The first cannot tell a lie from
+  a truth and no longer pretends to; the second can.
+- **A fixture of "honest" examples is a list of claims about Genesis.** Every
+  member is an assertion that a sentence is TRUE, with none of the scrutiny a
+  claim in the prompt or the docs gets. Grep each one against the code before
+  trusting the suite that holds it.
+- **Check the rebuttal as well as the refusal.** `RefusalCheck`'s `but`
+  strings are player-facing prose stored in a table nothing asserts the
+  wording of. Two of them have now carried over-wide or false claims (028 for
+  physics, this entry for equipment).
+- **Where a claim is half true, find which half, and say which.** *"The save
+  file does not hold your equipment"* is **true**, and consequential: `kit` is
+  session state, so quitting and loading tomorrow really does give the free
+  kit. *"On loading, the equipment goes back to the free kit"* is **false**.
+  The old sentence said the second and meant the first. That is why the fix is
+  not a word to delete, and why the player-facing wording was left for the
+  owner rather than guessed at.
+- **Make the denial the clause that is false, not the clause that is
+  ambiguous.** 118's new `RefusalCheck` denial is `"back to the free"` — the
+  consequence — and deliberately **not** `"equipment is not kept"`, which is
+  true of the save format. `log_023_test` now holds *"equipment is not kept in
+  a saved world's file"* in the honest list as the guard: widen the denial to
+  the ambiguous clause and that assertion goes red. Measured by injection.

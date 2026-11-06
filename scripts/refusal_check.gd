@@ -249,13 +249,42 @@ const CAPABILITIES := [
 		# commit that built a checker for false capability denials shipped
 		# one. What is true is narrower and is now said instead: a world comes
 		# back as it was BUILT, not as it was LEFT.
+		# --- 118: and the half of its own rebuttal that was false ---
+		#
+		# 025 stopped the prompt inviting that lie and moved the sentence
+		# into log_023_test's lies fixture. The comment it left there said
+		# "what is honest is the narrower statement two lines down about the
+		# STATE not being kept". Two lines down were TWO statements, not one -
+		# the shut door (true) and the equipment (false) - and only one of
+		# them was ever checked. TRAPS 11, in the one list in the project
+		# whose job is to catch this.
+		#
+		# 117 drove it: EQUIP boots at 400 N, /save, /load, and the kit and
+		# the body both still hold 400.0 against a free kit of 240.0. 118
+		# drove it again through the real scene and it is now
+		# tests/load_state_test.gd rather than a sentence in a document.
+		#
+		# So the "but" below no longer says Genesis does not keep the
+		# equipment, because it does. The distinction it draws instead is the
+		# real one: the FILE does not hold it, and the SESSION does.
 		"name": "saving and loading a world",
 		"words": [
 			"persist", "persists", "persistence", "saved and reloaded",
 			"save a world", "saving", "cannot be saved", "reload",
 		],
-		"denials": ["nothing persists"],
-		"but": "Genesis does save and load a world, and checks the one that comes back against the measurements taken the day it was saved. What it does not keep is the STATE it was left in - equipment, shut doors, and where things had been carried to.",
+		# "back to the free" is an outright denial and needs no negation
+		# frame, because it is not a denial of a capability in the ordinary
+		# way - it is a claim that a load RESETS the equipment, and nothing in
+		# Genesis does that. It is deliberately the CONSEQUENCE clause and not
+		# the file clause: "equipment is not kept with a saved world" is TRUE
+		# of the save format and is left alone, and "the boots go back to the
+		# free pair" is what is false. Grepped before it was written - the
+		# only two places in the repository that say it are the prompt clause
+		# at ai_interpreter.gd:198, which is still false and is the owner's
+		# open question, and the fixture in log_023_test that this commit
+		# moved into the lies.
+		"denials": ["nothing persists", "back to the free"],
+		"but": "Genesis does save and load a world, and checks the one that comes back against the measurements taken the day it was saved. What the FILE does not hold is the state it was left in: which doors were shut, where things had been carried to, and the equipment. Two of those three really are gone when a world comes back - but the equipment is NOT. The kit is set once, when the controller is built, so boots you equipped are still on your feet after a /load in the same session; it is quitting Genesis, not loading a world, that returns you to the free kit.",
 	},
 	{
 		"name": "one world inside another",
