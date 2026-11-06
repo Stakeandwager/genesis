@@ -11,6 +11,119 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
+- Last commit at the time of writing: **120**, and it takes the one piece of
+  119's live entry that 119 named as needing nobody: **whether the player's own
+  leftover walker body blocks a character's errand**, which 119 called
+  confounded and did not claim. It does. And asking the same question of the
+  sibling body found something worse, which is a live entry rather than a fix.
+  `tests/left_body_test.gd` **new, 16 assertions**, `run_tests.sh` one word
+  (the new suite is TIMED), **`scripts/main.gd` two lines of behaviour in two
+  functions plus a comment block**, `docs/TRAPS.md` one new entry (**118**),
+  and this file. **`PROMPT_FINGERPRINT` did not move and `prompt_bounds_test`
+  stayed at 72** - READ, not assumed: `assembled_prompt()`
+  (`ai_interpreter.gd:232`) is `SYSTEM_PROMPT` plus three registry sections,
+  and `main.gd` is in none of them.
+
+  **THE ANSWER TO 119's QUESTION, AND IT IS YES.** Each probe on a fresh
+  `Main`, so the errand is the FIRST order and the character is placed at the
+  entrance by the game's own path rather than by the probe; start position read
+  off `standable_surface()` in both and **asserted equal**,
+  `(0.00, 2.60, 0.00)`; `npc_at` `Vector3.INF` before both; the body put on the
+  **first corridor mark of `route(0, 2)`**, chosen by asking `room_of()` which
+  marks are in no room. **Body left there: `VALID`, `BLOCKED`, 5.1 m in 6.7 s,
+  body finishing in room 0, and the player reads "Could not get to the vault:
+  stopped making progress after 5 m."** **Body moved out of the world, nothing
+  else changed: `VALID`, `ARRIVED`, 34.9 m in 9.8 s, room 2, "Got to the vault.
+  35 m in 10 seconds."** Reproduced byte-identically on two runs.
+
+  **AND THE SAME QUESTION ASKED OF THE CAR FOUND A PLAYER-FACING FAULT THAT IS
+  WORSE THAN THE ONE IT WENT LOOKING FOR.** A dungeon, `/explore`, `/view`, a
+  race track, `/drive`: the walker is left at the dungeon entrance, which is
+  the origin, a fresh track starts there too, and **the car settles on top of
+  the invisible body at y 2.85 instead of 1.39 and a held key moves it
+  0.00 m against 4.90 m.** Removing the body from the tree and changing nothing
+  else restores 4.90 m. **It is not this commit's**: the same four trials
+  against the unmodified `main.gd` of `975a70d` read the same, the third at
+  0.05 m. The player is told nothing; the car simply does not move. First live
+  entry below.
+
+  **WHAT WAS ACTUALLY FIXED IS NARROWER THAN EITHER, AND IT IS DECISION-FREE.**
+  `_stop_exploring()` set `walker.visible = false` and nothing else, and
+  `Walker._physics_process` reads `Input.is_key_pressed` every tick whenever
+  `auto_walk` is false. `Input` reports the **device**, which a `LineEdit`
+  taking the event does not change. **Measured before the fix: holding W after
+  `/view` moved the hidden body 2.07 m, and 2.69 m again with the text box
+  focused and empty; `R`, read in the same branch, teleported it 4.80 m back to
+  the entrance.** `_stop_exploring()` now also sets `auto_walk = true` with
+  zero input and `_start_exploring()` sets it back to false. **The sibling door
+  already had the rule and this is TRAPS 11's shape:** `_stop_driving()` sets
+  `car.freeze = true`, and the frozen car moves **0.000 m** under the same held
+  key - measured, not assumed. Both doors are now asserted, and the suite's
+  last section walks `Main`'s own children for every `Walker` or `Car` that is
+  not the character, so a third body added later is asked the question without
+  anybody editing the file (TRAPS 114).
+
+  **WHAT WAS DELIBERATELY NOT FIXED: THE BODY IS STILL SOLID.** Whether a body
+  the player stepped out of should stay in the world at all is the owner's
+  question - the two honest readings are in the first live entry - and **both
+  consequences above are consequences of leaving it, so neither is pinned by a
+  suite.** `left_body_test` asserts that a `/view`-ed body is not DRAWN and not
+  DRIVEN, and says in its header that it asserts nothing about its being SOLID.
+
+  **FOUR INJECTIONS, EACH ALONE IN ITS OWN THROWAWAY COPY** with its own
+  `config/name` and its own cleared `user://` (TRAPS 6), each anchor counted
+  before patching and found **exactly once**, and **all four landed** - which
+  is new after two commits where the first attempt did not.
+  - **A**, the fix removed from `_stop_exploring()`: **failures=4** - the
+    hidden body walks **1.668 m**, is 1.668 m from where it was left, `R`
+    teleports it **4.799 m**, and the derived class row names `["Walker"]`.
+  - **B**, `_start_exploring()` no longer giving the keyboard back:
+    **failures=2** - the second walk reads **0.00 m** and the can-it-fail row
+    finds nothing steered. This is the row that stops the fix being a one-way
+    door.
+  - **C**, `car.freeze = true` removed from `_stop_driving()`: **failures=5** -
+    the frozen-car row reads **13.046 m**, and the class row names `["Car"]`
+    and then `["Walker", "Car"]`.
+  - **D**, `/view` removing the walker from the tree instead of hiding it:
+    **failures=5**, starting with the row that says `/view` hides a body and
+    does not remove it.
+
+  **AND THE PREDICTED DIFF WAS WRONG IN TWO NUMBERS (TRAPS 89).** It was
+  written to a file before any repository file was edited. It said
+  `left_body_test` would be **12** assertions and it is **16** - the suite grew
+  an `R` row, a second control row and a can-it-fail row for the derived class
+  check while it was being driven - and it said `explore_test` would stay at
+  **9** when the number is **14**, though the clause that mattered, that it
+  does not move, held. Everything else held exactly: suites 81 -> 82,
+  `result_line_test` 354 -> **358**, `prompt_bounds_test` **72**, `walker_test`
+  **3**, the five `/view` suites unmoved, `suites with something to look at: 0`,
+  and the diff against the baseline being **exactly two lines**.
+
+  **NOT VERIFIED, AND THE LIST IS THE POINT.**
+  **THE FIX IS MEASURED HEADLESSLY AND THE FOCUSED CASE IS NOT FAITHFUL.** The
+  probe sets device state with `Input.parse_input_event`; the `LineEdit` took
+  no character from it, its text stayed empty, so "the player typed W into the
+  box and their hidden body walked" is an **inference** from how `Input` works
+  and not a reading. The rows hold the key with nothing focused, which settles
+  that a hidden body is still read by the keyboard but not that a real
+  keystroke does both jobs at once. **One session on real hardware settles it
+  in a minute.**
+  **NOTHING ABOUT WHETHER A FAILED ERRAND COULD NAME WHAT STOPPED IT.**
+  `carrier.attempted` was empty in both probes and what `npc.gd:227` knows at
+  the moment it calls `halt()` has not been read. Named in the second live
+  entry as the cheapest thing left that needs nobody.
+  **ONLY THE DUNGEON, AND ONLY THE DUNGEON-THEN-TRACK PAIRING.** A farm or a
+  circuit has no character to send; no other pairing of world types was driven.
+  **NO SUITE WAS RUN AGAINST A FRESH CLONE OF THIS COMMIT**, which is what a
+  120a owes - see "Next action".
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is still **2026-10-14**, checked this commit by
+  grepping every `OWNER, 2026-[0-9][0-9]-[0-9][0-9]` marker in `HANDOVER.md`
+  and `TRAPS.md`: five of them, all that one date.
+  **THE DEPLOY STILL FAILS**, both secrets are still empty, and what a visitor
+  sees is still commit `71b065f` from 2026-10-14. Nothing here touched a
+  deployment setting, a secret, a flag or a target.
+
 - Last commit at the time of writing: **119a**, which is **docs only** - 0
   lines of diff in `scripts/`, `tests/` and `.github/`, no new finding about
   Genesis, no new claim about its behaviour, no new live entry. It records the
@@ -9309,6 +9422,82 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
+**120's RECORD. ONE MEASUREMENT IS OWED - A FRESH `git clone` OF THE PUSHED
+COMMIT - AND THAT IS 120a's WHOLE JOB.** 120 took its own baseline on the
+clean pushed tree at `975a70d`, in its own container with its own Godot
+download: `git status --porcelain` **empty before and after**, `--all`,
+`user://` cleared by **deleting `app_userdata/AI_Game_Builder`** rather than by
+renaming `config/name`, so `project.godot` was not edited to take the
+measurement. Godot **4.7.1.stable.official.a13da4feb**, `--version` read.
+**`1b6e8748b9da27ccfc85d7bbaca0504e`, 81 suites, 0 with something to look at**
+- **byte-identical to the md5 119 recorded and 119a reproduced from a clone.**
+So the record and the container still agree today.
+
+**120 ADDED ONE FILE AND CHANGED `scripts/`**, which 115 through 119 did not.
+`tests/left_body_test.gd` new, that name added to `TIMED` in `run_tests.sh`,
+`scripts/main.gd` two lines of behaviour in two functions plus a comment
+block, and `docs/TRAPS.md` and this file. **`PROMPT_FINGERPRINT` did not move**
+and `prompt_bounds_test` stayed at **72**, which was READ rather than assumed:
+`assembled_prompt()` is `SYSTEM_PROMPT` plus `WorldRegistry.prompt_sections()`
+plus `ToolRegistry.prompt_sections()` plus `NpcGoals.prompt_section()`, and
+`main.gd` is in none of them.
+
+**FOUR BYTE-IDENTICAL `--all` RUNS ON THE CHANGED TREE**, `user://` cleared
+before each by deleting `app_userdata/AI_Game_Builder`, **the last three on
+the complete tree with `docs/` in place**: md5
+**`a33311dc56bd6f3287eec1e1b0cf772a`**, **82 suites, 0 with something to look
+at**, `left_body_test` **16, failures=0**, `result_line_test` **358,
+failures=0**, `prompt_bounds_test` **72, failures=0**, `explore_test` **14,
+failures=0**, `load_state_test` **16, failures=0**, `load_shut_test` **16,
+failures=0**, `edit_state_test` **12, failures=0**, `player_door_test` **75,
+failures=0**, `view_frame_test` **84, failures=0**, `walker_test` **3,
+failures=0**. The last six are named because they are the five suites that type
+`/view` plus the one that builds its own `Walker`, so they are the suites
+`main.gd`'s change could reach. Each changed file's md5 was recorded before the
+final run and `md5sum -c` afterwards reported **nothing moved**, and `git
+status --porcelain` was **identical before and after** that run - with the
+single exception of THIS FILE, which records the run and is therefore edited
+after it.
+
+**`diff` AGAINST THE BASELINE RUN IS EXACTLY TWO LINES** - the new suite's
+line, and `result_line_test` 354 -> 358. **Every other suite is unmoved,
+`prompt_bounds_test` 72 among them**, which is the reading behind the claim
+that no prompt clause moved.
+
+**THE PREDICTED DIFF WAS WRONG IN TWO NUMBERS (TRAPS 89).** It predicted
+`left_body_test` at **12** assertions where it is **16**, and `explore_test` at
+**9** where it is **14** - though the clause that mattered about `explore_test`,
+that the `main.gd` change would not move it, held. What held: `scripts/main.gd`
+being the only script touched, `prompt_bounds_test` 72, `walker_test` 3, suites
+81 -> 82, `result_line_test` 354 -> 358, the five `/view` suites unmoved, and
+`suites with something to look at: 0`.
+
+**AND THE FOUR INJECTIONS, EACH ALONE IN ITS OWN THROWAWAY COPY WITH ITS OWN
+`config/name` AND ITS OWN CLEARED `user://` (TRAPS 6).** Every anchor was
+counted before patching and found **exactly once**, and **all four landed** -
+after two commits in which the first attempt did not.
+- **A**, the three new lines removed from `_stop_exploring()`: **failures=4** -
+  the hidden body walks **1.668 m**, sits 1.668 m from where it was left, `R`
+  teleports it **4.799 m**, and the derived class row names `["Walker"]`.
+- **B**, `walker.auto_walk = false` removed from `_start_exploring()`:
+  **failures=2** - the second walk reads **0.00 m** and the can-it-fail row
+  finds nothing steered.
+- **C**, `car.freeze = true` removed from `_stop_driving()`: **failures=5** -
+  the frozen car moves **13.046 m** and the class row names `["Car"]`, then
+  `["Walker", "Car"]`.
+- **D**, `/view` removing the walker from the tree instead of hiding it:
+  **failures=5**, starting with the row that says `/view` hides a body rather
+  than removing it.
+
+**AND A CONTROL ROW IS WHAT FOUND THE FIRST LIVE ENTRY.** The car's
+"while the player is IN it" row failed at **0.27 m** when the car section
+shared a `Main` with the walker section, where a car on a fresh `Main` goes
+**4.90 m**. Narrowing it four trials at a time is the first live entry below,
+and the reason every section of `left_body_test` gets a `Main` of its own.
+**The probe that found it had a wrong reading of its own, kept in TRAPS 118**:
+a hold that read 0.00 m and looked like focus mattering was a body already
+standing against the far wall.
+
 **AND RUN 6 IS A FRESH `git clone` OF THE PUSHED COMMIT**, written in by 119a
 - `3542ed7`, cloned into its own directory, `git status --porcelain` **EMPTY
 both before and after the run** (so `project.godot` was not edited to take the
@@ -16823,6 +17012,48 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
+**WHAT 120 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
+clone` OF THE PUSHED COMMIT.** 120 took its own baseline on the clean pushed
+tree at `975a70d` and reproduced the md5 119 recorded and 119a reproduced from
+a clone - `1b6e8748b9da27ccfc85d7bbaca0504e`, 81 suites, 0 with something to
+look at - wrote its predicted diff to a file before editing any repository
+file (**and two of its numbers were wrong, which is recorded under "Run the
+tests first" rather than tidied, TRAPS 89**), and took its runs on the changed
+tree. What it did NOT take is a run against a fresh `git clone` of its own
+pushed commit, which is the reading 104a and 106a through 119a each exist for.
+**That is 120a's whole job and it is the only thing owed.**
+**THE CLAUSE IT MATTERS MOST FOR IS `left_body_test` 16 ON THE CLONE.** It is
+a NEW FILE and the only thing in the project that reads whether the keyboard
+still drives a body the player has stepped out of, so a green run against the
+REMOTE tree is the reading that the suite went up on the remote rather than
+only existing locally. **`result_line_test` 358 ON THE CLONE IS THE SECOND**:
+it derives its members from `tests/` via `dir.get_files()`, so that count is
+the reading that the remote's `tests/` really holds the file this commit says
+it does, taken by the project's own reader rather than by `ls`. **AND
+`prompt_bounds_test` 72 IS THE THIRD**: it compares `assembled_prompt()`'s
+sha256 against `PROMPT_FINGERPRINT`, so a green run against the remote is the
+reading behind 120's claim that no prompt clause moved - which matters more
+than usual this time, because unlike 115 to 119 **this commit does change
+`scripts/`**.
+**DO NOT RE-TAKE 120's FOUR INJECTIONS** - they are in the record with their
+counts, each alone in its own throwaway copy with its own `config/name`, and
+all four landed.
+**AND DO NOT RE-DRIVE THE LEFTOVER BODY** - the blocked errand and the
+immobile car are both in the live entries below with their numbers, and the
+keyboard half is `tests/left_body_test.gd` rather than a table in a document.
+
+**THE WORK ITSELF, AFTER THAT. READ THE FIRST TWO LIVE ENTRIES BELOW BEFORE
+ANYTHING ELSE: THE FIRST ONE IS A CAR A PLAYER CANNOT DRIVE AND IS NOT TOLD
+WHY.** Both of them, and 119's entry, now wait on owner questions, and three
+of the four open questions in this file are about leftover bodies - there is a
+case for asking him the one question that answers all of them rather than
+measuring more. The piece of 119's entry that needed nobody is **spent**: it
+is measured, it is the second live entry below. The cheapest thing left that
+needs nobody is named inside that entry - **whether a failed errand COULD name
+what stopped it**, which is a read of what `npc.gd:227` knows at the moment it
+calls `halt()` and is one grep plus one probe, and which does not depend on
+any of the three pending answers.
+
 **~~WHAT 119 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
 clone` OF THE PUSHED COMMIT.~~ TAKEN IN 119a, AND IT REPRODUCED BYTE-FOR-BYTE
 - IT IS RUN 6 ABOVE.** Struck rather than deleted because what it owed and why
@@ -17556,6 +17787,127 @@ the final md5, and the one-line diff. That was a sound inference about the
 remote in place of a reading of it, which is exactly what 104a and 106a
 through 112a were each written to avoid, so the reading was taken instead.)
 
+**THE FIRST LIVE ENTRY AS OF 120, AND IT IS THE WORST THING ON THIS PAGE: AFTER
+A DUNGEON HAS BEEN EXPLORED, THE CAR CANNOT BE DRIVEN AT ALL, BECAUSE `/drive`
+PARKS IT ON TOP OF THE PLAYER'S OWN INVISIBLE BODY.**
+Found while narrowing a control row in 120's own new suite that failed for a
+reason 120 did not expect. Not fixed, and the reason is at the end.
+
+**WHAT WAS DRIVEN. FOUR TRIALS, EACH ON A FRESH `Main`, differing only in
+whether a dungeon was explored first and whether the leftover body was left in
+the tree:**
+
+| what happened first | body left at | car placed | car settles | held W moves it |
+|---|---|---|---|---|
+| a track only | - | y 2.70 | y 1.39 | **4.91 m** |
+| a dungeon, no `/explore` | - | y 2.70 | y 1.39 | **4.90 m** |
+| a dungeon, `/explore`, `/view` | **(0.00, 2.50, 0.00)** | y 2.72 | **y 2.85** | **0.00 m** |
+| the same, body removed from the tree | - | y 2.70 | y 1.39 | **4.90 m** |
+
+The third row is the fault and the fourth is what makes it the body rather
+than the track, the settle time or the harness: removing the walker from the
+scene tree and changing **nothing else** restores 4.90 m. The car is resting
+1.46 m too high because it is resting on a capsule nobody can see.
+
+**IT IS NOT 120's, AND THAT WAS CHECKED RATHER THAN ASSUMED.** The same four
+trials against the **unmodified `main.gd` of `975a70d`** - 120's change
+stashed, nothing else touched - read the same four rows, the third at
+**0.05 m** instead of 0.00 m, which is noise either side of immobile. 120's
+change is about the keyboard and does not touch this.
+
+**WHY A PLAYER MEETS IT, IN FIVE STEPS AND NO TRICKS.** Build a dungeon,
+`/explore`, `/view`, ask for a race track, `/drive`. The walker is created at
+`standable_surface()["start_position"]`, which for a freshly built dungeon is
+the entrance, which is the **origin**; a freshly built track puts its start
+there too. **The player is told nothing at all**: the car is simply where it
+should be and does not move.
+
+**WHAT IS MEASURED AND WHAT IS NOT.**
+**MEASURED:** the four rows above, twice, and the same four against the
+unmodified tree. The body's position after `/view`, read off the node.
+**NOT MEASURED:** whether the player can get out of it without restarting
+(walking the body elsewhere before `/view` presumably moves it out of the way,
+and that is a guess and is not claimed); whether the character's own leftover
+body does the same to the car; whether a `/load` or an edit changes it; any
+pairing of world types other than dungeon-then-track. The third row's `0.00 m`
+was taken at settle times of 60, 240 and 600 ticks and a held key of 180 and
+360 ticks, and never moved.
+**NOT ASSERTED ANYWHERE.** `left_body_test` gives each of its sections a fresh
+`Main` precisely so that this does not leak into them, and says so in its
+header; it pins none of it, because the question below is the owner's.
+
+**WHY IT IS NOT A ONE-LINE FIX, AND THIS IS THE PART THAT IS THE OWNER'S.**
+It is the same question as the second entry below, and the honest readings are
+the same two: **the body should leave the world when the player steps out of
+it** (then `/view` removes it or parks it somewhere harmless, and nothing the
+player left behind can ever be in the way), or **the body should stay exactly
+where it was left** (then the thing that is wrong is that `/drive` and an
+`ORDER` place a body into an occupied spot without looking, and the fix is at
+the placement rather than at `/view`). The first is simpler and silently
+throws away the interference the 018 comment in `game_controller.gd` is proud
+of; the second keeps it and costs a check at every place a body is put down.
+**120 did not choose.** Note that `_stop_driving()` has already chosen the
+SECOND reading for the car - it freezes it in place on purpose - which is an
+argument for the second but not a decision.
+
+**HOW TO PICK IT UP.** Nothing needs re-driving; the numbers above are in
+hand. If the owner has answered, both this entry and the next are one change.
+If he has not, do not guess it: a `/view` that removes the player's body is
+not reversible by a later session's taste.
+
+**THE SECOND LIVE ENTRY AS OF 120, AND IT IS THE SAME BODY DOING THE SAME
+THING TO THE CHARACTER: AN ERRAND IS REFUSED NOTHING AND SIMPLY STOPS, AND
+WHAT THE PLAYER IS TOLD NAMES NOTHING.**
+This is 119's confounded "NOT MEASURED" item, driven properly. It is a
+separate entry from the one above because the consequence a player meets is
+different and so is the sentence they read.
+
+**WHAT WAS DRIVEN.** Three 12x12 rooms in a line, nothing in them. Each probe
+its own fresh `Main`, so the errand is the FIRST order and the character is
+placed at the entrance by `main.gd:655-661` rather than by the probe; the
+start position was read off `standable_surface()` in both and **asserted
+equal**, `(0.00, 2.60, 0.00)`, and `npc_at` was `Vector3.INF` before both. The
+body was put on the **first corridor mark of `route(0, 2)`** - chosen off the
+route by asking `room_of()` which marks are in no room, rather than by picking
+a coordinate - then `/view`.
+
+- **Body left there:** `VALID`, outcome **`BLOCKED`**, **5.1 m in 6.7 s**,
+  carrier said *"stopped making progress"*, body finishing in **room 0**.
+  The player reads: ***"Could not get to the vault: stopped making progress
+  after 5 m."***
+- **Body moved out of the world, nothing else changed:** `VALID`,
+  **`ARRIVED`**, **34.9 m in 9.8 s**, room 2. The player reads: ***"Got to the
+  vault. 35 m in 10 seconds."***
+- Both reproduced byte-identically on two runs of the probe.
+
+**THE SENTENCE IS TRUE AND IT IS USELESS, WHICH IS THE PART THAT IS GENESIS's
+PROBLEM RATHER THAN THE PHYSICS'.** The errand really did stop making progress
+after 5 m. What stopped it was the player's own invisible body, and nothing in
+the record says so: `carrier.attempted` was **empty** in both probes, and the
+outcome record's `verified` block reports the destination and the room found,
+not the obstacle. A player who explored, came back to the overhead view and
+then sent somebody somewhere gets a failure with no cause in it.
+
+**WHAT IS MEASURED AND WHAT IS NOT.**
+**MEASURED:** the two outcomes, the two distances, the two sentences, the
+equal start positions, `npc_at` being `INF` before both, and that the chosen
+mark is in no room.
+**NOT MEASURED:** whether the record COULD name the obstacle. `halt()` is
+called with `"stopped making progress"` by `npc.gd:227` on a no-progress
+timer, and what the body knows at that moment has not been read - a
+`move_and_slide()` collider is available in principle and that is an
+inference, not a reading. Also not measured: a shut door and a leftover body
+at once; the character's own previous body doing this to the next errand; any
+world type but the dungeon.
+**NOT ASSERTED ANYWHERE**, for the reason under the entry above.
+
+**HUMAN DECISION NEEDED, and it is the same one as the entry above, so it is
+one answer and not two.** Whether a body the player has stepped out of stays
+in the world. Both entries fall out of whichever way it goes, and there is a
+third thing that is worth deciding separately and is cheaper: **whether a
+failed errand should name what stopped it.** That one does not depend on the
+first and is the one that most looks like Genesis's own thesis.
+
 **THE FIRST LIVE ENTRY AS OF 119, AND IT IS A THING GENESIS FORGETS ABOUT ITS
 OWN CHARACTER: A REBUILD RESETS WHERE THE CONTROLLER THINKS THE CHARACTER IS,
 AND DOES NOT RESET THE CHARACTER.**
@@ -17615,14 +17967,26 @@ which is an argument for the first but not a decision.
 rebuild read off `room_of()`, `npc_at` being `INF` after a rebuild, and
 `route(0, 2)` being non-empty so the route is real and simply starts in the
 wrong place. Driven twice, in a container with no player body in the world.
-**NOT MEASURED:** whether the player's own leftover walker body ALSO blocks a
+~~**NOT MEASURED:** whether the player's own leftover walker body ALSO blocks a
 character's errand. It looked that way first - `_stop_exploring()` sets only
 `visible = false`, so the body stays solid where the player left it - but the
 two probes that suggested it differed in the character's start position as
 well, so it is **confounded and is not claimed here**. It is a separate
 question and a cheap one: stand a dungeon up, drive the errand, then drive it
 again with the walker's body moved out of the world, holding the character's
-start position fixed.
+start position fixed.~~
+**MEASURED IN 120, EXACTLY THAT WAY, AND IT DOES BLOCK IT.** Struck rather
+than deleted because what was confounded and why is the part a later session
+needs. Each probe got a fresh `Main`, so the errand was the FIRST order and
+the character was placed at the entrance by the game's own path
+(`main.gd:655-661`) rather than by the suite - the start position was read off
+`standable_surface()` in both and asserted equal, `(0.00, 2.60, 0.00)`, and
+`npc_at` was `Vector3.INF` before both. With the body left standing on the
+first corridor mark of `route(0, 2)`: **`VALID`, outcome `BLOCKED`, 5.1 m in
+6.7 s**, `"stopped making progress"`, the body finishing in **room 0**. With
+the body moved out of the world and nothing else changed: **`VALID`,
+`ARRIVED`, 34.9 m in 9.8 s**, room 2. Reproduced byte-identically on two runs.
+The second live entry as of 120 holds it, with what the player is told.
 **NOT ASSERTED ANYWHERE:** no suite pins any of this. A suite that asserted
 today's answer would have to be deleted by whoever answers the question above,
 which is a tripwire and not a guard. `load_shut_test`'s header names the

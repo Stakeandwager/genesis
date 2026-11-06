@@ -9171,3 +9171,79 @@ measuring what it claimed.
   attached that is the owner's. `load_shut_test` asserts none of it and says
   so, because a suite that pinned today's answer would have to be deleted by
   whoever changes it.
+
+---
+
+## 118. `visible = false` asked to retire three properties, and it retires one
+
+**Signature:** the player has finished with something and it goes on doing
+what it did. The line that was supposed to put it away sets a drawing flag,
+and nothing anybody reads says the thing is still live.
+
+**Cause:** `_stop_exploring()` (`main.gd`) set `walker.visible = false` and
+nothing else. A body in this project has at least three separate properties,
+and the player stepping out of it should retire two of them:
+
+| property | retired by | was it? |
+|---|---|---|
+| it is DRAWN | `visible` | yes |
+| it is DRIVEN by the keyboard | nothing | **no** |
+| it is SOLID | nothing | not decided — see below |
+
+`Walker._physics_process` reads `Input.is_key_pressed(KEY_W)` and its
+neighbours every tick whenever `auto_walk` is false, and `Input` reports the
+**device**, which a `LineEdit` taking the event does not change. So an
+invisible body went on walking while the player typed their next request.
+Measured in a dungeon, after `/view`: holding W moved the hidden body
+**2.07 m**, and **2.69 m** again with the text box focused and empty; `R`,
+read in the same branch, **teleported** it 4.80 m back to the entrance.
+
+**And the sibling door had already got two of the three right, which is what
+makes this TRAPS 11 rather than an oversight.** `_stop_driving()` sets
+`car.freeze = true` **and** `car.visible = false`, and `Car._physics_process`
+reads the same keys just as unconditionally — measured, the frozen car moves
+**0.000 m** under the same held key. One of the two doors had the rule; the
+other had half of it. Nothing in either file said the rule out loud, which is
+why one copy could drift.
+
+**The third property is not an oversight and was deliberately left alone.**
+A body the player stepped out of stays SOLID, and that has consequences, both
+measured: a hidden body standing on a route makes a character's errand
+`BLOCKED` at 5.1 m where the identical errand from the identical start walks
+**34.9 m and ARRIVES**; and a hidden body left at a dungeon's entrance — the
+origin — is where `/drive` then places the car, which settles **on top of it**
+and moves **0.05 m** against **4.90 m** on a fresh `Main`. Whether a stepped
+-out-of body should stay in the world at all is the owner's question and is a
+live entry in `HANDOVER`, so `tests/left_body_test.gd` asserts the first two
+properties and deliberately pins neither consequence of the third.
+
+**And the probe for this read 0.00 m once for the wrong reason.** The third
+reading above — the text box focused — first came back **0.00 m**, and the
+obvious conclusion was that focus made the difference. It did not: the body
+had walked into the far wall during the previous hold and had nowhere left to
+go. Putting it back at the entrance first gave 2.69 m. A zero from a probe
+that could not have moved and a zero from a fix that works are the same
+number (TRAPS 6).
+
+**Do:**
+
+- **When something is retired, enumerate its properties and say which ones
+  are being retired.** "Hidden" is not "inert". If a line is meant to stop a
+  thing being drawn, driven and collided with, it has to do three things, and
+  the two it does not do should be in a comment rather than in the next
+  session's measurements.
+- **An `Input.*` read is not scoped by focus, by visibility or by a mode
+  flag.** It reads the device. A body that should only move in one mode has to
+  be gated on that mode by something the code actually checks — here
+  `auto_walk`, which `walker.gd:78` already documents as the door for
+  "something other than the keyboard walks this".
+- **Stopping a thing being DRIVEN and stopping it being SIMULATED are
+  different, and the narrower one is usually what is wanted.**
+  `set_physics_process(false)` was written here first, as the closest analogue
+  to the car's `freeze`; `auto_walk` with zero input leaves gravity and
+  `move_and_slide()` running and takes only the keyboard away.
+- **Ask the same question of the sibling path before calling it fixed, and
+  derive the list of siblings from the code.**
+  `left_body_test`'s last section walks `Main`'s own children for every
+  `Walker` or `Car` that is not the character, so a third body added later is
+  asked the question without anybody remembering to add it (TRAPS 114).

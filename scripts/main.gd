@@ -765,6 +765,9 @@ func _start_exploring() -> void:
 	walker.place_at(surface["start_position"], float(surface["start_heading"]))
 	walker.visible = true
 	walker.camera.current = true
+	# 120: and the keyboard drives it again. See _stop_exploring() for why it
+	# had to be taken away there, and why this is the line that gives it back.
+	walker.auto_walk = false
 	exploring = true
 
 	# Otherwise the movement keys would be typed into the text box.
@@ -772,12 +775,58 @@ func _start_exploring() -> void:
 	_record("/explore", "Walking. W and S to walk, A and D to turn, Shift to run, R back to the entrance. Click the text box and type /view to stop.", "ok")
 
 
+# --- 120: the body the player stepped out of stops being driven ---
+#
+# This set `visible = false` and nothing else, and `Walker._physics_process`
+# reads the keyboard every tick when `auto_walk` is false. `Input` reports the
+# DEVICE, which a LineEdit taking the event does not change, so an invisible
+# body went on walking while the player typed. MEASURED before the fix, in a
+# dungeon, after `/view`: holding W moved the hidden body **2.07 m**, and
+# **2.69 m** again with the text box focused - though in that third reading the
+# LineEdit took no character from the harness's injected event, so "the player
+# typed W and their hidden body walked" is an inference from how `Input` works
+# and not a reading. Said at the width it is true (TRAPS 15); one session on
+# real hardware settles it.
+#
+# THE SIBLING PATH HAD ALREADY GOT THIS RIGHT, WHICH IS WHY IT IS SMALL.
+# `_stop_driving()` sets `car.freeze = true`, and `Car._physics_process` reads
+# the same keys just as unconditionally - measured: after `/view` the frozen
+# car moves **0.000 m** under the same held key. So the rule was kept at one
+# of its two doors, and it is now kept at both (TRAPS 11).
+#
+# IT TAKES THE KEYBOARD AWAY AND LEAVES THE BODY SIMULATED, DELIBERATELY.
+# `auto_walk` is the existing door for "something other than the keyboard
+# walks this" (walker.gd:78), so holding it with zero input means nothing
+# walks it: drag brings it to a stop, gravity and `move_and_slide()` still
+# run, and `R` no longer teleports a hidden body back to the entrance either,
+# because that read is inside the same branch.
+#
+# `set_physics_process(false)` WAS WRITTEN HERE FIRST, AS THE CLOSEST
+# ANALOGUE TO THE CAR'S `freeze`, AND WAS CHANGED FOR THE NARROWER ONE. Said
+# plainly because the reason is NOT the one it first looked like: the car
+# `/drive` places after a dungeon has been explored is immobile, and that
+# turned out to be the leftover body itself rather than anything to do with
+# how it is stopped - the same probe against the unmodified `main.gd` of
+# 975a70d reads it too. Stopping a body being driven and stopping it being
+# simulated are still different things, and only the first was wanted.
+#
+# The body stays exactly where the player left it, which is what `freeze` does
+# to the car and what `_on_door_changed` already takes trouble to preserve.
+# WHETHER A BODY THE PLAYER HAS STEPPED OUT OF SHOULD STAY IN THE WORLD AS A
+# SOLID OBSTACLE AT ALL IS A DIFFERENT QUESTION AND IS NOT ANSWERED HERE. It
+# is the owner's: today it blocks a character's errand (BLOCKED at 5.1 m where
+# the same errand from the same start walks 34.9 m and ARRIVES) and it parks
+# under the car (0.05 m against 4.90 m). Both measured, both in HANDOVER as
+# live entries, neither changed by this commit.
 func _stop_exploring() -> void:
 	if not exploring:
 		return
 	exploring = false
 	if walker:
 		walker.visible = false
+		walker.auto_walk = true
+		walker.auto_forward = 0.0
+		walker.auto_turn = 0.0
 	if controller.camera:
 		controller.camera.current = true
 	status_label.text = "Back to the overhead view."
