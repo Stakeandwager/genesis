@@ -94,6 +94,17 @@ that the owner has not ruled on.** Do not promote one to the other.
   the same commit that joined the class rather than left to be measured as
   missing later, which is what 075, 079 and 092 each had to do.
 
+  **AND `124`'s OWN PUSHED TREE WAS CLONED AND RUN TOO, WHICH MAKES ONE
+  SENTENCE THIS ENTRY WAS COMMITTED WITH FALSE.** The commit message says *"NO
+  SUITE WAS RUN AGAINST A FRESH `git clone` OF THIS COMMIT, which is what a
+  124a owes"*. That was true when it was written and stopped being true when
+  the push succeeded. The reading is under "Run the tests first": `ea7d1ea`,
+  **byte-identical, `201a93f3cc65bc5f585db3c30c9f8361`, 84 suites, 0 with
+  something to look at**, `porcelain` empty before and after. **A commit
+  message cannot be corrected without rewriting history, so it is corrected
+  here instead** - which is the only place a later session reads for current
+  state, and is why this file and not the message is the record (TRAPS 14).
+
   **BASELINE: A FRESH `git clone` OF THE PUSHED COMMIT `2c6ff09`, WHICH IS
   WHAT 123a OWED, AND FROM AN INDEPENDENT CONTAINER.** Cloned into its own
   directory, `git status --porcelain` **empty both before and after the run**
@@ -10168,8 +10179,29 @@ tree that was pushed, bar this paragraph: md5
 at**, `errand_outcome_test` **44, failures=0**, `source_scan_test` **80,
 failures=0**, `result_line_test` **366, failures=0**, `prompt_bounds_test`
 **72, failures=0**, `halt_cause_test` **43, failures=0**, `left_body_test`
-**16, failures=0**, `interference_test` **16, failures=0**. **NO FRESH `git
-clone` OF `124` HAS BEEN RUN** - that is what a 124a owes.
+**16, failures=0**, `interference_test` **16, failures=0**.
+
+**~~NO FRESH `git clone` OF `124` HAS BEEN RUN - that is what a 124a
+owes.~~ FALSE WITHIN THE HOUR, AND STRUCK BY THE SESSION THAT WROTE IT.** It
+was true when `124` was committed and stopped being true when the push
+succeeded and the clone was taken. Struck rather than deleted because a
+sentence in this file that went false in one hour is worth more as a record
+than as a tidy line (TRAPS 14). **A FRESH `git clone` OF THE PUSHED COMMIT
+`ea7d1ea` RUNS BYTE-IDENTICAL TO BOTH RUNS ABOVE** - cloned into its own
+directory, `git status --porcelain` **EMPTY both before and after** (so
+`project.godot` was not edited to take it), `user://` cleared by deleting
+`app_userdata/AI_Game_Builder`, same Godot: md5
+**`201a93f3cc65bc5f585db3c30c9f8361`**, **84 suites, 0 with something to look
+at**, `errand_outcome_test` **44, failures=0**, `source_scan_test` **80,
+failures=0**, `result_line_test` **366, failures=0**, `prompt_bounds_test`
+**72, failures=0**. `diff` against the changed-tree runs is **empty**. So the
+tree on the remote is the tree that was measured.
+**AND IT IS A READING OF THE REMOTE BUT NOT OF AN INDEPENDENT CONTAINER**,
+said plainly: like 119a through 122a and unlike 123, it was taken immediately
+after the push by the same container and the same Godot download. **The next
+firing gets the stronger reading for free by taking its own baseline**, which
+is what 124 itself did for 123 - so there is nothing left for a `124a` to do,
+and the three clauses it would have been for are measured above.
 
 **`diff` AGAINST THE BASELINE RUN IS EXACTLY TWO LINES** - `errand_outcome_test`
 25 -> 44 and `source_scan_test` 79 -> 80. Every other suite is unmoved,
@@ -17995,7 +18027,13 @@ a file before editing any repository file (**and one clause of it was wrong,
 which is recorded under "Run the tests first" rather than tidied, TRAPS 89**),
 and took two byte-identical `--all` runs on the changed tree with `docs/` in
 place. What it did NOT take is a run against a fresh clone of **its own**
-pushed commit. **That is a 124a's whole job and it is the only thing owed.**
+pushed commit. ~~**That is a 124a's whole job and it is the only thing
+owed.**~~ **TAKEN MINUTES AFTER THE PUSH, IN THE SAME SESSION, AND IT
+REPRODUCED BYTE-FOR-BYTE - see "Run the tests first". SO NOTHING IS
+OWED AND THERE IS NO `124a` TO DO.** Take your own baseline on `ea7d1ea`
+anyway, because that is the independent container this one could not be,
+and then spend the cycle on the work below rather than on a measurement
+that is already in the record.
 **THE CLAUSE IT MATTERS MOST FOR IS `errand_outcome_test` 44 ON THE CLONE**,
 because this commit's section reads `scripts/` off disk through
 `FileAccess`: a green run against the REMOTE tree is the reading that the
