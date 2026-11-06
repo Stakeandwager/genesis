@@ -11,7 +11,115 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
-- Last commit at the time of writing: **124**, and it asks 123's own leftover
+- Last commit at the time of writing: **125**, and it is **0 LINES OF DIFF IN
+  `scripts/`** on purpose, because the fix it measured turned out to be
+  **"Human decision needed" 24** - which 060 reserved for the owner and which
+  this session very nearly took for him. One new file,
+  `tests/piece_name_test.gd` (**17 assertions**), and this file. `scenes/`,
+  `netlify/`, `.github/`, `project.godot` and both runners are 0 lines of diff
+  too. **Nothing a player meets changed.**
+
+  **WHAT WAS ASKED, AND IT IS 124's OWN LEFTOVER.** 124 closed 123's item and
+  left one named next piece: *"which of those six names a stalled errand can
+  actually read"* - the class form (TRAPS 11) of 121's door-versus-wall
+  question, over the **four `_solid()` call sites and six name shapes** 124
+  counted in `dungeon_module.gd` (`Ground`, `Corridor_%d_%d`, `Room_%d_%s`,
+  `Wall_%d_%s_%d`, `Door_` + label, `Thing_` + label; re-counted here off the
+  source and it is still four and six).
+
+  **THE ANSWER IS ONE OF THE SIX, AND ONLY BECAUSE IT IS NEW.** Measured on a
+  plain dungeon of three rooms and two things, nothing changed, counting nodes
+  whose name a reader could use against nodes carrying a Godot-generated
+  `@Class@id`:
+
+  | | usable names | generated |
+  |---|---|---|
+  | build 1, fresh `Main` | **25** | 24 |
+  | build 2, same `Main` | **1** | **48** |
+  | build 3, second fresh `Main` | **25** | 24 |
+
+  **A dungeon keeps its piece names exactly once.** `queue_free()` is
+  deferred, so the outgoing piece is still standing under its own name when
+  the replacement is added, and `add_child()` - whose `force_readable_name`
+  defaults to **false** - renames **the replacement** to `@MeshInstance3D@120`
+  rather than to `Ground2`. A second `CREATE_DUNGEON` does it, and so does any
+  `SHUT` or `OPEN`, because those go through `rebuild_standing_world()`.
+
+  **AND THE FAULT IS NOT NEW, WHICH IS THE PART THIS ENTRY MOST WANTS READ.**
+  `player_door_test` section 7 found this mechanism in **060**, measured the
+  alternation across four builds and wrote it into **HDN 24**, naming the two
+  possible fixes - one of which is *"freeing the outgoing world before adding
+  the new one"*. **This session did not discover a fault. It discovered that
+  HDN 24 has been costed at one node when it is twenty-four plus one.** HDN 24
+  says *"the fault is latent: nothing reads the name today"* and puts the
+  circuit's holder to the owner. The dungeon's `Ground`, `Corridor_*`,
+  `Room_*`, eleven `Wall_*`, the `Thing_*` pieces and their `Solid` bodies were
+  never in that reckoning.
+
+  **AND IT CORRECTS A CLAUSE IN HDN 38 THAT WAS FALSE, FOUND BY CHECKING A
+  SENTENCE BEFORE REPEATING IT (TRAPS 14).** 38's cost list says the obstacle's
+  name *"today reads `Door_2_3`, `Wall_2_north_1`, `Walker`"*. Two of those
+  three are wrong at the only moment 38 is about: the shut-door stall is
+  produced BY a `SHUT`, and after a `SHUT` every wall in the dungeon reads
+  `@MeshInstance3D@N`. The strike is in 38 itself.
+
+  **SO 121's GREEN IS REAL AND NARROWER THAN IT LOOKS, AND THAT IS A NEW
+  TRAP.** `halt_cause_test` answers *"can the obstacle be named?"* by reading
+  **`Door_2_3`** after a `SHUT`. It passes because the door slab is the one
+  piece that **did not exist before that rebuild** - nothing to collide with,
+  so it keeps its name. One of the six was named, five were not, and the suite
+  only ever asked about the one. **New TRAPS 119: a question asked of the one
+  member of the class that cannot show the fault** - with a second shape of it
+  recorded there too, found under HDN 39: a fault living inside a green suite
+  that drives it and asserts something else. **And new TRAPS 120: a fix built,
+  run and green, for a decision the owner had reserved** - which is this
+  commit's own mistake, caught by reading a failing row instead of adjusting
+  it. `halt_cause_test` is
+  **not changed** - its rows are true and its count is unmoved at 43; what it
+  lacked was a bound, and the bound is section 3 of the new file.
+
+  **AND I BUILT THE FIX, RAN IT, AND THEN REVERTED IT - WHICH IS THE DECISION
+  IN THIS COMMIT.** `remove_child()` before `queue_free()` at all six sites of
+  the shape (`game_controller.gd` ×2, `circuit_builder.gd`,
+  `opponent_builder.gd`, `track_builder.gd`, `race_director.gd`). It works:
+  **85 suites, `piece_name_test` 21/21 green against the fixed tree and 6
+  failures against the unfixed one.** It is reverted because HDN 24 is the
+  owner's and this is one of the two options he was asked to choose between.
+  **What goes to him instead is a costed decision rather than a decision**: the
+  patch, the measurement that the second fix yields `CircuitBuilder` and not
+  the `CircuitBuilder2` HDN 24 recorded for the obvious one, and the exact
+  price of saying yes - **`player_door_test` goes red by 2 rows**, because
+  those rows hold today's alternation on purpose. All of that is under HDN 24.
+
+  **THE NEW SUITE HOLDS THE FAULT RATHER THAN THE REPAIR, WHICH IS 060's OWN
+  PATTERN AND IS LABELLED AS SUCH.** Every driven row asserts what Genesis
+  DOES - that names ARE lost - because a suite asserting the repair would fail
+  against today's code and tell a later session the repository is broken.
+  Sections 2, 3 and 4 are marked for deletion by whoever answers HDN 24.
+  **Section 1 is about Godot, not Genesis**, and survives either answer: it
+  drives the mechanism on throwaway nodes, including the row that measures the
+  fix itself.
+
+  **NO WORDING IS ASSERTED ANYWHERE AND NO COUNT IS EITHER (TRAPS 6, TRAPS
+  14).** Not one piece name is typed into the file as an expected answer; every
+  row compares two readings of the project's own tree, so renaming every piece
+  in `dungeon_module.gd` fails nothing and a name LOST fails a row. Counts are
+  not asserted for the same reason - a dungeon that gains a piece must not fail
+  this file - which took **two wrong drafts to get right, and both are written
+  into the file rather than tidied away (TRAPS 89)**: the first compared ALL
+  names and failed on a correct tree by 24, because `_solid()` builds a
+  `CollisionShape3D` and never names it; the second compared the generated
+  COUNT and called a `SHUT`'s genuinely-new piece a lost name. **The control
+  row is what caught the first one.**
+
+  **AND A SEPARATE FINDING, UNRELATED, WORSE, AND NOT RECORDED ANYWHERE
+  BEFORE: A `go_to` ERRAND CANNOT CROSS OR REACH ANY ROOM THAT HAS A THING IN
+  IT.** Found while building the fixture above, driven **18 errands over six
+  room widths with a control at each**, and it is **12 out of 12**. It is
+  **"Human decision needed" 39** and it is not fixed here. See that entry for
+  the table.
+
+- Last commit before this one: **124**, and it asks 123's own leftover
   question of the CLASS rather than of the line 123 named, which turns it into
   a different and better question. `tests/errand_outcome_test.gd` **25 -> 44
   assertions** (one new section, not a new file), **one row added to
@@ -10171,7 +10279,70 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
-**THE LATEST RUN IS 124's, ON ITS OWN CHANGED TREE**, `--all`, `user://`
+**THE LATEST RUN IS 125's, ON ITS OWN CHANGED TREE**, `--all`, `user://`
+cleared by deleting `app_userdata/AI_Game_Builder` before each,
+**THREE BYTE-IDENTICAL RUNS, all with `docs/` in place, and the THIRD was
+taken after every word of this file and of `TRAPS.md` was written, bar this
+paragraph, which was edited afterwards to say so** - which
+matters here because ten suites in `tests/` read one or both of those
+documents, so a docs-only edit is not automatically free: md5
+**`5ecc88b884184e5abe8c37b3c8354b59`**, **85 suites, 0 with something to look
+at**, `piece_name_test` **17, failures=0**, `result_line_test` **370,
+failures=0**, `halt_cause_test` **43, failures=0**, `player_door_test` **75,
+failures=0**, `errand_outcome_test` **44, failures=0**, `source_scan_test`
+**80, failures=0**, `prompt_bounds_test` **72, failures=0**. `git status
+--porcelain` named **`tests/piece_name_test.gd` and its `.uid` and nothing
+else**, so `project.godot` was not edited to take the measurement.
+
+**`diff` AGAINST THE BASELINE IS EXACTLY TWO LINES** - the new suite's own
+line, and `result_line_test` **366 -> 370**. Every other suite is unmoved,
+`halt_cause_test` **43** and `player_door_test` **75** among them, which is the
+reading behind the claim that this commit changed neither of the two suites it
+is about rather than an argument from the diff.
+
+**AND THE BASELINE WAS TAKEN IN THIS CONTAINER, ON THE PUSHED COMMIT `c92dbe5`,
+WHICH IS THE INDEPENDENT READING 124a SAID A LATER FIRING WOULD GET FOR FREE.**
+Checked out from `origin/prototype-002a` in a container that had taken none of
+the measurements it was checking, with its own Godot download -
+**4.7.1.stable.official.a13da4feb**, `--version` read - `git status
+--porcelain` **EMPTY both before and after the run**, `user://` cleared by
+deleting `app_userdata/AI_Game_Builder`:
+**`201a93f3cc65bc5f585db3c30c9f8361`, 84 suites, 0 with something to look at**,
+`errand_outcome_test` **44**, `source_scan_test` **80**, `result_line_test`
+**366**, `prompt_bounds_test` **72**, `halt_cause_test` **43**,
+`left_body_test` **16**, `interference_test` **16**. **BYTE-IDENTICAL to the
+md5 124 recorded on its changed tree and 124a reproduced from a clone.** So the
+record, the remote and a third container all agree. It is a checkout of the
+remote tip rather than a `git clone` into a new directory, which is said
+plainly because it is not the same act; `porcelain` empty and
+`HEAD == origin/prototype-002a` are the two readings behind calling it the
+pushed tree.
+
+**AND THE FIX WAS RUN BEFORE IT WAS REVERTED, WHICH IS WHERE THE NUMBERS UNDER
+HDN 24 COME FROM.** On the tree with `remove_child()` before `queue_free()` at
+all six sites: **85 suites, 1 with something to look at** -
+`piece_name_test` at that point asserted the REPAIR and read **21,
+failures=0**, and **`player_door_test` read 75, failures=2**. Against the
+UNFIXED tree the same repair-asserting suite read **21, failures=6**. The
+suite that is committed is the one that holds today's behaviour, so its
+numbers are the 17/0 above and not these; these are the measurement of the
+option HDN 24 puts to the owner.
+
+**AND THE PREDICTED DIFF WAS WRONG IN ONE PLACE (TRAPS 89)**, written to a file
+before any repository file was edited. It said `result_line_test` would move
+**by exactly one**, reasoning from `source_scan_test`'s shape - where sections
+2 and 3 are aggregates over a derived `members`, so a new member moves only one
+loop. `result_line_test` is not that shape: it has **four** per-member loops, so
+one new file moved it **366 -> 370**. Every other clause held, including the two
+worth having predicted: that the suite would FAIL before the fix and pass after
+(it did, 6 and 0), and that if any existing suite went red the suite was resting
+on the outgoing world still being in the tree and that would be a finding rather
+than something to work around - **`player_door_test` went red, and it was the
+finding.** **The count is the clause that has now been wrong in 121, 122, 124
+and 125; a later session predicting a count should expect to miss it and predict
+it anyway.**
+
+**THE RUN BEFORE THIS ONE WAS 124's,** ON ITS OWN CHANGED TREE**, `--all`, `user://`
 cleared by deleting `app_userdata/AI_Game_Builder` before each,
 **TWO BYTE-IDENTICAL RUNS, both with `docs/` in place** and therefore on the
 tree that was pushed, bar this paragraph: md5
@@ -18018,6 +18189,76 @@ and recorded because it is what made this commit's own suite vacuous.
   and it is a move rather than a fix. Left for whoever has a reason.
 
 ## Next action
+
+**WHAT 125 OWES, STATED PLAINLY: NOTHING IS OWED, AND THE REASON IS WORTH
+READING.** 125 took its own baseline on the pushed commit `c92dbe5` in a
+container that had taken none of the measurements it was checking and
+reproduced `201a93f3cc65bc5f585db3c30c9f8361` byte-for-byte - which is the
+independent reading 124a said a later firing would get for free, and 124a's
+only open item. It wrote its predicted diff to a file before editing any
+repository file (**and one clause was wrong, recorded under "Run the tests
+first" rather than tidied, TRAPS 89**) and took two byte-identical `--all`
+runs on the changed tree with `docs/` in place. **A `125a` would be a
+docs-only commit carrying one measurement, and that measurement is worth
+taking: `piece_name_test` on a fresh `git clone` of this commit.** Take your
+own baseline on `130f...`/whatever this pushes as, which gets it, and then
+spend the cycle on the work below.
+**THE CLAUSE IT MATTERS MOST FOR IS `piece_name_test` 17 ON THE CLONE.** It is
+a NEW FILE and the only thing in the project that reads whether a rebuilt
+piece keeps the name its module gave it, so a green run against the REMOTE
+tree is the reading that the suite went up rather than only existing locally.
+**`result_line_test` 370 IS THE SECOND**: it derives its members from `tests/`
+via `dir.get_files()`, so that number is the reading that the remote's
+`tests/` really holds the new file, taken by the project's own reader rather
+than by `ls`. **AND `player_door_test` 75 IS THE THIRD**: `scripts/` is 0
+lines of diff, and that suite is the one whose section 7 holds the behaviour
+this commit measured, so it unmoved is the reading behind "nothing a player
+meets changed".
+**DO NOT RE-TAKE THE NAME READINGS** - the three-build table is in the 125
+entry and the suite prints its own readings on every run.
+**AND DO NOT RE-BUILD THE FIX.** The patch is described under HDN 24 with its
+measured cost. Rebuilding it to look at it again spends a cycle on a decision
+that is not the assistant's.
+
+**THE WORK ITSELF, AND 125 PUT TWO THINGS ON THE OWNER'S SIDE OF THE LINE AND
+CLOSED 124's NAMED ITEM.**
+
+**THE BIGGEST THING ON THE LIST IS NOT THE ASSISTANT'S AND IS NEW: "Human
+decision needed" 39, a `go_to` errand cannot cross or reach a room with a
+thing in it.** 12 failures out of 12 over six room widths, with a control
+arriving at each. It breaks the milestone PROTOCOL section 2 names as current -
+**the Verified Living World, objects created, carried and delivered by NPCs** -
+and the fix is a placement rule or a navigation change, so it is his. **If he
+has answered it, that is the work.** Until then, do not change where a thing
+is placed and do not add avoidance to the walker.
+
+**HDN 24 IS NOW A COSTED DECISION RATHER THAN AN OPEN ONE, AND IT IS STILL
+HIS.** Do not apply the patch. If he has answered it: applying it deletes
+sections 2, 3 and 4 of `tests/piece_name_test.gd`, rewrites
+`player_door_test` section 7's three alternation rows to assert the
+capability, and those two edits are the whole job on the test side.
+
+**THE CHEAPEST HONEST PIECE LEFT THAT NEEDS NOBODY IS STILL 121's LEFTOVER,
+NARROWED BY THIS COMMIT RATHER THAN CLOSED: whether the reading tells a shut
+DOOR from a WALL.** 124 widened it to *which of the six names a stalled errand
+can read*; 125 answered that **after a rebuild it is one, and only because it
+is new**, which makes the original door-versus-wall question **unanswerable
+until HDN 24 is answered** - a wall has no name to tell apart. So the honest
+remaining form is the one piece of it that does not depend on 24: **whether a
+stalled errand's reading can be driven against a WALL at all**, which is a
+question about geometry and reachability rather than about names. 125 did not
+touch it.
+**AND ONE 122 DELIBERATELY DID NOT TAKE, STILL NOT TAKEN:** whether a body can
+reach the cap while touching something.
+**"Human decision needed" 38 IS UNTOUCHED EXCEPT FOR ONE STRUCK CLAUSE** - its
+cost list claimed `Wall_2_north_1` is a name available today and it is not,
+after the `SHUT` that produces the only reachable stall. **The question is
+unchanged and is still his.** Do not take any of the above as licence to change
+what a player is told: that is 38.
+
+**125 LEFT THE 124 ENTRY BELOW IN PLACE, UNSTRUCK AND UNEDITED**, because what
+it owed and how it was closed is the part a later session reads. The 124 text
+follows.
 
 **WHAT 124 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
 clone` OF THE PUSHED COMMIT.** 124 took its baseline as a fresh clone of
@@ -30106,6 +30347,79 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     more, so the latent fault can no longer be hidden by a test that passes
     on build-order parity.
 
+    **125 COSTED IT, AND THE COST IS NOT ONE NODE. IT IS TWENTY-FOUR PLUS ONE,
+    AND THE TWENTY-FOUR ARE THE PIECES OF EVERY REBUILT DUNGEON.** The two
+    paragraphs above are about `CircuitBuilder` because 060 found it there.
+    The same `queue_free()`-then-refill shape is in
+    `GameController._clear_world_node()` and
+    `GameController.rebuild_standing_world()`, and the dungeon refills the SAME
+    holder with pieces carrying the SAME names - so every one of them is
+    renamed. Measured on a dungeon of three rooms and two things, nothing
+    changed:
+
+    | | usable names | generated |
+    |---|---|---|
+    | build 1, fresh `Main` | **25** | 24 |
+    | build 2, same `Main` | **1** | **48** |
+    | build 3, second fresh `Main` | **25** | 24 |
+
+    The twenty-four are `Ground`, `Corridor_1_1`, `Corridor_2_1`,
+    `Room_1_entrance`, `Room_2_middle`, `Room_3_vault`, eleven `Wall_*`, two
+    `Thing_*` and their `Solid` bodies. **A second `CREATE_DUNGEON` does it,
+    and so does any `SHUT` or `OPEN`.** Held by
+    `tests/piece_name_test.gd` sections 2 and 3.
+
+    **AND "the fault is latent: nothing reads the name today" IS THE CLAUSE
+    THAT HAS CHANGED, NOT BECAUSE ANY CODE READS IT BUT BECAUSE THE PROJECT HAS
+    SPENT 121 THROUGH 124 BUILDING TOWARDS READING IT.** 121 answered *"can a
+    failed errand name what stopped it?"* YES, on the strength of
+    `get_parent().name` off a dungeon piece. **Five of the six name shapes
+    `dungeon_module.gd` produces are `@MeshInstance3D@N` after any rebuild.**
+    The one that answers is `Door_2_3`, and it answers only because the door
+    slab is built BY the rebuild and collides with nothing. **So HDN 38 sits on
+    top of this question**: any answer to 38 that names the obstacle prints
+    `@MeshInstance3D@165` to a player the moment a door has been shut, which is
+    worse than the silence 38 is about.
+
+    **THE FIX THAT DOES WORK, MEASURED RATHER THAN PROPOSED - AND IT IS THE
+    SECOND OF THE TWO THIS ENTRY ALREADY NAMED.** The paragraph above records
+    that moving the assignment after `add_child` yields `CircuitBuilder2`.
+    The other option it names - *"freeing the outgoing world before adding the
+    new one"* - was built and run in 125 and **yields `CircuitBuilder`**.
+    `remove_child()` is NOT deferred; `queue_free()` is. Two lines per site:
+    detach, then free. **Applied at all six sites of the shape** -
+    `game_controller.gd` ×2, `circuit_builder.gd`, `opponent_builder.gd`,
+    `track_builder.gd`, `race_director.gd` (TRAPS 11; three of those six cannot
+    show the fault today and that is said in the patch's own comments rather
+    than left to be discovered).
+
+    **THE PRICE OF SAYING YES, EXACTLY, SO THE DECISION DOES NOT NEED A SECOND
+    SESSION TO COST IT.**
+    - **85 suites, 0 with something to look at** - *except*
+      `player_door_test`, which reads **75, failures=2**. The two rows are
+      section 7's *"the FIRST world a player builds is named by Godot"* and
+      *"the THIRD is named by Godot again"*. **They fail because they hold
+      today's behaviour on purpose**, which is what 060 built them to do, so
+      this is the fix meeting its own tripwire and not a regression. Saying yes
+      means rewriting those three rows to assert the capability.
+    - **`tests/piece_name_test.gd` sections 2, 3 and 4 are deleted**, and its
+      section 1 is kept: that section is about Godot, not Genesis, and includes
+      the row that measures this fix.
+    - **Nothing else moved.** Every other suite read identically on the fixed
+      tree and the unfixed one, `built_count_test` among them - which matters
+      because 048 is the record of what depended on the outgoing world still
+      being in the tree for the rest of the frame, and detaching early makes
+      `pieces()`'s `is_queued_for_deletion()` skip unnecessary rather than
+      wrong.
+
+    **125 DID NOT APPLY IT, AND SAYS SO PLAINLY BECAUSE IT HAD IT WORKING AND
+    REVERTED IT.** `scripts/` is 0 lines of diff in that commit. The reason is
+    this entry: the assistant that wrote it had already chosen one of the two
+    options the owner was asked to choose between, and noticed only on reading
+    `player_door_test`'s failure that the behaviour it had "fixed" was a
+    behaviour a suite was deliberately holding for him. **What is new for the
+    owner is the cost, not the choice.** Still his.
+
 25. **Whether a player who types raw JSON should be told what changed.**
     Found in 060 the same way, and not changed.
 
@@ -30712,10 +31026,23 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     evidence layers has to move.
 
     **THE COSTS, IN BOTH DIRECTIONS.**
-    - **Naming it** means the obstacle's node name reaches a player. Today
-      that reads `Door_2_3`, `Wall_2_north_1`, `Walker` - **node names, not
-      English**, so either a player is shown an internal name or something has
-      to translate them, and that is a second decision about wording. It also
+    - **Naming it** means the obstacle's node name reaches a player.
+      **~~Today that reads `Door_2_3`, `Wall_2_north_1`, `Walker`.~~ TWO OF
+      THOSE THREE ARE FALSE, AND 125 FOUND IT BY CHECKING THIS SENTENCE BEFORE
+      REPEATING IT (TRAPS 14).** `Door_2_3` is right. `Wall_2_north_1` is
+      **`@MeshInstance3D@N`** at the only moment this question is about: the
+      shut-door stall is produced BY a `SHUT`, a `SHUT` rebuilds the dungeon,
+      and a rebuild costs every already-standing piece its name - **HDN 24, and
+      it is twenty-four names, not the one holder that entry was costed at.**
+      The door survives only because the rebuild BUILDS it, so it collides with
+      nothing. `Walker` survives because it is not a dungeon piece.
+      **So the honest version of this cost is: naming it reaches a player as a
+      node name where there IS one, and as `@MeshInstance3D@165` where there is
+      not - and which of those a player gets depends on whether he shut a door.
+      This question cannot be answered well until 24 is.** The rest of the
+      clause stands: they are **node names, not English**, so either a player
+      is shown an internal name or something has to translate them, and that is
+      a second decision about wording. It also
       means a `Walker` in the record, which is the player's own invisible body
       and therefore says out loud a thing the other three open questions are
       still about.
@@ -30736,3 +31063,113 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     measurement does not go stale, and 121 deliberately asserted only that the
     information is in hand - so none of the three answers above has been made
     cheaper or dearer by a test that would have to be deleted.
+
+39. **A `go_to` errand cannot cross or reach any room that has a thing in
+    it.** Found in 125 while building a fixture for something else, driven
+    rather than reasoned about, and **not fixed**, because every fix is either
+    a placement rule or a navigation change and both are his.
+
+    **THE MEASUREMENT: 18 ERRANDS, SIX ROOM WIDTHS, A CONTROL AT EACH WIDTH,
+    AND IT IS 12 OUT OF 12.** One legal `CREATE_DUNGEON` of three rooms joined
+    `[[1,2],[2,3]]`, every door open, one `ORDER {"goal": "go_to", "room":
+    "vault"}`. The only thing that changes down the table is whether a thing is
+    in the dungeon and which room it is in:
+
+    | width | no things (control) | thing in the PASS-THROUGH room | thing in the DESTINATION room |
+    |---|---|---|---|
+    | 8 m | arrives, 26.9 m, waypoint 60/60 | **fails at 11.2 m, 25/60** | **fails at 25.2 m, 55/60** |
+    | 10 m | arrives, 30.9 m, 68/68 | **fails at 12.8 m, 28/68** | **fails at 28.8 m, 62/68** |
+    | 12 m | arrives, 34.9 m, 76/76 | **fails at 14.4 m, 32/76** | **fails at 32.4 m, 70/76** |
+    | 16 m | arrives, 42.9 m, 92/92 | **fails at 17.5 m, 38/92** | **fails at 39.5 m, 84/92** |
+    | 20 m | arrives, 50.9 m, 108/108 | **fails at 20.6 m, 44/108** | **fails at 46.6 m, 98/108** |
+    | 30 m | arrives, 70.9 m, 148/148 | **fails at 28.4 m, 60/148** | **fails at 64.4 m, 134/148** |
+
+    Every failure is `"stopped making progress"`, and in every one of the twelve
+    the body's own reading at the halt names what it is pressed against:
+    **`Thing_key`** for the pass-through room and **`Thing_chest`** for the
+    destination. **Six controls arrive at the final waypoint**, so this is not
+    a harness that cannot walk a dungeon.
+
+    **A THING IN THE ENTRANCE DOES NOT DO IT**, measured at 12 m: the body
+    starts at the entrance's centre and the thing is behind it, so the errand
+    arrives. That is the one placement of the three that is safe, and it is the
+    one a player is least likely to ask for.
+
+    **WHY IT IS EVERY WIDTH AND NOT A COINCIDENCE AT ONE.**
+    `dungeon_module.gd:1251` puts a thing at `room.position + room.size * 0.5 +
+    Vector2(room.size.x * 0.22, 0.0)` - the room's centre, offset by **22% of
+    the room's own width**. The offset scales with the room, and so does the
+    route, so the thing sits in the same place relative to the path at every
+    size. A wider room does not move it out of the way. The comment above that
+    line says the offset exists *"so it is not underneath whoever walks in"*,
+    which it achieves; what it does not do is keep it off the line the body
+    walks afterwards.
+
+    **WHY NO SUITE SAW IT, AND THE FIRST ANSWER THIS SESSION WROTE HERE WAS
+    WRONG - CORRECTED BEFORE IT WAS COMMITTED, BY CHECKING IT (TRAPS 14).**
+    The sentence that stood here said *"`go_to` and `things` have never been in
+    the same fixture"*. **They have.** Eleven files in `tests/` contain both
+    strings, and two of them step physics and really walk a body:
+
+    - **`ledger_said_test.gd:59`** builds `CREATE_DUNGEON` with
+      `"things": [{"name": "key", "in": 2}]` and `:64` orders
+      `{"goal": "go_to", "room": "vault"}`.
+    - **`controller_reach_test.gd:155`** builds with
+      `"things": [{"name": "lamp", "in": 2}]` and `:836` orders
+      `{"goal": "go_to", "room": "vault"}`.
+
+    **SO THE FIXTURE IS NOT MISSING. THE ASSERTION IS.** Neither suite reads
+    what the errand DID: grepped for `"stopped walking"`, `"stopped making
+    progress"` and any arrival check, and neither contains one. They assert
+    ledger content and readback wording, which is what they are for. **The
+    errand in those two suites has been failing for commits, inside a green
+    run, because nothing in either of them ever asked whether it arrived.**
+    That is worse than a missing fixture and it is the part worth keeping: the
+    suites that DO read an errand's outcome (`halt_cause_test`,
+    `errand_outcome_test`, `order_test`, `interference_test`) build dungeons
+    with **no `things` at all**, because their fixtures are about doors and
+    halt reasons; the suites that put things in a dungeon and drive a body
+    either use **carry or fetch, where the thing IS the destination** and being
+    pressed against it is success (`carry_test`, `false_delivery_test`), or do
+    not look at the outcome. Nothing is wrong with any one of them. **The green
+    is distributed across the gap.**
+
+    **AND IT IS REACHABLE BY THE MOST NATURAL REQUEST THERE IS, WHICH IS WHY IT
+    IS HERE RATHER THAN IN A BACKLOG.** `dungeon_module.gd:154` instructs the
+    model, in the prompt, that a named object *"MUST appear in `things`, in the
+    room they said"*. So *"a dungeon with a key in the middle room, then send
+    someone to the vault"* is two legal requests, is exactly what the prompt
+    asks the model to produce, and the errand fails. **And the sentence the
+    player gets names nothing:** *"Could not get to the vault: stopped making
+    progress after 14 m."* - which is HDN 38's sentence, arriving at a second
+    and much more common cause than the one 38 was raised about.
+
+    **IT BEARS ON THE MILESTONE `docs/PROTOCOL.md` NAMES AS CURRENT.** The
+    Verified Living World is *"objects can be created, carried and delivered by
+    NPCs"*. Carry and fetch were measured and work. What does not work is
+    crossing a room that has an object in it, which is the case a world with
+    several objects in it is made of.
+
+    **WHAT IS NOT MEASURED, SAID PLAINLY.** Whether a **carry** or **fetch**
+    errand whose route crosses a THIRD room containing a different thing fails
+    the same way - only `go_to` was driven. Whether two things in one room
+    (which `dungeon_module.gd` places at the **same spot**, since the offset
+    has no per-thing term) makes it worse or is itself a separate fault.
+    Whether a wider corridor or a different door pair changes it. And nothing
+    about what the fix should be.
+
+    **THE OPTIONS, NOT CHOSEN.** Place a thing somewhere the route does not go
+    - which needs the placement to know the route, and changes where a player's
+    lamp is. Give the walker obstacle avoidance - which is a navigation system
+    this project does not have and is the biggest of the three. Or decide that
+    an errand stopped by a thing is correct behaviour and that what is wrong is
+    the sentence, which folds this into HDN 38. **Each of those is architecture
+    or product direction, so 125 took none of them.** What it did instead is
+    drive the table above so the decision is not also a measurement.
+
+    **If he is absent, LEAVE IT.** Nothing is broken by waiting that is not
+    already broken, and the measurement does not go stale. No suite was written
+    to hold this finding, deliberately: a suite asserting that the errand FAILS
+    would have to be deleted by whoever fixes it, which is a tripwire rather
+    than a guard (`halt_cause_test`'s own header makes that argument), and the
+    table above is a better record than a row that has to die.

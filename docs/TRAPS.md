@@ -9247,3 +9247,94 @@ number (TRAPS 6).
   `left_body_test`'s last section walks `Main`'s own children for every
   `Walker` or `Car` that is not the character, so a third body added later is
   asked the question without anybody remembering to add it (TRAPS 114).
+
+---
+
+## 119. A question asked of the one member of the class that cannot show the fault
+
+**Signature:** a suite answers a general question — *can X be named? is Y
+recorded?* — with one driven reading, the reading is correct, the suite is
+green for several commits, and the general answer is **wrong for every other
+member of the class**.
+
+**Cause.** 121 asked whether a failed errand could name what stopped it. It
+drove a shut door, read the collider's owning piece, got `Door_2_3`, and
+answered **yes**. Every row was true. 124 then counted the naming rule that
+answer rests on and found **four `_solid()` call sites and six name shapes**,
+and named the class question for later: *which of those six names can a stalled
+errand actually read?*
+
+The answer is **one**, and the reason is the trap. The fixture is a `SHUT`.
+A `SHUT` goes through `rebuild_standing_world()`, which `queue_free()`s the
+standing pieces and refills the same holder in the same frame — so every piece
+that was already there loses its name to `add_child()`'s collision rename. The
+shut door slab is **the one piece the rebuild BUILDS**. It has no incumbent to
+collide with, so it is the only one of the six that still carries a name when
+the suite reads it. **121 picked, out of six, the single member that was immune
+to a fault it could not see.**
+
+A second shape of the same thing, found in the same session: a fault can live
+inside a green suite that **drives** it and asserts something else.
+`ledger_said_test` and `controller_reach_test` both build a dungeon with a
+thing in it and send a `go_to` errand into that room. That errand fails. Both
+suites are green, because neither reads the errand's outcome — they assert
+ledger content and readback wording. The fixture was there for commits; the
+assertion never was.
+
+**Do:**
+
+- When a suite answers a question about a CLASS from one driven member, ask
+  what makes that member different from the others **before** writing the
+  general answer down. Here one question would have done it: *is this piece
+  built before the fixture's action, or by it?*
+- Prefer a fixture whose member is **typical**, not the one that is easiest to
+  drive. Easiest to drive and immune are often the same member, because what
+  makes it easy is that the action creates it.
+- A green suite that drives a behaviour is not evidence about that behaviour
+  unless a row reads its **outcome**. Grep a suite for an outcome check before
+  citing it as coverage.
+- The suite that was narrow does not necessarily need changing.
+  `halt_cause_test` is untouched by 125: its rows are true and its count is
+  unmoved. What it lacked was a stated **bound**, and a bound belongs in the
+  file that measured the class.
+
+---
+
+## 120. A fix built, run and green, for a decision the owner had reserved
+
+**Signature:** a session finds a fault, writes the fix, every suite passes, and
+then one unrelated suite fails — and the failing rows turn out to be a previous
+session **deliberately holding** the behaviour that was just "fixed", with the
+question written into `HANDOVER.md` under *Human decision needed*.
+
+**Cause.** 125 measured that a rebuilt dungeon loses the names of all 24 of its
+pieces, applied `remove_child()` before `queue_free()` at all six sites of the
+shape, and read **85 suites, 1 with something to look at**:
+`player_door_test` **75, failures=2**. Reading those two rows is what found
+**HDN 24** — raised in 060, about this exact mechanism, naming this exact fix
+(*"freeing the outgoing world before adding the new one"*), and ending
+*"Whether the name should be made stable, or the reading of it removed, is
+yours."* The assistant had chosen, built and verified one of the two options
+the owner was asked to choose between, and would have pushed it as a bug fix.
+
+The work was not wasted and the fault is real. What was wrong was the
+**category**: it was filed as a fix when the repository had already filed it as
+a question.
+
+**Do:**
+
+- Before fixing anything that touches a builder, a sentence a player reads, or
+  behaviour a suite asserts, **grep `HANDOVER.md` for the mechanism** — not for
+  the symptom. "queue_free" and "add_child" would have found HDN 24; "piece
+  name" would not have.
+- A suite that fails **against your fix** is a primary source. Read the rows
+  before adjusting them: a row that asserts what looks like a bug may be a
+  previous session holding it on purpose, and rewriting it is how a reserved
+  decision gets taken silently.
+- When this happens, the deliverable is **the costed decision, not the diff**:
+  keep the measurement, keep the patch described, state exactly what breaks if
+  the owner says yes, and revert `scripts/`. 125's commit is 0 lines of diff in
+  `scripts/` for this reason.
+- Holding a fault in a suite is legitimate and must say so. Label the rows,
+  name the decision number, and say which rows the answer deletes — otherwise
+  the next session reads them as a specification.
