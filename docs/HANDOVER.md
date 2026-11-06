@@ -11,6 +11,53 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
+- Last commit at the time of writing: **121a**, which is **docs only** - 0
+  lines of diff in `scripts/`, `tests/` and `.github/`, no new finding about
+  Genesis, no new claim about its behaviour, no new live entry. It records the
+  one measurement 121's commit message left owed: **a fresh `git clone` of the
+  pushed commit `4891dfc` runs byte-identical to the four runs 121 took** -
+  `9f43a14b3fc45d1361399402cf0c9fc6`, **83 suites, 0 with something to look
+  at**, `halt_cause_test` **20, failures=0**, `source_scan_test` **79,
+  failures=0**, `result_line_test` **362, failures=0**, `prompt_bounds_test`
+  **72, failures=0** - with `git status --porcelain` **empty both before and
+  after the run**, so `project.godot` was not edited to take the measurement,
+  and `user://` cleared by deleting `app_userdata/AI_Game_Builder`. So the
+  tree on the remote is the tree that was measured. `diff` against 121's own
+  final run is empty.
+  **THE THREE CLAUSES IT MATTERS MOST FOR.** `halt_cause_test` 20 on the
+  clone: it is a NEW FILE and the only thing in the project that reads what
+  the body knows at the moment it stops, so a green run against the REMOTE
+  tree is the reading that the suite went up on the remote rather than only
+  existing locally. `source_scan_test` 79 with **failures=0** on the clone is
+  the second, and it is new to this list: it is the suite that failed 121's
+  first draft by name and line, so a green run against the remote is the
+  reading that what was pushed is the comment-stripped version and not the
+  raw-scanning one. `result_line_test` 362 on the clone is the third: it
+  derives its members from `tests/` on disk via `dir.get_files()`, so that
+  count is the reading that the remote's `tests/` really holds the file 121
+  says it does, taken by the project's own reader rather than by `ls`.
+  **NOTHING ELSE IN 121 WAS RE-MEASURED.** Its baseline, its predicted diff,
+  its five injections and the probes behind the live entry's new paragraph are
+  121's and are not re-taken.
+  **NO SUITE WAS RUN AGAINST A MODIFIED TREE BY 121a.** The only edits since
+  `4891dfc` are to `docs/HANDOVER.md`.
+  **121a BUILT NOTHING AND ALL THREE LIVE ENTRIES ARE UNTOUCHED**, as is the
+  new "Human decision needed" 38. The car `/drive` parks on the hidden body
+  still moves 0.00 m against 4.90 m, the hidden body still blocks a
+  character's errand, 119's rebuild still forgets where the character is
+  standing, and a failed errand still names nothing.
+  **AND IT WAS TAKEN IN THE SAME SESSION AS 121, WHICH IS SAID PLAINLY.**
+  115a through 118a were each taken by the next firing, from a container of
+  their own. This clone, like 119a's and 120a's, was taken immediately after
+  the push by the same container and the same Godot download. It is a reading
+  of the REMOTE TREE, which is what the measurement is for, but it is **not**
+  an independent container. A later session wanting that stronger reading gets
+  it for free by taking its own baseline, which is what "take your own
+  baseline" under "Run the tests first" is for.
+  **THE DEPLOY STILL FAILS**, both secrets are still empty, and what a visitor
+  sees is still commit `71b065f` from 2026-10-14. Nothing here touched a
+  deployment setting, a secret, a flag or a target.
+
 - Last commit at the time of writing: **121**, and it spends itself on the one
   thing three live entries agreed needed nobody: **whether a failed errand
   COULD name what stopped it.** It can, and the answer is sharper than the
@@ -9589,6 +9636,23 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
+**AND RUN 8 IS A FRESH `git clone` OF THE PUSHED COMMIT**, written in by 121a
+- `4891dfc`, cloned into its own directory, `git status --porcelain` **EMPTY
+both before and after the run** (so `project.godot` was not edited to take the
+measurement), `user://` cleared by deleting `app_userdata/AI_Game_Builder`,
+same Godot: **BYTE-IDENTICAL to the four runs 121 took on its working tree**,
+md5 **`9f43a14b3fc45d1361399402cf0c9fc6`**, **83 suites, 0 with something to
+look at**, `halt_cause_test` **20, failures=0**, `source_scan_test` **79,
+failures=0**, `result_line_test` **362, failures=0**, `prompt_bounds_test`
+**72, failures=0**. So the tree on the remote is the tree that was measured.
+The three clauses it matters most for are named in the 121a entry above. Taken
+for the reason 104a and 106a through 120a were each taken: the alternative is
+a sound inference about the remote in place of a reading of it, which is
+TRAPS 14's shape applied to this file. **Like 119a and 120a and unlike 115a
+through 118a it was taken in the SAME session as its own commit**, so it is a
+reading of the remote tree but not of an independent container; said plainly
+in the 121a entry.
+
 **121's RECORD. ONE MEASUREMENT IS OWED - A FRESH `git clone` OF THE PUSHED
 COMMIT - AND THAT IS 121a's WHOLE JOB.** 121 took its own baseline on the
 clean pushed tree at `c1cfa52`, in its own container with its own Godot
@@ -17250,8 +17314,13 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
-**WHAT 121 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
-clone` OF THE PUSHED COMMIT.** 121 took its own baseline on the clean pushed
+**~~WHAT 121 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
+clone` OF THE PUSHED COMMIT.~~ TAKEN IN 121a, AND IT REPRODUCED BYTE-FOR-BYTE
+- IT IS RUN 8 ABOVE.** Struck rather than deleted because what it owed and why
+is the part a later session needs. **Do not start by re-running on 121's or
+121a's behalf** - read the record under "Run the tests first", take your own
+baseline so you learn that the record and the container still agree today, and
+spend the time on the work below. The original sentence follows. 121 took its own baseline on the clean pushed
 tree at `c1cfa52` and reproduced the md5 120 recorded and 120a reproduced from
 a clone - `a33311dc56bd6f3287eec1e1b0cf772a`, 82 suites, 0 with something to
 look at - wrote its predicted diff to a file before editing any repository
