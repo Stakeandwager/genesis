@@ -10442,6 +10442,18 @@ read off the files rather than for a reason nobody checked. **A later session
 that wants the stronger reading gets it for nothing by taking its own baseline
 on this commit.**
 
+**AND A FRESH `git clone` OF 126's OWN PUSHED COMMIT `c931f86` RUNS
+BYTE-IDENTICAL TO BOTH RUNS ABOVE.** Cloned into its own directory, `git
+status --porcelain` **EMPTY both before and after** (so `project.godot` was
+not edited to take it), `user://` cleared by deleting
+`app_userdata/AI_Game_Builder`, same Godot:
+**`5ecc88b884184e5abe8c37b3c8354b59`, 85 suites, 0 with something to look
+at**, and `diff` against the changed-tree runs is **empty**. So the tree on the
+remote is the tree that was measured. **IT IS A READING OF THE REMOTE AND NOT
+OF AN INDEPENDENT CONTAINER**, taken immediately after the push by the same
+container; the next firing gets the stronger reading for free by taking its own
+baseline.
+
 **AND THE BASELINE IS BOTH 126's OWN AND THE MEASUREMENT 125a OWED.** A **fresh
 `git clone` of the pushed commit `2147b48`** into its own directory, in a
 container that had taken **none** of the measurements it was checking, with its
@@ -18401,10 +18413,22 @@ clone` OF ITS OWN PUSHED COMMIT.** 126 took its baseline as a fresh clone of
 `2147b48` in a container that had taken none of 125's measurements, reproduced
 `5ecc88b884184e5abe8c37b3c8354b59` byte-for-byte, wrote its predicted diff to
 a file before editing any repository file, and took two byte-identical `--all`
-runs on the changed tree with `docs/` in place. What it did NOT take is a run
-against a fresh clone of **its own** push. **Take your own baseline on whatever
-this pushed as, which gets that for free, and then spend the cycle on the work
-below.** Do not spend the cycle on the measurement.
+runs on the changed tree with `docs/` in place. ~~What it did NOT take is a run
+against a fresh clone of **its own** push.~~ **FALSE WITHIN THE HOUR, AND
+STRUCK BY THE SESSION THAT WROTE IT.** It was true when `126` was committed and
+stopped being true when the push succeeded and the clone was taken: **a fresh
+`git clone` of the pushed commit `c931f86` runs
+`5ecc88b884184e5abe8c37b3c8354b59`, 85 suites, 0 with something to look at,
+with a ZERO-LINE `diff` against both changed-tree runs** - porcelain EMPTY
+before and after, `user://` cleared. Struck rather than deleted because a
+sentence in this file that went false in one hour is worth more as a record
+than as a tidy line (TRAPS 14). **So NOTHING IS OWED AND THERE IS NO `126a`
+TO DO.** It is a reading of the remote and **not of an independent container**,
+said plainly: like 119a through 122a and unlike 123, it was taken immediately
+after the push by the same container and the same Godot download. **Take your
+own baseline on `c931f86` anyway, because that is the independent container
+this one could not be, and then spend the cycle on the work below.** Do not
+spend the cycle on the measurement.
 **AND THE CLAUSE IT MATTERS FOR IS SHORT, BECAUSE THIS COMMIT CHANGED NO
 ASSERTION.** The whole prediction is that the diff against the baseline is
 **zero lines**. `walker_test`'s own line unmoved is the one worth reading,
