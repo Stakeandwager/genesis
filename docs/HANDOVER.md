@@ -18597,10 +18597,24 @@ off the remote. **So 126a's open item is closed: that is the independent
 container 126a said it could not be, and the md5 reproduces in it.** `126a`
 is docs-only against `c931f86` - checked with `git diff --name-only`, 0 files
 outside `docs/` - so this baseline is also a reading of `c931f86`'s tree.
-**What 127 did NOT take is a run against a fresh clone of its own push.** A
-`127a` would be a docs-only commit carrying that one measurement. Take your
-own baseline on whatever 127 pushes as, which gets it, and spend the cycle on
-the work below rather than on the measurement.
+~~**What 127 did NOT take is a run against a fresh clone of its own push.** A
+`127a` would be a docs-only commit carrying that one measurement.~~ **FALSE
+WITHIN THE HOUR, AND STRUCK BY THE SESSION THAT WROTE IT - the same way 126's
+copy of this sentence went false.** It was true when `127` was committed and
+stopped being true when the push succeeded and the clone was taken: **a fresh
+`git clone` of the pushed commit `4b70bc1` runs
+`5ecc88b884184e5abe8c37b3c8354b59`, 85 suites, 0 with something to look at,
+with a ZERO-LINE `diff` against all three changed-tree runs** - cloned into
+its own directory, `git status --porcelain` EMPTY both before and after (so
+`project.godot` was not edited to take it), `user://` cleared by deleting
+`app_userdata/AI_Game_Builder`, same Godot download. So the tree on the remote
+is the tree that was measured, and 127's zero-line claim holds against the
+remote rather than only locally. **IT IS A READING OF THE REMOTE AND NOT OF
+AN INDEPENDENT CONTAINER**, said plainly: like 126a, it was taken immediately
+after the push by the same container and the same Godot download. **Take your
+own baseline on `4b70bc1` anyway, because that is the independent container
+this one could not be, and then spend the cycle on the work below rather than
+on the measurement.** Nothing is owed and there is no `127b` to do.
 **THE CLAUSE IT MATTERS FOR IS SHORT, BECAUSE 127 CHANGED NO ASSERTION'S
 EXPRESSION.** The whole prediction is that the diff against the baseline is
 **zero lines**. The two reworded MESSAGE strings are the only edits that are
