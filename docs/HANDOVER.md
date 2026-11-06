@@ -11,6 +11,128 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
+- Last commit at the time of writing: **121**, and it spends itself on the one
+  thing three live entries agreed needed nobody: **whether a failed errand
+  COULD name what stopped it.** It can, and the answer is sharper than the
+  question. `tests/halt_cause_test.gd` **new, 20 assertions**, `run_tests.sh`
+  one word (the new suite is TIMED), and this file. **`scripts/` is 0 lines of
+  diff**, so `PROMPT_FINGERPRINT` cannot have moved and `prompt_bounds_test`
+  stayed at **72** - and that is a reading of the run, not an argument from the
+  diff.
+
+  **THE READING, TAKEN INSIDE THE `stopped_walking` HANDLER** - the moment
+  `halt()` emits, which is the moment any fix would have to read. A door shut
+  in the carrier's face: `get_slide_collision_count()` **1**, `is_on_wall()`
+  **true**, flat speed **0.0000 m/s**, collider the `StaticBody3D` named
+  **`Solid`**, and **its parent is `Door_2_3` - the door that was shut**. The
+  player's leftover body, at each of the first three corridor marks of
+  `route(0, 2)`: count **1**, collider **`Walker`**, a `CharacterBody3D`
+  running `walker.gd`, at 5.1 / 5.6 / 6.1 m - **the first of which reproduces
+  120's 5.1 m in 6.7 s from a probe written this session without reusing
+  120's.** So the obstacle is not merely detectable: it has a name, and the
+  name is one `get_parent()` away, because every solid dungeon piece is a
+  descriptively named mesh carrying a child `StaticBody3D` called `Solid`
+  (`dungeon_module.gd:1465-1473`, read).
+
+  **AND THE CONTROLS ARE WHAT MAKE THE 1s MEAN ANYTHING (TRAPS 6).** The same
+  two calls, in the same errand: **0** and **false** mid-walk in the open at
+  4.33 m/s, and **0** and **false** at an ARRIVAL. A suite that read only the
+  stall could not tell a body pressed against a door from a body pressed
+  against something for the whole walk.
+
+  **WHAT THE SUITE PINS, AND WHY IT IS THE SHUT DOOR AND NOT THE BODY.** The
+  shut door is permanent intended behaviour - GENESIS CHALLENGE 001, already
+  asserted by `interference_test` - so it cannot be invalidated by any of the
+  three answers the owner owes. The leftover-body rows are a measurement in
+  the live entry and deliberately **not** a suite, because whichever way the
+  body question goes a suite built on that body could stop being reachable.
+  **Nothing about what a player should be TOLD is asserted anywhere**: that is
+  the new "Human decision needed" **38**, which this commit exists to make
+  cheap and does not answer.
+
+  **FOUR BYTE-IDENTICAL `--all` RUNS ON THE CHANGED TREE**, `user://` cleared
+  before each, the last two with `docs/` in place: md5
+  **`9f43a14b3fc45d1361399402cf0c9fc6`**, **83 suites, 0 with something to
+  look at**, `halt_cause_test` **20, failures=0**.
+
+  **FIVE INJECTIONS, EACH ALONE IN ITS OWN THROWAWAY COPY** with its own
+  `config/name` and its own cleared `user://` (TRAPS 6), every anchor counted
+  before patching and found **exactly once**, and **all five landed**.
+  - **A**, `_steer(delta)` moved after `super._physics_process(delta)`:
+    **failures=1**, the ordering row - and **the stall still named `Door_2_3`**,
+    which is recorded because it says what that row is for. It is not what
+    makes the reading work; it is the guard against the rows going on passing
+    while meaning the next frame instead of this one.
+  - **B**, the door slab named `"Slab_" + label` instead of `"Door_" + label`:
+    **failures=1**, and the row printed `Slab_2_3`. So the name row reads the
+    real name and is not a tautology.
+  - **C**, the shut door built with no collision at all: **failures=1** and
+    the suite drops to **14** assertions on its early return - the errand
+    arrives instead of stalling, so the stall rows are not vacuous.
+  - **D**, the solid body named `"Collision"` instead of `"Solid"`:
+    **failures=1**, the row that says the useful name is the PARENT's.
+  - **E**, a COMMENT added to `npc.gd` saying the parent call is not made:
+    **failures=0**, which is the row that proves the comment-stripping below
+    is doing its job rather than being decoration.
+
+  **AND THE HARNESS CAUGHT THIS SUITE'S FIRST DRAFT, WHICH IS WORTH MORE THAN
+  THE SUITE.** The last section reads `scripts/npc.gd` and `scripts/walker.gd`
+  to assert the call ordering. The first draft read them **raw**, and
+  `source_scan_test` went from `failures=0` to **`failures=2`**, by name and
+  line: *"a file in tests/ scans this project's source and has no `_code_of()`
+  at all, so a comment can answer its questions: halt_cause_test.gd
+  (halt_cause_test.gd:281, halt_cause_test.gd:289)"*. It was right - npc.gd's
+  own comments discuss `_steer`. This is TRAPS 63's "a check a comment can
+  satisfy is not a check", held **mechanically** by a suite rather than in
+  prose, catching a new file within one run of its being written. Fixed by
+  defining `_code_of()` and scanning the stripped text, plus a can-it-fail row
+  that the read was not empty (npc.gd **5199** chars, walker.gd **5604** after
+  stripping).
+
+  **AND THE PREDICTED DIFF WAS WRONG IN THREE PLACES (TRAPS 89).** Written to
+  a file before any repository file was edited. It said `halt_cause_test` would
+  be **17** assertions and it is **20** - 19 as first written, plus the
+  can-it-fail row the harness's catch added - and it said **"0 suites with
+  something to look at"** and **"the diff is exactly two lines"**, both of
+  which were **false on the first full run** for exactly the reason above: the
+  prediction assumed a new file in `tests/` could not move another suite's
+  count, and it moved `source_scan_test`. Both clauses are true of the final
+  tree and were not true when predicted. What held: `scripts/` 0 lines of
+  diff, suites 82 -> **83**, `result_line_test` 358 -> **362**,
+  `prompt_bounds_test` **72**, `left_body_test` **16**, `interference_test`
+  **16** unmoved.
+
+  **NOT VERIFIED, AND THE LIST IS THE POINT.**
+  **NOTHING WAS FIXED AND NOTHING A PLAYER MEETS CHANGED.** `scripts/` is 0
+  lines of diff. The failed errand still reads *"Could not get to the vault:
+  stopped making progress after 26 m."* and still names nothing, on purpose:
+  what it should say is the owner's (38).
+  **ONLY TWO HALT REASONS WERE DRIVEN.** `"stopped making progress"` and
+  `"stopped walking"`. `"gave up"` (the 90 s cap, `npc.gd:182-183`) and
+  `"nowhere to go"` (`npc.gd:107`) were **not** driven, and at those the body
+  may be touching nothing at all - so "the body knows what stopped it" is a
+  claim about the no-progress stall and is stated that way everywhere.
+  **AND THE READING DOES NOT TELL A DOOR FROM A WALL BY ITSELF.** Both are a
+  `Solid` under a named mesh; only the parent's name separates them, and the
+  wall case was read off `dungeon_module.gd`'s naming rule rather than by
+  stalling an errand against a wall.
+  **THE LEFTOVER-BODY ROWS ARE A PROBE, NOT A SUITE.** They are in the live
+  entry with their numbers. Nothing in `tests/` pins them, for the reason
+  given above.
+  **NO SUITE WAS RUN AGAINST A FRESH CLONE OF THIS COMMIT**, which is what a
+  121a owes - see "Next action".
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is still **2026-10-14**, checked this commit by
+  grepping every `OWNER, 2026-[0-9][0-9]-[0-9][0-9]` marker in `HANDOVER.md`
+  and `TRAPS.md`: five of them, all that one date.
+  **ALL THREE LIVE ENTRIES ARE STILL LIVE AND NONE OF THEM IS CLOSED.** The
+  car `/drive` parks on the hidden body still moves 0.00 m against 4.90 m, the
+  hidden body still blocks a character's errand, and 119's rebuild still
+  forgets where the character is standing. All three wait on the owner.
+  **THE DEPLOY STILL FAILS**, both secrets are still empty, and what a visitor
+  sees is still commit `71b065f` from 2026-10-14. Nothing here touched a
+  deployment setting, a secret, a flag or a target.
+
 - Last commit at the time of writing: **120a**, which is **docs only** - 0
   lines of diff in `scripts/`, `tests/` and `.github/`, no new finding about
   Genesis, no new claim about its behaviour, no new live entry. It records the
@@ -9467,6 +9589,61 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
+**121's RECORD. ONE MEASUREMENT IS OWED - A FRESH `git clone` OF THE PUSHED
+COMMIT - AND THAT IS 121a's WHOLE JOB.** 121 took its own baseline on the
+clean pushed tree at `c1cfa52`, in its own container with its own Godot
+download: `git status --porcelain` **empty before and after**, `--all`,
+`user://` cleared by **deleting `app_userdata/AI_Game_Builder`** rather than by
+renaming `config/name`, so `project.godot` was not edited to take the
+measurement. Godot **4.7.1.stable.official.a13da4feb**, `--version` read.
+**`a33311dc56bd6f3287eec1e1b0cf772a`, 82 suites, 0 with something to look at**
+- **byte-identical to the md5 120 recorded and 120a reproduced from a clone**,
+with `left_body_test` **16**, `prompt_bounds_test` **72** and
+`result_line_test` **358**. So the record and the container still agree today.
+
+**121 ADDED ONE FILE AND `scripts/` IS 0 LINES OF DIFF.**
+`tests/halt_cause_test.gd` new, that name added to `TIMED` in `run_tests.sh`,
+and this file.
+
+**FOUR BYTE-IDENTICAL `--all` RUNS ON THE CHANGED TREE**, `user://` cleared
+before each by deleting `app_userdata/AI_Game_Builder`, **the last two on the
+complete tree with `docs/` in place and the last of those on the tree that was
+pushed, bar this paragraph**: md5
+**`9f43a14b3fc45d1361399402cf0c9fc6`**, **83 suites, 0 with something to look
+at**, `halt_cause_test` **20, failures=0**, `result_line_test` **362,
+failures=0**, `prompt_bounds_test` **72, failures=0**, `source_scan_test`
+**79, failures=0**, `interference_test` **16, failures=0**, `left_body_test`
+**16, failures=0**. `md5sum -c` on each changed file after the final run
+reported **nothing moved**, and `git status --porcelain` was identical before
+and after - with the single exception of THIS FILE, which records the run and
+is therefore edited after it.
+
+**`diff` AGAINST THE BASELINE RUN IS EXACTLY TWO LINES** - the new suite's
+line, and `result_line_test` 358 -> 362. Every other suite is unmoved,
+`prompt_bounds_test` 72 among them, which is the reading behind the claim that
+no prompt clause moved.
+
+**AND AN EARLIER PAIR OF RUNS ON THE SAME TREE READ `failures=2` AND IS KEPT
+HERE RATHER THAN TIDIED.** md5 `8b31a1f019ee135a6cea6fdfa4560292`, **83
+suites, 1 with something to look at**: `source_scan_test` 79 **failures=2**,
+because this suite's first draft scanned `scripts/npc.gd` raw and this project
+has a standing rule, held mechanically, that a file in `tests/` which scans
+source must define `_code_of()` and search the comment-stripped text (TRAPS
+63). It named the file and both lines. That is the harness catching a new file
+within one run of its being written, and the two clauses of the predicted diff
+it falsified are in the 121 entry above.
+
+**THE FIVE INJECTIONS, EACH ALONE IN ITS OWN THROWAWAY COPY** with its own
+`config/name` and its own cleared `user://`, every anchor found exactly once,
+all five landed: **A** `_steer` after the parent call, failures=1 on the
+ordering row only (**the stall still named `Door_2_3`**, which is what that
+row is for and is recorded rather than smoothed over); **B** the door slab
+renamed, failures=1 and the row printed `Slab_2_3`; **C** the shut door built
+with no collision, failures=1 and the suite drops to **14** assertions because
+the errand arrives instead of stalling; **D** the solid body renamed
+`Collision`, failures=1; **E** a comment in `npc.gd` saying the parent call is
+not made, **failures=0**, which is the row that proves the stripping works.
+
 **AND RUN 7 IS A FRESH `git clone` OF THE PUSHED COMMIT**, written in by 120a
 - `d62f541`, cloned into its own directory, `git status --porcelain` **EMPTY
 both before and after the run** (so `project.godot` was not edited to take the
@@ -17073,6 +17250,60 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
+**WHAT 121 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
+clone` OF THE PUSHED COMMIT.** 121 took its own baseline on the clean pushed
+tree at `c1cfa52` and reproduced the md5 120 recorded and 120a reproduced from
+a clone - `a33311dc56bd6f3287eec1e1b0cf772a`, 82 suites, 0 with something to
+look at - wrote its predicted diff to a file before editing any repository
+file (**and three of its clauses were wrong, which is recorded under "Run the
+tests first" rather than tidied, TRAPS 89**), and took four byte-identical
+`--all` runs on the changed tree, the last two on the complete tree with
+`docs/` in place. What it did NOT take is a run against a fresh `git clone` of its own
+pushed commit, which is the reading 104a and 106a through 120a each exist for. **That is 121a's whole job and it is the only
+thing owed.**
+**THE CLAUSE IT MATTERS MOST FOR IS `halt_cause_test` 20 ON THE CLONE.** It is
+a NEW FILE and the only thing in the project that reads what the body knows at
+the moment it stops, so a green run against the REMOTE tree is the reading
+that the suite went up on the remote rather than only existing locally.
+**`result_line_test` 362 ON THE CLONE IS THE SECOND**: it derives its members
+from `tests/` on disk via `dir.get_files()`, so that count is the reading that
+the remote's `tests/` really holds the file this commit says it does, taken by
+the project's own reader rather than by `ls`. **AND `source_scan_test` 79 WITH
+`failures=0` IS THE THIRD, which is new** - it is the suite that failed this
+file's first draft by name and line, so a green run against the remote is the
+reading that what was pushed is the fixed version and not the raw-scanning
+one. `prompt_bounds_test` 72 matters less than usual this time because
+`scripts/` is 0 lines of diff, but it is in the record anyway.
+**DO NOT RE-TAKE 121's FIVE INJECTIONS** - they are in the record with their
+counts, each alone in its own throwaway copy with its own `config/name`,
+including the two whose result is the interesting part: **A** landed on the
+ordering row alone while the stall went on naming the right door, and **E**
+landed as `failures=0` on purpose.
+**AND DO NOT RE-READ WHAT THE BODY KNOWS AT A STALL** - it is
+`tests/halt_cause_test.gd` for the shut door and the second live entry's
+numbers for the leftover body, rather than a table in a document.
+
+**THE WORK ITSELF, AFTER THAT, AND THE SHAPE OF THE PAGE HAS CHANGED.** For
+five commits the honest answer to "what needs nobody" has been one named
+measurement at a time, and **121 spent the last one on the list.** All three
+live entries now wait on the owner, and so does the question 121 measured:
+**"Human decision needed" 38** is new, it is narrow, it has its costs in both
+directions measured rather than estimated, and it is the one that most looks
+like Genesis's own thesis. **Three of the four open questions are about
+leftover bodies and ONE ANSWER SETTLES THEM**; 38 is independent of all three.
+There is a strong case for a session that writes him one short note naming the
+four and stops, rather than measuring a fifth thing.
+**IF HE HAS NOT ANSWERED AND YOU WANT SOMETHING THAT NEEDS NOBODY**, the two
+cheapest honest pieces left are both named in 121's NOT VERIFIED list and
+neither is a fix: **(1) what the body knows at the OTHER two halt reasons** -
+`"gave up"` at the 90 s cap (`npc.gd:182-183`) and `"nowhere to go"`
+(`npc.gd:107`) - where it may be touching nothing at all, which is one probe
+and would say whether 38's cheap answer covers every failed errand or only the
+stall; and **(2) whether the reading tells a shut DOOR from a WALL**, which
+today rests on `dungeon_module.gd`'s naming rule being read rather than on an
+errand stalled against a wall. Do **not** take either as licence to change
+what a player is told: that is 38, and it is his.
+
 **~~WHAT 120 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
 clone` OF THE PUSHED COMMIT.~~ TAKEN IN 120a, AND IT REPRODUCED BYTE-FOR-BYTE
 - IT IS RUN 7 ABOVE.** Struck rather than deleted because what it owed and why
@@ -17958,13 +18189,53 @@ then sent somebody somewhere gets a failure with no cause in it.
 **MEASURED:** the two outcomes, the two distances, the two sentences, the
 equal start positions, `npc_at` being `INF` before both, and that the chosen
 mark is in no room.
-**NOT MEASURED:** whether the record COULD name the obstacle. `halt()` is
+~~**NOT MEASURED:** whether the record COULD name the obstacle. `halt()` is
 called with `"stopped making progress"` by `npc.gd:227` on a no-progress
 timer, and what the body knows at that moment has not been read - a
 `move_and_slide()` collider is available in principle and that is an
-inference, not a reading. Also not measured: a shut door and a leftover body
-at once; the character's own previous body doing this to the next errand; any
-world type but the dungeon.
+inference, not a reading.~~
+**MEASURED IN 121, AND THE ANSWER IS YES - BETTER THAN "A COLLIDER IS
+AVAILABLE".** Struck rather than deleted because what was an inference and why
+is the part a later session needs. Read inside the `stopped_walking` handler,
+which is the moment `halt()` emits and therefore the moment any fix would have
+to read:
+- **A door shut in the carrier's face:** `get_slide_collision_count()` **1**,
+  `is_on_wall()` **true**, flat speed **0.0000 m/s**, the collider the
+  `StaticBody3D` named **`Solid`** - and its PARENT is **`Door_2_3`**, the
+  door that was shut. 26.2 m in 11.8 s.
+- **The player's leftover body, at each of the first three corridor marks of
+  `route(0, 2)`:** count **1**, on_wall **true**, speed **0.0000**, and the
+  collider is **`Walker`**, a `CharacterBody3D` running `walker.gd` at
+  `/root/Main/Walker`. 5.1 m / 5.6 m / 6.1 m in 6.7 / 6.9 / 7.0 s - the first
+  of which reproduces 120's 5.1 m in 6.7 s from an independent probe.
+- **THE CONTROLS THAT MAKE THOSE ONES MEAN SOMETHING:** mid-walk in the open
+  the same two calls read **0** and **false** at 4.33 m/s, and at an ARRIVAL
+  they read **0** and **false**. So the 1 is the stall and not a body that is
+  always touching something.
+- **SO THE NAME IS ONE `get_parent()` AWAY.** Every solid dungeon piece is a
+  descriptively named `MeshInstance3D` (`Door_2_3`, `Wall_2_north_1`,
+  `Room_1_entrance`, `Thing_red_key`) carrying a child `StaticBody3D` named
+  `Solid` - `dungeon_module.gd:1465-1473`, read. A fix that reported
+  `get_collider().name` alone would tell a player **"Solid"**, which is no
+  better than silence; the useful name is the parent's.
+- **AND `carrier.attempted` IS EMPTY IN ALL FIVE PROBES**, re-read this
+  commit, which is 120's reading of the gap taken again rather than carried.
+**WHAT IS PINNED AND WHAT IS NOT.** `tests/halt_cause_test.gd` (20
+assertions) pins the capability on the SHUT-DOOR path only, because that one
+is permanent intended behaviour and cannot be invalidated by any of the three
+pending answers. The leftover-body rows above are a measurement here and
+deliberately not a suite: whichever way the body question goes, a suite built
+on that body stalling an errand could stop being reachable. **Nothing about
+what a player should be TOLD is asserted anywhere** - that is "Human decision
+needed" 38, which this measurement exists to make cheap.
+**STILL NOT MEASURED:** whether the obstacle is readable at the OTHER halt
+reasons - `"gave up"` (the 90 s cap, `npc.gd:182-183`) and `"nowhere to go"`
+(`npc.gd:107`) - where the body may be touching nothing at all; whether the
+reading distinguishes a shut DOOR from a WALL (both are `Solid`, and only the
+parent's name tells them apart, which is a reading of the names rather than of
+a stall against a wall); a shut door and a leftover body at once; the
+character's own previous body doing this to the next errand; any world type
+but the dungeon.
 **NOT ASSERTED ANYWHERE**, for the reason under the entry above.
 
 **HUMAN DECISION NEEDED, and it is the same one as the entry above, so it is
@@ -29359,3 +29630,58 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     **If he is absent, LEAVE IT.** Nothing a player sees depends on it. The
     cost is runner minutes and a log that buries its own headline - which has
     now been read, and the fault it was hiding has been fixed.
+
+38. **Should a failed errand NAME what stopped it?** Raised by 120's second
+    live entry as *"the one that most looks like Genesis's own thesis"* and
+    left unmeasured; **measured in 121, which changed nothing about what a
+    player is told.** It is here rather than decided because it changes a
+    sentence a player reads and the shape of a record in the ledger, and both
+    of those are his.
+
+    **WHAT A PLAYER GETS TODAY, verbatim:** *"Could not get to the vault:
+    stopped making progress after 26 m."* True, and there is nothing in it to
+    act on. `carrier.attempted` is **empty** - re-read this commit across five
+    probes - and the `verified` block reports the destination and the room
+    found, not the obstacle.
+
+    **WHAT IS AVAILABLE, MEASURED RATHER THAN REASONED ABOUT.** Read inside
+    the `stopped_walking` handler, which is the moment `halt()` emits:
+    `get_slide_collision_count()` is **1**, `is_on_wall()` is **true**, the
+    flat speed is **0.0000 m/s**, and the collider's owning piece carries a
+    descriptive name - **`Door_2_3`** for a door shut in the carrier's face,
+    and the collider is **`Walker`** at `/root/Main/Walker` when it is the
+    player's own leftover body. The controls that make those mean something
+    read **0** and **false** mid-walk and at an arrival. Pinned for the door
+    by `tests/halt_cause_test.gd`.
+
+    **SO THE ENGINEERING IS SMALL AND THE QUESTION IS NOT.** Two or three
+    lines in `halt()` would put the obstacle into `attempts` - which is
+    already the place for *"what was attempted and what came of it"* and is
+    already kept apart from the world's own verdict, so nothing about the four
+    evidence layers has to move.
+
+    **THE COSTS, IN BOTH DIRECTIONS.**
+    - **Naming it** means the obstacle's node name reaches a player. Today
+      that reads `Door_2_3`, `Wall_2_north_1`, `Walker` - **node names, not
+      English**, so either a player is shown an internal name or something has
+      to translate them, and that is a second decision about wording. It also
+      means a `Walker` in the record, which is the player's own invisible body
+      and therefore says out loud a thing the other three open questions are
+      still about.
+    - **Not naming it** leaves a failure with no cause in it, which is the
+      one shape this project's thesis is most pointed about.
+    - **A third answer exists and is cheaper than either:** record the
+      obstacle in `attempts` where only the ledger and a later session see it,
+      and change nothing a player reads. That separates "the record could name
+      it" from "the player is told", and the first needs no wording decision
+      at all.
+
+    **IT IS INDEPENDENT OF THE OTHER THREE OPEN QUESTIONS**, which are all one
+    question about whether a body the player stepped out of stays in the
+    world. This one holds whichever way that goes, because a door and a wall
+    stop an errand too.
+
+    **If he is absent, LEAVE IT.** Nothing is broken by waiting, the
+    measurement does not go stale, and 121 deliberately asserted only that the
+    information is in hand - so none of the three answers above has been made
+    cheaper or dearer by a test that would have to be deleted.
