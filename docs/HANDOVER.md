@@ -11,6 +11,45 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
+- Last commit at the time of writing: **117a**, which is **docs only** - 0
+  lines of diff in `scripts/`, `tests/` and `.github/`, no new finding about
+  Genesis, no new claim about its behaviour, no new live entry. It records the
+  one measurement 117's commit message left owed: **a fresh `git clone` of the
+  pushed commit `2f87466` runs byte-identical to the three runs 117 took** -
+  `a456c26dce4d38acf76b987d0e1a30d0`, **79 suites, 0 with something to look
+  at**, `edit_state_test` **12, failures=0**, `result_line_test` **346,
+  failures=0**, `prompt_bounds_test` **72, failures=0** - with `git status
+  --porcelain` **empty both before and after the run**, so `project.godot` was
+  not edited to take the measurement, and `user://` cleared by deleting
+  `app_userdata/AI_Game_Builder`. So the tree on the remote is the tree that
+  was measured.
+  **THE CLAUSE IT MATTERS MOST FOR IS `edit_state_test` 12 ON THE CLONE.** It
+  is a NEW FILE, and it is the only thing in the project that reads what an
+  edit keeps, so a green run against the REMOTE tree is the reading that the
+  suite went up on the remote at all rather than only existing locally - which
+  no inference from a working copy can give.
+  **AND `result_line_test` 346 ON THE CLONE IS THE SECOND ONE**: it derives its
+  members from `tests/` on disk via `dir.get_files()`, so 346 on the clone is
+  the reading that the remote's `tests/` really holds the file this commit says
+  it does, counted by the project's own reader rather than by `ls`.
+  **AND `prompt_bounds_test` 72 ON THE CLONE IS THE THIRD**: its last assertion
+  compares `assembled_prompt()`'s sha256 against `PROMPT_FINGERPRINT`, so a
+  green run against the remote is the reading behind 117's claim that
+  **`scripts/` is 0 lines of diff and no prompt clause moved**.
+  **NOTHING ELSE IN 117 WAS RE-MEASURED.** Its baseline, its predicted diff,
+  its three injections and the two drives (the edit path, and the `/load` path
+  that produced the new live entry) are 117's and are not re-taken.
+  **NO SUITE WAS RUN AGAINST A MODIFIED TREE BY 117a.** The only edits since
+  `2f87466` are to `docs/HANDOVER.md`.
+  **117a BUILT NOTHING, AND THE NEW LIVE ENTRY IS UNTOUCHED** - the false
+  `/load` sentence, the prompt clause at `ai_interpreter.gd:198` and the two
+  tests that hold them in place are exactly as 117 left them, with their
+  measurements, and are still the first thing to pick up.
+  **WHAT CHANGED FOR ANYONE USING GENESIS: NOTHING, AND THAT IS STATED
+  PLAINLY.** 117a is a reading of the remote. The deploy still fails on two
+  unset secrets, and what a visitor sees is still commit `71b065f` from
+  2026-10-14.
+
 - Last commit at the time of writing: **117**, and it takes **step (1) of
   116's live entry** - the one the entry called cheap and said bounds
   everything else - and the answer **corrects 116's own claim**. The carried
@@ -9034,8 +9073,25 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
-**117's RECORD. ONE MEASUREMENT IS OWED - A FRESH `git clone` OF THE PUSHED
-COMMIT - AND THAT IS 117a's WHOLE JOB.** 117 took its own baseline on the
+**AND RUN 4 IS A FRESH `git clone` OF THE PUSHED COMMIT**, written in by 117a
+- `2f87466`, cloned into its own directory, `git status --porcelain` **EMPTY
+both before and after the run** (so `project.godot` was not edited to take the
+measurement), `user://` cleared by deleting `app_userdata/AI_Game_Builder`,
+same Godot: **BYTE-IDENTICAL to runs 1, 2 and 3**, md5
+`a456c26dce4d38acf76b987d0e1a30d0`, **79 suites, 0 with something to look at**,
+`edit_state_test` **12, failures=0**, `result_line_test` **346, failures=0**,
+`prompt_bounds_test` **72, failures=0**. So the tree on the remote is the tree
+that was measured. **THE THREE CLAUSES IT MATTERS FOR** are named in the 117a
+entry above: the new suite exists on the remote rather than only locally,
+`tests/` on the remote really holds it as counted by the project's own reader,
+and the prompt the remote carries is the one `PROMPT_FINGERPRINT` names. Taken
+for the reason 104a and 106a through 116a were each taken: the alternative is a
+sound inference about the remote in place of a reading of it, which is TRAPS
+14's shape applied to this file.
+
+**117's RECORD. ~~ONE MEASUREMENT IS OWED - A FRESH `git clone` OF THE PUSHED
+COMMIT - AND THAT IS 117a's WHOLE JOB.~~ TAKEN IN 117a, AND IT REPRODUCED
+BYTE-FOR-BYTE - IT IS RUN 4 ABOVE.** 117 took its own baseline on the
 clean pushed tree at `d231e99`, from a **twentieth** independent container with
 its own Godot download: `git status --porcelain` **empty before and after**,
 `--all`, `user://` cleared by **deleting `app_userdata/AI_Game_Builder`** rather
@@ -16346,8 +16402,15 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
-**WHAT 117 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH CLONE OF
-THE PUSHED COMMIT.** 117 took its own baseline on the clean pushed tree
+**~~WHAT 117 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH CLONE OF
+THE PUSHED COMMIT.~~ TAKEN IN 117a, AND IT REPRODUCED BYTE-FOR-BYTE.** Struck
+rather than deleted because what it owed and why is the part a later session
+needs. **Do not start by re-running on 117's or 117a's behalf** - read the
+record under "Run the tests first", take your own baseline so you learn that
+the record and the container still agree today, and spend the time on the work
+below, which begins with the first live entry: a false sentence a player meets
+on an ordinary `/load`, measured and not fixed. The original sentence follows.
+**WHAT 117 OWED:** 117 took its own baseline on the clean pushed tree
 (byte-identical to the md5 116 recorded and 116a reproduced from a clone),
 wrote its predicted diff to a file before editing any repository file - and
 **one clause of it was wrong, which is recorded under "Run the tests first"
