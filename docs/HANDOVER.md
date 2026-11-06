@@ -11,6 +11,46 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
+- Last commit at the time of writing: **122a**, which is **docs only** - 0
+  lines of diff in `scripts/`, `tests/` and `.github/`, no new finding about
+  Genesis, no new claim about its behaviour, no new live entry. It records the
+  one measurement 122's commit message left owed: **a fresh `git clone` of the
+  pushed commit `9f07cba` runs byte-identical to the four runs 122 took** -
+  md5 `5055fad3202f078f6fe41fed6e58c32b`, **83 suites, 0 with something to
+  look at**, `halt_cause_test` **43, failures=0**, `source_scan_test` **79,
+  failures=0**, `result_line_test` **362, failures=0**, `prompt_bounds_test`
+  **72, failures=0** - with `git status --porcelain` **empty both before and
+  after the run**, so `project.godot` was not edited to take the measurement,
+  and `user://` cleared by deleting `app_userdata/AI_Game_Builder`. So the tree
+  on the remote is the tree that was measured. `diff` against 122's own final
+  run is empty.
+  **THE TWO CLAUSES IT MATTERS MOST FOR.** `halt_cause_test` **43** on the
+  clone: it is the only thing in the project that reads what the body knows at
+  the moment it stops, and 122 took it from one halt reason to all four, so a
+  green run against the REMOTE tree is the reading that the widened suite went
+  up on the remote rather than only existing locally. `result_line_test`
+  **362** on the clone is the second: it derives its members from `tests/` on
+  disk via `dir.get_files()`, so that count unmoved is the reading that 122
+  added no file - taken by the project's own reader rather than by `ls`.
+  **NOT VERIFIED. IT WAS TAKEN IN THE SAME SESSION AS 122, WHICH IS SAID
+  PLAINLY.** 115a through 118a were each taken by the next firing, from a
+  container of their own. This clone, like 119a's through 121a's, was taken
+  immediately after the push by the same container and the same Godot
+  download. It is a reading of the REMOTE TREE, which is what the measurement
+  is for, but it is **not** an independent container. A later session wanting
+  that stronger reading gets it for free by taking its own baseline.
+  **NOTHING ELSE IN 122 WAS RE-MEASURED.** Its baseline, its predicted diff,
+  its seven injections and the carry-at-the-cap probe are 122's and are not
+  re-taken.
+  **122a BUILT NOTHING.** All three live entries and "Human decision needed"
+  38 are untouched. The car `/drive` parks on the hidden body still moves
+  0.00 m against 4.90 m, the hidden body still blocks an errand, 119's rebuild
+  still forgets where the character is standing, and the stall's sentence still
+  names nothing.
+  **THE DEPLOY STILL FAILS**, both secrets are still empty, and what a visitor
+  sees is still commit `71b065f` from 2026-10-14. Nothing here touched a
+  deployment setting, a secret, a flag or a target.
+
 - Last commit at the time of writing: **122**, and it is **TRAPS 11 applied to
   121's own work**: 121 read what the body knows at ONE halt reason and left
   three. `tests/halt_cause_test.gd` **20 -> 43 assertions**, and **`scripts/`,
@@ -166,8 +206,10 @@ that the owner has not ruled on.** Do not promote one to the other.
   failure, on the path that reaches the cap.
   **WHETHER A `"stopped walking"` THAT IS NOT AN ARRIVAL IS REACHABLE.** The
   reading above says what its sentence would be if it is; it is not driven.
-  **NO SUITE WAS RUN AGAINST A FRESH `git clone` OF THIS COMMIT**, which is
-  what a 122a owes - see "Next action".
+  ~~**NO SUITE WAS RUN AGAINST A FRESH `git clone` OF THIS COMMIT**, which is
+  what a 122a owes - see "Next action".~~ **TAKEN IN 122a, AND IT REPRODUCED
+  BYTE-FOR-BYTE** - see the 122a entry above. Struck rather than deleted
+  because what it owed and why is the part a later session needs.
   **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
   recorded in this file is still **2026-10-14**, checked this commit by
   grepping every `OWNER, 2026-[0-9][0-9]-[0-9][0-9]` marker in `HANDOVER.md`
@@ -9801,6 +9843,20 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
+**AND THE LATEST RUN IS A FRESH `git clone` OF THE PUSHED COMMIT**, written in
+by 122a - `9f07cba`, cloned into its own directory, `git status --porcelain`
+**EMPTY both before and after the run** (so `project.godot` was not edited to
+take the measurement), `user://` cleared by deleting
+`app_userdata/AI_Game_Builder`, same Godot: **BYTE-IDENTICAL to the four runs
+122 took on its working tree**, md5
+**`5055fad3202f078f6fe41fed6e58c32b`**, **83 suites, 0 with something to look
+at**, `halt_cause_test` **43, failures=0**, `source_scan_test` **79,
+failures=0**, `result_line_test` **362, failures=0**, `prompt_bounds_test`
+**72, failures=0**. So the tree on the remote is the tree that was measured.
+**Like 119a through 121a and unlike 115a through 118a it was taken in the SAME
+session as its own commit**, so it is a reading of the remote tree but not of
+an independent container; said plainly in the 122a entry above.
+
 **122's RECORD. ONE MEASUREMENT IS OWED - A FRESH `git clone` OF THE PUSHED
 COMMIT - AND THAT IS 122a's WHOLE JOB.** 122 took its own baseline on the
 clean pushed tree at `cb841a1`, in its own container with its own Godot
@@ -17527,8 +17583,13 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
-**WHAT 122 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
-clone` OF THE PUSHED COMMIT.** 122 took its own baseline on the clean pushed
+**~~WHAT 122 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
+clone` OF THE PUSHED COMMIT.~~ TAKEN IN 122a, AND IT REPRODUCED BYTE-FOR-BYTE.**
+Struck rather than deleted because what it owed and why is the part a later
+session needs. **Do not start by re-running on 122's or 122a's behalf** - read
+the record under "Run the tests first", take your own baseline so you learn
+that the record and the container still agree today, and spend the time on the
+work below. The original sentence follows. 122 took its own baseline on the clean pushed
 tree at `cb841a1` and reproduced the md5 121 recorded and 121a reproduced from
 a clone - `9f43a14b3fc45d1361399402cf0c9fc6`, 83 suites, 0 with something to
 look at - wrote its predicted diff to a file before editing any repository
