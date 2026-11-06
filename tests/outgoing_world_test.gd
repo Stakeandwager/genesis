@@ -140,6 +140,19 @@ func _a_world_that_is_not_going_anywhere_still_counts() -> void:
 
 
 # --- and the sentence itself, on a real dungeon ---
+#
+# 127: THE OWNER'S RING BENDS A CORRIDOR, AND NOTHING HERE WALKS IT. Measured
+# by instrumenting DungeonModule.build() and running all 85 suites: this
+# fixture and panel_built_test's are two of the three dungeons in the whole
+# test body with a corridor of more than one leg. Its door [3,4] gets FOUR
+# legs, because the lattice seats the fourth room off the entrance rather
+# than beside the vault - and a ring does this at every size driven, 6 to
+# 40 m.
+# A body cannot walk a bend of that kind: an ORDER go_to forced across this
+# shape's four-leg corridor fails at 10 m, 12 m and 20 m rooms. Nothing in
+# this file drives a body, so nothing here is wrong; the bound is written
+# down because "the owner's ring" reads like a safe shape and is not one.
+# See "Human decision needed" 40 in docs/HANDOVER.md.
 func _the_sentence_a_player_reads() -> void:
 	var module := DungeonModule.new()
 	var checked: Dictionary = module.validate({

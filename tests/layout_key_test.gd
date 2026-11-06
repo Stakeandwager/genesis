@@ -263,6 +263,19 @@ func _perturb(layout: Dictionary, key: String) -> Dictionary:
 				return {}
 			list.remove_at(list.size() - 1)
 		"slots":
+			# 127: this perturbation builds the only FIVE-leg corridor in the
+			# whole test body. Moving the last room three slots diagonally
+			# makes _corridor() run out, across, back, across and in - five
+			# legs where an adjacent pair gets one. That is not a defect in
+			# this file; it is worth recording because the record said until
+			# 127 that _corridor() gives "one leg or four", and the function's
+			# range is {1, 4, 5}. Five legs is NOT confined to a layout
+			# perturbed by hand: swept over 2100 legal designs of 2 to 8
+			# rooms, solve() produced 538 five-leg corridors, the smallest
+			# shape being four rooms joined [[1,2],[1,3],[1,4],[2,4],[3,4]].
+			# A body cannot walk one: an ORDER go_to forced across that
+			# shape's five-leg corridor fails at 12 m and at 20 m rooms. See
+			# "Human decision needed" 40 in docs/HANDOVER.md.
 			var slots: Dictionary = value
 			var ids: Array = slots.keys()
 			slots[ids[ids.size() - 1]] = (slots[ids[ids.size() - 1]] as Vector2i) + Vector2i(3, 3)

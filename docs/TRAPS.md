@@ -9382,7 +9382,14 @@ over the member that was not.
 - Read a suite's fixture list as a **claim** and check it against what the
   module can actually produce. Here one reading would have done it: ask
   `_corridor()` how many legs each door's corridor has, for each shape in the
-  list, and look at the set. It is `{1}`; the function's range is `{1, 4}`.
+  list, and look at the set. It is `{1}`; ~~the function's range is
+  `{1, 4}`~~ **the function's range is `{1, 4, 5}`, struck and corrected in
+  127** — swept over 2100 legal designs of 2 to 8 rooms, `solve()` produced
+  8477 one-leg corridors, 1771 four-leg and **538 five-leg**, the smallest
+  five-leg shape being four rooms joined `[[1,2],[1,3],[1,4],[2,4],[3,4]]`.
+  The entry below was written by counting the legs of one shape and stating
+  the result as the function's range, which is the trap one level up from
+  the one it is about.
 - When a header says "every", find the enumeration it is quantifying over. If
   the enumeration is a hand-written array in the same file, the word "every"
   is about the array and not about the world.
@@ -9394,3 +9401,60 @@ over the member that was not.
   hazard, grep for the old value before the commit that changes it is
   finished — and then ask whether the hazard exists at any **other** boundary
   the same constant touches.
+
+---
+
+## 122. A limitation measured on one shape, written down as a property of the mechanism
+
+**Signature:** a session drives a fault properly — a table, controls,
+reproduced across processes — and then states the result one level more
+general than it drove it. The table is right. The sentence above it is wider
+than the table, and the extra width is wrong in both directions: the fault
+reaches shapes the entry does not mention, and does not behave the way the
+entry says on them.
+
+**Cause.** 126 found that a `go_to` errand cannot walk a corridor the lattice
+had to bend. It drove twelve room widths on **one shape** — five rooms off a
+hall — with controls, and wrote the finding as *"a `go_to` errand cannot walk
+a corridor the lattice had to bend, at every legal room size from 11 m
+upwards"*, adding that *"the band that fails is 11 m to the legal maximum and
+the band that arrives is everything below it"*. Both clauses are true of that
+shape. 127 asked the same question of other shapes and neither clause
+survived as stated:
+
+- **A ring of four bends a corridor at every size driven**, 6 m to the legal
+  maximum. So does a ring of five and a ring of six. The bend is not reached
+  only by a fifth room off a hall; it is reached by **the smallest loop there
+  is**, which `CREATE_DUNGEON`'s own prompt invites — *"More doors than rooms
+  is allowed and makes loops"*.
+- **An errand forced across the ring of four's bend fails at 10 m**, where
+  the five-off-a-hall table arrives, and at 12 m and 20 m. The size band
+  belongs to the geometry of the one bend that was driven, not to bends.
+- And `_corridor()`'s range was recorded as `{1, 4}`. It is `{1, 4, 5}`, and
+  `solve()` reaches the five-leg case from a legal request on four rooms.
+
+Nothing in 126's measurement was wrong, and the fault is real and larger than
+it was filed as. What was wrong was the **quantifier**: a reading over one
+member of a shape class, written as a reading about the class.
+
+This is trap 11 from the reporting side rather than the fixing side, and trap
+15 with a measurement behind it rather than a guess. It is also what made the
+entry read as cheaper than it is: *"a dungeon with five rooms off a hall"*
+sounds like a shape a player might not ask for. *"Any dungeon with a loop in
+it"* does not.
+
+**Do:**
+
+- After driving a fault, write down the **enumeration you drove** and the
+  enumeration you are quantifying over, and check they are the same set
+  before the sentence goes in. "Twelve widths of one shape" is not "every
+  legal size".
+- Vary the axis you are **not** varying. 126 varied room size over one shape;
+  one extra shape at one size would have caught both clauses.
+- When an entry states a mechanism (*"a bent corridor cannot be walked"*) and
+  a bound (*"from 11 m upwards"*), the bound is almost always the narrower
+  reading. Attach it to what produced it, by name, in the sentence itself.
+- A limitation's **width decides what it costs the owner**. Understating the
+  width of a fault he has to make a decision about is the same error as
+  overstating a capability, and it reaches him the same way: as a sentence he
+  trusts without re-driving.

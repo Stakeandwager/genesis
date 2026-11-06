@@ -11,7 +11,101 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
-- Last commit at the time of writing: **126**, and it is **DOCS PLUS ONE
+- Last commit at the time of writing: **127**, and it is **DOCUMENTS PLUS
+  COMMENTS PLUS TWO ASSERTION MESSAGES**. `docs/HANDOVER.md`, `docs/TRAPS.md`
+  (TRAPS 121 corrected, new entry **122**) and five files under `tests/`:
+  `panel_built_test.gd` and `asked_test.gd` (one message each, reworded, with
+  the comment above it), `outgoing_world_test.gd`, `layout_key_test.gd` and
+  `walker_test.gd` (comments only). **`scripts/`, `scenes/`, `netlify/`,
+  `.github/`, `project.godot` and both runners are 0 LINES OF DIFF. Not one
+  assertion was added, removed, or changed in what it tests**, and the suite
+  is unmoved at **85 suites, 0 with something to look at**. **Nothing a player
+  meets changed.**
+
+  **WHAT 126's "Next action" NAMED FIRST, AND IT IS DONE: whether any of the
+  other 84 suites builds a bent corridor without reading what the body does
+  in it. THE ANSWER IS THREE OF 85, AND NONE OF THE THREE DRIVES A BODY.**
+  Measured mechanically rather than by grepping fixtures: `build()` was
+  instrumented in a throwaway clone to record the leg count of every door of
+  every dungeon any suite actually builds, and all 85 suites were run through
+  `run_tests.sh --all`. **174 dungeons, 283 doors, leg counts
+  `{1: 277, 4: 2, 5: 4}`.** `panel_built_test` (ring of four, pitch 18),
+  `outgoing_world_test` (the owner's ring, pitch 16) and `layout_key_test`
+  (its deliberate `slots` perturbation) are the three. **Not one line of CODE
+  in any of the three mentions `ORDER`, `go_to`, `carry`, `Npc` or
+  `CharacterBody3D`** - read off the three files before this commit added the
+  comments that now put those words in them - so the TRAPS 119 shape being
+  hunted, a green suite that drives the fault and asserts something else, is
+  not there.
+
+  **WHAT IS THERE IS ONE LEVEL ALONG AND IS WORSE: A GREEN ROW WHOSE MESSAGE
+  CLAIMS A BODY CAN WALK SOMEWHERE A BODY CANNOT.**
+  `panel_built_test:402` reads `route() != []` under the message *"and the
+  body can actually walk to the room the panel calls deepest"*. Its fixture
+  is the ring of four with `[4,1]` shut, the room the panel calls deepest is
+  the cell, and `route()` answers with the 191-point path the suite's own
+  header records. **Driven on that exact fixture through the controller, an
+  `ORDER go_to` to the cell FAILS: 92.8 m, 34.3 s, "stopped making progress",
+  the character left outside every room - twice in one process, identical.**
+  `go_to` the crypt in the same state **arrives** (34.9 m), and with the ring
+  open `go_to` the cell **arrives** (16.7 m) by the one-leg door, so the
+  dungeon is walkable right up to the bend and the failure is the bend.
+  **The row is kept, and its wording now names what it reads**: asserting the
+  body would make the suite red against today's code for a decision reserved
+  to the owner, which is a tripwire and not a guard (TRAPS 120, and
+  `halt_cause_test`'s header makes the same argument).
+  **AND THE RULE WAS ASKED OF THE CLASS (TRAPS 11), NOT OF THE LINE.** Every
+  assertion in `tests/` whose message claims a body walks or reaches was
+  read against what its expression actually evaluates: there are **two**.
+  `asked_test:175` is the other - same wording, over a dungeon whose one
+  corridor has a single leg, so it is true there by accident; its comment
+  claimed `route()` was *"the reading the BODY walks"*. Both corrected.
+  `load_shut_test:192` and `interference_test:133` read `route()` too and
+  **already name it**, which is the pattern the two corrections follow.
+
+  **AND TWO CLAIMS THE RECORD MADE ABOUT THE MECHANISM ARE FALSE, FOUND BY
+  CHECKING THEM BEFORE REPEATING THEM (TRAPS 14), AND THEY MAKE HDN 40 WIDER
+  AND CHEAPER TO REACH THAN IT WAS FILED AS.**
+
+  **(1) THE SIZE BAND BELONGS TO THE SHAPE 126 DROVE, NOT TO THE BEND.**
+  HDN 40 said *"at every legal room size from 11 m upwards"* and *"the band
+  that arrives is everything below it"*. **A RING OF FOUR bends one of its
+  four corridors at every size driven - 6, 10, 12, 20 and 40 m - and an
+  errand forced across that bend FAILS AT 10 m**, inside the band the entry
+  called safe, and at 12 m and 20 m. Rings of five and six bend one too. So
+  the shape that reaches this fault is not *"five rooms off a hall"* but
+  **any loop**, which `CREATE_DUNGEON`'s own prompt invites in so many words:
+  *"More doors than rooms is allowed and makes loops."* That is **new TRAPS
+  122**: a limitation measured on one shape, written down as a property of
+  the mechanism.
+
+  **(2) `_corridor()`'s RANGE IS `{1, 4, 5}`.** HDN 40 said *"four for a door
+  between any other pair"*; TRAPS 121 said *"the function's range is
+  `{1, 4}`"*. Swept over **2100 legal designs of 2 to 8 rooms**: **8477
+  one-leg, 1771 four-leg, 538 five-leg**, the smallest five-leg shape being
+  four rooms joined `[[1,2],[1,3],[1,4],[2,4],[3,4]]`. **An errand cannot
+  walk a five-leg corridor either** - forced across that shape's five-leg
+  door it fails at 12 m (96.3 m) and at 20 m (108.1 m). Five legs appears
+  nowhere in this repository before 127. Both clauses struck in place.
+
+  **THE CONTROL, BECAUSE WITHOUT IT NONE OF THE ABOVE IS READABLE.** The
+  errand rows were driven through the controller the way 126 drove its table -
+  a real `CREATE_DUNGEON`, a real `SHUT`, a real `ORDER go_to`, the 90 s cap,
+  arrival decided by `room_of()`. **126's own row was driven first and must
+  fail: five off a hall at 12 m, `go_to e` - fails, 40.2 m, "stopped making
+  progress", outside every room, which is 126's figure for that row to the
+  decimetre.** So this is the same measurement as 126's and not a different
+  one that happens to agree.
+
+  **WHAT 127 DID NOT DO.** It did not read the MECHANISM of either new
+  failure - no halt position, no surface height, no collider named - so that
+  these two fail for the pad-step reason HDN 40 measured is an **inference**,
+  stated as one in that entry. It did not change a height, a placement rule,
+  a slab, the walker or `walkable()`. It did not add the bent shape to
+  `walker_test`. It did not apply HDN 24's patch. And it changed no
+  assertion's expression anywhere, so no number in any suite moved.
+
+- Last commit before this one: **126**, and it is **DOCS PLUS ONE
   COMMENT**. `docs/HANDOVER.md`, `docs/TRAPS.md` (new entry **121**) and the
   header of `tests/walker_test.gd`, which carried a false measurement.
   **`scripts/`, `scenes/`, `netlify/`, `.github/`, `project.godot` and both
@@ -10402,7 +10496,89 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
-**THE LATEST RUN IS 126's, ON ITS OWN CHANGED TREE**, `--all`, `user://`
+**THE LATEST RUN IS 127's, ON ITS OWN CHANGED TREE**, `--all`, through
+`run_tests.sh`, `user://` cleared by deleting `app_userdata/AI_Game_Builder`
+before each, **THREE BYTE-IDENTICAL RUNS, all with `docs/` in place**: md5
+**5ecc88b884184e5abe8c37b3c8354b59**, **85 suites, 0 with something to look
+at**, `walker_test` **3, failures=0**, `panel_built_test` **118,
+failures=0**, `asked_test` **38, failures=0**, `layout_key_test` **64,
+failures=0**, `outgoing_world_test` **12, failures=0**, `result_line_test`
+**370, failures=0**, `source_scan_test` **80, failures=0**,
+`player_door_test` **75, failures=0** - every one of the five edited suites
+unmoved, and the two that read every file under `res://tests/` unmoved with
+them. `git status --porcelain` named
+**`docs/HANDOVER.md`, `docs/TRAPS.md`, `tests/asked_test.gd`,
+`tests/layout_key_test.gd`, `tests/outgoing_world_test.gd`,
+`tests/panel_built_test.gd` and `tests/walker_test.gd` and nothing else**, so
+`project.godot` was not edited to take the measurement and no `.uid` was
+added.
+
+**`diff` AGAINST THE BASELINE IS ZERO LINES, AND THE md5 IS THE SAME md5.**
+That was the whole prediction, and it is the strongest available reading that
+a commit touching only comments, documents and two message strings is a
+commit that changed nothing a suite can see.
+
+**AND ONE CLAUSE OF 127's OWN PREDICTION WAS WRONG, RECORDED RATHER THAN
+TIDIED (TRAPS 89).** The predicted file list named **six** files. The commit
+touches **seven**: `tests/walker_test.gd` was edited after the prediction was
+written, when the two false clauses 126 had put in its header turned out to
+be two of the things this commit corrects. It is a comment-only edit and
+changes nothing about the run, and the prediction's substantive clause - zero
+lines of diff - is unaffected. The miss is the same shape as the count clause
+124 and 125 got wrong: a prediction written before the work is finished is a
+prediction about work that is not finished.
+
+**127's BASELINE IS A NEW CONTAINER, WHICH IS WHAT 126a SAID THE NEXT FIRING
+WOULD GET FOR NOTHING.** A **fresh `git clone` of the pushed commit
+`35cc5e9`** into its own directory, in a container that had taken **none** of
+the measurements it was checking, with its own Godot download -
+**4.7.1.stable.official.a13da4feb**, `--version` read - `git status
+--porcelain` **EMPTY both before and after the run**, and `user://`
+**genuinely absent rather than cleared**:
+`~/.local/share/godot/app_userdata/` did not exist in this container.
+**`5ecc88b884184e5abe8c37b3c8354b59`, 85 suites, 0 with something to look
+at**, `walker_test` **3**, `piece_name_test` **17**, `result_line_test`
+**370**, `player_door_test` **75**, `source_scan_test` **80**,
+`halt_cause_test` **43**, `errand_outcome_test` **44**, `prompt_bounds_test`
+**72**, `controller_reach_test` **330**, `ledger_said_test` **48**.
+**BYTE-IDENTICAL to the md5 126 recorded on its changed tree and 126a read
+off the remote.** `126a` is **docs-only** against `c931f86` - `git diff
+--name-only c931f86 35cc5e9` names `docs/HANDOVER.md` and nothing else, read
+rather than taken from the commit message - so this is a reading of
+`c931f86`'s tree as well. **126a's one open item is closed.**
+
+**127 PREDICTED ITS DIFF BEFORE EDITING ANY REPOSITORY FILE AND THE
+PREDICTION HELD IN EVERY CLAUSE, INCLUDING THE ONE IT MARKED AS A GUESS
+(TRAPS 89).** The file named the six files it would change, the files it
+would not, and `diff` against the baseline **zero lines**, on three readings:
+no assertion added or removed, so no count can move; the two edited
+assertions keep their expression and their truth-value, so no FAIL can
+appear; and no file under `tests/` or `scripts/` opens anything under `docs/`
+(126), so the document edits cannot reach a suite. **The clause it flagged as
+a guess was the two reworded MESSAGE strings**: five suites
+(`result_line_test`, `source_scan_test`, `scan_floor_test`, `record_id_test`,
+`formula_test`) open every file under `res://tests/`, and a message string is
+code rather than comment, so whether one of them matches on words inside a
+message was not read off the files - it was settled by the run. **It held.**
+
+**AND THE THIRD RUN HAS A REASON, WHICH IS NOT THE ONE 125 WAS STRUCK FOR.**
+Two comment lines in `tests/outgoing_world_test.gd` and
+`tests/panel_built_test.gd` were narrowed AFTER runs 1 and 2 - *"every legal
+room size"* became *"every size driven, 6 to 40 m"*, because the first is
+wider than what was driven. 126's reading says a comment edit in `tests/`
+cannot reach the five suites that open every file there, since they strip
+comments; **run 3 was taken rather than that reading repeated, and it is
+byte-identical to runs 1 and 2.** Checked as well as taken: seven of the
+eight suites that open a file under `res://tests/` strip comments
+(`session_test` is the eighth and its only use of that path is `extends
+"res://tests/drive_test.gd"`).
+
+**AND A DOCS-ONLY EDIT STILL CANNOT MOVE A SUITE, WHICH IS 126's READING AND
+NOT A REPEAT OF 125's STRUCK ONE.** No file under `tests/` or `scripts/`
+opens anything under `docs/`. 127's HANDOVER and TRAPS text after run 3 is
+this paragraph and the entry above, and that is free for that reason.
+
+**THE RUN BEFORE IT IS 126's, ON ITS OWN CHANGED TREE**, `--all`, `user://`
 cleared by deleting `app_userdata/AI_Game_Builder` before each,
 **TWO BYTE-IDENTICAL RUNS, both with `docs/` in place**: md5
 **`5ecc88b884184e5abe8c37b3c8354b59`**, **85 suites, 0 with something to look
@@ -18407,6 +18583,102 @@ and recorded because it is what made this commit's own suite vacuous.
   and it is a move rather than a fix. Left for whoever has a reason.
 
 ## Next action
+
+**WHAT 127 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
+clone` OF ITS OWN PUSHED COMMIT.** 127 took its baseline as a fresh `git
+clone` of `35cc5e9` in a NEW CONTAINER that had taken none of 126's or 126a's
+measurements, with its own Godot download - **4.7.1.stable.official.a13da4feb**,
+`--version` read - `git status --porcelain` **EMPTY both before and after**,
+and `user://` **genuinely absent rather than cleared**
+(`~/.local/share/godot/app_userdata/` did not exist here). It read
+**`5ecc88b884184e5abe8c37b3c8354b59`, 85 suites, 0 with something to look
+at**, byte-identical to what 126 recorded on its changed tree and 126a read
+off the remote. **So 126a's open item is closed: that is the independent
+container 126a said it could not be, and the md5 reproduces in it.** `126a`
+is docs-only against `c931f86` - checked with `git diff --name-only`, 0 files
+outside `docs/` - so this baseline is also a reading of `c931f86`'s tree.
+**What 127 did NOT take is a run against a fresh clone of its own push.** A
+`127a` would be a docs-only commit carrying that one measurement. Take your
+own baseline on whatever 127 pushes as, which gets it, and spend the cycle on
+the work below rather than on the measurement.
+**THE CLAUSE IT MATTERS FOR IS SHORT, BECAUSE 127 CHANGED NO ASSERTION'S
+EXPRESSION.** The whole prediction is that the diff against the baseline is
+**zero lines**. The two reworded MESSAGE strings are the only edits that are
+code rather than comment, so `result_line_test` **370** and `source_scan_test`
+**80** unmoved are the readings that five suites which open every file under
+`res://tests/` do not match on words inside an assertion message - **the one
+clause of 127's prediction that was a guess rather than a reading, and it
+held**.
+**DO NOT RE-TAKE THE SWEEP.** The 85-suite leg-count reading, the three
+suites, the 2100-design leg distribution, the ring rows, the five-leg rows
+and the control are all in the 127 entry and in HDN 40 with their numbers.
+**AND DO NOT RE-DRIVE `panel_built_test`'s FIXTURE.** 92.8 m, 34.3 s,
+outside every room, twice in one process; the crypt arrives at 34.9 m and the
+open ring's cell at 16.7 m.
+
+**THE WORK ITSELF. 127 CLOSED THE FIRST OF THE TWO ITEMS 126 LEFT AND MADE
+HDN 40 BIGGER. THE SECOND IS STILL THERE AND IS NOW THE CHEAPEST.**
+
+**HDN 39 AND HDN 40 ARE BOTH STILL HIS AND BOTH STILL BREAK THE SAME
+MILESTONE**, and 127 did not narrow either - it widened 40. **HDN 40 now
+reaches any dungeon with a loop in it**, at 10 m rooms as well as 11 and
+above, with `_corridor()`'s range `{1, 4, 5}` rather than `{1, 4}`, and with
+two of the project's own suites standing on the shape. Together with HDN 39 -
+a `go_to` errand cannot cross or reach a room with a thing in it, 12 of 12 -
+that is *objects created, carried and delivered by NPCs*, which
+`docs/PROTOCOL.md` section 2 names as the current direction. **If he has
+answered either, that is the work.** Until then: do not change where a thing
+is placed, do not change a height, do not widen a corridor slab, and do not
+add avoidance or turn-slowing to the walker.
+**HDN 24 IS STILL A COSTED DECISION AND STILL HIS.** Do not apply the patch.
+**HDN 38 IS UNTOUCHED AND IS STILL HIS**, and 127 makes it worse in the same
+direction 126 did: the sentence *"Could not get to the r6: stopped making
+progress after 40 m"* now has that third nameless cause on **any ring**, not
+only on a five-off-a-hall.
+
+**THE CHEAPEST HONEST PIECE LEFT THAT NEEDS NOBODY, AND IT IS 126's SECOND
+ITEM, UNTOUCHED BY 127: `player_door_test`'s `"and timed it"` ROW MEASURES A
+LAP WITH A WALL CLOCK AND READS 0.000 s WHEN THE SUITE IS RUN BY HAND WITH
+`--fixed-fps`.** `tests/player_door_test.gd:592` asserts
+`checkpoint_tracker.last_lap_time > 0.0` after the car is teleported through
+every checkpoint two frames apart; `CheckpointTracker` measures a lap with
+`Time.get_ticks_msec()` at `scripts/checkpoint_tracker.gd:51` and `:63`, a
+wall clock, so a lap completed in under a millisecond reads 0.000 s. 8 runs
+at `--fixed-fps 120`, seven of them failures=1; green through
+`run_tests.sh`, which does not pass that flag to this suite. **Read whether
+the row should assert something a wall clock can deliver, or whether a lap
+time measured off a wall clock is a defect in the tracker** - the first is a
+test change and is the assistant's; the second touches `scripts/` and should
+be measured before it is written. **127 read the two lines and the row and
+did not change either**, because it had the bent-corridor sweep in hand.
+
+**AND WHAT 127 LEAVES OF ITS OWN, ALL OF IT NOBODY'S DECISION.** In order of
+what it would tell the owner:
+**(1) WHERE THE RING'S OWN BAND STARTS.** 127 drove the ring of four at 10,
+12 and 20 m only. HDN 40's shape arrives below 11 m and the ring fails at 10,
+so the two bands differ and the ring's lower edge is unknown. Drive 4, 6 and
+8 m: if the ring fails at `MIN_SIDE` the fault has no safe band at all, which
+is a different sentence to put in front of him.
+**(2) WHETHER THE TWO NEW FAILURES ARE THE SAME MECHANISM.** HDN 40 measures
+the five-off-a-hall stall to the centimetre - body on the pad at y 1.901,
+0.58 m below the corridor, `is_on_wall()` true, eight headings driven. 127
+read none of that for the ring or the five-leg shape and says so. The reading
+is cheap - position, `is_on_floor()`, `is_on_wall()`, the collider's owning
+piece at the halt - and it decides whether this is one fault or two.
+**(3) WHETHER `carry` FAILS ON A RING.** HDN 40 has a `carry` row for its own
+shape and 127 drove none. A `carry` that leaves the thing outside every room
+on a four-room ring is the milestone failing on the smallest interesting
+dungeon.
+**(4) THE REST OF THE MESSAGE-VERSUS-EXPRESSION CLASS.** 127 swept `tests/`
+for messages claiming a BODY walks or reaches and found two. The same
+question is unasked for every other verb a message can claim and an
+expression cannot deliver - *arrives*, *is delivered*, *is carried*,
+*is reachable*. `result_line_test` and `source_scan_test` already read every
+file under `tests/`, so the reading has somewhere to live.
+**AND ONE 122 DELIBERATELY DID NOT TAKE, STILL NOT TAKEN:** whether a body
+can reach the cap while touching something.
+
+**127 LEFT THE 126 TEXT BELOW IN PLACE, UNSTRUCK AND UNEDITED.**
 
 **WHAT 126 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
 clone` OF ITS OWN PUSHED COMMIT.** 126 took its baseline as a fresh clone of
@@ -31491,20 +31763,86 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     than a guard (`halt_cause_test`'s own header makes that argument), and the
     table above is a better record than a row that has to die.
 
-40. **A `go_to` errand cannot walk a corridor the lattice had to bend, at
-    every legal room size from 11 m upwards.** Found in 126 while answering
-    121's leftover, driven rather than reasoned about, and **not fixed**,
-    because every fix is a placement rule, a geometry change or a navigation
-    change, and all three are his.
+40. **A `go_to` errand cannot walk a corridor the lattice had to bend.**
+    ~~at every legal room size from 11 m upwards~~ **STRUCK IN 127: THAT
+    BAND BELONGS TO THE ONE SHAPE 126 DROVE, AND THE FAULT IS WIDER AND
+    CHEAPER TO REACH THAN THIS ENTRY SAID.** Measured in 127, not argued:
+    **a RING OF FOUR - the smallest loop there is, and one `CREATE_DUNGEON`'s
+    own prompt invites in so many words (*"More doors than rooms is allowed
+    and makes loops"*) - bends one of its four corridors at every size
+    driven, 6, 10, 12, 20 and 40 m**, and **an errand forced across that bend
+    fails at 10 m**, which is inside the band this entry called safe, **and
+    at 12 m and 20 m**. A ring of five and a ring of six bend one corridor
+    too. The size band is a property of the bend's own geometry in the shape
+    it was driven on, not of bends. Struck rather than deleted, because an
+    understated width is how a decision gets costed wrongly (new **TRAPS
+    122**). Found in 126 while answering 121's leftover, widened in 127,
+    driven rather than reasoned about in both, and **not fixed**, because
+    every fix is a placement rule, a geometry change or a navigation change,
+    and all three are his.
+
+    **AND 127 ANSWERS THE SWEEP THIS ENTRY LEFT OPEN - "whether any EXISTING
+    suite's fixtures build a bent corridor" - AND THE ANSWER IS THREE OF 85,
+    WITH ONE OF THEM CERTIFYING A ROUTE AN ERRAND CANNOT WALK.** Measured by
+    instrumenting `DungeonModule.build()` and running every suite through
+    `run_tests.sh --all`: **174 dungeons built, 283 doors, leg counts
+    `{1: 277, 4: 2, 5: 4}`**. The three suites are
+    **`panel_built_test`** (ring of four, pitch 18, door `[3,4]` four legs),
+    **`outgoing_world_test`** (the owner's ring from 2026-10-16, pitch 16,
+    same door, four legs) and **`layout_key_test`** (five legs, from its
+    deliberate `slots` perturbation). **None of the three orders an errand or
+    drives a body at all** - not one line of CODE in any of them mentions
+    `ORDER`, `go_to`, `carry`, `Npc` or `CharacterBody3D`, read off the three
+    files before 127's own comments put those words into them - so no green
+    suite is driving this fault and asserting something else, which is the
+    TRAPS 119 shape that was being looked for. **What was found instead is one level along:
+    `panel_built_test:402` read `route() != []` under the message *"and the
+    body can actually walk to the room the panel calls deepest"*, on its own
+    ring with `[4,1]` shut - and on that exact fixture an `ORDER go_to` to
+    the cell FAILS: 92.8 m, 34.3 s, "stopped making progress", the character
+    outside every room, identical on two drives in one process.** `go_to` the
+    crypt in the same state arrives (34.9 m) and with the ring open `go_to`
+    the cell arrives (16.7 m) by the one-leg door, so the dungeon is walkable
+    right up to the bend. **The row is kept and its wording now names what it
+    reads**; asserting the body would make that suite red for a decision that
+    is the owner's. `asked_test:175` carried the same wording over a
+    one-leg dungeon where it happens to be true, and is corrected with it
+    (TRAPS 11).
+
+    **AND `_corridor()`'s RANGE IS `{1, 4, 5}`, NOT `{1, 4}`.** This entry
+    said *"**four** for a door between any other pair"* and TRAPS 121 said
+    *"the function's range is `{1, 4}`"*; both are struck. Swept over **2100
+    legal designs of 2 to 8 rooms at 12 m rooms**, `solve()` produced **8477
+    one-leg corridors, 1771 four-leg and 538 five-leg**, the smallest
+    five-leg shape being four rooms joined
+    `[[1,2],[1,3],[1,4],[2,4],[3,4]]`. **A body cannot walk a five-leg
+    corridor either**: an errand forced across that shape's five-leg door
+    fails at 12 m (96.3 m travelled) and at 20 m (108.1 m). Five legs was not
+    recorded anywhere in this repository before 127.
+
+    **WHAT 127's HARNESS IS, AND THE CONTROL THAT MAKES IT READABLE.** The
+    errand rows above were driven through the controller - `_handle_request`
+    with a real `CREATE_DUNGEON`, a real `SHUT` and a real
+    `ORDER go_to`, the 90 s cap, the character's own `travelled` and `why`,
+    arrival decided by `room_of()` - which is 126's own arrangement.
+    **The control is 126's own row: five off a hall at 12 m, `go_to e`, which
+    must fail and does, at 40.2 m, "stopped making progress", outside every
+    room** - and 40.2 m is the figure 126's table records for that row to the
+    decimetre, so this is the same measurement and not a second one that
+    happens to agree.
 
     **WHAT "HAD TO BEND" MEANS, IN THE MODULE'S OWN TERMS.** `solve()` seats
     rooms on a lattice. `_corridor()` builds **one** leg for a door between
-    slots that are orthogonally adjacent, and **four** for a door between any
-    other pair - out through the lane, along it, and back in. Ring 1 holds
-    four slots straight off a wall, so **the fifth room off one hall is the
-    first that has to take a corner slot**, and the corridor to it is the
-    four-leg kind. *"A dungeon with five rooms off a hall, then send someone to
-    the fifth"* is two legal requests and the errand fails.
+    slots that are orthogonally adjacent, and ~~**four** for a door between
+    any other pair~~ **four or five** for a door between any other pair
+    (struck in 127, see above) - out through the lane, along it, and back in.
+    Ring 1 holds four slots straight off a wall, so **the fifth room off one
+    hall is the first that has to take a corner slot**, and the corridor to
+    it is the four-leg kind. *"A dungeon with five rooms off a hall, then send
+    someone to the fifth"* is two legal requests and the errand fails.
+    **AND A RING IS SMALLER AND MORE LIKELY: four rooms joined in a loop puts
+    one room off the entrance rather than beside its other neighbour, and
+    that corridor is the four-leg kind at every size driven** (127).
 
     **THE MEASUREMENT: TWELVE WIDTHS, A STRAIGHT-CHAIN CONTROL AT FOUR OF
     THEM, AND IT IS EIGHT OF TWELVE.** One legal `CREATE_DUNGEON` of six rooms
@@ -31528,8 +31866,10 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     | **30 m** | **fails** | 117/151 | 69.0 m | `Corridor_5_3` |
     | **40 m** | **fails** | 146/191 | 84.8 m | `Corridor_5_4` |
 
-    `MIN_SIDE` is 4 and `MAX_SIDE` is 40, so **the band that fails is 11 m to
-    the legal maximum** and the band that arrives is everything below it. Every
+    `MIN_SIDE` is 4 and `MAX_SIDE` is 40, so **for THIS SHAPE the band that
+    fails is 11 m to the legal maximum** and the band that arrives is
+    everything below it - **and 127 measured that the band is the shape's and
+    not the bend's: a ring of four fails at 10 m.** Every
     failure is `"stopped making progress"`. **The straight-chain control
     arrives at 6, 12, 20 and 40 m** (52/52, 76/76, 108/108, 188/188), so this
     is not a harness that cannot walk a dungeon. **The 12 m row and the 6 m row
@@ -31608,9 +31948,25 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     corridor; only an errand was driven. Whether the pad is finite in a way that
     matters: three of the eight hand-driven headings walked the body off the
     pad's edge and it fell without end, which is a separate thing and is not
-    recorded anywhere else. Whether any **existing** suite's fixtures build a
-    bent corridor - `walker_test`'s three do not, which is TRAPS 121, but the
-    other 84 were not swept for it. And nothing about what the fix should be.
+    recorded anywhere else. ~~Whether any **existing** suite's fixtures build
+    a bent corridor - `walker_test`'s three do not, which is TRAPS 121, but
+    the other 84 were not swept for it.~~ **SWEPT IN 127 AND CLOSED: three of
+    85, listed above.** And nothing about what the fix should be.
+
+    **AND WHAT 127 DID NOT MEASURE, SAID PLAINLY.** It did not read the
+    MECHANISM of the ring-of-four or five-leg failures - no body position at
+    the halt, no surface height, no collider named, so whether those two fail
+    for the pad-step reason this entry measures for the five-off-a-hall shape
+    is **an inference and not a reading**. It drove one errand per row at the
+    ring and the five-leg shape and **two** at `panel_built_test`'s fixture;
+    only the `panel_built_test` rows and the control are reproduced. It drove
+    no `carry` on either new shape. It drove the ring at 10, 12 and 20 m and
+    not at 6, 8, 11, 16, 24, 30 or 40 m, so **where the ring's own band
+    starts is not known** - only that 10 m fails. The leg-count sweep is 2100
+    designs at **one** room size, 12 m, so the five-leg count is not a
+    frequency over sizes. And the 85-suite sweep counts the dungeons that
+    reach `build()`: `asked_test`'s layout, for instance, is solved and never
+    built, and was read separately (one leg, slots adjacent).
 
     **THE OPTIONS, NOT CHOSEN.** Level the ground pad with the corridors, or
     make the step climbable - which changes what the world looks like and what

@@ -170,9 +170,20 @@ func _the_facts_are_there_and_the_door_is_not() -> void:
 			% str(thing.keys()))
 	# Rooms are counted from 0 inside the module, as _room_index() resolves
 	# them; a route's own points are used here rather than a point typed in,
-	# so this is the reading the BODY walks.
+	# so this is the reading the body is GIVEN.
+	#
+	# 127: that last clause used to read "so this is the reading the BODY
+	# walks", and the row below used to say "the body can walk hall to vault".
+	# Neither is a reading of a body. route() plans over the doors walkable()
+	# certifies, and the two can disagree: on a ring of four with the
+	# ring-closing door shut, route() answers with 191 points and an ORDER
+	# go_to over those points fails ("Human decision needed" 40). It happens
+	# to be true HERE - this dungeon is two rooms and its one corridor has a
+	# single leg, read off _corridor() rather than assumed - and that is
+	# exactly why the wording was never caught. Corrected to name what is
+	# read, in both places, with the assertion itself unchanged.
 	var walk: Array = module.route(layout, 0, 1)
-	_check(not walk.is_empty(), "the body can walk hall to vault (%d points)" % walk.size())
+	_check(not walk.is_empty(), "route() answers hall to vault (%d points)" % walk.size())
 	if not walk.is_empty():
 		_check(module.room_of(layout, walk[0]) == 0,
 			"room_of() already answers 'where is the red key now' for a position: "

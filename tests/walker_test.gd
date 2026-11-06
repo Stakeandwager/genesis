@@ -30,12 +30,21 @@ extends SceneTree
 # file's own fixture list, and nothing checks it. All three shapes - a row of
 # five, four off a hall, two rooms - place every room in a slot ORTHOGONALLY
 # ADJACENT to its neighbour, so every corridor they build has ONE leg.
-# _corridor() also builds FOUR-leg corridors, for any door between rooms the
-# lattice could not seat side by side, and a body cannot walk one: see
-# "Human decision needed" 40 in docs/HANDOVER.md for the table, which fails
-# at every room size from 11 m to the legal maximum of 40 m and arrives at
-# every size below. The shape that shows it is a fifth room off a hall - the
-# fifth neighbour is the one that has to take a ring-1 CORNER slot.
+# _corridor() also builds corridors of FOUR and FIVE legs, for a door between
+# rooms the lattice could not seat side by side, and a body cannot walk one:
+# see "Human decision needed" 40 in docs/HANDOVER.md.
+#
+# 127: and the two sentences 126 wrote here next were each narrower than the
+# thing they described, so they are corrected rather than repeated. They said
+# the range is "FOUR-leg corridors", and it is {1, 4, 5} - solve() produced
+# 538 five-leg corridors over 2100 legal designs. And they said the shape
+# that shows it is "a fifth room off a hall", with the fault appearing at
+# 11 m and above. That is true of THAT shape and of no other measured since:
+# a RING of four - the smallest loop, which the prompt invites in so many
+# words - bends one of its four corridors at every size driven, 6, 10, 12,
+# 20 and 40 m, and an errand forced across that bend fails at 10 m, where
+# the five-off-a-hall table arrives. The size band belongs to the shape
+# driven, not to the bend.
 #
 # IT IS NOT ADDED HERE, DELIBERATELY. Adding it would make this suite red
 # against today's code, and the fix is a placement rule, a geometry change or

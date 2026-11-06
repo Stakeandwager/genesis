@@ -307,6 +307,20 @@ func _the_dungeon_panel_against_its_slabs() -> void:
 
 
 # --- a ring of four rooms, for the doors ---
+#
+# 127: AND THIS RING BENDS ONE OF ITS FOUR CORRIDORS, WHICH IS WORTH KNOWING
+# BEFORE READING ANYTHING BELOW. The lattice seats the cell off the hall
+# rather than beside the crypt, so door [3,4] gets a FOUR-leg corridor -
+# out through the lane, along it, and back in. Read off _corridor() on this
+# exact request, not assumed, and a ring does it at every size driven, 6 to
+# 40 m. With [4,1] shut, which is what this suite does, route() to the cell
+# is the 191-point path that crosses that bend, and an ORDER go_to over it
+# FAILS: 92.8 m, 34.3 s, "stopped making progress", the character outside
+# every room, identical on two drives in one process. go_to the crypt in the
+# same state arrives (34.9 m), and with the ring open go_to the cell arrives
+# (16.7 m) by the one-leg door, so the dungeon is walkable right up to the
+# bend. Every row in this file is about measure(), walkable() and route() and
+# is true of them; no body is driven here. See "Human decision needed" 40.
 func _ring() -> Dictionary:
 	return {
 		"rooms": [
@@ -399,8 +413,19 @@ func _getting_about_follows_the_usable_doors() -> void:
 	_check(str(metrics["deepest_room"]) == str((layout["rooms"] as Array)[furthest_room]["name"]),
 		"the panel names that room (%s vs %s)" % [
 			str(metrics["deepest_room"]), str((layout["rooms"] as Array)[furthest_room]["name"])])
+	# 127: this said "and the body can actually walk to the room the panel
+	# calls deepest", and on THIS fixture that sentence is false. What is read
+	# is route(), which answers over the doors walkable() certifies; no body is
+	# driven anywhere in this file. Measured rather than argued: an ORDER go_to
+	# to the cell on this exact ring, with [4,1] shut, FAILS - 92.8 m, 34.3 s,
+	# "stopped making progress", the character left outside every room, driven
+	# twice in one process and identical both times. The corridor between the
+	# crypt and the cell is the four-leg kind and the body falls off the bend.
+	# See "Human decision needed" 40. The row is kept and its wording now names
+	# what it reads: asserting the body would make this suite red for a
+	# decision that is the owner's, which is a tripwire and not a guard.
 	_check(not module.route(layout, 0, furthest_room).is_empty(),
-		"and the body can actually walk to the room the panel calls deepest")
+		"and route() answers with a way to the room the panel calls deepest, over the doors walkable() certifies (NOT a reading of whether a body can walk it - see HDN 40)")
 
 	# Shut a second door: the cell is sealed off entirely. WALKABLE already
 	# said so before 047; now the lines beside it agree with it.
