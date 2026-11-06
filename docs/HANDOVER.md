@@ -11,6 +11,36 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
+- Last commit at the time of writing: **118a**, which is **docs only** - 0
+  lines of diff in `scripts/`, `tests/` and `.github/`, no new finding about
+  Genesis, no new claim about its behaviour, no new live entry. It records the
+  one measurement 118's commit message left owed: **a fresh `git clone` of the
+  pushed commit `ae9176b` runs byte-identical to the four runs 118 took** -
+  `331780b3eae154a3ab1a39d300a6a243`, **80 suites, 0 with something to look
+  at**, `load_state_test` **16, failures=0**, `log_023_test` **88,
+  failures=0**, `load_check_test` **40, failures=0**, `result_line_test`
+  **350, failures=0**, `prompt_bounds_test` **72, failures=0** - with `git
+  status --porcelain` **empty both before and after the run**, so
+  `project.godot` was not edited to take the measurement, and `user://`
+  cleared by deleting `app_userdata/AI_Game_Builder`. So the tree on the
+  remote is the tree that was measured.
+  **THE CLAUSE IT MATTERS MOST FOR IS `load_state_test` 16 ON THE CLONE.** It
+  is a NEW FILE and the only thing in the project that reads what a `/load`
+  keeps, so a green run against the REMOTE tree is the reading that the suite
+  went up on the remote at all rather than only existing locally - which no
+  inference from a working copy can give.
+  **NOTHING ELSE IN 118 WAS RE-MEASURED.** Its baseline, its predicted diff
+  and its four injections are 118's and are not re-taken.
+  **NO SUITE WAS RUN AGAINST A MODIFIED TREE BY 118a.** The only edits since
+  `ae9176b` are to `docs/HANDOVER.md`.
+  **118a BUILT NOTHING, AND WHAT A PLAYER READS IS UNCHANGED** - the `/load`
+  caveat still says *"none of equipment ... came back"* while the player holds
+  the boots, the prompt clause at `ai_interpreter.gd:198` still says it more
+  flatly, and both are steps (2) and (3) of the live entry, waiting on the
+  owner's question about what the caveat is FOR. The deploy still fails on two
+  unset secrets, and what a visitor sees is still commit `71b065f` from
+  2026-10-14.
+
 - Last commit at the time of writing: **118**, and it takes **step (1) of
   117's live entry** - the two tests that held a false sentence in place - and
   then finds the same false claim in **two places the entry did not name**,
@@ -9141,6 +9171,30 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
+**AND RUN 5 IS A FRESH `git clone` OF THE PUSHED COMMIT**, written in by
+118a - `ae9176b`, cloned into its own directory, `git status --porcelain`
+**EMPTY both before and after the run** (so `project.godot` was not edited to
+take the measurement), `user://` cleared by deleting
+`app_userdata/AI_Game_Builder`, same Godot: **BYTE-IDENTICAL to the four runs
+118 took on its working tree**, md5 **`331780b3eae154a3ab1a39d300a6a243`**,
+**80 suites, 0 with something to look at**, `load_state_test` **16,
+failures=0**, `log_023_test` **88, failures=0**, `load_check_test` **40,
+failures=0**, `result_line_test` **350, failures=0**, `prompt_bounds_test`
+**72, failures=0**. So the tree on the remote is the tree that was measured.
+**THE THREE CLAUSES IT MATTERS MOST FOR.** `load_state_test` 16 on the clone:
+it is a NEW FILE and the only thing in the project that reads what a `/load`
+keeps, so a green run against the REMOTE tree is the reading that the suite
+went up on the remote rather than only existing locally. `result_line_test`
+350 on the clone: it derives its members from `tests/` on disk via
+`dir.get_files()`, so that count is the reading that the remote's `tests/`
+really holds the file this commit says it does, taken by the project's own
+reader rather than by `ls`. `prompt_bounds_test` 72 on the clone: its last
+assertion compares `assembled_prompt()`'s sha256 against `PROMPT_FINGERPRINT`,
+so a green run against the remote is the reading behind 118's claim that no
+prompt clause moved. Taken for the reason 104a and 106a through 117a were each
+taken: the alternative is a sound inference about the remote in place of a
+reading of it, which is TRAPS 14's shape applied to this file.
+
 **118's RECORD. ONE MEASUREMENT IS OWED - A FRESH `git clone` OF THE PUSHED
 COMMIT - AND THAT IS 118a's WHOLE JOB.** 118 took its own baseline on the
 clean pushed tree at `2c1f09e`, from a **twenty-first** independent container
@@ -16544,8 +16598,13 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
-**WHAT 118 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
-clone` OF THE PUSHED COMMIT.** 118 took its own baseline on the clean pushed
+**~~WHAT 118 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
+clone` OF THE PUSHED COMMIT.~~ TAKEN IN 118a, AND IT REPRODUCED BYTE-FOR-BYTE
+- IT IS RUN 5 ABOVE.** Struck rather than deleted because what it owed and why
+is the part a later session needs. **Do not start by re-running on 118's or
+118a's behalf** - read the record under "Run the tests first", take your own
+baseline so you learn that the record and the container still agree today, and
+spend the time on the work below. The original sentence follows. 118 took its own baseline on the clean pushed
 tree (byte-identical to the md5 117 recorded and 117a reproduced from a clone),
 wrote its predicted diff to a file before editing any repository file - and
 **one clause of it was wrong, which is recorded under "Run the tests first"
