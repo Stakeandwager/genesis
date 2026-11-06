@@ -11,6 +11,52 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
+- Last commit at the time of writing: **119a**, which is **docs only** - 0
+  lines of diff in `scripts/`, `tests/` and `.github/`, no new finding about
+  Genesis, no new claim about its behaviour, no new live entry. It records the
+  one measurement 119's commit message left owed: **a fresh `git clone` of the
+  pushed commit `3542ed7` runs byte-identical to the five runs 119 took** -
+  `1b6e8748b9da27ccfc85d7bbaca0504e`, **81 suites, 0 with something to look
+  at**, `load_shut_test` **16, failures=0**, `load_state_test` **16,
+  failures=0**, `result_line_test` **354, failures=0**, `prompt_bounds_test`
+  **72, failures=0**, `load_check_test` **40, failures=0**, `log_023_test`
+  **88, failures=0** - with `git status --porcelain` **empty both before and
+  after the run**, so `project.godot` was not edited to take the measurement,
+  and `user://` cleared by deleting `app_userdata/AI_Game_Builder`. So the
+  tree on the remote is the tree that was measured.
+  **THE THREE CLAUSES IT MATTERS MOST FOR.** `load_shut_test` 16 on the clone:
+  it is a NEW FILE and the only thing in the project that reads what a `/load`
+  does to a shut door, so a green run against the REMOTE tree is the reading
+  that the suite went up on the remote rather than only existing locally.
+  `result_line_test` 354 on the clone: it derives its members from `tests/` on
+  disk via `dir.get_files()`, so that count is the reading that the remote's
+  `tests/` really holds the file 119 says it does, taken by the project's own
+  reader rather than by `ls`. `prompt_bounds_test` 72 on the clone: its last
+  assertion compares `assembled_prompt()`'s sha256 against
+  `PROMPT_FINGERPRINT`, so a green run against the remote is the reading
+  behind 119's claim that `scripts/` is 0 lines of diff and no prompt clause
+  moved.
+  **NOTHING ELSE IN 119 WAS RE-MEASURED.** Its baseline, its predicted diff
+  and its four injections are 119's and are not re-taken.
+  **NO SUITE WAS RUN AGAINST A MODIFIED TREE BY 119a.** The only edits since
+  `3542ed7` are to `docs/HANDOVER.md`.
+  **119a BUILT NOTHING, AND BOTH LIVE ENTRIES ARE UNTOUCHED** - the rebuild
+  that forgets where the character is standing is exactly as 119 measured it
+  (34.9 m against 85.8 m, and 33.9 m `BLOCKED` under a different geometry),
+  and the `/load` caveat still tells a player *"none of equipment ... came
+  back"* while the kit and the body both still hold 400.0. Steps (2) and (3)
+  of that entry still wait on the owner's question about what the caveat is
+  FOR. The deploy still fails on two unset secrets, and what a visitor sees is
+  still commit `71b065f` from 2026-10-14.
+  **AND 119a WAS TAKEN IN THE SAME SESSION AS 119, WHICH IS NEW AND IS SAID
+  PLAINLY.** 115a through 118a were each taken by the next firing. This one was
+  taken immediately after the push, from a clone into its own directory, by the
+  same container and the same Godot download - so it is a reading of the
+  REMOTE TREE, which is what the measurement is for, but it is **not** an
+  independent container as 118's baseline was. A later session wanting that
+  stronger reading should take its own baseline and will get it for free, which
+  is what "take your own baseline" under "Run the tests first" is for.
+
 - Last commit at the time of writing: **119**, and it takes the measurement
   118's record named as the cheap one that needs nobody: **the shut door
   across `/load`**, the one cell of TRAPS 115's table that was still a reading.
@@ -9263,6 +9309,23 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
+**AND RUN 6 IS A FRESH `git clone` OF THE PUSHED COMMIT**, written in by 119a
+- `3542ed7`, cloned into its own directory, `git status --porcelain` **EMPTY
+both before and after the run** (so `project.godot` was not edited to take the
+measurement), `user://` cleared by deleting `app_userdata/AI_Game_Builder`,
+same Godot: **BYTE-IDENTICAL to the five runs 119 took on its working tree**,
+md5 **`1b6e8748b9da27ccfc85d7bbaca0504e`**, **81 suites, 0 with something to
+look at**, `load_shut_test` **16, failures=0**, `load_state_test` **16,
+failures=0**, `result_line_test` **354, failures=0**, `prompt_bounds_test`
+**72, failures=0**, `load_check_test` **40, failures=0**, `log_023_test` **88,
+failures=0**. So the tree on the remote is the tree that was measured. The
+three clauses it matters most for are named in the 119a entry above. Taken for
+the reason 104a and 106a through 118a were each taken: the alternative is a
+sound inference about the remote in place of a reading of it, which is TRAPS
+14's shape applied to this file. **Unlike 115a through 118a it was taken in
+the SAME session as its own commit**, so it is a reading of the remote tree
+but not of an independent container; said plainly in the 119a entry.
+
 **119's RECORD. ONE MEASUREMENT IS OWED - A FRESH `git clone` OF THE PUSHED
 COMMIT - AND THAT IS 119a's WHOLE JOB.** 119 took its own baseline on the
 clean pushed tree at `a0cee0d`, from a **twenty-second** independent container
@@ -16760,8 +16823,13 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
-**WHAT 119 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
-clone` OF THE PUSHED COMMIT.** 119 took its own baseline on the clean pushed
+**~~WHAT 119 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
+clone` OF THE PUSHED COMMIT.~~ TAKEN IN 119a, AND IT REPRODUCED BYTE-FOR-BYTE
+- IT IS RUN 6 ABOVE.** Struck rather than deleted because what it owed and why
+is the part a later session needs. **Do not start by re-running on 119's or
+119a's behalf** - read the record under "Run the tests first", take your own
+baseline so you learn that the record and the container still agree today, and
+spend the time on the work below. The original sentence follows. 119 took its own baseline on the clean pushed
 tree at `a0cee0d` and reproduced 118's md5 exactly, wrote its predicted diff
 to a file before editing any repository file - **and its central clause was
 wrong, which is recorded under "Run the tests first" rather than tidied
