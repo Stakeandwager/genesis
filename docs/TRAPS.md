@@ -9630,3 +9630,57 @@ checkpoint escapes this only because nothing ever parks on one.
   loading pause, a grid hold. The green suite said `failures=1` here; the
   number that explained it was in a note, not in a row.
 
+
+---
+
+## 126. A numbered entry that was announced and never added to the list
+
+**Signature:** a document says *"see 'Human decision needed' 41 below"* and
+there is no 41. The content is not missing — it is written out in full
+somewhere else in the same file — but the list a reader actually consults
+ends at 40, so the decision is unreachable by anyone who goes looking for it
+the way the document tells them to.
+
+**Cause.** 130 raised a decision that is the owner's, wrote it out properly
+under `## Next action`, and announced it there as *"'Human decision needed' 41
+IS NEW AND IT IS HIS"*. It never appended entry 41 to the `## Human decision
+needed` list. Three references in `HANDOVER.md` and one in `TRAPS.md` pointed
+at it. 130a then repeated the pointer in its own commit message — *"that is
+the owner's under HDN 41"* — which is the pointer being copied forward without
+being followed.
+
+**And the same commit left a second instance of the same class.** `## Run the
+tests first` opens with *"THE LATEST RUN IS 129's"* and gives
+`player_door_test` **91**. 130 changed that suite to **104** and ran `--all`
+twice; 130a ran it again. Neither touched the section. Two commits later it
+still told a fresh session that a green run reads 91.
+
+**What both have in common, and it is the useful part.** A long document has
+**narrative** sections, which a commit naturally updates because it is writing
+them, and **index** sections — the decision list, the latest-run block, the
+limitations list — which a reader consults *instead of* the narrative and
+which no commit is writing. Everything 130 said was true in the place it said
+it. What went stale is the place it did not say it. **A commit that is honest
+paragraph by paragraph can still leave the document as a whole making a false
+claim**, which is TRAPS 14's shape arriving through composition rather than
+through a single stale sentence.
+
+**Do:**
+
+- **A cross-reference is a claim about the document and gets checked like
+  one.** Before writing *"see X below"*, go and look at X. If you are
+  announcing a new numbered entry, add the entry in the same commit as the
+  announcement, and add it before writing the announcement.
+- **After changing a suite's count, an md5, or anything a reader looks up, ask
+  which INDEX section states that number** and go and edit it. Grep for the
+  old value: one `grep 91` would have found this.
+- The check is mechanical and takes seconds, so take it over both namespaces
+  rather than the one you touched (TRAPS 11): collect `^## N.` from `TRAPS.md`
+  and the numbered items under `## Human decision needed`, collect every
+  `TRAPS n` and `HDN n` reference in both files, and subtract. 131 did that and
+  found **HDN 41 was the only dangling reference in either document** — TRAPS
+  1–125 are all present and every `TRAPS n` reference resolves, HDN 1–40 are
+  all present (4 and 5 struck), and every `docs/...` path named anywhere in the
+  repository exists.
+- **Do not fix the reference by deleting it.** The pointer was right about what
+  ought to exist; what was missing was the entry.

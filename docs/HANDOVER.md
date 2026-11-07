@@ -11,7 +11,87 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
-- Last commit at the time of writing: **130a**, and it is **DOCS ONLY** - 0
+- Last commit at the time of writing: **131**, and it is **DOCS ONLY** - 0
+  lines of diff in `scripts/`, `scenes/`, `tests/`, `netlify/`, `.github/`,
+  `project.godot` and both runners, confirmed by `git diff --stat` and not by
+  intention. It does **two** things: it repairs a fault in these documents,
+  **asked of the class and not the instance**, and it takes the independent
+  baseline `130a` said the next firing would get for nothing.
+
+  **THE FAULT: 130 ANNOUNCED A NUMBERED ENTRY AND NEVER ADDED IT.** 130 raised
+  the lap-boundary residual as the owner's, wrote it out in full under
+  `## Next action`, and said there *"'Human decision needed' 41 IS NEW AND IT
+  IS HIS"*. **The `## Human decision needed` list ended at 40 and still did
+  when 131 read it.** Four pointers aimed at the missing entry -
+  three in `HANDOVER.md` (the 130 bullet's *"'Human decision needed' 41 below
+  and is NOT applied"*, 130's "WHAT WAS NOT VERIFIED" paragraph, and the
+  `## Next action` announcement; lines 112, 197 and 19226 **as 131 found the
+  file**, before this commit's own insertions moved them) and one in
+  `TRAPS.md` under TRAPS 124 - and
+  `130a`'s own commit message copied it forward as *"the owner's under HDN
+  41"*. **The decision was not lost; it was unreachable from the list the
+  document tells a reader to consult.** HDN 41 now exists, carrying 130's
+  measurements and nothing new.
+
+  **AND THE SECOND INSTANCE OF THE SAME CLASS, WHICH IS WHY THIS IS NOT A
+  ONE-LINE FIX (TRAPS 11).** `## Run the tests first` - the section a fresh
+  session reads to learn what a green run looks like - opened with *"THE
+  LATEST RUN IS 129's"* and gave `player_door_test` **91** and md5
+  `69ebfb9f...`. **130 changed that suite to 104 and ran `--all` twice; 130a
+  ran it again; neither touched the section**, read off `git show a67a8aa --
+  docs/HANDOVER.md` and `git show 9822095 -- docs/HANDOVER.md`, both of which
+  contain no hit for `THE LATEST RUN IS`. It is now current, with 130's block
+  and 129's block below it in order.
+
+  **THE CLASS, SWEPT MECHANICALLY RATHER THAN BY EYE.** Every `TRAPS n` and
+  every `HDN n` / *"Human decision needed" n* reference in both documents was
+  collected and subtracted from the entries that exist: **TRAPS 1-125 all
+  present and every TRAPS reference resolves; HDN 1-40 all present (4 and 5
+  struck through); HDN 41 was the ONLY dangling reference in either
+  document**, 4 references in all. Every `docs/...` path named anywhere in the
+  repository exists, `docs/harness/README.md` included. Commit-number
+  references 024-130 all resolve to a `## NNN` heading or a Starting-state
+  bullet - **that last scan over-matches bold numbers that are assertion
+  counts, so it is a floor and not an exact count**, said plainly.
+
+  **THE MEASUREMENT, AND IT CLOSES `130a`'s ONE OPEN ITEM.** `130a` said its
+  reading was of the remote and not of an independent container and that the
+  next firing would get the stronger one for nothing. **Taken:**
+  `prototype-002a` fetched by name into this container's own checkout at
+  **`9822095`**, its own Godot download **`4.7.1.stable.official.a13da4feb`**
+  (binary md5 **`c083304672e2b4264cfb7f823aba095f`**), `git status
+  --porcelain` **EMPTY before and after**, `user://` cleared by deleting
+  `app_userdata/AI_Game_Builder`, `--all` through `run_tests.sh`: md5
+  **`4efdd84270a1ad5df50fc08fa0af46f3`**, **85 suites, 0 with something to
+  look at**, `player_door_test` **104**, `drive_test` **24**, `session_test`
+  **18**, `result_line_test` **370**, `source_scan_test` **80**.
+  **BYTE-IDENTICAL to the md5 130 recorded on its changed tree and `130a`
+  read off the remote.** `130a` is docs-only against `a67a8aa` - `git diff
+  --name-only a67a8aa 9822095` names `docs/HANDOVER.md` and nothing else,
+  **read rather than taken from the commit message** - so this is a reading of
+  130's code tree too.
+
+  **WHAT IT DID NOT DO.** It changed **no** line of `scripts/`, `tests/`,
+  `scenes/`, `netlify/`, `.github/`, `project.godot` or either runner, so it
+  fixed **no** fault a player can meet and added **no** row. It did **not**
+  apply HDN 41, 24, 38, 39 or 40 and did not narrow any of them. **It did not
+  add a mechanical guard for the class it just swept** - that is new HDN 42
+  and the reason is written there: every candidate place for such a check
+  either puts a file under `tests/` that opens `docs/`, which would make false
+  a property many commits' reasoning rests on, or changes the runner.
+  **The suite is green and that is the same thing it always is**: `go_to`
+  still cannot walk a bent corridor (HDN 40) or reach a room with a thing in
+  it (HDN 39), and neither is held by a row, deliberately. It did not run on
+  the owner's hardware, in a browser, or against a live API key.
+  **NOTHING HERE TOUCHED A DEPLOYMENT SETTING, A SECRET, A FLAG OR A TARGET.**
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is still **2026-10-14**, checked this commit by
+  grepping every `OWNER, 2026-[0-9][0-9]-[0-9][0-9]` marker in `HANDOVER.md`
+  and `TRAPS.md`: **five markers, all of them in `HANDOVER.md`, all
+  2026-10-14; `TRAPS.md` carries none.**
+  New **TRAPS 126**. New **HDN 41** (130's, added) and **HDN 42**.
+
+- Last commit before this one: **130a**, and it is **DOCS ONLY** - 0
   lines of diff in `scripts/`, `scenes/`, `tests/`, `netlify/`, `.github/`,
   `project.godot` and both runners. It carries **one measurement and nothing
   else, and it was taken rather than predicted**: a **fresh `git clone`
@@ -10968,7 +11048,92 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
-**THE LATEST RUN IS 129's, ON ITS OWN CHANGED TREE**, `--all`, through
+**THE LATEST RUN IS 131's, AND IT IS AN INDEPENDENT CONTAINER ON THE
+PUSHED `9822095` (130a)** - the reading `130a` said the next firing would get
+for nothing, taken. `git fetch origin prototype-002a` into the container's own
+checkout at **`9822095`**, its own Godot download
+**`4.7.1.stable.official.a13da4feb`** (`--version` read; binary md5
+**`c083304672e2b4264cfb7f823aba095f`**), `git status --porcelain` **EMPTY both
+before and after the run** (so `project.godot` was not edited to take it and no
+`.uid` was added), `user://` cleared by deleting `app_userdata/AI_Game_Builder`
+before it, `--all` through `run_tests.sh`: md5
+**`4efdd84270a1ad5df50fc08fa0af46f3`**, **85 suites, 0 with something to look
+at**, `player_door_test` **104, failures=0**, `drive_test` **24, failures=0**,
+`session_test` **18, failures=0**, `result_line_test` **370, failures=0**,
+`source_scan_test` **80, failures=0**.
+
+**AND IT WAS RUN TWICE, WITH THE DOCUMENT EDITS IN BETWEEN, WHICH IS THE
+MEASUREMENT 131 OWED RATHER THAN A CLAIM IT INHERITED.** This commit changes
+only `docs/`, and the sentence that makes that safe - *a document edit cannot
+reach a suite* - is the one every docs-only commit leans on. So the second
+`--all` was taken with `docs/HANDOVER.md` and `docs/TRAPS.md` **already
+carrying this commit's insertions** - **327 of them at that moment**, which is
+not the final figure and is said so on purpose: this paragraph was written
+after that run, so the tree as committed carries more document lines than the
+run saw. **What makes that harmless is the grep and not the assumption**: no
+file under `tests/` or `scripts/` opens anything under `docs/`, re-measured in
+this commit and recorded above. `user://` cleared again before it: **md5 `4efdd84270a1ad5df50fc08fa0af46f3`, 85 suites, 0 with
+something to look at, and the `diff` against the first run is ZERO LINES**.
+**184 s wall**, timed with `date` around the runner. `git status --porcelain`
+after it names **`docs/HANDOVER.md` and `docs/TRAPS.md` and nothing else** -
+no `.uid`, `project.godot` untouched - and stderr was **0 bytes**.
+
+**AND A THIRD RUN, ON THE DOCUMENTS AS GOOD AS COMMITTED: `4efdd842...`
+AGAIN, 85 SUITES, 0 TO LOOK AT, ZERO-LINE DIFF, 183 s, STDERR 0 BYTES.** So
+**three byte-identical `--all` runs** - one before any document was touched,
+one at 327 insertions, one at the end - and the `diff` between all three is
+zero lines. **The third is not quite the tree as committed and that is said
+rather than rounded off**: one sentence further up this file (the
+owner-marker count) was tightened while that run was in flight, and this
+paragraph was written after it. **Two document edits therefore postdate every
+run, which is the same position 130 was in and is handled the same way: by
+the grep, not by the promise.** Nothing under `tests/` or `scripts/` opens
+anything under `docs/`, measured in this commit, so no suite's answer can
+rest on any paragraph here.
+
+**WHAT KIND OF CHECKOUT THIS WAS, SAID EXACTLY, BECAUSE TRAPS 1 IS ABOUT
+EXACTLY THIS.** The container began with a **non-shallow** clone already
+sitting on `main`, and `prototype-002a` was fetched **by name** and checked
+out - so the tree measured is the branch's tip and not Prototype 001. The
+fetch was `--depth=200`, which left `.git/shallow` in place and the HISTORY
+truncated at 200 commits while the TREE was complete; `git status
+--porcelain` empty at `9822095` is what establishes the tree, and a suite
+reads files rather than history, so the reading above is unaffected. It was
+made non-shallow (`git fetch --unshallow`, 214 commits) before anything was
+committed. **A depth-limited fetch of a NAMED branch is not TRAPS 1** - TRAPS
+1 is `--depth 1` with no branch, which gets `main` - but it is close enough
+to it to be worth writing down rather than left for a later session to
+wonder about.
+
+**THAT md5 IS BYTE-IDENTICAL TO THE ONE 130 RECORDED ON ITS CHANGED TREE AND
+`130a` READ OFF THE REMOTE, AND IT CLOSES `130a`'s ONE OPEN ITEM.** `130a` is
+docs-only against `a67a8aa` - `git diff --name-only a67a8aa 9822095` names
+`docs/HANDOVER.md` and nothing else, **read rather than taken from the commit
+message** - so this is a reading of 130's code tree as well. The one thing that
+had to be checked to say that: no file under `tests/` or `scripts/` **opens**
+anything under `docs/`, re-grepped here - 30 lines in those directories contain
+the string `docs/` and **29 are comments**; the one that is not is a failure
+*message* in `field_type_test.gd:635`, not a read.
+
+**AND THE HEAD OF THIS SECTION WAS STALE FROM 130 UNTIL 131.** It said *"THE
+LATEST RUN IS 129's"* and gave md5 `69ebfb9f...` and `player_door_test` **91**,
+while 130 had changed that suite to **104** and moved the md5 two commits
+earlier. 130 and 130a each ran `--all` and **neither touched this section** -
+`git show a67a8aa -- docs/HANDOVER.md` and `git show 9822095 --
+docs/HANDOVER.md` contain no hit for `THE LATEST RUN IS`, checked rather than
+assumed. A session told to read this file to learn what a green run looks like
+would have read the pre-130 numbers and met 104 as a surprise. **New TRAPS
+126**, and the second instance of the same class is HDN 41.
+
+**THE RUN BEFORE IT IS 130's**, on its own changed tree, and **DO NOT RE-TAKE
+IT**: two byte-identical `--all` runs at the same md5
+`4efdd84270a1ad5df50fc08fa0af46f3`, plus the baseline that closed 129a's open
+item (md5 `69ebfb9f7a462613107ecbb6d73c81eb`, `player_door_test` **91**), plus
+`player_door_test` alone at `--fixed-fps 120` reading **104, failures=0** with
+section 9's distances unchanged to the decimetre. All of those numbers are in
+the 130 and 130a entries at the top of this file.
+
+**THE RUN BEFORE THOSE IS 129's, ON ITS OWN CHANGED TREE**, `--all`, through
 `run_tests.sh`, `user://` cleared by deleting `app_userdata/AI_Game_Builder`
 before each, **THREE BYTE-IDENTICAL RUNS, all with `docs/` in place** - two
 before the documents were written and one after, so that the reading 126
@@ -19194,7 +19359,40 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
-**THE FIRST ITEM BELOW IS DONE. 130 FIXED IT.** The lap boundary is the start
+**131's LEFTOVER IS NOTHING, AND THAT IS A READING.** It took the independent
+baseline on `9822095` that `130a` was owed and it reproduced
+`4efdd84270a1ad5df50fc08fa0af46f3` byte for byte, so **there is no `131a` to
+do** and no measurement outstanding. **DO NOT RE-TAKE IT**, and do not take a
+clone-of-your-own-push reading either: 131 changed no file a suite reads, so a
+re-run of its own push can only reproduce the number above. Take your own
+baseline on `131` if you like it as a habit, then spend the cycle on the work.
+
+**THE FIRST THING TO DO, AND IT IS THE ONE 130 NAMED AS CHEAP AND NEEDING
+NOBODY: NO SUITE HOLDS THE STANDING START THROUGH REAL STEERING.** This is
+unchanged by 131, which added no row at all. `player_door_test` section 9
+teleports a frozen car along the centreline, so the `_left_line` /
+`_began_at_line` rule that TRAPS 125 is about is held only against a
+teleport. `physics_test` and `behaviour_test` already drive a body under real
+physics. The row is a `/drive`, real throttle until the car is clear of the
+line, and the assertion that `lap_started` went true **after** the car moved
+and not on the frame it was placed. **It can fail against the first version of
+130's fix**, which is written out in this file's 130 entry, so it is not a row
+that cannot fail (TRAPS 6). Do not type a lap time in as the expected answer.
+
+**AND THE SECOND IS THE LAST MEMBER OF 128's AND 129's CLASS: `Npc.elapsed`
+HAS NO ROW HOLDING IT IS THE SIMULATION'S CLOCK.** The paragraph further down
+this section still describes it correctly and 131 did not touch it. **Label it
+a GUARD and not a measurement (TRAPS 6)**: the clock there is already right,
+so the row cannot fail against today's tree.
+
+**BEFORE YOU WRITE ANY DOCUMENT PARAGRAPH, RUN 131's SWEEP** - TRAPS 126's
+third "Do" has the recipe, it is one command, and it found a fault that had
+survived two commits. **And when you change a suite's count or an md5, grep
+for the old number and edit the index section that states it**, which is the
+other half of TRAPS 126 and the half that is easy to forget because nothing
+points at it.
+
+**THE ITEM BELOW WAS THE FIRST ONE AND IT IS DONE. 130 FIXED IT.** The lap boundary is the start
 line, lap 1 is a whole lap, and `player_door_test` is 104 assertions with
 three new kinds of row that were red against the unfixed tracker. The numbers
 are in the 130 entry at the top of this file. **DO NOT RE-TAKE THEM**: the
@@ -19224,7 +19422,10 @@ was placed. It can fail against the first version of 130's fix, which is in
 this file's 130 entry, so it is not a row that cannot fail (TRAPS 6).
 
 **AND "Human decision needed" 41 IS NEW AND IT IS HIS, BECAUSE IT MOVES A
-SENTENCE A PLAYER READS.** Lap 1 is still 53.2 m of 2376.9 m short (2.2%,
+SENTENCE A PLAYER READS.** (**131: THE ENTRY ITSELF WAS NEVER ADDED TO THE
+LIST WHEN THIS PARAGRAPH WAS WRITTEN, AND IS NOW. TRAPS 126.** Everything
+below was true where it stood; it was unreachable from the list a reader
+consults.) Lap 1 is still 53.2 m of 2376.9 m short (2.2%,
 measured) because a line event fires on **arrival** within `REACH` rather than
 at the **closest approach** to the line. Firing at closest approach instead
 would make lap 1 exact and make every lap exact to the centimetre - and it
@@ -32889,3 +33090,102 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     red against today's code, and a suite asserting the fault has to be deleted
     by whoever fixes it. The comment added to its header names the uncovered
     member and points here.
+
+41. **Should a lap boundary fire at the point of CLOSEST APPROACH to the line
+    instead of on ARRIVAL within `REACH`?** Raised by 130, which fixed TRAPS
+    124 and left this residual measured. **131 ADDED THIS ENTRY: 130 WROTE
+    ITS CONTENT UNDER "Next action", DECLARED IT "Human decision needed 41",
+    AND NEVER ADDED IT HERE** - so three places in this file and one in
+    `TRAPS.md` pointed at a list entry that did not exist, from 130 until
+    131. See the 131 entry and new TRAPS 126. Nothing about the decision
+    changed; it was unreachable in the list a reader consults.
+
+    **WHAT IS MEASURED, AND IT IS 130's MEASUREMENT AND NOT A NEW ONE.** Lap
+    1 is short by **53.2 m of a 2376.9 m circuit, 2.2%**, where the fault 130
+    removed was 16.7%. `player_door_test` section 9 reads each lap counted
+    **11.8, 27.2 and 23.4 m** from the line, not at it. It is a fixed offset
+    and not a growing one, and a real lap beats it: lap 1 read **0.8083 s**
+    against **0.8333 s** for laps 2 and 3, **0.970**, inside `LAP_AGREE` 0.10
+    with room to spare.
+
+    **THE MECHANISM, READ OFF `scripts/checkpoint_tracker.gd` RATHER THAN
+    INFERRED.** `REACH` is **30.0** and a checkpoint is "reached" by
+    proximity. `update_progress()` closes a lap on the first frame the car is
+    **within** `REACH` of `checkpoints[0]`, which is up to 30 m before the
+    line; and a car that began inside the line's circle - which both `/drive`
+    (`main.gd:728`) and `/race`'s grid (`race_director.gd:96`-`97`) do - has
+    lap 1 timed from the frame it is first seen **clear** of that circle,
+    which is past the line. Those two are the standing-start rule TRAPS 125
+    is about, and they are why the residual exists.
+
+    **WHAT THE CHANGE WOULD BE, COSTED.** One function in
+    `checkpoint_tracker.gd`, plus two fields (`_closest` and
+    `_closest_clock`): instead of firing on arrival, keep the smallest
+    distance seen and the clock at that distance, and fire when the distance
+    starts growing again. That makes lap 1 exact and every lap exact to the
+    centimetre. Section 9's rows already measure the quantity it would move,
+    in metres, so the row that would hold it exists.
+
+    **WHY IT IS NOT THE ASSISTANT'S.** It moves every *"Lap N completed in
+    ..."* from about 30 m **before** the line to about 30 m **after** it, and
+    delays that sentence by that much driving. **That is a change to when the
+    game speaks to a player, so it is appearance and product direction.**
+    **DO NOT APPLY IT.**
+
+    **If he is absent, LEAVE IT.** Nothing is broken by waiting: the offset is
+    measured, bounded, fixed in size, and beaten by a real lap, and the
+    measurement does not go stale. **No suite was written to hold it**, which
+    is deliberate - a row asserting lap 1 is exact would have to be deleted by
+    whoever answers this entry, and a row asserting it is 53.2 m short would
+    guard the residual instead of the capability (TRAPS 6).
+
+42. **Where should a mechanical cross-reference check live, if anywhere?**
+    Raised by 131, which found HDN 41 dangling and swept the class by hand.
+    The sweep is twenty lines of Python and takes under a second: collect the
+    entries that exist in `TRAPS.md` and in this file's `## Human decision
+    needed` list, collect every `TRAPS n` and `HDN n` reference in both, and
+    subtract. **It found a real fault that had survived two commits and been
+    copied into a commit message.** A check that cheap, for a class this
+    project has been bitten by repeatedly (TRAPS 14, 122, 126), looks like it
+    should be automatic. **131 did not make it automatic, and the reason is
+    the decision.**
+
+    **WHY IT IS NOT OBVIOUS, AND THIS IS THE PART THAT IS HIS.** Every
+    candidate place costs something real:
+
+    - **A suite under `tests/`.** This would be the natural home, and it is
+      the one place it must not go without his say. **No file under `tests/`
+      or `scripts/` opens anything under `docs/`** - re-grepped in 131: 30
+      lines in those directories contain the string `docs/` and 29 are
+      comments, the one that is not being a failure *message* in
+      `field_type_test.gd:635`. That property is **load-bearing**: 126, 127,
+      129, 130 and 131 all reason from it when they say a document edit
+      cannot reach a suite, which is what lets a run taken before the
+      documents were written stand as a reading of the committed tree. A
+      doc-reading suite makes it false and every one of those arguments has
+      to be re-stated.
+    - **A non-suite tool under `tests/`**, like `replay.gd`, excluded by
+      `NOT_A_SUITE`. Cheaper, but the grep above goes from 0 to 1 and the
+      sentence *"no file under `tests/` opens anything under `docs/`"* has to
+      become *"no SUITE does"* everywhere it appears. That is a correct
+      sentence and a weaker one.
+    - **A step in `run_tests.sh`.** Changes the runner, which is a file every
+      commit's "0 lines of diff" list names, and puts a documentation check
+      inside the thing that measures the game.
+    - **CI.** That is HDN 27, still open, and this would be a second reason
+      to answer it.
+    - **Nothing, and keep doing it by hand.** TRAPS 126's "Do" tells the next
+      session to run the sweep, which costs one command a cycle and relies on
+      the session reading TRAPS. That is exactly the arrangement that failed
+      for HDN 41.
+
+    **WHAT IS NOT IN DOUBT.** The sweep itself is right and its result is
+    recorded in the 131 entry, so the decision is not also a measurement.
+    **131's recommendation, clearly labelled as a proposal:** the non-suite
+    tool, because it keeps the check in the repository where a session will
+    find it and keeps every suite's independence from `docs/` intact at the
+    cost of one re-worded sentence. **Not applied.**
+
+    **If he is absent, LEAVE IT**, and run the sweep by hand each cycle as
+    TRAPS 126 says. Nothing goes stale by waiting; the worst case is that the
+    next dangling reference lives for a cycle instead of an hour.
