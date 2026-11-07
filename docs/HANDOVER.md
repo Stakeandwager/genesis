@@ -11,7 +11,45 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
-- Last commit at the time of writing: **130**, and it is **ONE FILE UNDER
+- Last commit at the time of writing: **130a**, and it is **DOCS ONLY** - 0
+  lines of diff in `scripts/`, `scenes/`, `tests/`, `netlify/`, `.github/`,
+  `project.godot` and both runners. It carries **one measurement and nothing
+  else, and it was taken rather than predicted**: a **fresh `git clone`
+  --branch prototype-002a of the pushed commit `a67a8aa`** into its own
+  directory, `git status --porcelain` EMPTY before and after (so
+  `project.godot` was not edited to take it), `user://` cleared by deleting
+  `app_userdata/AI_Game_Builder`, same Godot download
+  `4.7.1.stable.official.a13da4feb`: **md5
+  `4efdd84270a1ad5df50fc08fa0af46f3`, 85 suites, 0 with something to look at,
+  `player_door_test` 104, `drive_test` 24, `session_test` 18**, and the `diff`
+  against 130's committed-tree run is **ZERO LINES**. **So the tree on the
+  remote is the tree that was measured.**
+
+  **AND ONE READING THAT IS NEW AND NOT A REPEAT: `player_door_test` ALONE AT
+  `--fixed-fps 120` AGAINST THAT SAME CLONE** - the configuration 127's
+  finding hid in - reads **104 assertions, failures=0**, and section 9's
+  distances come back **IDENTICAL** to the unflagged run:
+
+  | | lap 1 | lap 2 | lap 3 |
+  |---|---|---|---|
+  | metres driven, no flag | 2323.7 | 2359.8 | 2379.3 |
+  | metres driven, `--fixed-fps 120` | **2323.7** | **2359.8** | **2379.3** |
+  | metres from the line when counted, both | 11.8 / **11.8** | 27.2 / **27.2** | 23.4 / **23.4** |
+  | reported time, no flag | 0.8083 s | 0.8333 s | 0.8333 s |
+  | reported time, `--fixed-fps 120` | **0.9833 s** | **1.0000 s** | **1.0083 s** |
+
+  **THAT IS THE MEASUREMENT THAT SHOWS SECTION 9 IS ASKING ITS QUESTION IN THE
+  RIGHT UNIT.** The times move with the tick, as a duration must; the metres do
+  not move at all, because geometry is not a clock. A span row written in
+  seconds would have had to carry a frame-rate tolerance; these carry none.
+
+  **IT IS A READING OF THE REMOTE AND NOT OF AN INDEPENDENT CONTAINER**, said
+  plainly: like 126a, 127a, 128a and 129a it was taken immediately after the
+  push by the same container and the same Godot download. The next firing gets
+  the stronger reading for nothing by taking its own baseline on `a67a8aa`.
+  **130 OWES NOTHING ELSE AND THERE IS NO `130b` TO DO.**
+
+- Last commit before this one: **130**, and it is **ONE FILE UNDER
   `scripts/`, ONE UNDER `tests/`, PLUS THE DOCUMENTS**.
   `scripts/checkpoint_tracker.gd` (the lap boundary) and
   `tests/player_door_test.gd` (**91 -> 104 assertions**: section 3 rewritten,
@@ -19163,12 +19201,17 @@ are in the 130 entry at the top of this file. **DO NOT RE-TAKE THEM**: the
 seven-red table, the three-lap distance table, the two byte-identical `--all`
 runs (md5 `4efdd84270a1ad5df50fc08fa0af46f3`) and the baseline that closed
 129a's open item (md5 `69ebfb9f7a462613107ecbb6d73c81eb`) are all there.
-**130 OWES ONE MEASUREMENT AND IT IS A FRESH `git clone` OF ITS OWN PUSHED
-COMMIT.** Three commits running (126, 127, 128) wrote a sentence predicting
-that measurement would not be taken and all three went false within the hour;
-129 took the run instead. **Take the run. It costs one `--all` and the
-sentence costs a paragraph.** Take your own baseline on 130's pushed commit
-too, in your own container, and then spend the cycle on the work.
+~~**130 OWES ONE MEASUREMENT AND IT IS A FRESH `git clone` OF ITS OWN PUSHED
+COMMIT.**~~ **TAKEN, IN `130a`, BEFORE THE CYCLE ENDED.** Three commits running
+(126, 127, 128) wrote a sentence predicting that measurement would not be taken
+and all three went false within the hour; 129 took the run instead and so did
+130. The clone of `a67a8aa` reads md5
+`4efdd84270a1ad5df50fc08fa0af46f3` with a zero-line diff, and
+`player_door_test` alone at `--fixed-fps 120` against it reads 104,
+failures=0, with section 9's distances unchanged to the decimetre. **Nothing is
+owed.** Take your own baseline on `a67a8aa` anyway, because that is the
+independent container `130a` could not be, and then spend the cycle on the
+work.
 
 **AND ONE THING 130 LEFT THAT IS CHEAP AND NEEDS NOBODY: NO SUITE HOLDS THE
 STANDING START THROUGH REAL STEERING.** Section 9 teleports a frozen car along
