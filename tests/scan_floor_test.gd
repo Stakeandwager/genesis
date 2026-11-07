@@ -199,6 +199,10 @@ const FLOORS := {
 		"floor": "readers_scanned > 0",
 		"why": "083 ADDED THIS FLOOR; silent on its own at 69 assertions, failures=0. The absence it holds underwrites a sentence in its own file - no production code identifies a world by name - which is why the alternating world name is said to cost nothing today (TRAPS 14)",
 	},
+	"player_door_test.gd::_the_class_cannot_grow_in_silence": {
+		"floor": "read >= PLACE_AT_FILES_FLOOR",
+		"why": "134: the floor is a FLOOR and not the count, for the reason KNOWN is one in source_scan_test - a new script arriving is not a failure and a scan that reached nothing is (37 .gd files at 134, floor 25). MEASURED on its own with the read pointed at a directory that does not exist: 147 assertions, failures=9, and the nine are this floor, the sites-found row, and one per row of PLACE_AT_SITES left with no call site. So nothing in that section is silent on an empty read and no sibling is covering for it",
+	},
 	"prompt_numeral_test.gd::_initialize": {
 		"floor": "scanned > 0",
 		"why": "078: the stray-template row is an absence, and a null check cannot see a directory that is merely empty",

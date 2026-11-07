@@ -217,6 +217,84 @@ const CLOCK_RAN := 0.9
 const A_LENGTH := 300
 const B_LENGTH := 400
 const C_LENGTH := 500
+# 134: section 12's floor on the number of .gd files it read out of scripts/.
+# A FLOOR and not the count, for the reason KNOWN is a floor in
+# source_scan_test: a new script arriving is not a failure, and a scan that
+# reached nothing is. `ls scripts/*.gd` was 37 at 134.
+const PLACE_AT_FILES_FLOOR := 25
+# 134: the three members of TRAPS 125's class, as keys into PLACE_AT_SITES.
+# Typed here and derived there, so the two have to agree: this list is what
+# sections 10 and 11 between them hold, and the table is what the code says.
+const PLAYER_PLACEMENTS := [
+	"main.gd::_start_driving::car",
+	"main.gd::_on_controller_log::car",
+	"race_director.gd::start::player",
+]
+
+# --- 12's TABLE: every `place_at` CALL SITE in `scripts/`, with the reason it
+#     is in or out of TRAPS 125's class (134) ---
+#
+# WHERE THIS CAME FROM. TRAPS 128 is a count: two documents and a source-file
+# header all said TRAPS 125's class had TWO members, every one of the two was
+# handled correctly, and `grep -rn place_at scripts/` had a THIRD - reachable
+# by typing one ordinary command. 133 read the grep, wrote the row for the
+# third member (section 11), and left the tripwire out on purpose. This is the
+# tripwire. The thing that went wrong was not that a placement was unhandled;
+# it was that NOTHING FAILED when the class gained a member, so the count
+# lived in prose and went stale there for two commits.
+#
+# WHY A TABLE AND NOT A COUNT, which is the same answer source_scan_test's
+# `COUNTER_EQUALITIES` gives for the same reason. A count of seven against the
+# number 7 fails on a fourth placement, but it fails WITH NOTHING TO READ: it
+# cannot say which site arrived, and it cannot say whether the arrival is in
+# the class or out of it. What a scanner CAN decide is the shape - the file,
+# the enclosing function and the receiver of every `.place_at(` call in the
+# comment-stripped code. What it cannot decide is whether a given call can
+# move the body `CheckpointTracker.update_progress` is reading: that needs
+# `race_director.gd:333` to be read as only ever reached for a car that is not
+# the player's. So the scan finds the sites, EVERY site must carry a row here,
+# and the row carries the reading. An eighth site fails BY NAME.
+#
+# AND THE SCOPE IS `scripts/` AND NOT THE TWO FILES THAT HOLD THE THREE
+# (TRAPS 11). The class is *where is the player's car placed*, asked of the
+# code. A scan narrowed to `main.gd` and `race_director.gd` would answer it
+# for today's tree and miss the first placement written into a new file, which
+# is the fault this entry exists to stop rather than a smaller version of it.
+#
+# `player` IS THE VERDICT AND IT IS NOT DECIDABLE BY THE SCAN. `true` means
+# the call can place the body the lap tracker reads - a member of TRAPS 125's
+# class, and one that must be held by a row. `false` means it cannot, and the
+# `why` says what stops it.
+const PLACE_AT_SITES := {
+	"main.gd::_start_driving::car": {
+		"player": true,
+		"why": "`/drive`, on the line. Section 10 drives this one with the car's own throttle and five of its rows were seen red against the first version of 130's fix",
+	},
+	"main.gd::_on_controller_log::car": {
+		"player": true,
+		"why": "A WORLD REBUILT WHILE DRIVING - the member TRAPS 128 is about. A CREATE_TRACK that succeeds while the player is driving re-spreads the checkpoints and puts the car back on the NEW start line, inside REACH, from a standstill, with the clock re-armed. Held by section 11b",
+	},
+	"race_director.gd::start::player": {
+		"player": true,
+		"why": "the `/race` grid, a row behind the line. Held GEOMETRICALLY by section 11a and not under throttle, because `race_director.gd:140`-`141` clears `auto_drive` every physics frame while the race runs (TRAPS 127) - a harness limit, measured, and not a reason to change production",
+	},
+	"race_director.gd::start::car": {
+		"player": false,
+		"why": "the same function, one loop above: it places an OPPONENT. The loop runs over the cars the director spawned and the player is placed after it, on the line below. An opponent's position is never passed to the player's CheckpointTracker",
+	},
+	"race_director.gd::_recover::car": {
+		"player": false,
+		"why": "`_recover(r)` is reached only from the `_drive` and `_physics_process` paths that call it for `r[\"car\"] != _player`, so the body it lifts back onto the road is never the player's. Said rather than rounded up (TRAPS 128)",
+	},
+	"main.gd::_on_ordered::npc": {
+		"player": false,
+		"why": "an NPC's Walker at the start of an errand. `Walker.place_at` is a different function (`walker.gd:191`) on a different body, and no walker position reaches the lap tracker",
+	},
+	"main.gd::_start_exploring::walker": {
+		"player": false,
+		"why": "the player's WALKER at the start of `/explore`, also `walker.gd:191`. `/explore` builds no circuit and `checkpoint_tracker.checkpoints` is empty on that path, so there is no line for it to be inside",
+	},
+}
 
 var main: Node3D
 var asserted := 0
@@ -1702,6 +1780,186 @@ func _the_other_two_standing_starts() -> void:
 	main._stop_driving()
 
 
+# --- 12. the tripwire: nothing failed when the class gained a member (134) ---
+#
+# THE ONE THING THIS SECTION ASSERTS, said before the rows so it cannot be
+# read as more than it is: **the set of `place_at` call sites in `scripts/` is
+# the set `PLACE_AT_SITES` carries a reading for, and the subset of them that
+# can move the body the lap tracker reads is the three sections 10 and 11
+# hold.** It is a TRIPWIRE and not a behaviour row, and the difference is
+# labelled rather than left to be inferred (TRAPS 6): nothing a player does
+# can make it fail, and no amount of it passing says a placement is handled
+# correctly - sections 10 and 11 say that, and they were seen red. What it
+# says is that the CLASS cannot grow, shrink or be renamed in silence, which
+# is the one thing that did happen and that nothing noticed for two commits.
+#
+# THAT IT CAN FAIL AGAINST A LEGAL TREE IS MEASURED AND NOT ASSERTED
+# (TRAPS 6, and the shape 133 got right for `Npc.elapsed`). THREE RED
+# READINGS, each in a throwaway copy of the repository outside it with its own
+# `config/name` (TRAPS 50), and each failed BY NAME:
+#
+#   a fourth placement  `_restart_lap()` added to `main.gd` - a new door that
+#                       puts the car back on the start line, the same two
+#                       lines `_start_driving` uses. 8 sites, 5 in main.gd,
+#                       and the FAIL names `main.gd::_restart_lap::car` with
+#                       the line the door was inserted at.
+#   a placement removed `main.gd:661`'s `npc.place_at` commented out. 6 sites,
+#                       and the FAIL names the ROW that has no site left.
+#   the careless fix    the same fourth placement AND a table row for it
+#                       marked `player: true`, with `PLAYER_PLACEMENTS`
+#                       unchanged - which is the realistic path, because a
+#                       maintainer who sees the first FAIL adds a row. The
+#                       per-site rows go green and the CLASS row fails,
+#                       printing all four members.
+#
+# The counts are in HANDOVER's 134 entry. Nothing in `scripts/` was changed in
+# this repository to take them.
+#
+# THE SCAN'S OWN NARROWNESS IS CONTROLLED BELOW, over sources this function
+# BUILDS, because TRAPS 106's rule applies before any of it is believed: a
+# scan that reached no code would find no sites, every row would have nothing
+# to contradict it, and the section would pass by finding nothing. So the
+# read is asserted, the file count is asserted, and four properties of the
+# scanner are driven over built text: a call is found, `func place_at(` is
+# NOT a call, a call that exists only in a comment is not a call, and the
+# enclosing function name is the one the call is actually inside.
+func _the_class_cannot_grow_in_silence() -> void:
+	var files := DirAccess.get_files_at("res://scripts")
+	var read := 0
+	var sites := {}
+	for name in files:
+		if not str(name).ends_with(".gd"):
+			continue
+		var raw := FileAccess.get_file_as_string("res://scripts/%s" % str(name))
+		if raw == "":
+			continue
+		read += 1
+		for site in _place_at_sites(_code_of(raw)):
+			var row: Dictionary = site
+			sites["%s::%s::%s" % [str(name), str(row["func"]), str(row["receiver"])]] = int(row["line"])
+
+	# THE READ, ASKED AT THE READ (085, TRAPS 81). A directory that came back
+	# empty and a file that came back empty both leave `sites` empty, and an
+	# empty `sites` would satisfy every "has a row" assertion below.
+	_check(read >= PLACE_AT_FILES_FLOOR,
+		"scripts/ was read as code: %d .gd files, floor %d" % [read, PLACE_AT_FILES_FLOOR])
+	_check(sites.size() > 0,
+		"and the scan found place_at call sites in them (%d)" % sites.size())
+
+	# EVERY SITE CARRIES A READING. This is the direction an ARRIVAL fails in.
+	for key in sites:
+		_check(PLACE_AT_SITES.has(str(key)),
+			"the place_at call at %s:%d has a row saying whether it can place the body the lap tracker reads" % [
+				str(key), int(sites[key])])
+
+	# EVERY READING STILL HAS A SITE. This is the direction a REMOVAL, a
+	# rename or a moved call fails in - and a row left standing for a call
+	# site that is gone is a claim about the code that has stopped being true
+	# (TRAPS 14), so it fails here rather than going unremarked.
+	for key in PLACE_AT_SITES:
+		_check(sites.has(str(key)),
+			"and the row for %s still has a call site in scripts/" % str(key))
+
+	# THE CLASS ITSELF: the subset that can move the body, derived from the
+	# table rather than typed, against the three sections 10 and 11 hold.
+	var in_class: Array = []
+	for key in PLACE_AT_SITES:
+		if bool((PLACE_AT_SITES[key] as Dictionary)["player"]):
+			in_class.append(str(key))
+	in_class.sort()
+	var held := PLAYER_PLACEMENTS.duplicate()
+	held.sort()
+	_check(in_class == held,
+		"TRAPS 125's class is the %d placements sections 10 and 11 hold, derived from the table: %s" % [
+			held.size(), str(in_class)])
+
+	# AND EVERY MEMBER OF IT IS IN A FILE THIS SUITE ACTUALLY DRIVES, so the
+	# list above cannot be satisfied by three rows about code nothing runs.
+	for key in held:
+		var where := str(key).split("::")[0]
+		_check(where == "main.gd" or where == "race_director.gd",
+			"and %s is in a file sections 10 and 11 drive through the scene" % str(key))
+
+	# --- the scanner, over sources this function builds (TRAPS 106) ---
+	# `one_call` AND NOT `found`, WHICH IS NOT A STYLE CHOICE. The first draft
+	# called it `found`, and `_the_scene` has a `var found := 0` that is a
+	# counter - so source_scan_test's section 5 classified the three-conjunct
+	# assertion below as an equality between two counts of one collection and
+	# failed by name, asking for a row in its COUNTER_EQUALITIES. It is not
+	# one; it is that scan's own narrowness meeting a name collision, measured
+	# and recorded as TRAPS 131. The collision is removed here rather than
+	# given a table row, because a row would record an avoidable name as a
+	# permanent fact about this file.
+	var call_only := "func _somewhere() -> void:\n\tcar.place_at(a, b)\n"
+	var one_call := _place_at_sites(call_only)
+	_check(one_call.size() == 1
+			and str((one_call[0] as Dictionary)["func"]) == "_somewhere"
+			and str((one_call[0] as Dictionary)["receiver"]) == "car",
+		"the scan reads a place_at call as receiver + enclosing function (%s)" % str(one_call))
+
+	var def_only := "func place_at(pos: Vector3, heading: float) -> void:\n\tpass\n"
+	_check(_place_at_sites(def_only).is_empty(),
+		"and a `func place_at(` DEFINITION is not a call site, which is why car.gd and walker.gd contribute none")
+
+	var in_comment := _code_of("func _somewhere() -> void:\n\t# car.place_at(a, b)\n\tpass\n")
+	_check(_place_at_sites(in_comment).is_empty(),
+		"and a call that exists only in a comment is not a call site, because the scan reads what _code_of() leaves")
+
+	var two_funcs := "func _first() -> void:\n\tpass\n\n\nfunc _second() -> void:\n\tplayer.place_at(a, b)\n"
+	var later := _place_at_sites(two_funcs)
+	_check(later.size() == 1 and str((later[0] as Dictionary)["func"]) == "_second",
+		"and the enclosing function is the one the call is inside and not the first in the file (%s)" % str(later))
+
+	# THE NOTE INTERPOLATES AND DOES NOT DESCRIBE (TRAPS 129). The class count
+	# is attributed to the TABLE, because that is where it comes from - under
+	# the first red reading below the code had FOUR player placements and the
+	# table said three, and a note reading "3 of them can place the body" would
+	# have been a false sentence about the code printed under a failure. The
+	# number of sites carrying no row is printed for the same reason: it is the
+	# fault, so the note has to carry it.
+	var counts := {}
+	var unread := 0
+	for key in sites:
+		var where := str(key).split("::")[0]
+		counts[where] = int(counts.get(where, 0)) + 1
+		if not PLACE_AT_SITES.has(str(key)):
+			unread += 1
+	notes.append("12: %d place_at call sites across %d .gd files of scripts/ (%s); %d with no row here; the table marks %d as able to place the body the lap tracker reads: %s" % [
+		sites.size(), read, str(counts), unread, in_class.size(), str(in_class)])
+
+
+# Every `.place_at(` CALL in the given CODE, as receiver, enclosing function
+# and line. A `func place_at(` declaration has no receiver and is not matched,
+# which is the one distinction the scan has to make and is driven over built
+# text in section 12 rather than trusted.
+#
+# NOT A PARSER, and narrow in the direction that matters: a receiver written
+# as anything but a plain identifier - `_cars[i].place_at(...)` - is NOT
+# matched, so this scan can MISS a site and can never invent one. A miss
+# shows up as a row in PLACE_AT_SITES with no site, which fails. The
+# alternative - a looser regex that matched an expression - would report a
+# receiver nobody can key a table by.
+func _place_at_sites(code: String) -> Array:
+	var out: Array = []
+	var call := RegEx.create_from_string("([A-Za-z_][A-Za-z0-9_]*)[\\t ]*\\.place_at[\\t ]*\\(")
+	var func_line := RegEx.create_from_string("^[\\t ]*(?:static[\\t ]+)?func[\\t ]+([A-Za-z_][A-Za-z0-9_]*)")
+	var current := ""
+	var number := 0
+	for raw in code.split("\n"):
+		var line := str(raw)
+		number += 1
+		var f := func_line.search(line)
+		if f != null:
+			current = f.get_string(1)
+		for m in call.search_all(line):
+			out.append({
+				"receiver": (m as RegExMatch).get_string(1),
+				"func": current,
+				"line": number,
+			})
+	return out
+
+
 # How far a point is from the start line, in the plane, which is the same
 # measure CheckpointTracker.update_progress uses to decide `at_line`.
 func _from_line(t: CheckpointTracker, p: Vector3) -> float:
@@ -1727,6 +1985,7 @@ func _run() -> void:
 	await _a_lap_is_a_whole_lap()
 	await _a_standing_start_is_driven()
 	await _the_other_two_standing_starts()
+	_the_class_cannot_grow_in_silence()
 
 	print("")
 	for note in notes:

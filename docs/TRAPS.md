@@ -9857,3 +9857,121 @@ Found in 133, in its own new section, by reading the red run's output rather
 than only its failure count.
 
 > The row failed. The line under it said everything was fine.
+
+---
+
+## 130. A note's number was measured, and the sentence around it named the wrong source
+
+**Signature:** a suite goes red, and the note printed under the failures
+carries a number that was really measured — and a sentence that attributes it
+to something it was not measured from, so the note is false about the code at
+exactly the moment the code is wrong.
+
+**Cause.** 134's new tripwire derives the class it holds from a table in the
+suite: `PLACE_AT_SITES` gives every `place_at` call site in `scripts/` a
+verdict, and the section counts the ones marked as able to move the body the
+lap tracker reads. Its first draft printed
+
+```
+%d of them can place the body the lap tracker reads: %s
+```
+
+with that count. Every character of it was a substitution — this is **not**
+TRAPS 129's typed-in adjective. The number was measured. It was measured
+**from the table**, and the sentence says *can place the body*, which is a
+property of **the code**. Those are the same number only while the table and
+the code agree, and the whole point of the section is the moment they do not.
+
+Read under the first red reading — a fourth placement written into a throwaway
+`main.gd` — the note printed `3 of them can place the body the lap tracker
+reads` while **four** of them could. The FAIL two lines above named the fourth
+site correctly; the note under it stated the pre-fault count as current fact.
+
+**Do:**
+
+- **Attribute every number in a note to where it was read from, in the note.**
+  `the table marks %d as able to...` and `%d with no row here` are both true
+  under the red run; `%d of them can...` is not. The fix is a clause, not a
+  number.
+- **Ask of each value in a format string: measured from WHAT?** A value read
+  off a suite's own table, const or expectation is not a reading of the code,
+  and a note that does not say which it is will be read as the code.
+- **Print the fault's own count.** The red run's note now carries `1 with no
+  row here`, so the note cannot be read as a green one even by somebody who
+  skips the FAIL. A note that only ever prints agreement is a note that is
+  silent precisely when it matters.
+- This is TRAPS 129 one level in, and 129's mechanical check does not catch
+  it: every word here *was* a `%` substitution. The check that does catch it
+  is asking what each substitution was measured from.
+
+Found in 134, in its own new section, by reading the red run's output rather
+than only its failure count — which is the rule 133 said it would pass on
+above any particular task, and it paid twice.
+
+> The number was real. The sentence was about something else.
+
+---
+
+## 131. The scan that enumerates a class reported a member that does not exist
+
+**Signature:** a suite whose job is to find every instance of a shape in
+`tests/` fails by name on a file that has no instance of it — and the key it
+prints is for an assertion that appears in no source.
+
+**Cause.** `source_scan_test._counter_equalities()` reads the condition of
+every `_check(` in a file and splits it into conjuncts so that
+`a == b and a > 0` is read as the two claims it is. It split on the **literal
+string `" and "`**. The condition reader above it reassembles a condition
+that is **continued across lines** by appending a single space at each line
+break — so the next conjunct arrives as `1 \t\t\tand str(...)`: a space, then
+the continuation line's **tabs**, then `and`. `" and "` does not match that.
+The whole multi-line condition was therefore treated as ONE comparison,
+`find("==")` took the first `==`, and every counter name mentioned anywhere
+after it landed on the right-hand side.
+
+**Both readings were taken**, over two built sources, against the committed
+scanner of 133a and against the fix:
+
+| source | 133a reported | after |
+|---|---|---|
+| `a == 3` / `and b == a` / `and a > 0` | `a==b` keyed as `a==a,b` | `b==a` |
+| `a == 3` / `and b > 0` | **`a==b`** | nothing |
+
+The first row is a key for an assertion that is in no source. **The second is
+worse and is the entry: that condition contains no equality between two
+counters at all, and the scan reported one.** A scan asked to enumerate a
+class invented a member of it.
+
+What it cost: 134 added a three-conjunct assertion to `player_door_test`
+section 12 whose local was named `found` — a name that is a counter in a
+different function of the same file — and `source_scan_test` failed by name
+demanding a `COUNTER_EQUALITIES` row for `found==found` *over a collection in
+a function that local is not in*. The first instinct was to write the row.
+That would have recorded an avoidable name collision as a permanent fact
+about the file and left the scan still inventing sites.
+
+**Do:**
+
+- **A boundary in source text is a whitespace RUN, not a character.** The fix
+  is `RegEx` `[\t ]+(?:and|or)[\t ]+`. `grep`ed for the class rather than
+  assumed: `split(" and ")` and `split(" or ")` occur in exactly one place in
+  `tests/` and `scripts/`, which is this one (TRAPS 11).
+- **When a scan demands a row for something you did not write, suspect the
+  scan before writing the row.** The table entry is the cheap answer and it
+  is the one that hides the fault. Ask the function directly: here, feeding
+  `_counter_equalities()` a built source printed `a==b` for a source with no
+  `==` between counters in it, which settled it in one run.
+- **A scanner's own controls must be driven over the shapes the scanner
+  actually meets.** Section 9 held nine properties of this read and every
+  built source in it was a condition on ONE line, so the control suite
+  guarded a narrower function than the one that ran. Two rows for the
+  multi-line case are added there, and both were seen red against the
+  committed split.
+- The class on today's `tests/` is unchanged by the fix — 4 sites in 3 files,
+  the same four rows — which is a measurement and is the reason the fix landed
+  in the same commit rather than being left for a cycle of its own.
+
+Found in 134, by a scan correctly refusing to stay quiet about something, and
+then by disbelieving what it said about what that something was.
+
+> It asked for a row describing an assertion nobody had written.

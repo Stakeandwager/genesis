@@ -11,7 +11,119 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
-- Last commit at the time of writing: **133a**, and it is **DOCS ONLY** - 0
+- Last commit at the time of writing: **134**, and it is **THREE FILES UNDER
+  `tests/` PLUS `docs/TRAPS.md`**. `tests/player_door_test.gd` (**130 -> 154
+  assertions**: one new section 12, one new table, two new consts, one new
+  helper), `tests/source_scan_test.gd` (**80 -> 82**: a one-line fix to
+  `_counter_equalities` and the two rows that hold it) and
+  `tests/scan_floor_test.gd` (**148 -> 151**: one new `FLOORS` row).
+  **`scripts/`, `scenes/`, `netlify/`, `.github/`, `project.godot` and both
+  runners are 0 LINES OF DIFF**, confirmed by `git diff --name-only` and not
+  by intention, so **nothing a player meets changed** and **no fault a player
+  can meet was fixed**. The fault that WAS fixed is in a suite, and it is
+  real: a scan that enumerates a class was reporting members that do not
+  exist.
+
+  **ONE. THE TRIPWIRE TRAPS 128 ASKS FOR AND 133 DELIBERATELY DID NOT WRITE,
+  WHICH IS WHAT `## Next action` HAS NAMED FIRST SINCE 133.**
+  `player_door_test` section 12 derives every `.place_at(` call site in
+  **`scripts/`** - not in the two files that hold the three, which is TRAPS
+  11's rule applied to the scope of the scan - as `file::function::receiver`,
+  and every site must carry a row in the new `PLACE_AT_SITES` table giving it
+  a verdict and a reason. **Seven sites, at the seven lines TRAPS 128's grep
+  named** (`main.gd` 265, 661, 728, 765; `race_director.gd` 89, 97, 333),
+  **three of them in TRAPS 125's class**, and the three are asserted against
+  `PLAYER_PLACEMENTS` rather than counted.
+
+  **THE VERDICT IS A ROW AND NOT AN ASSERTION, FOR THE REASON
+  `COUNTER_EQUALITIES` GIVES FOR THE SAME SHAPE.** What a scanner can decide
+  is the file, the enclosing function and the receiver. What it cannot decide
+  is whether a given call can move the body `update_progress` reads - that
+  needs `race_director.gd:333` read as reached only for `r["car"] != _player`.
+  So the scan finds the sites, every site carries a reading, and an eighth
+  fails **by name**. A bare `count == 7` would fail too, and with nothing to
+  read.
+
+  **IT IS LABELLED A TRIPWIRE AND NOT A BEHAVIOUR ROW, AND THAT IT CAN FAIL
+  AGAINST A LEGAL TREE IS MEASURED (TRAPS 6).** Three red readings, each in
+  its own throwaway copy outside the repository with its own `config/name`
+  (TRAPS 50):
+
+  | reconstruction | reading |
+  |---|---|
+  | `_restart_lap()` added to `main.gd` - a fourth placement, the same two lines `_start_driving` uses | **8 sites, 5 in main.gd, failures=1**, naming `main.gd::_restart_lap::car` |
+  | `main.gd:661`'s `npc.place_at` commented out | **6 sites, failures=1**, naming the ROW left with no site |
+  | the same fourth placement AND a table row for it marked `player: true`, `PLAYER_PLACEMENTS` unchanged | **failures=1** on the CLASS row, printing all four members |
+  | the directory read pointed at a path that does not exist | **147 assertions, failures=9** - the floor, the sites row, and one per table row |
+
+  The third is the one worth keeping: it is what a maintainer who sees the
+  first FAIL actually does, and the per-site rows go green while the class row
+  catches it. The fourth is the `FLOORS` row's own measurement.
+
+  **TWO. A SCAN THAT ENUMERATES A CLASS WAS REPORTING MEMBERS THAT DO NOT
+  EXIST, AND IT FOUND ITSELF.** `source_scan_test`'s section 5 failed on the
+  new section, demanding a `COUNTER_EQUALITIES` row for
+  `player_door_test.gd::_the_class_cannot_grow_in_silence::found==found` over
+  a collection in a function that local is not in. **The row was not written.**
+  `_counter_equalities` splits a `_check(` condition into conjuncts on the
+  literal string `" and "`, and the condition reader above it reassembles a
+  multi-line condition with a single space at each line break - so the next
+  conjunct arrives as `1 \t\t\tand ...` and the split silently does not
+  happen. Fed built sources, the committed scanner printed:
+
+  | built source | 133a | after the fix |
+  |---|---|---|
+  | `a == 3` / `and b == a` / `and a > 0` | `a==a,b` | `b==a` |
+  | `a == 3` / `and b > 0` | **`a==b`** | nothing |
+
+  The second row is the finding: **that condition has no equality between two
+  counters in it at all, and the scan reported one.** The boundary is now a
+  whitespace run (`[\t ]+(?:and|or)[\t ]+`), the two rows that hold it are in
+  section 9, and **both were seen red against the committed split** (82
+  assertions, failures=2). **The class on today's `tests/` is UNCHANGED - 4
+  sites in 3 files, the same four rows - measured both ways**, which is why
+  the fix landed here instead of waiting for a cycle of its own. `grep`ed for
+  the class rather than assumed (TRAPS 11): `split(" and ")` and
+  `split(" or ")` occur in exactly one place in `tests/` and `scripts/`.
+  **TRAPS 131.**
+
+  **THREE. AND THE NOTE'S FIRST DRAFT WAS TRAPS 129 ONE LEVEL IN, FOUND BY
+  READING THE RED RUN'S OUTPUT (TRAPS 130).** Section 12's note printed `%d of
+  them can place the body the lap tracker reads` with a number that WAS
+  measured - from the **table**. Under the first red reading the code had four
+  player placements and the table said three, so the note printed *"3 of them
+  can place the body"* under a failure naming the fourth. Every character was
+  a `%` substitution, so TRAPS 129's mechanical check passes it; the check
+  that catches it is asking what each substitution was measured FROM. It now
+  reads `the table marks %d as able to...` and carries `%d with no row here`,
+  which is the fault's own count: the red run prints `1 with no row here`.
+
+  **WHAT WAS WEIGHED AND NOT DONE, WITH THE EVIDENCE, BECAUSE
+  `## Next action` ASKED FOR A DECISION EITHER WAY.** 133 left open whether
+  `checkpoint_tracker.gd:33`-`43`'s header should name the third placement.
+  **It is not edited, and the reason is a measurement rather than the streak.**
+  `tests/player_door_test.gd:1695` - a row that landed in 133 - prints *"the
+  rule 130 wrote holds at the placement neither TRAPS 125 nor
+  checkpoint_tracker.gd names"*. Naming it in the header makes that printed
+  sentence false, so the *"one-line comment edit"* is a two-file edit with a
+  test's own message in it, and the message is TRAPS 129's shape the moment
+  the header moves. Against that: the header does not claim to be exhaustive -
+  it names two placements as the reason `_left_line` exists - and 130's own
+  precedent at `checkpoint_tracker.gd:5`-`7` is that a claim the fix came from
+  is kept as written and corrected elsewhere. **The correction is TRAPS 128,
+  and as of this commit the count is a checked fact rather than a prose
+  claim**, which is worth more than completing one sentence. **It is not
+  carried forward as a task.**
+
+  **THE SWEEP, RUN BEFORE ANY DOCUMENT PARAGRAPH WAS WRITTEN** (TRAPS 126's
+  third "Do", with the line-start anchor 132 and 133 both needed): **TRAPS
+  1-129 all present and every `TRAPS n` reference resolves; HDN 1-43 all
+  present (4 and 5 struck) and no dangling `HDN n` reference in either
+  document; all 14 `docs/...` paths named anywhere in the repository exist.**
+  This commit then added TRAPS 130 and TRAPS 131, so a sweep on the pushed
+  tree reads 1-131. **No new "Human decision needed".**
+
+- Last commit before this one: **133a**, and it is **DOCS ONLY** - 0
   lines of diff in `scripts/`, `scenes/`, `tests/`, `netlify/`, `.github/`,
   `project.godot` and both runners, confirmed by `git diff --name-only`. It
   carries **one measurement and nothing else, and it was taken rather than
@@ -11340,7 +11452,60 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
-**THE LATEST RUN IS 133a's, AND IT IS A FRESH `git clone` OF THE PUSHED
+**THE LATEST RUN IS 134's, ON ITS OWN CHANGED TREE, AND THREE SUITES' COUNTS
+MOVED.** `--all` through `run_tests.sh`, `user://` cleared by deleting
+`app_userdata/AI_Game_Builder` before it, Godot
+**`4.7.1.stable.official.a13da4feb`** (binary md5
+**`c083304672e2b4264cfb7f823aba095f`**): md5
+**`717e20a08a4a7d5239d0c4ad6137afe0`**, **85 suites, 0 with something to look
+at**, `player_door_test` **154, failures=0**, `source_scan_test` **82,
+failures=0**, `scan_floor_test` **151, failures=0**, `halt_cause_test` **53,
+failures=0**, `drive_test` **24, failures=0**, `session_test` **18,
+failures=0**, `result_line_test` **370, failures=0**. **228 s wall**, timed
+with `time` around the runner. **The runner wrote 0 bytes to stderr** - the
+capture holds 43 bytes and all 43 are `time`'s own three lines, counted with
+`wc -c` against a rebuilt copy of them rather than eyeballed.
+
+**THE `diff` AGAINST 134's OWN BASELINE IS THREE LINES, AND THAT IS THE WHOLE
+EFFECT OF THE CHANGE**: `player_door_test` **130 -> 154**,
+`scan_floor_test` **147 -> 151** and `source_scan_test` **80 -> 82**. Every
+other suite's line is byte-identical, read off `diff` rather than by eye.
+
+**AND THE BASELINE WAS AN INDEPENDENT CONTAINER ON THE PUSHED `cae0c70`
+(133a), WHICH IS THE READING `133a` SAID THE NEXT FIRING WOULD GET FOR
+NOTHING.** Its own container, its own Godot download (same binary md5),
+`git status --porcelain` **EMPTY**, `user://` cleared: md5
+**`fdf2d136a5261b1c2d202d5ca01af15a`**, **85 suites, 0 to look at**,
+`player_door_test` **130**, `scan_floor_test` **147**, `source_scan_test`
+**80**, 238 s wall - **byte-identical to what 133 recorded on its changed
+tree and `133a` read off the remote**. Sixth container, same number.
+**Nothing is owed on it.**
+
+**ONE NUMBER IN THE RECORD WAS WRONG AND IS CORRECTED BY THIS RUN, WHICH IS
+WHY A BASELINE IS TAKEN AND NOT ASSUMED.** 134's own intermediate run - section
+12 written, the `FLOORS` row not yet - read `scan_floor_test` **148,
+failures=1**, and that 148 was briefly written down here as the baseline. The
+baseline is **147**: the 148th assertion is the one section 12's new directory
+read created, and it was the FAIL. `scan_floor_test` caught the new read by
+name and demanded a row saying what fails when it comes back empty, which is
+the suite doing exactly its job.
+
+**BOTH CONFIGURATIONS WERE TAKEN FOR `player_door_test`, THOUGH IT IS IN
+NEITHER RUNNER'S FLAG LIST** (HDN 43 is about the seven that differ, and this
+is not one of them): **154, failures=0 at `--fixed-fps 120`, 2 s wall**, and
+**154, failures=0 with no flag, 24 s wall**. Section 12 reads source and steps
+no physics, so it costs about **0 s** either way; the 24 s is what the
+driving sections have always cost without the flag. **Both runners are 0 lines
+of diff**, and `run_tests.bat` needed no edit because no suite was added.
+
+**WHAT A GREEN RUN LOOKS LIKE, FOR A SESSION READING THIS TO FIND OUT:** 85
+suites, `suites with something to look at: 0`, and the suites worth naming at
+`player_door_test` **154**, `source_scan_test` **82**, `scan_floor_test`
+**151**, `halt_cause_test` **53**, `drive_test` **24**, `session_test` **18**,
+`result_line_test` **370**. If `player_door_test` reads 130 you are on 133a or
+earlier.
+
+**THE RUN BEFORE IT ALL IS 133a's, A FRESH `git clone` OF THE PUSHED
 `dc6767c` (133)**: its own directory outside the repository, `git status
 --porcelain` EMPTY before and after, `user://` cleared by deleting
 `app_userdata/AI_Game_Builder`, Godot `4.7.1.stable.official.a13da4feb` -
@@ -11412,10 +11577,15 @@ added to one; **both runners are 0 lines of diff**, and `run_tests.bat` needed
 no edit because no suite was added - checked by running all thirteen of its
 `findstr` patterns against both names, and none matches.
 
-**WHAT A GREEN RUN LOOKS LIKE, FOR A SESSION READING THIS TO FIND OUT:** 85
+~~**WHAT A GREEN RUN LOOKS LIKE, FOR A SESSION READING THIS TO FIND OUT:** 85
 suites, `suites with something to look at: 0`, and the six suites worth naming
 at **130 / 53 / 24 / 18 / 370 / 80**. If `player_door_test` reads 113 and
-`halt_cause_test` reads 43 you are on 132a or earlier.
+`halt_cause_test` reads 43 you are on 132a or earlier.~~ **STRUCK IN 134: that
+was current at 133 and is not now** - `player_door_test` is 154,
+`source_scan_test` 82 and `scan_floor_test` 151. Two paragraphs both headed
+*what a green run looks like*, one of them stale, is TRAPS 126's shape, so the
+one that has stopped being current is struck rather than left to be read as an
+alternative. The paragraph at the top of this section is the live one.
 
 **THE RUN BEFORE IT ALL IS 132a's, A FRESH `git clone` OF THE PUSHED
 `04b939b` (132)**: `git status --porcelain` EMPTY before and after, `user://`
@@ -19774,6 +19944,102 @@ and recorded because it is what made this commit's own suite vacuous.
   and it is a move rather than a fix. Left for whoever has a reason.
 
 ## Next action
+
+**134 OWES ONE MEASUREMENT AND IT IS A FRESH `git clone` OF ITS OWN PUSHED
+COMMIT.** Everything else it could take, it took: its own independent
+baseline on the pushed `cae0c70` (133a) reproduced
+`fdf2d136a5261b1c2d202d5ca01af15a` byte for byte from a sixth container,
+which closes `133a`'s one open item; `--all` on its own changed tree reads
+`717e20a08a4a7d5239d0c4ad6137afe0`, 85 suites, 0 to look at, and the `diff`
+against that baseline is **three lines**; `player_door_test` was taken in
+both configurations. **What it did NOT take is a clone of its own push**, so
+a `134a` carrying that one reading - and nothing else - is honest work if the
+cycle has the minutes for it. **It is not worth a cycle of its own**: nothing
+in `scripts/` changed, so a re-run of the pushed tree can only reproduce the
+number above, and a firing that has real work in front of it should do the
+work. **DO NOT RE-TAKE ANY OF THE REST OF IT.**
+
+**BOTH ITEMS THIS FILE CARRIED SINCE 133 ARE DONE, AND ONE OF THEM IS CLOSED
+RATHER THAN DONE.** The tripwire is written (`player_door_test` section 12,
+`PLACE_AT_SITES`, three red readings plus the empty-read reading, all in the
+134 entry - **DO NOT RE-TAKE THEM**). And the second item - whether
+`checkpoint_tracker.gd:33`-`43`'s header should name the third placement -
+**was decided NO, with a measurement, and is not carried forward**: naming it
+there makes `player_door_test.gd:1695`'s own printed sentence false, so the
+"one-line comment edit" is a two-file edit with a test message in it. The
+reasoning is in the 134 entry. **`scripts/` is still 0 lines of diff and the
+streak stands at six commits** (`130a`, `131`, `132`, `132a`, `133`, `133a`,
+and `134` the seventh), counted with `git rev-list a67a8aa..HEAD` and a
+per-commit `git diff --name-only`.
+
+**SO THE FIRST THING TO DO NOW IS THE ONE 134 FOUND AND COULD NOT FINISH
+HONESTLY IN ITS OWN CYCLE: THE OTHER EIGHT PROPERTIES OF
+`_counter_equalities` ARE HELD ONLY OVER SINGLE-LINE CONDITIONS.** TRAPS 131
+is that this scan reported a site that does not exist, because its conjunct
+split was a literal `" and "` and a condition continued across lines arrives
+with tabs in it. The split is fixed and the multi-line case is now driven in
+`source_scan_test` section 9 - **two rows, both seen red against the
+committed split**. What is NOT done is the rest of that section: its nine
+other built sources are all one-liners, so each of the properties they hold
+(`a == 3` is not a site, a sum against `.size()` is, a commented-out
+`_check` is not, a bracket in a message does not run the reader past the end)
+**is held only for the shape that was easy to type**. Each one is a
+three-line addition to the same section and each can be measured both ways
+the way the two new rows were - `_counter_equalities()` takes a String, so no
+scene and no physics is needed and a reading takes seconds. **Do them one
+built source at a time and read the output, not the count** - the two that
+landed in 134 were written only after the function was fed the source and
+asked what it said. Expect at least one of the nine to disagree with its
+single-line sibling; if none does, that is a result worth writing down too.
+
+**AND THE SECOND IS THE SAME QUESTION ASKED OF THE OTHER SCANS, WHICH IS A
+READ AND NOT A CHANGE (TRAPS 11).** `_counter_equalities` is not the only
+function in `tests/` that reads a `_check(` condition or a multi-line
+construct out of source. `source_scan_test` alone has `_registry_calls`,
+`_class` and `_code_of`; `scan_floor_test`, `result_line_test` and
+`formula_test` each read source the same way. **The rule TRAPS 131 produced -
+a boundary in source text is a whitespace run, not a character - was grepped
+for and `split(" and ")` occurs in exactly one place.** That is the literal
+instance closed. The CLASS is wider: any of those readers that assumes a
+construct fits on one line has the same fault in a different costume, and
+nobody has asked them. One command to start: find every `.split("` and every
+`.find("` in `tests/` whose needle contains a space, and read each one
+against a multi-line example. **Write down what each one does rather than
+fixing what you find in the same breath** - 134's fix was safe only because
+the class on today's `tests/` was measured unchanged both ways first.
+
+**BEFORE YOU WRITE ANY DOCUMENT PARAGRAPH, RUN 131's SWEEP** - TRAPS 126's
+third "Do" has the recipe, it is one command, and it has now found a fault in
+three separate cycles. 134 ran it: **TRAPS 1-129 all present and every
+`TRAPS n` reference resolves; HDN 1-43 all present (4 and 5 struck) and no
+dangling `HDN n` reference in either document; all 14 `docs/...` paths named
+anywhere in the repository exist.** (134 then added TRAPS 130 and TRAPS 131,
+so a sweep on the pushed tree reads 1-131 and 1-43.) Note the two parser
+traps, both still live: `H.index('## Human decision needed')` finds the
+**backticked mention** near the top of this file, so anchor the match to a
+line start; and HDN entries are numbered `N. **`, not `### N.`, so a parser
+keyed on a heading finds none and reports a clean sweep over nothing.
+**And when you change a suite's count or an md5, grep for the old number and
+edit the index section that states it** - the other half of TRAPS 126, and
+the half nothing points at. 134 moved `player_door_test` 130 -> 154,
+`source_scan_test` 80 -> 82 and `scan_floor_test` 147 -> 151; `## Run the
+tests first` was edited in the same commit **and the stale "what a green run
+looks like" paragraph two screens below it was STRUCK**, because two
+paragraphs with that heading and different numbers is the fault that section
+is supposed to prevent.
+
+**AND THE RULE 134 WOULD PASS ON ABOVE ANY PARTICULAR TASK, BECAUSE IT IS THE
+ONE 133 PASSED ON AND IT PAID TWICE AGAIN: READ THE RED RUN'S OUTPUT, NOT ITS
+FAILURE COUNT.** TRAPS 130 is a note whose number was measured off the wrong
+source, and it showed itself only in a red run's printed note. TRAPS 131 is a
+scan inventing a class member, and it showed itself only after the function
+was fed a built source and asked what it said - the failure message alone was
+a plausible request for a table row, and writing that row was the wrong move
+that looked like the obvious one. **A suite that fails by name is telling you
+something; what it names is not always what is wrong.**
+
+**WHAT 133 LEFT, KEPT BELOW BECAUSE WHAT IT WAS AND HOW IT CLOSED IS THE PART
+A LATER SESSION READS.**
 
 **133's LEFTOVER IS NOTHING, AND THAT IS A READING AND NOT A PREDICTION.**
 ~~**133 OWES ONE MEASUREMENT AND IT IS A FRESH `git clone` OF ITS OWN PUSHED

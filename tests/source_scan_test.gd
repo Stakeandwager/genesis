@@ -742,6 +742,30 @@ func _run() -> void:
 	_check(str((plain[0] as Dictionary)["coll"]) == "items" and str((plain[0] as Dictionary)["left"]) == "a" and str((plain[0] as Dictionary)["right"]) == "b",
 		"and the collection and both counters are read off the code, which is what the row key is made of")
 
+	# 134: A CONDITION CONTINUED ACROSS LINES, which is the case this read got
+	# wrong from 108 to 133 and the reason the conjunct boundary is now a
+	# whitespace run. BOTH READINGS WERE TAKEN - the committed scanner of 133a
+	# was run over these same two built sources in a throwaway copy outside
+	# the repository - and they are recorded here rather than described:
+	#
+	#   source                              133a reported        now
+	#   `a == 3` / `b == a` / `a > 0`       `a==a,b`             `b==a`
+	#   `a == 3` / `b > 0`                  `a==b`               nothing
+	#
+	# The first is a key for an assertion that is in no source. The SECOND IS
+	# A SITE THAT DOES NOT EXIST: that condition contains no equality between
+	# two counters at all, and the old split reported one, which is a scan
+	# inventing a member of the class it is asked to enumerate. Neither row is
+	# a guard - each one fails against the scanner as it was committed.
+	var multi := two_loops + "\t_check" + "(a == 3\n\t\t\tand b == a\n\t\t\tand a > 0, \"x\")\n"
+	var multi_found := _counter_equalities(multi)
+	_check(multi_found.size() == 1
+			and str((multi_found[0] as Dictionary)["left"]) == "b"
+			and str((multi_found[0] as Dictionary)["right"]) == "a",
+		"a multi-line condition is split at its conjuncts, so the site is the one conjunct that IS the shape: %s" % str(multi_found))
+	_check(_counter_equalities(two_loops + "\t_check" + "(a == 3\n\t\t\tand b > 0, \"x\")\n").is_empty(),
+		"and a multi-line condition with no two-counter equality in it is no site at all, which the single-space split reported as one")
+
 	# DIFFERENT COLLECTIONS ARE NOT THE SHAPE: two counts of two things can
 	# differ for a reason that has nothing to do with either loop.
 	_check(_counter_equalities(decl + "\tfor x in items:\n\t\ta += 1\n\tfor y in others:\n\t\tb += 1\n\t_check" + "(a == b, \"x\")\n").is_empty(),
@@ -1270,10 +1294,27 @@ func _counter_equalities(code: String) -> Array:
 			continue
 		# Each top-level conjunct separately: `a == b and a > 0` is two claims
 		# and only one of them is this shape.
+		#
+		# 134: THE BOUNDARY IS WHITESPACE AND NOT ONE SPACE, which this read
+		# got wrong from 108 to 133. A `_check(` condition continued across
+		# lines is reassembled by the reader above with a single space at each
+		# line break, so the next conjunct arrives as `1 \t\t\tand str(...)` -
+		# and `split(" and ")` does not match a space followed by tabs. The
+		# whole multi-line condition was then treated as ONE comparison, with
+		# `find("==")` taking the first `==` and every counter name mentioned
+		# anywhere after it landing on the right-hand side. That reports a site
+		# that is not one, and it would key a genuine second-conjunct site
+		# wrongly. It cost 134 a diversion: a three-conjunct assertion in
+		# `player_door_test` section 12 whose local was named `found` - a
+		# counter in another function of that file - was classified as
+		# `found==found` over a collection in a function it is not in. See
+		# TRAPS 131. The class on today's `tests/` is UNCHANGED by this fix
+		# (4 sites in 3 files, same four rows, measured both ways), and the
+		# multi-line case is driven in section 9.
 		var parts: Array = []
-		for chunk in condition.split(" and "):
-			for piece in str(chunk).split(" or "):
-				parts.append(str(piece))
+		var conj := RegEx.create_from_string("[\\t ]+(?:and|or)[\\t ]+")
+		for piece in conj.sub(condition, "\u0001", true).split("\u0001"):
+			parts.append(str(piece))
 		for part in parts:
 			var text := str(part)
 			var eq := text.find("==")
