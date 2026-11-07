@@ -11,7 +11,31 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
-- Last commit at the time of writing: **133**, and it is **TWO FILES UNDER
+- Last commit at the time of writing: **133a**, and it is **DOCS ONLY** - 0
+  lines of diff in `scripts/`, `scenes/`, `tests/`, `netlify/`, `.github/`,
+  `project.godot` and both runners, confirmed by `git diff --name-only`. It
+  carries **one measurement and nothing else, and it was taken rather than
+  predicted**: a **fresh `git clone` --branch prototype-002a of the pushed
+  commit `dc6767c` (133)** into its own directory outside the repository,
+  `git status --porcelain` **EMPTY before and after**, `user://` cleared by
+  deleting `app_userdata/AI_Game_Builder`, the same Godot download
+  `4.7.1.stable.official.a13da4feb` (binary md5
+  `c083304672e2b4264cfb7f823aba095f`), `--all` through `run_tests.sh`: md5
+  **`fdf2d136a5261b1c2d202d5ca01af15a`**, **85 suites, 0 with something to
+  look at**, `player_door_test` **130**, `halt_cause_test` **53**,
+  `drive_test` **24**, `session_test` **18**, `result_line_test` **370**,
+  `source_scan_test` **80**, **304 s** wall, stderr **0 bytes**, and the
+  `diff` against 133's committed-tree run is **ZERO LINES**. **SO THE TREE ON
+  THE REMOTE IS THE TREE THAT WAS MEASURED**, and 133's one open item -
+  *"no clone of this push has been run yet"* - is closed.
+
+  **IT IS A READING OF THE REMOTE AND NOT OF AN INDEPENDENT CONTAINER**, said
+  plainly: like 126a through 132a it was taken immediately after the push by
+  the same container and the same Godot download. The next firing gets the
+  stronger reading for nothing by taking its own baseline on `dc6767c`.
+  **133 OWES NOTHING ELSE AND THERE IS NO `133b` TO DO.**
+
+- Last commit before this one: **133**, and it is **TWO FILES UNDER
   `tests/` PLUS THE DOCUMENTS**. `tests/player_door_test.gd` (**113 -> 130
   assertions**: one new section 11, three new consts) and
   `tests/halt_cause_test.gd` (**43 -> 53**: one new section, four new consts,
@@ -11316,8 +11340,19 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
-**THE LATEST RUN IS 133's, ON ITS OWN CHANGED TREE, AND THE NUMBERS THAT MOVED
-ARE TWO SUITES' COUNTS.** `--all` through `run_tests.sh`, `user://` cleared by
+**THE LATEST RUN IS 133a's, AND IT IS A FRESH `git clone` OF THE PUSHED
+`dc6767c` (133)**: its own directory outside the repository, `git status
+--porcelain` EMPTY before and after, `user://` cleared by deleting
+`app_userdata/AI_Game_Builder`, Godot `4.7.1.stable.official.a13da4feb` -
+**md5 `fdf2d136a5261b1c2d202d5ca01af15a`, 85 suites, 0 with something to look
+at, `player_door_test` 130, `halt_cause_test` 53, `drive_test` 24,
+`session_test` 18, `result_line_test` 370, `source_scan_test` 80**, 304 s
+wall, stderr 0 bytes, and the `diff` against 133's committed-tree run is
+**ZERO LINES**. It is a reading of the remote by the same container, not of an
+independent one.
+
+**THE RUNS BEFORE IT ARE 133's, ON ITS OWN CHANGED TREE, AND THE NUMBERS THAT
+MOVED ARE TWO SUITES' COUNTS.** `--all` through `run_tests.sh`, `user://` cleared by
 deleting `app_userdata/AI_Game_Builder` before it, Godot
 **`4.7.1.stable.official.a13da4feb`** (binary md5
 **`c083304672e2b4264cfb7f823aba095f`**): md5
@@ -19741,6 +19776,9 @@ and recorded because it is what made this commit's own suite vacuous.
 ## Next action
 
 **133's LEFTOVER IS NOTHING, AND THAT IS A READING AND NOT A PREDICTION.**
+~~**133 OWES ONE MEASUREMENT AND IT IS A FRESH `git clone` OF ITS OWN PUSHED
+COMMIT.**~~ **TAKEN, IN `133a`, BEFORE THE CYCLE ENDED** - `dc6767c` cloned
+into its own directory, same md5, zero-line diff, 304 s.
 133 ran `--all` on its own changed tree
 (`fdf2d136a5261b1c2d202d5ca01af15a`, 85 suites, 0 to look at,
 `player_door_test` 130, `halt_cause_test` 53) and took its own independent
@@ -19748,9 +19786,10 @@ baseline on the pushed `319a771` first
 (`f9f44ad3b36ed0eb04b8679640f17a8a`, reproduced byte for byte, which closes
 `132a`'s one open item from a fifth container). It also ran both changed
 suites **with and without `--fixed-fps 120`**, which is the pair HDN 43 is
-about. **DO NOT RE-TAKE ANY OF IT.** If a clone-of-the-push reading is wanted
-it is the one measurement 133 did not take, and it is cheap; otherwise take
-your own baseline on `133` and spend the cycle on the work.
+about, and ran its own push back as a clone. **DO NOT RE-TAKE ANY OF IT.**
+Take your own baseline on `dc6767c` if you like it as a habit, because that
+is the independent container `133a` could not be, and then spend the cycle on
+the work.
 
 **BOTH ITEMS THIS FILE HAS CARRIED SINCE 132 ARE DONE. 133 DID THEM.**
 *"`Npc.elapsed` has no row holding it is the simulation's clock"* is false as
