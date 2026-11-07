@@ -10278,3 +10278,105 @@ parser trap.
 document that holds *"there is exactly one live X"* needs that sentence to be
 **counted**, not maintained. Any claim of uniqueness in prose is a claim, and
 it gets checked like one (TRAPS 14).
+
+---
+
+## 136. An ALL-CAPS identifier class that cannot hold a digit either loses the name or truncates it, and which one decides whether anybody hears
+
+**Signature:** a new refusal category is added to `scripts/` and
+`controller_reach_test` prints **`330 assertions, failures=0`** while
+`refusal_reach_test` prints **`219 assertions, failures=3`** — and all three
+failures name a **different category**, the one the new name happens to begin
+with. Following what they name produces three plausible table edits, a green
+suite, and a category that still has no row.
+
+**Cause.** **THIRTEEN regexes in three suites** read an ALL-CAPS identifier out
+of source through the character class `[A-Z][A-Z_]*` or `[A-Z_]+`. **Neither
+admits a digit.** The three domains they read are refusal categories
+(`refusal_reach_test` ×3, `controller_reach_test` ×6), errand outcome codes
+(`errand_outcome_test` ×3) and controller command names
+(`controller_reach_test` ×1), and a digit is legal in all three —
+`FAILED_LAYOUT2`, `GAVE_UP2`, `DELIVERED2` are names somebody will write.
+
+**AND THE COST SPLITS ON ONE DETAIL NOBODY HAD LOOKED AT: whether the class is
+quote-anchored.** It decides which of two different faults you get.
+
+| shape | example | what the reader returns for `X2` |
+|---|---|---|
+| **quote-anchored** — `"([A-Z][A-Z_]*)"` | `errand_outcome_test._assigned`, `._arms`, `._hand_called`; `controller_reach_test`'s five refusal-site forms | **nothing at all** — the closing quote cannot be reached, so the name is **LOST IN SILENCE** |
+| **unanchored** — bare `FAILED_[A-Z][A-Z_]*` | `refusal_reach_test:402`, `:446`; `controller_reach_test:633` | the **prefix**, `FAILED_LAYOUT` — the name is **TRUNCATED** |
+
+**MEASURED, in a throwaway copy with one refusal site
+`_finish_failed(record, "FAILED_LAYOUT2", [...])` added to
+`scripts/game_controller.gd` and nothing else changed:**
+
+| suite | narrow class (as committed through 137a) | widened class |
+|---|---|---|
+| `refusal_reach_test` | 219, **failures=3**, every one naming **`FAILED_LAYOUT`** | 220, **failures=1**, naming **`FAILED_LAYOUT2`** |
+| `controller_reach_test` | 330, **failures=0 — SILENT** | 332, **failures=2**, naming **`FAILED_LAYOUT2`** |
+
+**So the truncating half is LOUD AND MISNAMING and the anchored half is
+SILENT.** The three red lines the narrow class produced were
+*"`FAILED_LAYOUT` is produced in 4 place(s) and its row says 3"*,
+*"the categories owned both inside and outside the module pipeline are
+`["FAILED_LAYOUT", "FAILED_UNWALKABLE"]`"* and *"`FAILED_LAYOUT` is produced in
+4 places and `LAYOUT_BRANCHES` names 3 of them"*. **Every one is a true
+sentence about a count that moved, and none of them is the fault.** The
+truncated name merged into an existing category's entry, so it inflated that
+category's place count and triggered the staleness checks pinned to it — while
+the thing that actually arrived, a category with no row anywhere, was never
+named by any of the three. **This is TRAPS 130 at a character class: a suite
+that fails by name is telling you something, and what it names is not always
+what is wrong.** The obvious repair — bump the row from 3 to 4, add
+`FAILED_LAYOUT` to `SHARED_WITH_CONTROLLER`, extend `LAYOUT_BRANCHES` — is
+three small edits that produce a green run with the real fault buried.
+
+**And `controller_reach_test`'s silence is the worse half**, because its
+`_refusal_sites()` is a class-enumerating reader (TRAPS 132): the new site was
+not truncated, it was **never enumerated**, so *"every refusal site has a
+row"* stayed true of the sites it could see and said nothing about the one it
+could not. A refusal a player can actually be shown had no row in either
+suite and both printed a pass.
+
+**Do:** when a regex reads an identifier out of source, **make the character
+class the identifier's real domain** rather than the shape of the examples in
+front of you, and widen every member of the class in one commit — there were
+thirteen, in three files, and fixing the one that failed would have left
+twelve (TRAPS 11). The letter-first half is worth keeping and is already
+documented at `refusal_reach_test:400` (*"`FAILED_` on its own is not a
+category: a name needs a letter"*), so the domain is
+`[A-Z][A-Z_0-9]*` and not `[A-Z_0-9]+`.
+
+**And hold it where the reader can be CALLED, not where its text can be
+grepped.** `errand_outcome_test`'s three readers take a `String`, so three
+assertions feed them `GAVE_UP2`, `DELIVERED2` and `ARRIVED2` and require the
+name back whole; against the narrow class all three return **`[]`** and fail
+by name (measured: 47 assertions, failures=3). A sweep for the forbidden
+character class as *text* was considered and rejected: the line that declares
+the needle contains the needle, so the sweep finds itself and has to be
+tricked out of it, and what it would assert is the wording rather than the
+capability (TRAPS 6).
+
+**What this is not.** **It is not a fault a player can meet today, and no line
+of `scripts/` changed.** `scripts/` holds **ZERO** ALL-CAPS string literals
+containing a digit — counted with
+`grep -rhoE '"[A-Z][A-Z_]*[0-9][A-Z_0-9]*"' scripts/*.gd`, which returns
+nothing — so every reading above is of a name that does not exist yet, and the
+widened patterns return byte-identical results on the committed tree
+(`refusal_reach_test` 219/0, `controller_reach_test` 330/0 before and after).
+What makes it worth a commit rather than a line in a notes file is that the
+input is **ordinary**: numbering a second variant of an existing refusal,
+outcome or command is a thing a person does without thinking, and the reading
+above shows it arrives either in silence or wearing another name's clothes.
+
+**The limitation, stated rather than guarded.** Nothing holds that a
+**fourteenth** pattern cannot arrive with the narrow class. The nine readers in
+`refusal_reach_test` and `controller_reach_test` take their source off disk
+rather than as an argument, so they cannot be fed a built identifier from
+inside their own suite the way `errand_outcome_test`'s three can. Closing that
+means giving each file **one reading** of its category pattern — a single
+`static func _category_pattern() -> String` the other call sites concatenate —
+and asserting that one pattern matches `FAILED_X2`. That is the project's own
+"One reading" rule applied to a regex, it is a real refactor of six embedded
+patterns in `controller_reach_test`, and it is its own commit with its own
+baseline.

@@ -487,7 +487,7 @@ static func _body_of(code: String, header: String) -> String:
 static func _assigned(code: String) -> Array:
 	var found: Dictionary = {}
 	var assign := RegEx.create_from_string("\\boutcome[ \t]*:?=[ \t]*(.+)$")
-	var literal := RegEx.create_from_string("\"([A-Z][A-Z_]*)\"")
+	var literal := RegEx.create_from_string("\"([A-Z][A-Z_0-9]*)\"")
 	for raw in code.split("\n"):
 		var m := assign.search(str(raw))
 		if m == null:
@@ -526,7 +526,7 @@ static func _assigned_in_block(body: String, opener: String) -> Array:
 # literal and a colon.
 static func _arms(body: String) -> Array:
 	var found: Dictionary = {}
-	var arm := RegEx.create_from_string("^[ \t]*\"([A-Z][A-Z_]*)\"[ \t]*:[ \t]*$")
+	var arm := RegEx.create_from_string("^[ \t]*\"([A-Z][A-Z_0-9]*)\"[ \t]*:[ \t]*$")
 	for raw in body.split("\n"):
 		var m := arm.search(str(raw))
 		if m != null:
@@ -537,7 +537,7 @@ static func _arms(body: String) -> Array:
 # Every ALL-CAPS literal handed to a named function at a call site.
 static func _hand_called(code: String, fn: String) -> Array:
 	var found: Dictionary = {}
-	var call := RegEx.create_from_string(fn + "\\([ \t]*\"([A-Z][A-Z_]*)\"")
+	var call := RegEx.create_from_string(fn + "\\([ \t]*\"([A-Z][A-Z_0-9]*)\"")
 	for m in call.search_all(code):
 		found[m.get_string(1)] = true
 	return _sorted(found)
@@ -684,6 +684,29 @@ func _vocabulary_controls() -> void:
 			_assigned(_body_of(pair, "func finish_order("))))
 	_check(_base_returns(two_arms) == ["\"Nothing happened.\""],
 		"and the fall-through reader ignores the returns inside the arms (%s)" % str(_base_returns(two_arms)))
+
+	# A DIGIT IN THE NAME (138). All three readers took an ALL-CAPS identifier
+	# to be letters and underscores only, so a name carrying a digit came back
+	# TRUNCATED rather than missing - and a truncation that lands on a name
+	# that already exists is SILENT, because the new name merges into the old
+	# one's entry and no "has a row" assertion has anything to complain about.
+	# These three fail against the character class this file carried until 138
+	# and pass against the widened one. The reason they are readings and not a
+	# table: `scripts/` holds ZERO ALL-CAPS literals with a digit today
+	# (counted), so nothing here is a claim about the current tree.
+	var digit_assign := "\toutcome = \"GAVE_UP2\"\n"
+	_check(_assigned(digit_assign) == ["GAVE_UP2"],
+		"an outcome name carrying a DIGIT is read whole, not truncated to the existing name it starts with (%s)" % str(
+			_assigned(digit_assign)))
+
+	var digit_arm := "\tmatch outcome:\n\t\t\"DELIVERED2\":\n\t\t\treturn \"a\"\n"
+	_check(_arms(digit_arm) == ["DELIVERED2"],
+		"and so is a match ARM's name (%s)" % str(_arms(digit_arm)))
+
+	var digit_hand := "\toutcome_line(\"ARRIVED2\", room, 0.0, 0.0)\n"
+	_check(_hand_called(digit_hand, "outcome_line") == ["ARRIVED2"],
+		"and so is one HANDED to a named function, which is the reader row D uses (%s)" % str(
+			_hand_called(digit_hand, "outcome_line")))
 
 
 func _run() -> void:

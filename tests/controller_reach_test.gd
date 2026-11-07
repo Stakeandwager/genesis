@@ -512,11 +512,11 @@ func _answers(category: String, branch: String) -> void:
 func _refusal_sites() -> Dictionary:
 	var found := {}
 	var forms := [
-		"_finish_failed\\(\\s*record\\s*,\\s*(\"FAILED_[A-Z_]+\"|[A-Z_]+|[a-z_]+\\[\"category\"\\])",
-		"_finish_nothing\\(\\s*(?:record|_new_record\\([^)]*\\))\\s*,\\s*(\"FAILED_[A-Z_]+\"|[A-Z_]+)",
-		"record_rejection\\(\\s*(\"FAILED_[A-Z_]+\"|\"UNSUPPORTED\")",
-		"\\w+\\[\"category\"\\]\\s*=\\s*(\"FAILED_[A-Z_]+\")",
-		"\"category\"\\s*:\\s*(\"FAILED_[A-Z_]+\")",
+		"_finish_failed\\(\\s*record\\s*,\\s*(\"FAILED_[A-Z][A-Z_0-9]*\"|[A-Z][A-Z_0-9]*|[a-z_][a-z_0-9]*\\[\"category\"\\])",
+		"_finish_nothing\\(\\s*(?:record|_new_record\\([^)]*\\))\\s*,\\s*(\"FAILED_[A-Z][A-Z_0-9]*\"|[A-Z][A-Z_0-9]*)",
+		"record_rejection\\(\\s*(\"FAILED_[A-Z][A-Z_0-9]*\"|\"UNSUPPORTED\")",
+		"\\w+\\[\"category\"\\]\\s*=\\s*(\"FAILED_[A-Z][A-Z_0-9]*\")",
+		"\"category\"\\s*:\\s*(\"FAILED_[A-Z][A-Z_0-9]*\")",
 	]
 	for name in CONTROLLER_FILES:
 		var file := FileAccess.open("res://scripts/" + name, FileAccess.READ)
@@ -630,7 +630,7 @@ func _enumeration() -> void:
 			scanned += 1
 			var text := f.get_as_text()
 			f.close()
-			var re := RegEx.create_from_string("FAILED_[A-Z][A-Z_]*")
+			var re := RegEx.create_from_string("FAILED_[A-Z][A-Z_0-9]*")
 			for m in re.search_all(text):
 				every[m.get_string()] = true
 	# 078: THE FLOOR. Every assertion below this comes out of the loop above,
@@ -907,7 +907,7 @@ func _guard_no_handler() -> void:
 	var guarded := {}
 	for raw_line in body.split("\n"):
 		var line := str(raw_line)
-		var re := RegEx.create_from_string("^\\t\\t\"([A-Z_]+)\"")
+		var re := RegEx.create_from_string("^\\t\\t\"([A-Z][A-Z_0-9]*)\"")
 		var m := re.search(line)
 		if m == null:
 			continue

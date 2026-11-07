@@ -399,7 +399,7 @@ func _categories_in_source(code_only: bool) -> Dictionary:
 		var text := _code_of(raw) if code_only else raw
 		# FAILED_ on its own is not a category: experiment_runner strips the
 		# prefix off one with replace("FAILED_", ""). A name needs a letter.
-		var re := RegEx.create_from_string("FAILED_[A-Z][A-Z_]*")
+		var re := RegEx.create_from_string("FAILED_[A-Z][A-Z_0-9]*")
 		for m in re.search_all(text):
 			var cat := m.get_string()
 			if not found.has(cat):
@@ -437,13 +437,13 @@ func _sites_in_code() -> Dictionary:
 		file.close()
 
 	var decl := RegEx.create_from_string(
-		"const[ \t]+([A-Z][A-Z_0-9]*)[ \t]*:=[ \t]*\"(FAILED_[A-Z][A-Z_]*)\"")
+		"const[ \t]+([A-Z][A-Z_0-9]*)[ \t]*:=[ \t]*\"(FAILED_[A-Z][A-Z_0-9]*)\"")
 	var alias := {}
 	for name in sources:
 		for m in decl.search_all(str(sources[name])):
 			alias[m.get_string(1)] = m.get_string(2)
 
-	var literal := RegEx.create_from_string("FAILED_[A-Z][A-Z_]*")
+	var literal := RegEx.create_from_string("FAILED_[A-Z][A-Z_0-9]*")
 	var by_alias := {}
 	for a in alias:
 		by_alias[a] = RegEx.create_from_string("(^|[^A-Za-z_0-9])" + str(a) + "([^A-Za-z_0-9]|$)")
