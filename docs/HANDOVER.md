@@ -11,7 +11,149 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
-- Last commit at the time of writing: **132a**, and it is **DOCS ONLY** - 0
+- Last commit at the time of writing: **133**, and it is **TWO FILES UNDER
+  `tests/` PLUS THE DOCUMENTS**. `tests/player_door_test.gd` (**113 -> 130
+  assertions**: one new section 11, three new consts) and
+  `tests/halt_cause_test.gd` (**43 -> 53**: one new section, four new consts,
+  one new helper, one new array). **`scripts/`, `scenes/`, `netlify/`,
+  `.github/`, `project.godot` and both runners are 0 LINES OF DIFF**,
+  confirmed by `git diff --name-only` and not by intention, so **nothing a
+  player meets changed** and **no fault was fixed**: both new sections hold
+  rules that were already right. The `diff` of the `--all` output against the
+  baseline is **TWO LINES, and they are the two suites changed**.
+
+  **WHAT IT DID, ITEM BY ITEM, AND THE FIRST TWO ARE THE TWO THINGS `## Next
+  action` HAS NAMED SINCE 132.**
+
+  **ONE. `Npc.elapsed` NOW HAS ROWS HOLDING IT IS THE SIMULATION'S CLOCK, AND
+  THEY ARE A MEASUREMENT AND NOT A GUARD.** This file said to label them a
+  guard because *"the clock there is already right, so the row cannot fail
+  against today's tree"*. **That was true of today's tree and false of the row
+  (TRAPS 6 cuts both ways):** the question a row has to answer is whether a
+  legal implementation could make it fail, and the wall clock 128 took OUT of
+  `checkpoint_tracker.gd` is exactly such an implementation. So it was
+  reconstructed - `elapsed` set from `Time.get_ticks_msec()` in a throwaway
+  copy outside the repository with its own `config/name` (TRAPS 50) - and the
+  new rows **ran red in BOTH configurations**:
+
+  | tree | flag | ledger said | simulated | wall | band | player was told |
+  |---|---|---|---|---|---|---|
+  | today | `--fixed-fps 120` | **9.7000 s** | 9.7458 s | 0.2340 s | 4.87-14.62 | *"35 m in 10 seconds"* |
+  | today | none | **9.7000 s** | 9.7458 s | 19.5060 s | 4.87-14.62 | *"35 m in 10 seconds"* |
+  | wall clock | `--fixed-fps 120` | **0.2000 s** | 9.7458 s | 0.2340 s | 4.87-14.62 | *"35 m in **0 seconds**"* |
+  | wall clock | none | **19.5000 s** | 9.7458 s | 19.5060 s | 4.87-14.62 | *"35 m in **20 seconds**"* |
+
+  **THREE of the new rows fail in each red column** - the field mid-walk, the
+  ledger's `"seconds"`, and the number dug back out of the sentence - and the
+  bottom row is the one worth keeping: *an errand that walked 35 m told the
+  player it took 0 seconds*, which is 127's lap reading 0.000 s arriving at a
+  different clock. **The verdict is NOT taken from `elapsed`.** It is taken
+  from `main.controller.last_outcome_record["seconds"]`
+  (`game_controller.gd:443`) and from the sentence
+  `NpcGoals.outcome_line` builds (`npc_goals.gd:380`), which is what a player
+  actually meets (TRAPS 14); one row reads the field itself, mid-walk, and
+  says so.
+
+  **AND THE SUITE WAS NOT BLIND BEFORE - IT WAS BLIND IN ONE OF THE TWO
+  CONFIGURATIONS, WHICH IS A SHARPER SENTENCE AND IS MEASURED.** The existing
+  cap row (`THE CAP IS REACHABLE BY A LEGAL REQUEST`) **does** fail against a
+  wall clock with `--fixed-fps 120`, because the 90 s cap is never reached;
+  **without the flag it passes**, because the errand still gives up. So
+  *"nothing held this clock"* would have been too strong and is not written
+  anywhere. What is true: nothing held it as a **claim about the clock**, and
+  the one row that caught it caught it only under the flag - which is new
+  **HDN 43**, because `run_tests.bat` does not pass that flag to this suite.
+
+  **TWO. THE OTHER TWO PLACEMENTS INSIDE THE START LINE'S `REACH` ARE NOW
+  HELD, AND THERE TURNED OUT TO BE A THIRD NOBODY HAD NAMED (TRAPS 128).**
+  TRAPS 125 names **two** - `/drive` and the `/race` grid - and
+  `checkpoint_tracker.gd:33`-`43` names the same two by file and line.
+  `grep -rn place_at scripts/` is **nine lines**, three of which place the
+  player's car, and the third is **`main.gd:265`: a world rebuilt while
+  driving**. A `CREATE_TRACK` that succeeds while the player is driving
+  re-spreads the checkpoints (`:261`) and puts the car back on the new start
+  line (`:265`) - inside `REACH`, from a standstill, with the clock re-armed,
+  which is every condition TRAPS 125 is about. **Named by neither document and
+  held by no row, and reachable by typing one command.** It behaves correctly
+  today, and the reason is worth keeping: 130's fix went into
+  `update_progress`, which all three placements go through, so the rule
+  covered a member nobody had enumerated.
+
+  **FIVE OF SECTION 11's ROWS WERE SEEN RED**, against the first version of
+  130's fix reconstructed in its own throwaway copy (`checkpoints[0]` a target
+  like the other eleven, no `_left_line` guard): `lap_started` **true on the
+  frame the grid was formed**; true somewhere in the **436 frames of
+  countdown**; **true on the frame the rebuild replaced the car**; and true
+  somewhere in the **240 frames** it was then held at zero throttle. The same
+  reconstruction reproduced **132's six** - section 8's lap-sum row and
+  section 10's five - **which is independent corroboration that the
+  reconstruction is faithful**, and is why the five above can be read as the
+  fault and not as an artefact. **10 failures in all.** The two rows labelled
+  **GUARD** stayed green, as labelled.
+
+  **THE GRID IS HELD GEOMETRICALLY AND THE REASON IS A MEASUREMENT (TRAPS 127,
+  TRAPS 11).** A real throttle cannot reach it: `race_director.gd:140`-`141`
+  clears `_player.auto_drive` every physics frame while the race runs. So what
+  is held is what needs no throttle and is the half the fault was in - the car
+  is placed inside `REACH` (**23.41 m** of `REACH` **30.0 m**, measured not
+  typed) and **no lap starts on any frame of the countdown**. Nothing in
+  `scripts/` was changed to make a row reachable.
+
+  **AND THE SECTION READS NO FIELD 130 ADDED, WHICH IS WHAT LETS IT BE RUN
+  RED.** `_left_line`, `_began_at_line` and `_seen` are 130's fix; a section
+  that reads them cannot parse against the version that lacks them. Every row
+  reads only `lap_started`, `lap_count`, `checkpoints` and `_clock`.
+
+  **THE CONTROL IS PRODUCTION'S OWN LINE (TRAPS 6).** *"`lap_started` stayed
+  false"* is also what a tracker that was never shown the car would say.
+  `main.gd:858` calls `update_progress` and `:862` writes *"Race starts in
+  N..."* in the **same** `_process`, one line further down - so the label
+  carrying that sentence is production saying it ran past the call. Sampled on
+  the countdown frames themselves: **434 of 434** without the flag, **360 of
+  360** with it.
+
+  **THREE. TWO FAULTS IN 133's OWN FIRST DRAFT, BOTH FOUND BY READING THE RED
+  RUN RATHER THAN ITS FAILURE COUNT.** Neither is in `scripts/`.
+  **(a)** Two GUARD rows compared the tracker's clock against a count of
+  **process** frames while the clock advances in `_physics_process`; without
+  `--fixed-fps` those are not the same count (**434 process / 360 physics**)
+  and both rows failed green-tree. Now read off `Engine.get_physics_frames()`.
+  **(b)** A note printed *"lap_started false throughout"* as **typed words
+  beside measured numbers**, so it printed that sentence under a red run too -
+  **new TRAPS 129**. Both notes now interpolate the measured boolean.
+  **And a third, in the same family:** the sentence row first compared
+  `"in %.0f seconds"` of the record's **snapped** value against a sentence
+  built from the **raw** value, which can land either side of a half - it read
+  *"wanted in 20 seconds, got in 19 seconds"* on the no-flag wall-clock run,
+  failing for a reason that was nothing to do with the clock. It now digs the
+  number out of the sentence and bands **that**, which needs no agreement
+  between two roundings and is the stronger claim.
+
+  **WHAT IT DID NOT DO.** It changed **no** line of `scripts/`, so `go_to`
+  still cannot walk a bent corridor (HDN 40) or reach a room with a thing in
+  it (HDN 39), and the lap-boundary residual (HDN 41) is untouched and still
+  the owner's. HDN 24, 38 and 42 are untouched and none is narrower. **It did
+  not run on the owner's hardware, in a browser, or against a live API key.**
+  **NOTHING HERE TOUCHED A DEPLOYMENT SETTING, A SECRET, A FLAG OR A TARGET.**
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE**: every
+  `OWNER, 2026-[0-9][0-9]-[0-9][0-9]` marker in `HANDOVER.md` and `TRAPS.md`
+  was grepped this commit - **five markers, all in `HANDOVER.md`, all
+  2026-10-14; `TRAPS.md` carries none** - so the last owner session on record
+  is still 2026-10-14.
+  New **TRAPS 128** and **TRAPS 129**. New **HDN 43**.
+
+  **AND IT CLOSED `132a`'s ONE OPEN ITEM FOR NOTHING, AS THAT ENTRY SAID IT
+  WOULD.** `132a` said its reading was of the remote and not of an independent
+  container. **Taken:** this container's own checkout, its own Godot download
+  (`4.7.1.stable.official.a13da4feb`, binary md5
+  `c083304672e2b4264cfb7f823aba095f`), `git status --porcelain` **EMPTY**,
+  `user://` cleared, `--all` on the pushed `319a771` before a file was
+  touched - md5 **`f9f44ad3b36ed0eb04b8679640f17a8a`**, **85 suites, 0 with
+  something to look at**, `player_door_test` **113**, 234 s wall, stderr 0
+  bytes. **BYTE-IDENTICAL to what 132 and 132a recorded**, from a fifth
+  container. **Nothing is owed on it.**
+
+- Last commit before this one: **132a**, and it is **DOCS ONLY** - 0
   lines of diff in `scripts/`, `scenes/`, `tests/`, `netlify/`, `.github/`,
   `project.godot` and both runners. It carries **one measurement and nothing
   else, and it was taken rather than predicted**: a **fresh `git clone`
@@ -11174,7 +11316,73 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
-**THE LATEST RUN IS 132a's, AND IT IS A FRESH `git clone` OF THE PUSHED
+**THE LATEST RUN IS 133's, ON ITS OWN CHANGED TREE, AND THE NUMBERS THAT MOVED
+ARE TWO SUITES' COUNTS.** `--all` through `run_tests.sh`, `user://` cleared by
+deleting `app_userdata/AI_Game_Builder` before it, Godot
+**`4.7.1.stable.official.a13da4feb`** (binary md5
+**`c083304672e2b4264cfb7f823aba095f`**): md5
+**`fdf2d136a5261b1c2d202d5ca01af15a`**, **85 suites, 0 with something to look
+at**, `player_door_test` **130, failures=0**, `halt_cause_test` **53,
+failures=0**, `drive_test` **24, failures=0**, `session_test` **18,
+failures=0**, `result_line_test` **370, failures=0**, `source_scan_test` **80,
+failures=0**. **260 s wall**, timed with `date` around the runner, **stderr 0
+bytes**.
+
+**AND IT WAS RUN TWICE, WITH THE DOCUMENT EDITS IN BETWEEN, WHICH IS THE
+MEASUREMENT RATHER THAN THE CLAIM EVERY DOCS-CARRYING COMMIT LEANS ON.** The
+first `--all` was on the changed code tree with both documents still
+untouched (**260 s**); the second on the tree **as committed**, with this
+commit's document insertions already in place - **444 of them at that moment,
+which is not the final figure and is said so on purpose**, since this
+paragraph was written after that run - and with the comment-only line-number
+correction to `tests/halt_cause_test.gd` (`game_controller.gd:444` -> `:443`,
+which was wrong) already applied, so the second run is the code tree as
+committed. **md5 `fdf2d136a5261b1c2d202d5ca01af15a` both times, 85 suites, 0
+to look at, `diff` between the two ZERO LINES, 247 s, stderr 0 bytes each.**
+**What makes the trailing paragraph harmless is the grep and not the
+promise**, re-measured this commit: 30 lines under `tests/` and `scripts/`
+contain the string `docs/`, **29 are comments**, the one that is not is a
+failure *message* at `field_type_test.gd:635`, and no `FileAccess`, `load(`
+or `open(` anywhere in either directory names a `docs/` path.
+
+**THE `diff` AGAINST 133's OWN BASELINE IS TWO LINES, AND THAT IS THE WHOLE
+EFFECT OF THE CHANGE**: `halt_cause_test` **43 -> 53** and `player_door_test`
+**113 -> 130**. Every other suite's line is byte-identical, read off `diff`
+rather than by eye.
+
+**AND THE BASELINE WAS AN INDEPENDENT CONTAINER ON THE PUSHED `319a771`
+(132a), WHICH IS THE READING `132a` SAID THE NEXT FIRING WOULD GET FOR
+NOTHING.** Its own checkout, its own Godot download, `git status --porcelain`
+**EMPTY before and after**, `user://` cleared: md5
+**`f9f44ad3b36ed0eb04b8679640f17a8a`**, **85 suites, 0 to look at**,
+`player_door_test` **113**, 234 s wall, stderr 0 bytes - **byte-identical to
+what 132 recorded on its changed tree and `132a` read off the remote**. Fifth
+container, same number. **Nothing is owed on it.**
+
+**AND BOTH NEW SECTIONS WERE READ IN BOTH CONFIGURATIONS, WHICH IS NOT A
+HABIT HERE AND IS THE REASON HDN 43 EXISTS.** `run_tests.sh` gives
+`halt_cause_test` `--fixed-fps 120` and `run_tests.bat` gives it nothing (HDN
+43 names all seven suites that differ, measured by running the `.bat`'s own
+patterns), so both were taken:
+
+| suite | `--fixed-fps 120` | no flag |
+|---|---|---|
+| `halt_cause_test` | **53, failures=0**, 3 s wall | **53, failures=0**, 134 s wall |
+| `player_door_test` | **130, failures=0**, 2 s wall | **130, failures=0**, 24 s wall |
+
+`halt_cause_test` without the flag was **113 s at 43 assertions** before this
+commit, so the new section costs about **21 s** there and about **0 s** with
+the flag. `player_door_test` is in neither runner's flag list and was not
+added to one; **both runners are 0 lines of diff**, and `run_tests.bat` needed
+no edit because no suite was added - checked by running all thirteen of its
+`findstr` patterns against both names, and none matches.
+
+**WHAT A GREEN RUN LOOKS LIKE, FOR A SESSION READING THIS TO FIND OUT:** 85
+suites, `suites with something to look at: 0`, and the six suites worth naming
+at **130 / 53 / 24 / 18 / 370 / 80**. If `player_door_test` reads 113 and
+`halt_cause_test` reads 43 you are on 132a or earlier.
+
+**THE RUN BEFORE IT ALL IS 132a's, A FRESH `git clone` OF THE PUSHED
 `04b939b` (132)**: `git status --porcelain` EMPTY before and after, `user://`
 cleared by deleting `app_userdata/AI_Game_Builder`, Godot
 `4.7.1.stable.official.a13da4feb`, `--all` through `run_tests.sh` - **md5
@@ -19531,6 +19739,95 @@ and recorded because it is what made this commit's own suite vacuous.
   and it is a move rather than a fix. Left for whoever has a reason.
 
 ## Next action
+
+**133's LEFTOVER IS NOTHING, AND THAT IS A READING AND NOT A PREDICTION.**
+133 ran `--all` on its own changed tree
+(`fdf2d136a5261b1c2d202d5ca01af15a`, 85 suites, 0 to look at,
+`player_door_test` 130, `halt_cause_test` 53) and took its own independent
+baseline on the pushed `319a771` first
+(`f9f44ad3b36ed0eb04b8679640f17a8a`, reproduced byte for byte, which closes
+`132a`'s one open item from a fifth container). It also ran both changed
+suites **with and without `--fixed-fps 120`**, which is the pair HDN 43 is
+about. **DO NOT RE-TAKE ANY OF IT.** If a clone-of-the-push reading is wanted
+it is the one measurement 133 did not take, and it is cheap; otherwise take
+your own baseline on `133` and spend the cycle on the work.
+
+**BOTH ITEMS THIS FILE HAS CARRIED SINCE 132 ARE DONE. 133 DID THEM.**
+*"`Npc.elapsed` has no row holding it is the simulation's clock"* is false as
+of 133 - and it is held as a **measurement and not a guard**, which is the
+opposite of what this file told 133 to write. The instruction said the row
+could not fail against today's tree; the test is whether a legal
+implementation could make it fail, and the wall clock 128 removed from
+`checkpoint_tracker.gd` is one. Reconstructed, it reads **0.2000 s** with
+`--fixed-fps` and **19.5000 s** without for an errand the engine simulated in
+**9.7458 s**, and the player is told *"35 m in 0 seconds"*. **DO NOT RE-TAKE
+THOSE NUMBERS** - the four-row table is in this file's 133 entry.
+*"Hold the `/race` placement geometrically"* is done too, in
+`player_door_test` section 11, and **five of its rows were seen red**.
+
+**SO THE FIRST THING TO DO NOW IS THE TRIPWIRE TRAPS 128 ASKS FOR AND 133
+DELIBERATELY DID NOT WRITE.** The class is *every place the player's car is
+placed inside the start line's `REACH`*; it has **three** members
+(`main.gd:728`, `main.gd:265`, `race_director.gd:97`), all three are now held
+by a row, and **nothing fails if a fourth is added**. The row that would hold
+it counts `place_at` call sites in the comment-stripped source of `main.gd`
+and `race_director.gd` and names what to do when the count moves -
+`player_door_test` already scans `res://scripts/main.gd` through `_code_of`
+and is already in `source_scan_test`'s `KNOWN` list, so it is the natural
+home and costs no new file. **133 left it out for one reason, stated rather
+than hidden:** an assertion of the shape `counterA == counterB` in `tests/`
+is classified by `source_scan_test`'s `COUNTER_EQUALITIES` table and needs an
+entry there with a CAN FAIL / CANNOT FAIL verdict, and writing a row whose
+verdict had not been thought through is how that table gets a wrong entry.
+**Read that table first** (`source_scan_test.gd:218`), then decide whether
+the row is a count-against-a-const (which the table does not catch) or a
+genuine equality (which needs the entry). It is small, it can fail the
+moment a fourth placement appears, and it needs nobody.
+
+**AND THE SECOND IS THE OTHER HALF OF TRAPS 128, WHICH IS A READ AND NOT A
+CHANGE.** The class was wrong in **two** documents and in a source header -
+TRAPS 125's *"two placements"* and `checkpoint_tracker.gd:33`-`43`'s same
+two. 133 corrected neither in place: TRAPS 125 is kept as it was written
+because it is the entry the fix came from (the same reason
+`checkpoint_tracker.gd:5`-`7` is kept), and TRAPS 128 is the correction. **If
+you think the source header should name the third member, that is a one-line
+comment edit in `scripts/` and it is the first `scripts/` diff in a while -
+weigh it against the fact that the last commit to touch `scripts/` is
+`a67a8aa` (130) and **the four since it - `130a`, `131`, `132`, `132a` - have
+each claimed "0 lines of diff in `scripts/`", with 133 the fifth** (counted
+with `git rev-list a67a8aa..HEAD` and a per-commit `git diff --name-only`,
+not estimated), and that a comment-only edit still makes that line false.**
+Say which it is in the commit message either way.
+
+**BEFORE YOU WRITE ANY DOCUMENT PARAGRAPH, RUN 131's SWEEP** - TRAPS 126's
+third "Do" has the recipe, it is one command, and it found a fault that had
+survived two commits. 133 ran it: **TRAPS 1-127 all present and every `TRAPS
+n` reference resolves; HDN 1-42 all present (4 and 5 struck) and no dangling
+`HDN n` reference in either document; all 14 `docs/...` paths named anywhere
+in the repository exist.** (133 then added TRAPS 128, TRAPS 129 and HDN 43, so
+a sweep on the pushed tree reads 1-129 and 1-43.) Note the parser trap 132
+hit and 133 hit again: `H.index('## Human decision needed')` finds the
+**backticked mention** of that heading near the top of this file, not the
+heading - anchor the match to a line start. And `## Human decision needed` is
+the **LAST** section of this file, so the block runs to end of file.
+**And when you change a suite's count or an md5, grep for the old number and
+edit the index section that states it**, which is the other half of TRAPS 126
+and the half that is easy to forget because nothing points at it. 133's change
+moved `player_door_test` 113 -> 130 and `halt_cause_test` 43 -> 53;
+`## Run the tests first` was edited in the same commit, and the 113s and 43s
+left standing elsewhere in this file are narrative sentences about what 130 to
+132a measured, which are still true of those commits.
+
+**AND THE RULE 133 WOULD PASS ON ABOVE ANY PARTICULAR TASK, BECAUSE IT COST
+IT TWO FAULTS IN ITS OWN FIRST DRAFT: READ THE RED RUN'S OUTPUT, NOT ITS
+FAILURE COUNT.** A reconstruction run is the only moment a suite's own prints
+are seen under failure, and that is where a note that asserts instead of
+measuring shows itself (TRAPS 129) and where a row that compares two
+roundings of the same number shows itself. Both were found that way and
+neither would have been found by a passing run.
+
+**WHAT 132 LEFT, KEPT BELOW BECAUSE WHAT IT WAS AND HOW IT CLOSED IS THE PART
+A LATER SESSION READS.**
 
 **132's LEFTOVER IS NOTHING, AND THAT IS A READING AND NOT A PREDICTION.**
 132 ran `--all` three times on its own changed tree
@@ -33430,3 +33727,54 @@ container, every run **sequential** with `user://` cleared first (TRAPS 50).
     **If he is absent, LEAVE IT**, and run the sweep by hand each cycle as
     TRAPS 126 says. Nothing goes stale by waiting; the worst case is that the
     next dangling reference lives for a cycle instead of an hour.
+
+43. **SEVEN SUITES GET `--fixed-fps 120` FROM `run_tests.sh` AND NOT FROM
+    `run_tests.bat`, SO "THE SUITE PASSES" MEANS A DIFFERENT THING ON THE TWO
+    RUNNERS.** Found in 133 while checking which configuration its new
+    `halt_cause_test` section would actually run in on the owner's machine.
+    **Measured by RUNNING the `.bat`'s own patterns against each name, not by
+    reading the list.** `run_tests.sh` has **22** suites in `TIMED`;
+    `run_tests.bat:45` matches thirteen substrings, and these seven of the 22
+    match none of them:
+
+    `edit_state_test`, `errand_outcome_test`, `halt_cause_test`,
+    `load_state_test`, `load_shut_test`, `left_body_test`, `report_test`.
+
+    So on Linux those seven run at a fixed 120 Hz tick and on Windows they run
+    at whatever the engine gives them in real time. **This is pre-existing and
+    is not a fault 133 introduced** - it predates this commit and nothing in
+    either runner was touched (both are 0 lines of diff).
+
+    **IT IS NOT HARMLESS EITHER, AND 133 IS THE MEASUREMENT OF WHY.** Its new
+    `halt_cause_test` section separates a simulation clock from a wall clock,
+    and the two configurations are the two directions a wall clock is wrong
+    in: with the flag a wall clock read **0.2000 s** for an errand the engine
+    simulated in **9.7458 s** and the player was told *"35 m in 0 seconds"*;
+    without it the same wall clock read **19.5000 s** and the player was told
+    *"20 seconds"*. The section was deliberately written to fail in **both**,
+    and was run red in both to prove it. **But the existing cap row in the
+    same suite - the only row that had ever read `Npc.elapsed` - fails against
+    a wall clock only WITH the flag**: without it the errand still reaches the
+    90 s cap and the row passes. So for these seven suites the sh runner and
+    the bat runner have genuinely different catching power, and until 133 the
+    only row touching that clock was one of the ones that differ.
+
+    **WHY IT IS HIS AND NOT THE ASSISTANT'S.** The obvious repair is one
+    `/c:` pattern per missing name on `run_tests.bat:45`. That is an edit to
+    the runner the owner executes on hardware this harness cannot reach, in a
+    file every commit's "0 lines of diff" list names, and `findstr` is the
+    tool TRAPS 4 is about - a wrong pattern there silently changes which
+    suites are flagged rather than failing. It is also not obviously the right
+    direction: the other reading is that the **sh** list is too long and some
+    of those seven do not need a fixed tick at all, which is a question about
+    what each suite measures and not a spelling fix.
+
+    **WHAT IS NOT IN DOUBT:** the seven names above, and that 133's two new
+    sections pass in both configurations - `halt_cause_test` **53,
+    failures=0** with the flag and **53, failures=0** without
+    (**134 s** wall without it against **113 s** for the 43-assertion suite
+    before, so the new section costs about **21 s** there and about **0 s**
+    with the flag), and `player_door_test` **130, failures=0** both ways.
+    **Not applied.** If he is absent, **LEAVE IT**: nothing goes stale by
+    waiting, and the rule to follow meanwhile is the one 133 used - run a new
+    section both ways and record both, rather than assuming the runner's list.

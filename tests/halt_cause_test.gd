@@ -126,6 +126,16 @@ var mid_walk := {}
 var at_cap := {}
 var at_nowhere := {}
 
+# 133: the clock section's scale, its band and where it takes its mid-walk
+# reading. The reasoning for every one of them is in that section's header;
+# none of them is an expected number of seconds.
+const CLOCK_SCALE := 0.5
+const CLOCK_FLOOR := 0.5
+const CLOCK_CEILING := 1.5
+const CLOCK_MID_FRAMES := 240
+
+var said: Array = []
+
 
 func _check(ok: bool, what: String) -> void:
 	asserted += 1
@@ -235,6 +245,12 @@ func _on_stopped(why: String, _at: Vector3, seconds: float, travelled: float) ->
 		at_cap = r
 	elif why == "nowhere to go":
 		at_nowhere = r
+
+
+# 133: what the player was told. Connected only for the clock section, and
+# only the last line is read there.
+func _on_said(text: String) -> void:
+	said.append(text)
 
 
 func _settle() -> void:
@@ -558,6 +574,159 @@ func _ordering_section() -> void:
 			src.length(), walker.length()])
 
 
+# --- 133: the seconds an errand reports are the SIMULATION's seconds ---
+#
+# WHY THIS SECTION EXISTS, AND WHY IT IS IN THIS SUITE. `Npc.elapsed` is the
+# last of the three durations Genesis reports about its own world, and the
+# only row that had ever read it is the cap row in `_cap_section` above -
+# which holds that the number reaches `NpcGoals.MAX_SECONDS` and NOT that it
+# is the simulation's clock. 128 found the lap clock was the WALL's from 002B
+# to 127 and changed it, and `checkpoint_tracker.gd:82`-`89` names the other
+# two - `RaceDirector._clock` and this one - as the ones that were already
+# right. "Already right" was a READ of `npc.gd:178` and nothing held it, which
+# is the same shape as the claim 128 found false.
+#
+# WHAT IS ASSERTED IS THE NUMBER A PLAYER MEETS, NOT THE FIELD (TRAPS 14).
+# `elapsed` goes out through `stopped_walking` (`npc.gd:168`),
+# `GameController.finish_order` snaps it to a tenth and writes it into the
+# ledger record as `"seconds"` (`game_controller.gd:443`), and
+# `NpcGoals.outcome_line` puts it in the sentence - *"Got to the vault. 34 m
+# in 6 seconds."* (`npc_goals.gd:380`). So the verdict below is taken from the
+# ledger record and from the sentence the player reads. One row reads the
+# field itself, mid-walk, and it is labelled as that.
+#
+# HOW THE TWO CLOCKS ARE SEPARATED WITHOUT SLEEPING, AND IN EITHER
+# CONFIGURATION (TRAPS 4). `Engine.time_scale` scales the delta the engine
+# hands out and does not touch the wall. At CLOCK_SCALE the SIMULATED span of
+# the errand is what it always was, while the WALL span is 1 / CLOCK_SCALE
+# times it with no `--fixed-fps` and a fraction of it WITH `--fixed-fps`,
+# where frames run as fast as the machine computes them rather than in real
+# time. Both are outside the band, in opposite directions, which is why one
+# scale covers both ways the runner is used. The scale is set BEFORE the ORDER
+# that starts the errand, so every frame it is timed over is a scaled frame.
+#
+# NOTHING HERE IS TYPED IN AS AN EXPECTED NUMBER OF SECONDS. The band is a
+# ratio against the span THIS SUITE stepped - frames this suite counted itself
+# multiplied by `Engine.physics_ticks_per_second` and the scale it set - so
+# the two sides of every comparison have different sources. Change the
+# fixture, the rooms or the tick rate and the rows still hold; put a wall
+# clock back in `npc.gd` and they fail.
+#
+# FRAMES ARE COUNTED ONLY WHILE THE BODY IS `GOING`, and that is not
+# bookkeeping. `elapsed += delta` is in `_steer` (`npc.gd:178`), and
+# `_physics_process` calls `_steer` only in that state (`npc.gd:171`-`173`),
+# so a frame spent WAITING or STOPPED adds nothing and must not be counted
+# against it.
+func _clock_section() -> void:
+	# `_on_stopped` files by halt reason, so an arrival here lands in the same
+	# dict `_arrival_section` used. Its rows have already run; this clears it
+	# so nothing below can read that errand's answer as this one's.
+	at_arrival = {}
+	said = []
+	_make_main()
+	await process_frame
+	await _type(DUNGEON % ROOMS)
+
+	var tick := 1.0 / float(Engine.physics_ticks_per_second)
+	Engine.time_scale = CLOCK_SCALE
+	await _type(ORDER)
+	_check(main.npc != null,
+		"an errand to the vault starts with the engine's time scale at %.2f" % CLOCK_SCALE)
+	if main.npc == null:
+		Engine.time_scale = 1.0
+		await _drop_main()
+		return
+	main.npc.stopped_walking.connect(_on_stopped)
+	main.controller.log_message.connect(_on_said)
+
+	var frames := 0
+	var mid_elapsed := -1.0
+	var wall_at_start := Time.get_ticks_msec()
+	# Derived from the cap the errand would halt at, not chosen: an errand
+	# that gives up does so at MAX_SECONDS of SIMULATED time, which is that
+	# many frames at this scale.
+	var guard := int(ceil(NpcGoals.MAX_SECONDS / (tick * CLOCK_SCALE))) + 1200
+	while frames < guard and main.npc != null and main.npc.state == Npc.GOING:
+		await physics_frame
+		frames += 1
+		if frames == CLOCK_MID_FRAMES:
+			mid_elapsed = main.npc.elapsed
+	var wall_span := float(Time.get_ticks_msec() - wall_at_start) / 1000.0
+	var mid_span := float(CLOCK_MID_FRAMES) * tick * CLOCK_SCALE
+	var sim_span := float(frames) * tick * CLOCK_SCALE
+	for i in 20:
+		await physics_frame
+	Engine.time_scale = 1.0
+
+	_check(str(at_arrival.get("why", "")) == "stopped walking",
+		"and it ends the way an arrival ends, so the duration below is a whole errand's and not a cap's - \"%s\"" % str(at_arrival.get("why", "")))
+	_check(frames > CLOCK_MID_FRAMES and mid_elapsed >= 0.0,
+		"and it walked for longer than the %d frames the mid-walk reading is taken at - %d frames of GOING in all" % [
+			CLOCK_MID_FRAMES, frames])
+
+	# THE FIELD, read while the clock is still running, against a span this
+	# suite chose rather than one the errand chose.
+	_check(mid_elapsed > mid_span * CLOCK_FLOOR and mid_elapsed < mid_span * CLOCK_CEILING,
+		"THE FIELD: %d frames into the walk Npc.elapsed reads the SIMULATED span and not the wall's - %.4f s against %.4f s simulated, band %.4f to %.4f" % [
+			CLOCK_MID_FRAMES, mid_elapsed, mid_span, mid_span * CLOCK_FLOOR, mid_span * CLOCK_CEILING])
+
+	# THE NUMBER A PLAYER MEETS. The ledger's own record, and only this
+	# errand's: a record left over from an earlier one reads as a pass, which
+	# is the guard `errand_outcome_test` wrote for the same reason.
+	var rec: Dictionary = main.controller.last_outcome_record
+	var order: Dictionary = main.controller.last_order_record
+	var mine := not rec.is_empty() and not order.is_empty() \
+		and str(rec.get("about", "")) == str(order.get("id", ""))
+	_check(mine,
+		"and THIS errand wrote the outcome record the row below reads - about \"%s\" against order id \"%s\"" % [
+			str(rec.get("about", "")), str(order.get("id", ""))])
+	if not mine:
+		main.controller.log_message.disconnect(_on_said)
+		await _drop_main()
+		return
+
+	var reported := float(rec.get("seconds", -1.0))
+	_check(reported > sim_span * CLOCK_FLOOR and reported < sim_span * CLOCK_CEILING,
+		"THE NUMBER A PLAYER MEETS: the ledger's \"seconds\" is the SIMULATED duration of the errand and not the wall's - %.4f s against %.4f s simulated over %d frames, wall %.4f s, band %.4f to %.4f" % [
+			reported, sim_span, frames, wall_span, sim_span * CLOCK_FLOOR, sim_span * CLOCK_CEILING])
+	_check(float(rec.get("travelled", 0.0)) > 1.0,
+		"and the errand it is the duration OF really walked - %.1f m in the same record" % float(rec.get("travelled", 0.0)))
+
+	# AND IT REACHES THE SENTENCE, WHOSE OWN NUMBER IS READ OUT AND PUT
+	# THROUGH THE SAME BAND.
+	#
+	# WHY IT IS NOT COMPARED AGAINST THE RECORD'S NUMBER, WHICH IS A FAULT
+	# THIS ROW HAD AND WAS CAUGHT BY RUNNING IT RED. The first draft asserted
+	# that the sentence contained `"in %.0f seconds" % reported`. The record
+	# holds `snappedf(elapsed, 0.1)` (`game_controller.gd:443`) and the
+	# sentence rounds the RAW `elapsed` to the second (`npc_goals.gd:380`), so
+	# the two roundings can land either side of a half: against a wall-clock
+	# `npc.gd` with no `--fixed-fps` the record read 19.5000 s, the row wanted
+	# "in 20 seconds" and the sentence said "in 19 seconds", and the row
+	# failed for a reason that was nothing to do with which clock it was. It
+	# would have flaked on any errand that happened to land on a half-second.
+	# Reading the sentence's own number and banding it needs no agreement
+	# between two roundings, and it is the stronger claim of the two: it is
+	# the duration the PLAYER sees, held against the span this suite stepped.
+	var sentence := str(said[-1]) if not said.is_empty() else ""
+	var dug := RegEx.create_from_string("in ([0-9]+) seconds").search(sentence)
+	_check(dug != null,
+		"and the sentence the player reads carries a duration at all - \"%s\"" % sentence)
+	if dug != null:
+		var told := float(dug.get_string(1))
+		_check(told > sim_span * CLOCK_FLOOR and told < sim_span * CLOCK_CEILING,
+			"AND THAT IS THE DURATION THE PLAYER IS TOLD: the sentence's own number is the SIMULATED duration too - %d s in \"%s\", against %.4f s simulated, band %.4f to %.4f" % [
+				int(told), sentence, sim_span, sim_span * CLOCK_FLOOR, sim_span * CLOCK_CEILING])
+
+	_check(is_equal_approx(Engine.time_scale, 1.0),
+		"and the engine's time scale is back to 1.0 for anything after this (%.2f)" % Engine.time_scale)
+	lines.append("  ERRAND CLOCK: at time_scale %.2f, %d frames of GOING = %.4f s simulated and %.4f s of wall; Npc.elapsed read %.4f s at frame %d of a %.4f s span; the ledger reported %.4f s and the player read \"%s\"" % [
+		CLOCK_SCALE, frames, sim_span, wall_span, mid_elapsed, CLOCK_MID_FRAMES, mid_span, reported, sentence])
+
+	main.controller.log_message.disconnect(_on_said)
+	await _drop_main()
+
+
 func _run() -> void:
 	await _arrival_section()
 	await _stall_section()
@@ -565,6 +734,7 @@ func _run() -> void:
 	await _nowhere_section()
 	await _unreachable_section()
 	_ordering_section()
+	await _clock_section()
 	print("")
 	for l in lines:
 		print(l)

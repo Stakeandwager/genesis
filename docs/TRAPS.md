@@ -9746,3 +9746,114 @@ Found in 132, while writing the real-throttle standing start, after two probe
 runs were read as a fact about the car.
 
 > The flag was set. Something else unset it, a hundred and twenty times a second.
+
+---
+
+## 128. The class was counted in a document, and the code had one more
+
+**Signature:** two documents and a source-file header all agree that a class
+has N members, every one of the N is handled correctly, and the code has
+N + 1 — the extra one reachable by typing one ordinary command.
+
+**Cause.** TRAPS 125 is about a boundary event detected by proximity, and the
+places it can go wrong are the places the player's car is PLACED inside the
+start line's `REACH` before it has driven anywhere. TRAPS 125 names **two**:
+`/drive`, on the line, and the `/race` grid, a row behind it.
+`checkpoint_tracker.gd:33`-`43` — the header of the file that holds the fix —
+names the same two, by file and line. 132 wrote the standing start for the
+first and measured why a test cannot drive the second. Three documents, two
+commits, one number, and nobody had asked the code.
+
+`grep -rn place_at scripts/` is **nine lines**. Three of them place the
+player's car:
+
+```
+main.gd:728            /drive, on the line                     — named
+race_director.gd:97    the /race grid, a row behind the line    — named
+main.gd:265            A WORLD REBUILT WHILE DRIVING            — NAMED BY NOTHING
+```
+
+The third is the tail of `_on_controller_log` (`main.gd:238`), which is where
+a build's result is handled - read off the source rather than guessed at,
+because the first draft of this entry said `_execute_json` and that function
+begins at `main.gd:271`, six lines LATER.
+
+A `CREATE_TRACK` that succeeds while the player is driving re-spreads the
+checkpoints over the new circuit
+(`checkpoint_tracker.initialize`, `:261`) and then puts the car back on the
+new start line (`:265`) — **inside `REACH`, from a standstill, with the lap
+clock re-armed**, which is every condition TRAPS 125 is about. It behaves
+correctly today, and that is the only reason this entry is about a count and
+not about a fault: 130's `_left_line` / `_began_at_line` fix is in
+`update_progress`, which all three placements go through, so fixing the rule
+in the right place covered a member nobody had enumerated. Run against the
+first version of 130's fix the third member reads `lap_started` **true on the
+frame the car was replaced**, exactly as the grid does — measured in 133, and
+now held by a row.
+
+**And the two named members were not equally held either**, which is the same
+shape one level down: `/drive` had a driven row from 132 and the grid had
+none, so "TRAPS 125's class is held" was true of one of two named members and
+one of three real ones.
+
+**Do:**
+
+- **A count of a class in prose is a claim about the code and gets checked
+  like one** — the same rule TRAPS 14 applies to a limitation and TRAPS 126 to
+  a cross-reference. Before relying on *"there are two places this
+  happens"*, grep for the operation and count the call sites. Here one grep
+  of nine lines settled it.
+- **Enumerate from the operation, not from the list you inherited.** The
+  question that found this is *where is the player's car placed?*, asked of
+  `scripts/`, and not *are the two placements handled?*.
+- **Say why each call site is in or out of the class, in the same breath.**
+  `race_director.gd:89` places an opponent and `:333` is `_recover`, reached
+  only for `r["car"] != _player` — so neither can move the body the tracker
+  reads. A member excluded without a reason is a member nobody checked.
+- A member that is correct by inheritance is still worth a row. The rule held
+  at `main.gd:265` because the fix went into the one function all three go
+  through; nothing recorded that, so nothing would have noticed a fourth
+  placement that bypassed it.
+
+Found in 133, while writing the row for the one member 132 could not drive.
+
+> Three documents said two. The grep said three.
+
+---
+
+## 129. A test's own print that asserts instead of measuring
+
+**Signature:** a suite goes red, and the summary line it prints underneath the
+failures still describes the behaviour as correct.
+
+**Cause.** 133's new section printed a note ending *"lap_started false
+throughout, tracker clock 0.0417 -> 1.6917 s"*. Every number in it was
+measured. The words `lap_started false throughout` were **typed into the
+format string** — the row above tested the flag, and the note merely repeated
+what the row was hoping for. Run against the unfixed tracker the row failed
+and the note, two lines below it, printed `lap_started false throughout`
+anyway.
+
+It is TRAPS 14's shape — a sentence that was true when it was written and
+is not rechecked — arriving in a `print` rather than in a document, and it is
+worse there in one specific way: a note is what a session reads to find out
+what a run MEASURED, so a note that restates an assertion is the one place a
+red run can be read as a green one.
+
+**Do:**
+
+- **A note interpolates values; it does not describe outcomes.** Print
+  `lap_started went true on one of them: %s` with the measured boolean, not
+  `lap_started false throughout`. If the sentence would still be printed when
+  the row beside it fails, it is not a measurement.
+- Ask it of every format string in a section, not just the one you noticed
+  (TRAPS 11). The check is mechanical: for each word in the note that is not
+  a `%` substitution, could a red run print it?
+- The same applies to a `_check`'s own message where the message states more
+  than the predicate tests — a message naming a conclusion the predicate does
+  not reach is the failure text lying about what failed.
+
+Found in 133, in its own new section, by reading the red run's output rather
+than only its failure count.
+
+> The row failed. The line under it said everything was fine.

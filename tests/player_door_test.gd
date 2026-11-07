@@ -200,6 +200,17 @@ const LAP_AGREE := 0.10
 # ENGINE TICKS, so the frame rate is written into neither. CLOCK_RAN is the
 # fraction of the held span the tracker's own clock has to have advanced by
 # for the subtraction under it to mean anything.
+# 133: section 11 holds the OTHER two placements inside the start line's
+# REACH - the /race grid and a world rebuilt while driving. GRID_HOLD_MULTIPLE
+# is how many times the countdown's own length the watching loop may run
+# before it stops waiting for the countdown to expire, so the frame rate is
+# written into neither it nor REBUILD_HOLD_FRAMES, which is in ENGINE TICKS.
+# GRID_SENTENCE is the opening of main.gd:862's countdown status line and is
+# section 11's control: the label carrying it is production saying it ran past
+# the update_progress call one line above.
+const GRID_HOLD_MULTIPLE := 4
+const REBUILD_HOLD_FRAMES := 240
+const GRID_SENTENCE := "Race starts in"
 const STANDING_HOLD_FRAMES := 240
 const STANDING_DRIVE_FRAMES := 3600
 const CLOCK_RAN := 0.9
@@ -1455,6 +1466,242 @@ func _a_standing_start_is_driven() -> void:
 	main._stop_driving()
 
 
+# --- 11. the OTHER two places a car starts inside the line (133) ---
+#
+# THE CLASS, AND IT HAS THREE MEMBERS AND NOT TWO. TRAPS 125 is about a
+# boundary event detected by proximity: `at_line` answers *where is the car*
+# and a lap boundary asks *did it pass*, and those differ in exactly one
+# place - a car standing still inside the zone, which is where a start line
+# is. It names TWO placements of the player's car inside the line's REACH,
+# `/drive` and the `/race` grid, and `checkpoint_tracker.gd:33`-`43` names the
+# same two. Every `place_at` call on the player's car in `scripts/` was read
+# this commit and there are THREE:
+#
+#   main.gd:728           `/drive`, on the line - section 10 drives this one.
+#   race_director.gd:97   the `/race` grid, a row behind the line.
+#   main.gd:265           A WORLD REBUILT WHILE DRIVING. `_track_centreline()`
+#                         is re-spread over the new circuit, the tracker is
+#                         re-initialised at :261, and then the car is put back
+#                         on the new start line at :265 - inside REACH, from a
+#                         standstill, with the clock re-armed. Named by
+#                         neither document, held by no row, and reachable by
+#                         typing one command while driving.
+#
+# (`race_director.gd:89` and `:333` are also `place_at` calls and are NOT in
+# the class: :89 places an OPPONENT, and :333 is `_recover`, which is reached
+# only from `_drive(r, ...)` and `_physics_process` calls that only for
+# `r["car"] != _player` - so neither can move the car the tracker is reading.
+# Said rather than rounded up.)
+#
+# WHY THE GRID IS HELD GEOMETRICALLY AND NOT UNDER THROTTLE, WHICH IS A
+# MEASUREMENT AND NOT A PREFERENCE (TRAPS 11, TRAPS 14). A test cannot drive
+# the player's car while a race is running: `race_director.gd:140`-`141` runs
+# `if racing and _player.auto_drive: _player.auto_drive = false` in
+# `_physics_process`, so the director takes the `auto_drive` door back every
+# physics frame and re-emits "GO!" each time something sets it. 132 measured
+# it - false at every one of 3000 samples, 0.0 km/h, and the only travel was
+# the 1.29 m the car drifts standing still - and TRAPS 127 is that reading.
+# That is the product behaving as designed: in a race, the player drives. The
+# limitation is the HARNESS's and not the car's, and nothing in `scripts/` is
+# changed here to make a row reachable.
+#
+# SO WHAT IS HELD IS THE HALF THAT NEEDS NO THROTTLE, AND IT IS THE HALF THE
+# FAULT WAS IN: the car is placed INSIDE the line's REACH, and no lap is
+# timing at any point in the wait that follows. For the grid that wait is the
+# countdown the player sits out, which is exactly the span the fault put into
+# lap 1 - section 8 read lap 1 at 3.0992 s against 0.0833 s for laps 2 and 3
+# against the first version of 130's fix, because the clock had run through
+# the whole 3 s of it.
+#
+# NOTHING HERE READS `_left_line` OR `_began_at_line`, AND THAT IS DELIBERATE.
+# Those two fields are 130's fix. A section that reads them cannot be run
+# against the version of the tracker that lacks them, so it cannot be shown
+# red against the fault it is about. Every row below reads only fields that
+# exist on both: `lap_started`, `lap_count`, `checkpoints` and `_clock`.
+#
+# AND THE CONTROL IS PRODUCTION'S OWN LINE (TRAPS 6). "lap_started stayed
+# false" is also what a tracker that was never shown the car would say.
+# `main.gd:858` calls `checkpoint_tracker.update_progress(car.global_position)`
+# and `main.gd:859`-`862` writes "Race starts in N..." onto the status label
+# in the SAME `_process`, one line further down and inside a branch that
+# requires the race to be running - so a status label reading that sentence is
+# production saying it ran past the call, on a frame of the countdown. It is
+# sampled on the countdown frames themselves rather than inferred, and the
+# count of frames it was seen on is asserted and printed.
+func _the_other_two_standing_starts() -> void:
+	# --- 11a: the /race grid ---
+	main._handle_request("/drive")
+	await process_frame
+	if main.car == null:
+		_check(false, "a /drive before the grid rows put a car on the circuit")
+		return
+	main._handle_request("/race %d" % RACE_OPPONENTS)
+	await process_frame
+	_check(main.race.running,
+		"/race %d formed a grid on the player's circuit" % RACE_OPPONENTS)
+	if not main.race.running:
+		main._stop_driving()
+		return
+	var t: CheckpointTracker = main.checkpoint_tracker
+	if t.checkpoints.size() < CheckpointTracker.CHECKPOINT_COUNT:
+		_check(false, "and the checkpoints the line is one of are spread (%d)" % t.checkpoints.size())
+		main._stop_driving()
+		return
+
+	var tick := 1.0 / float(Engine.physics_ticks_per_second)
+	var grid: Vector3 = main.car.global_position
+	var grid_from_line := _from_line(t, grid)
+	var clock_at_grid: float = t._clock
+	# The tracker's clock is advanced in _physics_process and the loop below
+	# steps PROCESS frames, because update_progress is called from
+	# main.gd's _process. Without --fixed-fps those two counts are not the
+	# same, so the span the guard compares against is read off the engine's
+	# own physics-frame counter and never off the loop's.
+	var physics_at_grid := Engine.get_physics_frames()
+
+	# THE PREMISE. `_behind(GRID_SPACING * 2)` is 20 m of CENTRELINE at one
+	# opponent, and how far that is in the plane is the circuit's shape to
+	# decide - so it is measured here and not typed in. If the grid ever moved
+	# outside REACH there would be no standing start on it to get wrong, and
+	# every row under this one would pass while holding nothing.
+	_check(grid_from_line <= CheckpointTracker.REACH,
+		"/race placed the player's car INSIDE the start line's REACH, which is what makes the grid a standing start: %.2f m from it, REACH is %.1f m" % [
+			grid_from_line, CheckpointTracker.REACH])
+	_check(main.race.countdown_left() > 0.0,
+		"and there is a countdown still to sit out - %.2f s of RaceDirector.COUNTDOWN %.1f" % [
+			main.race.countdown_left(), RaceDirector.COUNTDOWN])
+	_check(not t.lap_started,
+		"and no lap is timing on the frame the grid was formed")
+
+	# THE WAIT. Nothing here writes a position, a throttle or a flag: the
+	# director holds the grid itself (race_director.gd:99-101, auto_drive with
+	# zero throttle), and this loop only watches.
+	var frames := 0
+	var limit := int(ceil(RaceDirector.COUNTDOWN / tick)) * GRID_HOLD_MULTIPLE
+	var started_in_countdown := false
+	var counted_in_countdown := 0
+	var left_reach := false
+	var furthest := grid_from_line
+	var said_the_countdown := 0
+	while frames < limit and main.race.countdown_left() > 0.0:
+		await process_frame
+		frames += 1
+		if t.lap_started:
+			started_in_countdown = true
+		counted_in_countdown = maxi(counted_in_countdown, t.lap_count)
+		var away := _from_line(t, main.car.global_position)
+		furthest = maxf(furthest, away)
+		if away > CheckpointTracker.REACH:
+			left_reach = true
+		if main.status_label.text.begins_with(GRID_SENTENCE):
+			said_the_countdown += 1
+	var clock_at_go: float = t._clock
+	var physics_in_countdown := int(Engine.get_physics_frames() - physics_at_grid)
+
+	_check(main.race.countdown_left() == 0.0,
+		"and the countdown really ran out rather than this loop giving up on it - %d frames of a %d-frame ceiling" % [
+			frames, limit])
+	_check(said_the_countdown > 0,
+		"THE CONTROL, AND IT IS PRODUCTION'S OWN: the status label read \"%s...\" on %d of those %d frames, which is main.gd:859 one line PAST the update_progress call at :858 - so the tracker was shown the car on a countdown frame" % [
+			GRID_SENTENCE, said_the_countdown, frames])
+	_check(not left_reach,
+		"and the car stayed INSIDE the line's REACH for the whole wait, so the wait happened where it matters - furthest %.2f m of REACH %.1f m, drifting %.3f m off the grid" % [
+			furthest, CheckpointTracker.REACH, grid.distance_to(main.car.global_position)])
+	_check(not started_in_countdown,
+		"THE ROW: no lap clock started on ANY of those %d frames of countdown - which is the span the first version of 130's fix put inside lap 1" % frames)
+	_check(counted_in_countdown == 0,
+		"and no lap was COUNTED on the grid either (%d)" % counted_in_countdown)
+
+	# A GUARD, LABELLED (TRAPS 6). The tracker's clock is right today, so this
+	# cannot fail against this tree. It is here because "nothing started" is
+	# also true of a tracker whose clock never ran, and a reader cannot tell
+	# those apart from the rows above alone.
+	_check(clock_at_go - clock_at_grid >= float(physics_in_countdown) * tick * CLOCK_RAN,
+		"GUARD: and the tracker's own clock advanced through that wait - %.4f s against the %.4f s of PHYSICS frames the engine counted over it" % [
+			clock_at_go - clock_at_grid, float(physics_in_countdown) * tick])
+	# The note prints what was MEASURED and not what was asserted: a note
+	# reading "lap_started false throughout" is a sentence that stays true on
+	# a red run, which is the shape TRAPS 14 is about arriving in a print.
+	notes.append("GRID START: /race placed the car %.2f m from the line (REACH %.1f); %d process frames of countdown watched over %d physics frames, furthest %.2f m, lap_started went true on one of them: %s, laps counted %d, tracker clock %.4f -> %.4f s, status label said \"%s\" on %d frames" % [
+		grid_from_line, CheckpointTracker.REACH, frames, physics_in_countdown, furthest,
+		started_in_countdown, counted_in_countdown,
+		clock_at_grid, clock_at_go, GRID_SENTENCE, said_the_countdown])
+	main._stop_driving()
+	await process_frame
+
+	# --- 11b: the third member - a world rebuilt while driving ---
+	#
+	# Reached by typing one CREATE_TRACK while driving. The length differs
+	# from the standing world's so the circuit really is rebuilt, and which
+	# one is standing afterwards is read off `_first_section_length()` rather
+	# than assumed.
+	main._handle_request("/drive")
+	await process_frame
+	if main.car == null:
+		_check(false, "a /drive before the rebuild rows put a car on the circuit")
+		return
+	var before := _first_section_length()
+	var rebuild_to := C_LENGTH if before != C_LENGTH else A_LENGTH
+	main._handle_request(_track(rebuild_to))
+	await process_frame
+	await process_frame
+	_check(main.driving and main.car != null,
+		"a CREATE_TRACK typed WHILE DRIVING leaves the player driving, which is what makes main.gd:265 reachable")
+	if not main.driving or main.car == null:
+		main._stop_driving()
+		return
+	_check(_first_section_length() == rebuild_to and rebuild_to != before,
+		"and it really is a different circuit under the car - first straight %d m, was %d m" % [
+			_first_section_length(), before])
+
+	t = main.checkpoint_tracker
+	if t.checkpoints.size() < CheckpointTracker.CHECKPOINT_COUNT:
+		_check(false, "and the new circuit's checkpoints are spread (%d)" % t.checkpoints.size())
+		main._stop_driving()
+		return
+	var replaced: Vector3 = main.car.global_position
+	var replaced_from_line := _from_line(t, replaced)
+	var clock_at_replace: float = t._clock
+	var physics_at_replace := Engine.get_physics_frames()
+
+	_check(replaced_from_line <= CheckpointTracker.REACH,
+		"THE THIRD MEMBER, AND NEITHER DOCUMENT NAMED IT: the rebuild put the car back INSIDE the new line's REACH from a standstill - %.2f m from it, REACH is %.1f m" % [
+			replaced_from_line, CheckpointTracker.REACH])
+	_check(not t.lap_started and t.lap_count == 0,
+		"and the re-armed tracker is timing nothing on the frame it was replaced (lap_started %s, lap_count %d)" % [
+			t.lap_started, t.lap_count])
+
+	# The same wait section 10 holds on the line, at the car's own zero
+	# throttle, on the placement nothing had held.
+	main.car.auto_drive = true
+	main.car.auto_steer = 0.0
+	main.car.auto_throttle = 0.0
+	var held := 0
+	var started_while_replaced := false
+	var drift := 0.0
+	while held < REBUILD_HOLD_FRAMES:
+		await process_frame
+		held += 1
+		drift = maxf(drift, replaced.distance_to(main.car.global_position))
+		if t.lap_started:
+			started_while_replaced = true
+	var clock_after_hold: float = t._clock
+	var physics_in_hold := int(Engine.get_physics_frames() - physics_at_replace)
+
+	_check(_from_line(t, main.car.global_position) <= CheckpointTracker.REACH,
+		"and after %d frames of ZERO throttle it is still inside that REACH - %.2f m from the line, drifted %.3f m settling" % [
+			held, _from_line(t, main.car.global_position), drift])
+	_check(not started_while_replaced,
+		"THE ROW: no lap clock started on ANY of those %d frames either - the rule 130 wrote holds at the placement neither TRAPS 125 nor checkpoint_tracker.gd names" % held)
+	_check(clock_after_hold - clock_at_replace >= float(physics_in_hold) * tick * CLOCK_RAN,
+		"GUARD: and the tracker's clock advanced through THAT wait too - %.4f s against the %.4f s of PHYSICS frames the engine counted over it" % [
+			clock_after_hold - clock_at_replace, float(physics_in_hold) * tick])
+	notes.append("REBUILT WHILE DRIVING: first straight %d -> %d m, car replaced %.2f m from the new line (REACH %.1f), held %d process frames over %d physics frames at zero throttle (drifted %.3f m), lap_started went true on one of them: %s, tracker clock %.4f -> %.4f s" % [
+		before, rebuild_to, replaced_from_line, CheckpointTracker.REACH, held, physics_in_hold, drift,
+		started_while_replaced, clock_at_replace, clock_after_hold])
+	main._stop_driving()
+
+
 # How far a point is from the start line, in the plane, which is the same
 # measure CheckpointTracker.update_progress uses to decide `at_line`.
 func _from_line(t: CheckpointTracker, p: Vector3) -> float:
@@ -1479,6 +1726,7 @@ func _run() -> void:
 	await _one_race_two_clocks()
 	await _a_lap_is_a_whole_lap()
 	await _a_standing_start_is_driven()
+	await _the_other_two_standing_starts()
 
 	print("")
 	for note in notes:
