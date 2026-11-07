@@ -1834,9 +1834,9 @@ func _the_class_cannot_grow_in_silence() -> void:
 		if raw == "":
 			continue
 		read += 1
-		for site in _place_at_sites(_code_of(raw)):
-			var row: Dictionary = site
-			sites["%s::%s::%s" % [str(name), str(row["func"]), str(row["receiver"])]] = int(row["line"])
+		for entry in _site_keys(str(name), _place_at_sites(_code_of(raw))):
+			var pair: Array = entry
+			sites[str(pair[0])] = int(pair[1])
 
 	# THE READ, ASKED AT THE READ (085, TRAPS 81). A directory that came back
 	# empty and a file that came back empty both leave `sites` empty, and an
@@ -1910,6 +1910,59 @@ func _the_class_cannot_grow_in_silence() -> void:
 	_check(later.size() == 1 and str((later[0] as Dictionary)["func"]) == "_second",
 		"and the enclosing function is the one the call is inside and not the first in the file (%s)" % str(later))
 
+	# --- the KEYING, over sources this function builds (139) ---
+	#
+	# The fault this section's name denies was in the keying and not in the
+	# scanner: two calls the scanner reported correctly collapsed into one
+	# entry on their way into `sites`. So the keys are built here from sources
+	# whose answer is known and READ BACK, rather than asserted about.
+
+	# A triple that occurs ONCE keeps a bare key, which is what every row in
+	# PLACE_AT_SITES is keyed by. If this gains an ordinal, the whole table
+	# stops matching and the three assertions above fail together.
+	var one_site := _site_keys("x.gd", _place_at_sites(
+		"func _a() -> void:\n\tcar.place_at(p, h)\n"))
+	_check(one_site.size() == 1 and str((one_site[0] as Array)[0]) == "x.gd::_a::car",
+		"a triple that occurs once is keyed without an ordinal (%s)" % str(one_site))
+
+	# TWO CALLS SHARING FILE, FUNCTION AND RECEIVER, which is the input that
+	# was silent. Both must survive, with DISTINCT keys and their OWN lines.
+	var twice := _site_keys("x.gd", _place_at_sites(
+		"func _a() -> void:\n\tcar.place_at(p, h)\n\tcar.place_at(q, k)\n"))
+	var twice_keys: Array = []
+	var twice_lines: Array = []
+	for raw in twice:
+		twice_keys.append(str((raw as Array)[0]))
+		twice_lines.append(int((raw as Array)[1]))
+	# THE ORDINALLED LITERALS LIVE ON A `var` LINE AND NOT INSIDE A `_check`
+	# CONDITION, which is not a style choice. `_code_of()` truncates a line at
+	# the first `#` even inside a double-quoted literal, so a condition holding
+	# `"...car#1"` loses its closing bracket and is ABANDONED UNREAD by
+	# `source_scan_test::_reader_reach` - and a counter-equality inside an
+	# unread condition is invisible to that file's section 8. Measured, not
+	# guessed: the first draft of this section put the literals in the
+	# condition and `source_scan_test` failed by name at 116 assertions,
+	# `player_door_test.gd::_the_class_cannot_grow_in_silence: 1 _check
+	# condition(s) abandoned unread`. Hoisted rather than given a row in
+	# `UNREAD_CONDITIONS`, because a row would record an avoidable line break
+	# as a permanent fact about this file (TRAPS 130, TRAPS 131).
+	var want_twice: Array = ["x.gd::_a::car#1", "x.gd::_a::car#2"]
+	_check(twice_keys == want_twice,
+		"and a SECOND call in the same function with the same receiver gets its own key rather than overwriting the first - the fault 139 measured (%s)" % str(twice_keys))
+	_check(twice_lines == [2, 3],
+		"and each of the two carries its own line, so neither reading is the other's (%s)" % str(twice_lines))
+
+	# AND THE PAIR IS TOLD APART BY RECEIVER, NOT ONLY BY THE ORDINAL, which
+	# is why `race_director.gd::start::car` and `::start::player` are two rows
+	# today and neither of them is keyed with a `#`.
+	var two_receivers := _site_keys("x.gd", _place_at_sites(
+		"func _a() -> void:\n\tcar.place_at(p, h)\n\tplayer.place_at(q, k)\n"))
+	var receiver_keys: Array = []
+	for raw in two_receivers:
+		receiver_keys.append(str((raw as Array)[0]))
+	_check(receiver_keys == ["x.gd::_a::car", "x.gd::_a::player"],
+		"and two different receivers in one function are two bare keys, which is how race_director.gd::start's two rows stay unordinalled (%s)" % str(receiver_keys))
+
 	# THE NOTE INTERPOLATES AND DOES NOT DESCRIBE (TRAPS 129). The class count
 	# is attributed to the TABLE, because that is where it comes from - under
 	# the first red reading below the code had FOUR player placements and the
@@ -1957,6 +2010,41 @@ func _place_at_sites(code: String) -> Array:
 				"func": current,
 				"line": number,
 			})
+	return out
+
+
+# One key per site, as `file::func::receiver`, with an ORDINAL when that
+# triple repeats - the convention `scan_floor_test::_keys_for` already uses
+# for the same reason, and the reason is this function's own name.
+#
+# 139: `_the_class_cannot_grow_in_silence` built its `sites` dictionary
+# straight off `_place_at_sites()` keyed by the triple alone, so a SECOND
+# `place_at` call sharing a file, an enclosing function and a receiver
+# OVERWROTE the first: the count did not move, the surviving row's line
+# number silently became the later call's, and a fourth member of TRAPS 125's
+# class in `main.gd::_start_driving` left the suite GREEN at 154 assertions.
+# Measured, not reasoned - the reading is in HANDOVER's 139 entry. Keyed this
+# way the same input fails by name, which is what the function claims.
+#
+# The ordinal is POSITIONAL, so inserting a call above an existing duplicate
+# renumbers both and fails loudly in both directions. That is the trade
+# `_keys_for` already accepted deliberately: a renumber that fails by name is
+# worth more than a new site that arrives in silence.
+static func _site_keys(file_name: String, rows: Array) -> Array:
+	var per_triple := {}
+	for raw in rows:
+		var row: Dictionary = raw
+		var triple := "%s::%s::%s" % [file_name, str(row["func"]), str(row["receiver"])]
+		per_triple[triple] = int(per_triple.get(triple, 0)) + 1
+	var seen_so_far := {}
+	var out: Array = []
+	for raw in rows:
+		var row: Dictionary = raw
+		var triple := "%s::%s::%s" % [file_name, str(row["func"]), str(row["receiver"])]
+		var n := int(seen_so_far.get(triple, 0)) + 1
+		seen_so_far[triple] = n
+		out.append([triple if int(per_triple[triple]) == 1 else "%s#%d" % [triple, n],
+			int(row["line"])])
 	return out
 
 

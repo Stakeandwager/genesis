@@ -11,7 +11,93 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
-- Last commit at the time of writing: **138**, and it is **THREE FILES UNDER
+- Last commit at the time of writing: **139**, and it is **ONE FILE UNDER
+  `tests/` PLUS `docs/TRAPS.md` AND THIS FILE**. `scripts/`, `scenes/`,
+  `netlify/`, `.github/`, `project.godot` and both runners are **0 LINES OF
+  DIFF**, confirmed by `git diff --name-only`, so **nothing a player meets
+  changed**. What was done is the task `Next action` named first: driving
+  `player_door_test::_the_class_cannot_grow_in_silence`, the reader 138 read
+  and did not drive. **It was green and wrong, and it had been since the
+  section was written in 134.**
+
+  **ONE. THE FUNCTION'S NAME WAS FALSE, AND THE SCANNER WAS NOT THE PROBLEM.**
+  `_place_at_sites()` is correct: one entry per call, with receiver, enclosing
+  function and line. The caller poured that array into a dictionary **keyed by
+  `file::func::receiver` and nothing else**, so a second `place_at` in the same
+  function on the same receiver **overwrote the first**. Both of the section's
+  directions - every site has a row, every row has a site - then stayed true of
+  a set one member short, and the surviving row's line number silently became
+  the **later** call's.
+
+  **TWO. MEASURED IN A THROWAWAY COPY, not reasoned about**, with one line
+  added to `scripts/main.gd::_start_driving` - a second
+  `car.place_at(_track_start(), _track_heading())`, which is a **fourth**
+  member of TRAPS 125's class, inside the start line's `REACH`, from a
+  standstill:
+
+  | keying | `player_door_test` | what it said |
+  |---|---|---|
+  | `file::func::receiver` (as committed through 138) | **154, failures=0 - SILENT** | the note printed **7** call sites when the source held **8**, and the row's line as **730**, the call at 728 unrepresented |
+  | with an ordinal (this commit) | **159, failures=3** | `main.gd::_start_driving::car#1:728` and `::car#2:730` have no row, and the row for `main.gd::_start_driving::car` has no site |
+
+  **THREE. ITERATING THE ARRAY INSTEAD OF THE DICTIONARY WOULD NOT HAVE FIXED
+  IT**, which is the part that decided the shape of the fix.
+  `source_scan_test` section 8 holds a structurally identical class correctly
+  by looping over its **array** of sites - but that works there because its
+  key already distinguishes its sites. Here both duplicates map to the **same**
+  key, so checking each against `PLACE_AT_SITES` asks the same question twice
+  and gets the same true answer. **The key had to distinguish them.**
+
+  **FOUR. THE RULE ALREADY EXISTED IN THE REPOSITORY, IN A SIBLING SUITE
+  (TRAPS 11).** `scan_floor_test::_keys_for` builds `file::func` keys for the
+  same kind of scan and appends an **ordinal** exactly when the pair repeats,
+  driven on built input in its section 6. 139 follows that convention for the
+  three-part key: bare when unique, `#n` when the triple repeats. So **the
+  committed tree's keys are unchanged and the run is byte-identical** - which
+  the one-line diff is the evidence for.
+
+  **FIVE. WHAT IS HELD IS THE CAPABILITY, CALLED, NOT THE WORDING, GREPPED.**
+  The keying is lifted into `static func _site_keys(file_name, rows)` so it can
+  be fed built sources, and four assertions do that: **154 -> 158**. One of the
+  four - that two calls sharing file, function and receiver get **distinct**
+  keys - was **seen red against the committed keying**, printing
+  `["x.gd::_a::car", "x.gd::_a::car"]`. **The other three pass under both
+  keyings and are guards, not measurements of this fault**, said plainly rather
+  than counted as readings (TRAPS 6).
+
+  **SIX. THE CLASS WAS GREPPED RATHER THAN THE INSTANCE FIXED (TRAPS 11), AND
+  IT HAS ONE LIVE MEMBER.** Every keyed dictionary write in `tests/` and
+  `scripts/` was enumerated with a script over
+  `^[\t ]*name[key] =` and classified by whether the value is a per-site field
+  (a collapse loses a site) or a tally or `true` (a collapse loses nothing).
+  **Four other candidates were read and are NOT members, each for a stated
+  reason:** `check_wiring_test:472`/`478` and `scan_floor_test:867` store
+  `true` and are only ever read with `.has()`; `source_scan_test:761`
+  (`eq_keys`) iterates its **array** for the "every site has a row" direction
+  and uses the dictionary only to look up one named instance;
+  `prompt_numeral_test:316` (`by_class`) is keyed by a class name off
+  `ProjectSettings.get_global_class_list()`, which the engine makes unique;
+  `piece_name_test:170` (`readable`) compares **name and class sets** and says
+  in its own comment that this is why it does not compare counts;
+  `refusal_reach_test:444` (`alias`) is keyed by a `const` name and `scripts/`
+  holds **two** such declarations, both in `game_controller.gd`, with distinct
+  names. Written as **TRAPS 137**.
+
+  **SEVEN. A SECOND FAULT, IN THIS COMMIT'S OWN FIRST DRAFT, FOUND BY A SUITE
+  AND NOT BY ME.** The new rows first asserted the ordinalled keys against
+  literals holding a `#`. `_code_of()` truncates a line at the first `#` **even
+  inside a double-quoted literal**, so the condition lost its closing bracket
+  and was **abandoned unread** by `source_scan_test::_reader_reach`:
+  **116 assertions, failures=1**, naming
+  `player_door_test.gd::_the_class_cannot_grow_in_silence`. The obvious repair
+  is a row in `UNREAD_CONDITIONS`; **that row would have recorded an avoidable
+  line break as a permanent fact about the file**, and a counter-equality
+  written inside that condition later would have been invisible to section 8
+  with the table's blessing. The literals are **hoisted to a `var` line**
+  instead - `source_scan_test` back to **115, failures=0** and the unread set
+  to **17 across 10 functions**. TRAPS 130 and 131 in a third costume.
+
+- Last commit before this one: **138**, and it is **THREE FILES UNDER
   `tests/` PLUS `docs/TRAPS.md` AND THIS FILE**. `scripts/`, `scenes/`,
   `netlify/`, `.github/`, `project.godot` and both runners are **0 LINES OF
   DIFF**, confirmed by `git diff --name-only`, so **nothing a player meets
@@ -11996,8 +12082,47 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
-**THE LATEST RUN IS 138's, ON ITS OWN CHANGED TREE, AND ONE SUITE'S COUNT
+**THE LATEST RUN IS 139's, ON ITS OWN CHANGED TREE, AND ONE SUITE'S COUNT
 MOVED.** `--all` through `run_tests.sh`, `user://` cleared by deleting
+`app_userdata/AI_Game_Builder` before it, Godot
+**`4.7.1.stable.official.a13da4feb`** (binary md5
+**`c083304672e2b4264cfb7f823aba095f`**, checked with `md5sum` on the download
+rather than assumed): md5 **`fe87c7e18ed4a0609c8242849afa3caf`**, **85 suites,
+0 with something to look at**, `player_door_test` **158, failures=0**,
+`source_scan_test` **115, failures=0**, `scan_floor_test` **164**,
+`errand_outcome_test` **47**, `refusal_reach_test` **219**,
+`controller_reach_test` **330**, `loadcheck` **39**, `halt_cause_test` **53**,
+`drive_test` **24**, `session_test` **18**, `result_line_test` **370**.
+**200 s wall** (`3m20.328s`), and the runner wrote **0 bytes to stderr** - the
+capture holds 44 bytes and all 44 are `time`'s own three lines, counted with
+`wc -c`.
+
+**THE `diff` AGAINST 139's OWN BASELINE IS ONE LINE, AND THAT IS THE WHOLE
+EFFECT OF THE CHANGE**: `player_door_test` **154 -> 158**. Every other suite's
+line is byte-identical, read off `diff | wc -l` rather than by eye. **So the
+ordinal changed no key on the committed tree**, which is the "costs nothing
+today" claim as a measurement instead of a prediction.
+
+**AND 139's BASELINE IS AN INDEPENDENT CONTAINER, TAKEN BEFORE ANY EDIT.** A
+fresh `git clone --branch prototype-002a` of the pushed `24ce77f` (138) into
+its own directory outside the repository, `git status --porcelain` **EMPTY**,
+`user://` cleared, in a new container with its own `md5sum`-checked Godot
+download: md5 **`1b9b47298278db98b9c61e640655c7d0`**, **85 suites, 0 to look
+at**, `errand_outcome_test` **47**, `player_door_test` **154**,
+`source_scan_test` **115**, `scan_floor_test` **164**, 198 s wall
+(`3m18.818s`) - **byte-identical to what 138 recorded on its changed tree.
+ELEVENTH CONTAINER, SAME NUMBER.** 138's one open item - *"no clone of this
+push has been run yet"* - is **CLOSED, and 138 owes nothing.**
+
+**ONE RED RUN IS RECORDED HERE BECAUSE IT IS THE POINT OF THE COMMIT.** The
+fourth-placement input - one line added to `scripts/main.gd::_start_driving` in
+a throwaway copy - reads **154, failures=0** against the keying committed
+through 138 and **159, failures=3** against this one, naming
+`main.gd::_start_driving::car#1:728` and `::car#2:730`. Both numbers were
+taken, neither predicted.
+
+~~**THE LATEST RUN WAS 138's, ON ITS OWN CHANGED TREE, AND ONE SUITE'S COUNT
+MOVED.**~~ **SUPERSEDED BY 139's ABOVE.** `--all` through `run_tests.sh`, `user://` cleared by deleting
 `app_userdata/AI_Game_Builder` before it, Godot
 **`4.7.1.stable.official.a13da4feb`** (binary md5
 **`c083304672e2b4264cfb7f823aba095f`**, checked with `md5sum` on the download
@@ -12086,9 +12211,10 @@ and nothing is owed on it.
 
 **WHAT A GREEN RUN LOOKS LIKE, FOR A SESSION READING THIS TO FIND OUT:** 85
 suites, `suites with something to look at: 0`, and the suites worth naming at
-`player_door_test` **154**, `source_scan_test` **115**, `scan_floor_test`
+`player_door_test` **158**, `source_scan_test` **115**, `scan_floor_test`
 **164**, `halt_cause_test` **53**, `drive_test` **24**, `session_test` **18**,
 `result_line_test` **370**, `errand_outcome_test` **47**. If
+`player_door_test` reads 154 you are on 138 or earlier; if
 `errand_outcome_test` reads 44 you are on 137a or earlier; if `scan_floor_test`
 reads 156 you are on 136a or earlier. **THIS IS THE ONLY LIVE ONE.** Five paragraphs with this heading are
 struck below; 137 struck two of them, because one had been left live since 132
@@ -20755,8 +20881,27 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
-**137a's OPEN ITEM IS CLOSED AND 138 DID IT FOR NOTHING, WHICH IS THE PATTERN
-TO KEEP.** `137a` could only read the remote with the same container that had
+**138's OPEN ITEM IS CLOSED AND 139 DID IT FOR NOTHING, WHICH IS THE PATTERN
+TO KEEP.** 139's first command was the baseline it was going to take anyway: a
+fresh `git clone --branch prototype-002a` of the pushed `24ce77f` (138) into
+its own directory, in a new container with its own `md5sum`-checked Godot
+download, and it reproduced **`1b9b47298278db98b9c61e640655c7d0`** byte for
+byte with `errand_outcome_test` at **47** - **eleventh container, same
+number**. **DO NOT RE-TAKE IT.**
+
+**AND 139 DID NOT PUSH A `139a`, FOR THE REASON 138 WROTE DOWN.** The
+clone-and-run of this push is worth having and is not worth a commit: the next
+firing's own baseline takes it from a genuinely independent container, which is
+strictly the stronger reading, and costs one command it was going to run
+anyway. **So the first thing you do is that baseline, on the pushed `139`, and
+if its md5 is `fe87c7e18ed4a0609c8242849afa3caf` with `player_door_test` at
+158 then the pushed tree is the measured tree and nothing is owed.** If it is
+not, that disagreement is the most important thing in the repository and it is
+the cycle's work.
+
+~~**137a's OPEN ITEM IS CLOSED AND 138 DID IT FOR NOTHING, WHICH IS THE
+PATTERN TO KEEP.**~~ **138's EQUIVALENT, KEPT BECAUSE THE PATTERN IS THE
+POINT.** `137a` could only read the remote with the same container that had
 just pushed it. 138's baseline was a fresh
 `git clone --branch prototype-002a` of the pushed `b0dd3ba` into its own
 directory, in a new container with its own `md5sum`-checked Godot download, and
@@ -20778,23 +20923,36 @@ pushed tree is the measured tree and nothing is owed.** If it is not, that
 disagreement is the most important thing in the repository and it is the
 cycle's work.
 
-**THE TASK THIS FILE HAS NAMED FIRST SINCE 135 IS STILL THE TASK: SEVEN OF THE
-57 SOURCE READERS HAVE NOW BEEN ASKED WHAT THEY CANNOT PARSE, AND 50 HAVE
-NOT.** The six before this cycle are in the 136 and 137 entries at the top of
-this file - **DO NOT RE-ASK THEM.** 138 asked the seventh,
-`refusal_reach_test::_categories_in_source`, and the answer was the
-thirteen-member digit class now written as **TRAPS 136** and fixed in all
-thirteen.
+**THE TASK THIS FILE HAS NAMED FIRST SINCE 135 IS STILL THE TASK: EIGHT OF THE
+57 SOURCE READERS HAVE NOW BEEN ASKED WHAT THEY CANNOT PARSE, AND 49 HAVE
+NOT.** The seven before this cycle are in the 136, 137 and 138 entries at the
+top of this file - **DO NOT RE-ASK THEM.** 139 drove the eighth,
+`player_door_test::_the_class_cannot_grow_in_silence`, and **the answer was
+again not about the reader**: the scanner was correct and the caller's
+dictionary key dropped the field that told two sites apart. Written as
+**TRAPS 137**, fixed, and the class grepped across `tests/` and `scripts/` -
+**one live member, four other candidates read and ruled out with reasons**
+(see the 139 entry, point SIX).
 
-**AND 138 DID NOT ASK THE SECOND READER THIS FILE NAMED, WHICH IS SAID PLAINLY
-RATHER THAN LEFT TO LOOK DONE.** `player_door_test::_the_class_cannot_grow_in_silence`
-was **READ** and not **DRIVEN**: it reads `scripts/` with
-`DirAccess.get_files_at()`, which does not recurse, and its floor is
+**AND THE RULE 139 WOULD ADD TO 137's "the answer is often not about the
+reader" AND 138's "ask whether the reader is alone": ASK WHAT HAPPENS TO THE
+READING AFTER THE READER RETURNS IT.** `_place_at_sites()` answered correctly
+and the loss happened one line later, on the way into a dictionary. A reader
+can be blameless and the section still be green and wrong, so **read the whole
+path from the scan to the assertion**, not just the scan. The grep that
+generalises it is one command over every keyed dictionary write, classified by
+whether the value is a per-site field or a tally.
+
+**AND WHAT 139 LEFT ON THAT READER, SAID PLAINLY RATHER THAN LEFT TO LOOK
+DONE.** The keying is fixed and driven, but the **other** thing 138 noticed
+about the same function is **UNCHANGED AND UNMEASURED**: it reads `scripts/`
+with `DirAccess.get_files_at()`, which does not recurse, and its floor is
 `read >= PLACE_AT_FILES_FLOOR` where the constant is **25** against **37**
-files actually present - so a read that is one file short is silent, which is
-TRAPS 134's shape and is already caught loudly by `scan_floor_test` section 7's
-subdirectory tripwire. **No built source was fed to it and nothing here is a
-measurement of it.** It stays on the list below.
+files actually present - so a read that is one file short is still silent here.
+That is TRAPS 134's shape, it is already caught loudly by `scan_floor_test`
+section 7's subdirectory tripwire, and **139 did not touch it**. Whether the
+floor should be the measured count rather than a typed 25 is a question nobody
+has put to it; it is small and it is its own commit.
 
 **THE NEXT ONES TO ASK, with `_categories_in_source` struck off.** Remaining:
 `agreement_test::_scripts`; `check_wiring_test::_no_door_rows`;
@@ -20806,8 +20964,11 @@ measurement of it.** It stays on the list below.
 `result_line_test::_test_files`; `scan_floor_test::_test_files`;
 `scene_light_test::_everything_that_points_has_been_pointed`;
 `source_scan_test::_class` and `::_scripts_code`. **Start with
-`player_door_test::_the_class_cannot_grow_in_silence`**, which 138 left
-undriven and whose name is a claim about exactly the silence 137 measured.
+`controller_reach_test::_enumeration`**, because it is a class-enumerating
+reader (TRAPS 132) in the suite that was **SILENT** under 138's digit input,
+and a class enumerator that misses a member is the shape both 137 and 139
+turned out to be. `_the_class_cannot_grow_in_silence` is struck off the list -
+139 drove it.
 
 **AND THE WAY TO DO IT IS STILL NOT A GREP.** Feed the function a built source
 whose answer you know and READ WHAT IT SAYS. 137's harness is worth copying
@@ -20852,9 +21013,9 @@ a local, which is a change to what that file's class IS: its own commit with
 its own baseline, and section 6's rows are the rows to rewrite when it happens.
 
 **THE DEPLOY READING IS REFRESHED AND IT IS STILL THE OWNER'S.** The
-`web build` workflow has now failed **158 times, runs 28 through 185**, and 138
-counted **86-185 off the Actions API - 100 of 100 `failure`, no other
-conclusion**. The cause is unchanged since 064: `NETLIFY_AUTH_TOKEN` and
+`web build` workflow has now failed **159 times, runs 28 through 186** -
+`total_count` **186** off the Actions API - and 139 counted **87-186 this
+cycle: 100 of 100 `failure`, `completed`, no other conclusion**. The cause is unchanged since 064: `NETLIFY_AUTH_TOKEN` and
 `NETLIFY_SITE_ID` are empty in the job environment, so the CLI falls back to an
 interactive login and times out after five and a half minutes. **Nothing in
 this cycle touched a secret, a workflow file or a deployment setting**, and
@@ -20863,20 +21024,27 @@ Actions and it is his. See "Human decision needed" 19.
 
 **BEFORE YOU WRITE ANY DOCUMENT PARAGRAPH, RUN 131's SWEEP** - TRAPS 126's
 third "Do" has the recipe, it is one command, and it has now found a fault in
-four separate cycles. 138 ran it: **TRAPS 1-135 all present and every
-`TRAPS n` reference resolves; HDN 1-43 all present and no dangling `HDN n`
-reference in either document; all 14 `docs/...` paths named anywhere in the
-repository exist.** (138 then added TRAPS 136, so a sweep on the pushed tree
-reads 1-136.) The two parser traps are both still live:
+four separate cycles. 139 ran it: **TRAPS 1-136 all present, none
+duplicated, and every `TRAPS n` reference in either document resolves; HDN
+1-43 present with 4 and 5 struck (42 entries) and no dangling `HDN n`
+reference; exactly ONE whole-line `## Human decision needed` heading; 0
+duplicated adjacent lines in this file.** (139 then added TRAPS 137, so a sweep
+on the pushed tree reads 1-137.) **AND ONE CORRECTION TO A COUNT THIS FILE HAS
+CARRIED: the `docs/...` paths number 13, NOT 14** - 11 with a file extension
+plus `docs` and `docs/harness` - and **all 13 exist**, listed by the sweep
+rather than totalled. The 14 was a prior cycle's regex, repeated for several
+cycles without being re-counted, which is TRAPS 14's shape on a number small
+enough that nobody looked. The two parser traps are both still live:
 `'## Human decision needed'` occurs 8 times in this file and exactly **ONE** is
 a whole-line heading, so anchor every match against a WHOLE LINE; and HDN
 entries are numbered `N. **`, not `### N.`, so a parser keyed on a heading
 finds none and reports a clean sweep over nothing.
 
-**AND RUN TRAPS 135's THREE `grep -c` AFTER YOU EDIT, NOT BEFORE.** 138 did:
-`^\*\*WHAT A GREEN RUN LOOKS LIKE` is **1**, `^\*\*THE LATEST RUN IS` is **1**,
-and the first `Last commit at the time of writing` bullet is this commit's, at
-**line 14**. Adding the current paragraph is not the same as there being one.
+**AND RUN TRAPS 135's THREE `grep -c` AFTER YOU EDIT, NOT BEFORE.** 139 did,
+after the edits: `^\*\*WHAT A GREEN RUN LOOKS LIKE` is **1**,
+`^\*\*THE LATEST RUN IS` is **1**, and the first
+`Last commit at the time of writing` bullet is this commit's, at **line 14**.
+Adding the current paragraph is not the same as there being one.
 
 **A THING NOT TO DO, CARRIED FORWARD UNCHANGED: DO NOT TEACH `_code_of()`
 ABOUT STRING LITERALS AS A WAY TO CLOSE THE 17.** It is copied

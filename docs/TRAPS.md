@@ -10380,3 +10380,99 @@ and asserting that one pattern matches `FAILED_X2`. That is the project's own
 "One reading" rule applied to a regex, it is a real refactor of six embedded
 patterns in `controller_reach_test`, and it is its own commit with its own
 baseline.
+
+---
+
+## 137. A site scan keyed by fewer fields than distinguish a site, in the function whose name denies it
+
+**Signature:** a fourth member is added to a class a suite exists to hold, and
+the suite prints **`154 assertions, failures=0`**. The function that passed is
+called `_the_class_cannot_grow_in_silence`.
+
+**Cause.** `player_door_test::_the_class_cannot_grow_in_silence` enumerates
+every `place_at` call site in `scripts/` — TRAPS 125's class, *every place the
+player's car is placed inside the start line's `REACH`* — and asserts both
+directions: every site has a row in `PLACE_AT_SITES`, every row still has a
+site. The scanner it uses, `_place_at_sites()`, is correct and returns one
+entry per call with **receiver, enclosing function and line**. The caller then
+poured that array into a **dictionary keyed by `file::func::receiver` and
+nothing else**:
+
+```gdscript
+sites["%s::%s::%s" % [str(name), str(row["func"]), str(row["receiver"])]] = int(row["line"])
+```
+
+**The key omits the one field that tells two calls apart.** A second
+`place_at` in the same function on the same receiver **overwrites the first**.
+Both directions then stay true of a set that is one member short, and the
+survivor's line number silently becomes the **later** call's, so the row that
+remains points at the wrong call.
+
+**MEASURED, in a throwaway copy with one line added to
+`scripts/main.gd::_start_driving`** — a second
+`car.place_at(_track_start(), _track_heading())`, which is a **fourth** member
+of TRAPS 125's class, placed inside the start line's `REACH`, from a standstill:
+
+| keying | `player_door_test` | what it said |
+|---|---|---|
+| **`file::func::receiver`** (as committed through 138) | **154, failures=0 — SILENT** | note printed `7 place_at call sites`, the true number being **8**, and the row's line as **730**, the first call at 728 unrepresented |
+| **with an ordinal** | **159, failures=3** | `main.gd::_start_driving::car#1:728` and `::car#2:730` have no row, and the row for `main.gd::_start_driving::car` has no site |
+
+**AND ITERATING THE ARRAY INSTEAD OF THE DICTIONARY DOES NOT FIX IT**, which
+is the part worth reading before reaching for the obvious repair.
+`source_scan_test` section 8 holds a structurally identical class correctly by
+looping over its **array** of sites rather than the dictionary it also builds
+— but that works there because its key already distinguishes its sites. Here,
+both duplicate sites map to the **same** key, so checking each one against
+`PLACE_AT_SITES` asks the same question twice and gets the same true answer.
+**The key itself has to distinguish them; the loop cannot.**
+
+**AND THE REPOSITORY HAD ALREADY SOLVED THIS ONCE.**
+`scan_floor_test::_keys_for` builds `file::func` keys for the same kind of
+scan and appends an **ordinal** — `file::func#2` — exactly when the pair
+repeats, with a comment saying the collision arithmetic is checked against
+itself and driven on built input in its section 6. The rule existed, written
+down, in a sibling suite, and the other member of the list never got it.
+**That is TRAPS 11 at a dictionary key.**
+
+**Do:**
+
+- When a scan enumerates sites out of source, **the key must carry every field
+  that can tell two sites apart**, or carry an ordinal when the rest of the
+  key repeats. A key that drops a field does not report a collision; it
+  reports a smaller class, and every "every member has a row" assertion over
+  it stays true.
+- **Count the scanner's output against the dictionary's size.** The two were
+  7 and 7 here when the source held 8. Any gap is a collapse.
+- Prefer an ordinal that is **absent when the key is unique**, so the existing
+  table keeps matching and today's run is byte-identical. The ordinal is
+  positional, so inserting a call above a duplicate renumbers both and fails
+  loudly in both directions — which is the trade `_keys_for` already accepted
+  deliberately, and a renumber that fails by name is worth more than a new
+  site that arrives in silence.
+- **A function whose name is a claim gets its claim driven.** This one had
+  been read in 138 and not driven, and it had been green and wrong since the
+  section was written in 134.
+
+**And a second fault, found in this commit's own first draft, which is why the
+assertions look the way they do.** The new rows asserted the ordinalled keys
+against literals holding a `#`:
+
+```gdscript
+_check(twice_keys == ["x.gd::_a::car#1", "x.gd::_a::car#2"], ...)
+```
+
+`_code_of()` truncates a line at the first `#` **even inside a double-quoted
+literal**, so that condition lost its closing bracket and was **abandoned
+unread** by `source_scan_test::_reader_reach`. It failed by name —
+`source_scan_test` **116 assertions, failures=1**,
+*"`player_door_test.gd::_the_class_cannot_grow_in_silence`: 1 `_check`
+condition(s) abandoned unread, and `UNREAD_CONDITIONS` carries the key"* — and
+the obvious repair is to add the row to `UNREAD_CONDITIONS`. **That row would
+have recorded an avoidable line break as a permanent fact about the file**, and
+a counter-equality written inside that condition later would have been
+invisible to section 8 with the table's blessing. The literals are hoisted to a
+`var` line instead; `source_scan_test` returns to **115, failures=0** and the
+unread set to **17 across 10 functions**. TRAPS 130 and TRAPS 131's rule in a
+third costume: the failure message was a plausible request for a table row, and
+writing it was the wrong move that looked like the obvious one.
