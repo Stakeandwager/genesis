@@ -9525,3 +9525,58 @@ about* in the configuration anybody actually runs.
 - Then run the new row against the **unfixed** tree and watch it go red, in
   every configuration the runner might use. A guard nobody has seen fail is
   a sentence.
+
+**129 MEASURED THE THIRD BULLET RATHER THAN TAKING IT.** Its section 8 rows
+were run against this same pre-128 wall-clock tracker at the engine's **own**
+rate, `time_scale 1.0`: the wall clock's laps summed to **0.9276** of the
+finish time against the fixed tree's 0.9394, and each full lap was **3 ms**
+off the span the suite stepped, inside a 3.3 ms tolerance. **Every row
+PASSED.** So the separating condition is not a refinement of such a row - it
+is the only reason the row can fail at all, and a version written without it
+would have been green against the fault it certifies.
+
+---
+
+## 124. The units of a measurement were fixed and what it measures between was never read
+
+**Signature:** a quantity reported to the player is corrected, with a suite
+row that proves the correction, and the quantity is still wrong — because the
+fault that was fixed was *how* it is measured and the one left is *what it is
+measured between*. The suite has been driving the wrong span green for
+releases.
+
+**Cause.** 128 found that `CheckpointTracker` timed a lap with a wall clock
+and made it the engine's delta, and 129 drove a whole race to hold the claim.
+Driving it showed the first reported lap is **0.4583 s** where laps 2, 3 and
+4 — same track, same constant speed — are all **0.5583 s**: `0.8209` of them,
+against the `10/12 = 0.8333` the arithmetic predicts. `next_index` starts at
+1 and is only ever incremented or reset to 1, so `checkpoints[0]`, **the
+start line, is never a target**: timing starts at `checkpoints[1]` and the
+lap is counted at `checkpoints[11]`. Lap 1 spans ten of twelve segments; the
+laps after it span twelve, which is why they agree to four decimals. And
+because `best_lap_time` is a `min`, **the short first lap becomes the "best
+lap" the player is shown, on the status line and in the history, and a real
+lap cannot beat it unless it is 17% faster.**
+
+Two things had to be true for this to survive. `player_door_test` section 3
+has teleported a car through every checkpoint in order since 060 and asserted
+that **one lap was counted and that it was timed** — the counting and the
+units, never the span. And the file's own comment says *"A lap only counts
+when they are passed in order and the **start line is reached again**"*,
+which is false and has been since 002B: a claim about Genesis sitting
+unchecked in a comment, which is TRAPS 14 in the one place TRAPS 14 does not
+usually look.
+
+**Do:**
+
+- When you fix **how** a quantity is measured, ask in the same breath **what
+  it is measured between**, and read the boundary off the code rather than
+  off the name. "Lap time" names the span; it does not describe it.
+- A row that asserts a duration is *counted* and *non-zero*, or that it is in
+  the right units, does not assert that it is the duration of the right
+  thing. The row that catches this needs **two** of the quantity under
+  conditions that make them equal — lap 1 against lap 2 at a constant speed —
+  and then no number has to be typed in at all.
+- A comment that describes a boundary is a claim about Genesis. `grep` the
+  code for the thing it names. One read of `next_index` would have found that
+  nothing ever looks for the start line.

@@ -173,6 +173,17 @@ const SCENE_PATH := "res://scenes/main.tscn"
 const LAP_SCALE := 0.1
 const LAP_FLOOR := 0.25
 const LAP_CEILING := 3.0
+# 129: section 8 drives one whole race at LAP_SCALE and compares the two
+# durations it reports. RACE_LAP_TICKS and RACE_GRACE_TICKS are in engine
+# ticks rather than seconds, so the frame rate is not written into either;
+# RACE_GRACE_TICKS is UNSCALED because what it covers is the countdown, which
+# runs before the scale is set. STEP_METRES is under CheckpointTracker.REACH
+# so no checkpoint is stepped over.
+const RACE_OPPONENTS := 1
+const STEP_METRES := 20.0
+const RACE_LAP_TICKS := 4.0
+const RACE_GRACE_TICKS := 6.0
+const RACE_SUM_FLOOR := 0.5
 const A_LENGTH := 300
 const B_LENGTH := 400
 const C_LENGTH := 500
@@ -903,6 +914,180 @@ func _the_name_is_not_the_worlds() -> void:
 	notes.append("world node names, in build order: %s - the builder's name alternates with a Godot dummy" % str(world_names))
 
 
+# --- 8. the lap time and the finish time of ONE race, side by side (129) ---
+#
+# WHAT THIS HOLDS, AND WHY SECTION 3 DOES NOT ALREADY HOLD IT. 128 changed
+# CheckpointTracker from a wall clock to the simulation's clock and said, in
+# scripts/checkpoint_tracker.gd's own comment, that "a lap time and the finish
+# time of the race it was driven in are the same clock". That sentence was
+# READ OFF TWO SOURCES - checkpoint_tracker.gd and race_director.gd:138, both
+# `+= delta` in _physics_process - and the two sentences it is about were
+# never printed side by side in one race and compared. Section 3 drives a lap
+# with no race running at all, so it cannot hold it. This section drives a
+# whole /race to its finish and reads BOTH numbers out of the one history.
+#
+# AND IT RUNS AT Engine.time_scale = LAP_SCALE, WHICH IS NOT DECORATION
+# (TRAPS 6). MEASURED, in a throwaway clone whose checkpoint_tracker.gd is the
+# PRE-128 wall-clock one, driving this same race:
+#
+#   at time_scale 1.0   the wall clock's laps summed to 0.93 of the finish
+#                       time and each full lap was 3 ms off the span the
+#                       suite stepped - INSIDE the tolerances below, so
+#                       every row here PASSES against the fault it is about
+#   at time_scale 0.1   the same laps summed to 8.47 TIMES the finish time
+#                       and each full lap was 0.49 s - 294 ticks - off
+#
+# So a version of this section written without the scale would have been a
+# section that cannot fail against the thing it certifies. The numbers for
+# both trees are in HANDOVER's 129 entry.
+#
+# WHAT IS ASSERTED IS THE CAPABILITY AND NOT A NUMBER (TRAPS 6, TRAPS 14). No
+# lap time, finish time or ratio is typed in as an expected answer. The lap
+# rows are compared against the simulated span THIS SUITE stepped, read off
+# Engine.get_physics_frames() and Engine.physics_ticks_per_second - a third
+# source, neither of the two clocks - and the sum row is a comparison of the
+# two numbers the player was shown against each other. Change the fixture,
+# the checkpoint count, the lap count or the frame rate and these rows hold.
+#
+# WHERE THE SUM BAND COMES FROM, SO IT IS NOT A NUMBER PULLED OUT OF THE AIR.
+# The tracker starts timing at the first checkpoint after the line and counts
+# a lap when it reaches the LAST checkpoint, so of a RACE_LAPS-lap race it
+# times RACE_LAPS laps less two twelfths of one: about 0.94 of the race at a
+# steady speed, and the grid-to-line run takes a little more off. It is
+# therefore BELOW the finish time for any track and any speed, and well above
+# half of it. Both edges are asserted; the measured value is in the note.
+func _one_race_two_clocks() -> void:
+	main._handle_request("/drive")
+	await process_frame
+	if main.car == null:
+		_check(false, "a /drive before the race put a car on the circuit")
+		return
+	var line: PackedVector3Array = main._track_centreline()
+	if line.size() < CheckpointTracker.CHECKPOINT_COUNT:
+		_check(false, "and the circuit has a centreline to drive (%d points)" % line.size())
+		return
+
+	main._handle_request("/race %d" % RACE_OPPONENTS)
+	await process_frame
+	_check(main.race.running, "/race %d started a race on the player's circuit" % RACE_OPPONENTS)
+	if not main.race.running:
+		return
+
+	# The countdown is run at the engine's own rate: at LAP_SCALE it would
+	# cost COUNTDOWN / LAP_SCALE seconds of real time to wait out, and what
+	# has to be scaled is the LAPS. The few frames of countdown that the
+	# race's clock keeps past zero are the reason the finish-time row below
+	# carries a grace, and it says so there.
+	var frames := 0
+	while frames < 120 * 30 and main.race.countdown_left() > 0.0:
+		await physics_frame
+		frames += 1
+	_check(main.race.countdown_left() == 0.0,
+		"and the countdown is spent after %d physics frames" % frames)
+
+	Engine.time_scale = LAP_SCALE
+	await physics_frame
+	await physics_frame
+	var tick := 1.0 / float(Engine.physics_ticks_per_second)
+	var frames_at_go := Engine.get_physics_frames()
+
+	# Nobody steers in a headless test, so the car is moved along the line the
+	# checkpoints were spread along - main.gd's own _track_centreline() - and
+	# frozen, because a loose car drifts off the point it was put on. The step
+	# is under REACH so no checkpoint is skipped, and well inside the race
+	# director's SEARCH_WINDOW so it never loses which point the car is at.
+	main.car.freeze = true
+	var n := line.size()
+	var span := 0.0
+	for i in n:
+		span += line[i].distance_to(line[(i + 1) % n])
+	var spacing := span / float(n)
+	var step := clampi(int(floor(STEP_METRES / maxf(spacing, 0.01))), 1, 15)
+
+	var timed: Array = []
+	var marks: Array = []
+	var counted := 0
+	var at := 0
+	var steps := 0
+	while not main.race.finished and steps < 20000:
+		at += step
+		steps += 1
+		main.car.global_position = line[at % n] + Vector3(0.0, 0.5, 0.0)
+		await process_frame
+		if main.checkpoint_tracker.lap_count > counted:
+			counted = main.checkpoint_tracker.lap_count
+			timed.append(main.checkpoint_tracker.last_lap_time)
+			marks.append(Engine.get_physics_frames())
+
+	var sim_span := float(Engine.get_physics_frames() - frames_at_go) * tick * LAP_SCALE
+	var finish_time := float(main.race.racers[0]["finish_time"])
+	var last_lap: float = main.checkpoint_tracker.last_lap_time
+	var lap_count: int = main.checkpoint_tracker.lap_count
+	var hist := _history()
+	Engine.time_scale = 1.0
+
+	_check(main.race.finished,
+		"and the player drove it to the finish, %d m of road at %.1f m a step (%d steps)" % [int(span), step * spacing, steps])
+	if not main.race.finished:
+		main.race.stop()
+		main._stop_driving()
+		return
+
+	_check(lap_count == RaceDirector.RACE_LAPS,
+		"the tracker counted the race's %d laps as the player drove them (counted %d)" % [RaceDirector.RACE_LAPS, lap_count])
+
+	# The FULL laps only. The first one starts at the first checkpoint after
+	# the line rather than at GO, so the span this suite stepped from GO is
+	# not the span it timed; every lap after it runs from one lap count to the
+	# next, which is exactly the span between two marks.
+	var tolerance := RACE_LAP_TICKS * tick * LAP_SCALE
+	for k in range(1, timed.size()):
+		var stepped := float(int(marks[k]) - int(marks[k - 1])) * tick * LAP_SCALE
+		_check(absf(float(timed[k]) - stepped) <= tolerance,
+			"lap %d's time is the SIMULATED span the suite stepped over it and not the wall's: timed %.4f s, stepped %.4f s, allowed %.4f s" % [
+				k + 1, float(timed[k]), stepped, tolerance])
+
+	# The other member of the same class, held here for the first time: the
+	# race's own clock. A grace of RACE_GRACE_TICKS UNSCALED ticks is allowed
+	# above the stepped span because finish_time is `_clock - COUNTDOWN` and
+	# the countdown was run before the scale was set, so the few frames by
+	# which the race's clock passed COUNTDOWN are unscaled and are counted
+	# into it. A wall clock here reads about 1/LAP_SCALE times the span and is
+	# nowhere near the grace.
+	var grace := RACE_GRACE_TICKS * tick
+	_check(finish_time >= sim_span - tolerance and finish_time <= sim_span + grace,
+		"and the finish time is the simulated span too: %.4f s against %.4f s stepped, allowed %.4f s over" % [
+			finish_time, sim_span, grace])
+
+	# The row this section exists for: the two numbers THE PLAYER WAS SHOWN,
+	# out of one race, compared against each other rather than against the
+	# code that made them.
+	var sum := 0.0
+	for t in timed:
+		sum += float(t)
+	_check(sum < finish_time,
+		"the laps the player was shown sum to LESS than the finish time he was shown, as the geometry says they must: %.4f s of laps, %.4f s raced" % [sum, finish_time])
+	_check(sum > finish_time * RACE_SUM_FLOOR,
+		"and to more than %.2f of it, so the two sentences are the same clock and not two: %.4f of the finish time" % [
+			RACE_SUM_FLOOR, sum / maxf(finish_time, 0.0001)])
+
+	# Built from each object's OWN number through its OWN formatter, so this
+	# asserts the two handlers reported what happened rather than that some
+	# line containing "Lap" or "Finished" was written.
+	var lap_line := "Lap %d completed in %s" % [lap_count, main.checkpoint_tracker.get_formatted_time(last_lap)]
+	_check(hist.contains(lap_line),
+		"and both sentences are in the one history: " + lap_line)
+	_check(hist.contains("in %s." % main.race._format(finish_time)),
+		"and \"Finished P... in %s.\", the race's own number through the race's own formatter" % main.race._format(finish_time))
+	_check(is_equal_approx(Engine.time_scale, 1.0),
+		"and the engine's time scale is back to 1.0 (%.2f)" % Engine.time_scale)
+
+	notes.append("ONE RACE: %d laps timed %s summing to %.4f s, finish time %.4f s (%.4f of it), stepped span %.4f s at time_scale %.2f" % [
+		lap_count, str(timed.map(func(t): return "%.4f" % float(t))), sum, finish_time, sum / maxf(finish_time, 0.0001), sim_span, LAP_SCALE])
+
+	main.race.stop()
+	main._stop_driving()
+
 func _run() -> void:
 	print("--- PLAYER DOOR: the four unheld connects, in the scene the game runs ---")
 	main = load(SCENE_PATH).instantiate()
@@ -918,6 +1103,7 @@ func _run() -> void:
 	await _reads_the_box_not_the_argument()
 	_the_scene_has_no_floor()
 	_the_name_is_not_the_worlds()
+	await _one_race_two_clocks()
 
 	print("")
 	for note in notes:
