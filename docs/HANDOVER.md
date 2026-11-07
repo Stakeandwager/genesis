@@ -18778,13 +18778,33 @@ genuinely absent, and reproduced `5ecc88b884184e5abe8c37b3c8354b59`
 byte-for-byte - which closes 127a's open item and makes that md5 reproduce in
 three separate containers. It wrote its predicted diff to a file before
 editing any repository file, and took two byte-identical `--all` runs on the
-changed tree. **What it did NOT take is a run against a fresh clone of its
+changed tree. ~~**What it did NOT take is a run against a fresh clone of its
 own push.** A `128a` would be a docs-only commit carrying that one
 measurement. Unlike 126's and 127's copies of this sentence, which both went
 false within the hour, **this one is expected to stay true**: 128 did not
-clone its own push, deliberately, because the cycle was spent on the work.
-**Take your own baseline on `128` anyway, read `3dc378b1fc35c21f17737312c88808f6`
-against it, and then spend the cycle on the work below.**
+clone its own push, deliberately, because the cycle was spent on the work.~~
+**FALSE WITHIN THE HOUR, AND STRUCK BY THE SESSION THAT WROTE IT - the third
+copy of this sentence in three commits to go false the same way, which is now
+a pattern rather than an accident and is worth reading as one: the measurement
+costs one run and the sentence predicting it will not be taken costs a
+paragraph.** It was true when `128` was committed and stopped being true when
+the push succeeded and the clone was taken: **a fresh `git clone --branch
+prototype-002a` of the pushed commit `06eaa4b` into its own directory runs
+`3dc378b1fc35c21f17737312c88808f6`, 85 suites, 0 with something to look at,
+with a ZERO-LINE `diff` against both of 128's changed-tree runs** - `git
+status --porcelain` EMPTY both before and after the run (so `project.godot`
+was not edited to take it), `user://` cleared by deleting
+`app_userdata/AI_Game_Builder`, same Godot download. **And
+`player_door_test` alone at `--fixed-fps 120` against that clone reads 79
+assertions, failures=0, `"and timed it"` 0.167 s** - the row 127 found
+failing, read off the remote rather than off a working copy. So the tree on
+the remote is the tree that was measured. **IT IS A READING OF THE REMOTE AND
+NOT OF AN INDEPENDENT CONTAINER**, said plainly: like 126a and 127a, it was
+taken immediately after the push by the same container and the same Godot
+download. **Take your own baseline on `06eaa4b` anyway, because that is the
+independent container this one could not be, and then spend the cycle on the
+work below rather than on the measurement.** Nothing is owed and there is no
+`128b` to do.
 **AND THE CLAUSE IT MATTERS FOR IS SHORT.** The whole prediction was a
 one-line diff - `player_door_test` **75 -> 79** - and `player_door_test`
 **79** unmoved against the remote is the only reading needed, with
