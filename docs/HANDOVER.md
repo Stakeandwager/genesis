@@ -11,7 +11,27 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
-- Last commit at the time of writing: **129**, and it is **ONE FILE UNDER
+- Last commit at the time of writing: **129a**, and it is **DOCS ONLY** - 0
+  lines of diff in `scripts/`, `scenes/`, `tests/`, `netlify/`, `.github/`,
+  `project.godot` and both runners. It carries **one measurement and nothing
+  else: a fresh `git clone --branch prototype-002a` of the pushed commit
+  `62e2891` into its own directory**, `git status --porcelain` EMPTY both
+  before and after the run (so `project.godot` was not edited to take it),
+  `user://` cleared by deleting `app_userdata/AI_Game_Builder`, same Godot
+  download `4.7.1.stable.official.a13da4feb`: **md5
+  `69ebfb9f7a462613107ecbb6d73c81eb`, 85 suites, 0 with something to look at,
+  `player_door_test` 91, `drive_test` 24, `session_test` 18**, and the `diff`
+  against ALL THREE of 129's changed-tree runs is **ZERO LINES**. And
+  `player_door_test` ALONE at `--fixed-fps 120` against that same clone reads
+  **91, failures=0**, sum/finish **0.8906**. **So the tree on the remote is
+  the tree that was measured.**
+  **IT IS A READING OF THE REMOTE AND NOT OF AN INDEPENDENT CONTAINER**, said
+  plainly: like 126a, 127a and 128a, it was taken immediately after the push
+  by the same container and the same Godot download. The next firing gets the
+  stronger reading for nothing by taking its own baseline on `62e2891`.
+  **129 OWES NOTHING ELSE AND THERE IS NO `129b` TO DO.**
+
+- Last commit before this one: **129**, and it is **ONE FILE UNDER
   `tests/` PLUS THE DOCUMENTS**. `tests/player_door_test.gd` (**79 -> 91
   assertions**, one new section 8 and five new consts) and the two documents.
   **`scripts/`, `scenes/`, `netlify/`, `.github/`, `project.godot` and both
@@ -145,7 +165,7 @@ that the owner has not ruled on.** Do not promote one to the other.
   and `TRAPS.md`: **five in `HANDOVER.md` and none in `TRAPS.md`**, all that
   one date.
 
-- Last commit before this one: **128**, with the docs-only **128a** after
+- The commit before those: **128**, with the docs-only **128a** after
   it, and it is the first commit
   since **`d62f541` (120), 2026-11-06** to change a file under `scripts/`.
   **COUNTED RATHER THAN CLAIMED, AND THE FIRST DRAFT OF THIS SENTENCE WAS
@@ -267,7 +287,7 @@ that the owner has not ruled on.** Do not promote one to the other.
   sentences were not driven side by side in one race** - see "Next action".
   **NOTHING HERE TOUCHED A DEPLOYMENT SETTING, A SECRET, A FLAG OR A TARGET.**
 
-- The commit before those: **127**, and it is **DOCUMENTS PLUS
+- And before them: **127**, and it is **DOCUMENTS PLUS
   COMMENTS PLUS TWO ASSERTION MESSAGES**. `docs/HANDOVER.md`, `docs/TRAPS.md`
   (TRAPS 121 corrected, new entry **122**) and five files under `tests/`:
   `panel_built_test.gd` and `asked_test.gd` (one message each, reworded, with
@@ -19037,10 +19057,18 @@ lap, and a `best_lap_time` that no lap beat. **Do not type a lap time in as
 the expected answer**: the row is that lap 1 agrees with lap 2 at a constant
 speed, which is exactly the measurement above and needs no number.
 
-**WHAT 129 OWES, AND IT IS NOTHING ELSE.** Its baseline was a fourth
-independent container on `077e22c` and **it reproduced
-`3dc378b1fc35c21f17737312c88808f6`, which closes 128a's one open item**. Its
-own push was cloned and run as well; the reading is in "Run the tests first".
+**WHAT 129 OWES: NOTHING, AND THAT IS A READING AND NOT A PREDICTION.** Its
+baseline was a fourth independent container on `077e22c` and **it reproduced
+`3dc378b1fc35c21f17737312c88808f6`, which closes 128a's one open item**.
+**AND ITS OWN PUSH WAS CLONED AND RUN BEFORE THE CYCLE ENDED** - `62e2891`,
+md5 `69ebfb9f7a462613107ecbb6d73c81eb`, zero-line diff against all three
+changed-tree runs, carried in the docs-only `129a`. **THREE COMMITS RUNNING
+WROTE "a 12Xa would be a docs-only commit carrying that one measurement" AND
+ALL THREE WENT FALSE WITHIN THE HOUR** (126, 127, 128); 128a's "Next action"
+named that a pattern and said the measurement costs one run and the sentence
+costs a paragraph. **129 took the run instead of writing the sentence.** Take
+your own baseline on `62e2891` anyway, because that is the independent
+container `129a` could not be, and spend the cycle on the work.
 **DO NOT RE-TAKE ANY OF 129's MEASUREMENTS.** The four-tree injection table
 (fixed; wall clock at `time_scale` 1.0, at 0.1, and at 0.1 with
 `--fixed-fps`), the race's own numbers, and the lap-1 table above are all in
