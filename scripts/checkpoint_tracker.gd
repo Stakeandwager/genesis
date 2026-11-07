@@ -18,7 +18,26 @@ var last_lap_time := 0.0
 var best_lap_time := 0.0
 var lap_started := false
 
-var _lap_start_msec := 0
+# 128: THE LAP CLOCK IS THE SIMULATION'S CLOCK AND NOT THE WALL'S.
+# It was a wall clock from 002B to 127, and that is the odd one out of the
+# three durations Genesis reports about its own world. The other two
+# accumulate the engine's frame delta in _physics_process: RaceDirector._clock
+# (race_director.gd:138), which is where a race's finish time comes from, and
+# Npc.elapsed (npc.gd:178), which is the "seconds" an errand reports and the
+# cap it gives up at. This one now does the same thing, so a lap time and the
+# finish time of the race it was driven in are the same clock.
+#
+# MEASURED, not argued, and the measurement is in HANDOVER's 128 entry: at
+# 2.5 frames a second the old clock read 8.41 s for a lap the engine had
+# simulated in 1.40 s, because Godot clamps the delta it hands out and does
+# not clamp the wall. The same lap read 0.000 s under --fixed-fps, which is
+# what 127 found and could not explain from the suite alone.
+var _clock := 0.0
+var _lap_start := 0.0
+
+
+func _physics_process(delta: float) -> void:
+	_clock += delta
 
 
 func initialize(centreline: PackedVector3Array) -> void:
@@ -28,6 +47,8 @@ func initialize(centreline: PackedVector3Array) -> void:
 	last_lap_time = 0.0
 	best_lap_time = 0.0
 	lap_started = false
+	_clock = 0.0
+	_lap_start = 0.0
 
 	if centreline.size() < CHECKPOINT_COUNT:
 		return
@@ -48,7 +69,7 @@ func update_progress(position: Vector3) -> void:
 	# Passing the first checkpoint after the start line begins the timing.
 	if next_index == 1 and not lap_started:
 		lap_started = true
-		_lap_start_msec = Time.get_ticks_msec()
+		_lap_start = _clock
 
 	next_index += 1
 	if next_index < checkpoints.size():
@@ -60,8 +81,8 @@ func update_progress(position: Vector3) -> void:
 		return
 
 	lap_count += 1
-	last_lap_time = float(Time.get_ticks_msec() - _lap_start_msec) / 1000.0
-	_lap_start_msec = Time.get_ticks_msec()
+	last_lap_time = _clock - _lap_start
+	_lap_start = _clock
 	if best_lap_time <= 0.0 or last_lap_time < best_lap_time:
 		best_lap_time = last_lap_time
 	lap_completed.emit(last_lap_time, best_lap_time)

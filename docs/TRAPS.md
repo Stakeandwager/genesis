@@ -9458,3 +9458,70 @@ it"* does not.
   width of a fault he has to make a decision about is the same error as
   overstating a capability, and it reaches him the same way: as a sentence he
   trusts without re-driving.
+
+---
+
+## 123. A duration reported about the simulation, measured off the wall clock
+
+**Signature:** a suite row about a timing is green through the runner and red
+when the suite is run by hand with a flag, and the number the code reports is
+right in ordinary play and wrong exactly when the machine is struggling —
+which is when a player is most likely to be looking at it.
+
+**Cause.** `CheckpointTracker` timed a lap with `Time.get_ticks_msec()` from
+002B to 127. Genesis reports **three** durations about things that happened
+in its own world, and the other two accumulate the engine's frame delta in
+`_physics_process`: `Npc.elapsed` (`npc.gd:178`), which is the `"seconds"` an
+errand reports and the cap it gives up at, and `RaceDirector._clock`
+(`race_director.gd:138`), which is where a race's finish time comes from.
+**Two of the three were already right. Nobody had put the three side by
+side**, so the odd one out survived eleven releases.
+
+127 found the symptom and could not name the fault from it: the row
+`last_lap_time > 0.0` reads **0.000 s** at `--fixed-fps`, because the whole
+lap takes less than a millisecond of real time, and 127 left the open
+question as *"either the row should assert something a wall clock can
+deliver, or a lap time measured off a wall clock is a defect in the
+tracker"*. **Driving it answered it.** The same lap, three clocks, frame cost
+added with `OS.delay_msec` to emulate a machine that cannot hold the budget:
+
+| condition | tracker said | engine's delta | wall |
+|---|---|---|---|
+| `--fixed-fps 120` | **0.000** | 0.175 | 0.000 |
+| ~5 fps | **4.013** | 1.400 | 4.215 |
+| ~2.5 fps | **8.021** | 1.400 | 8.422 |
+
+Godot clamps the delta it hands out and does not clamp the wall, so at 2.5
+frames a second Genesis told the player a lap took **8.02 s** that the engine
+had simulated in **1.40 s**. And `main.gd:858` feeds the tracker during a
+`/race` as well, so *"Lap 1 completed in …"* and *"Finished P1 of 4 in …"* —
+two sentences about the same minute of the same race — came from two clocks
+that disagree by a factor of six down there.
+
+**And the row guarding it could not have caught any of that.** `> 0.0` is
+true of a wall clock whenever the lap takes more than a millisecond, which it
+does through `run_tests.sh`. That is trap 6 in its quietest form: not a check
+that can never fail, but a check that cannot fail *against the fault it is
+about* in the configuration anybody actually runs.
+
+**Do:**
+
+- A duration about something that happened **in the world** is a measurement
+  of the world, and comes from the world's clock — the engine's frame delta.
+  The wall clock is right for durations about the **session**: how long a
+  person has been building, how long until their first world
+  (`session_report.gd:222`, `:232`). Those two are correct as they are and
+  were deliberately left alone.
+- When a suite row about a reported number goes red under a flag, ask what
+  the project's other numbers **of the same kind** do before deciding whose
+  defect it is. Enumerate them. Here the enumeration was three long and it
+  answered the question outright.
+- A row asserting a duration is `> 0` asserts almost nothing. Assert it
+  against a span measured from a **different source**, and drive a condition
+  where the two candidate clocks disagree. `Engine.time_scale` separates
+  simulated time from wall time without sleeping: at 0.1 a wall clock reads
+  about ten times the simulated span, or about zero under `--fixed-fps`, and
+  one band excludes both.
+- Then run the new row against the **unfixed** tree and watch it go red, in
+  every configuration the runner might use. A guard nobody has seen fail is
+  a sentence.

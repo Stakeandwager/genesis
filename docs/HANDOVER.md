@@ -11,7 +11,128 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
-- Last commit at the time of writing: **127**, and it is **DOCUMENTS PLUS
+- Last commit at the time of writing: **128**, and it is the first commit
+  since **`d62f541` (120), 2026-11-06** to change a file under `scripts/`.
+  **COUNTED RATHER THAN CLAIMED, AND THE FIRST DRAFT OF THIS SENTENCE WAS
+  WRONG (TRAPS 14).** It read *"the first commit since 120 to change a file a
+  player meets"*, and `git rev-list` plus a per-commit `git diff --name-only`
+  over HDN 33(b)'s own path list says otherwise: **13 commits since
+  `d62f541`, none of them touching `scripts/`, and two of them - `4891dfc`
+  (121) and `2c6ff09` (123) - each changing one line of `run_tests.sh`**,
+  which is on that list. So the streak is 13 on `scripts/` and 0 on the wider
+  list, and 128 makes it 1 on both. The draft was caught by running the count
+  it asserted, which is the whole of TRAPS 14 and the thing HDN 33(b)'s own
+  arithmetic has gone stale over twice.
+  `scripts/checkpoint_tracker.gd`
+  (the lap clock), `tests/player_door_test.gd` (**75 -> 79 assertions**, one
+  new block in section 3), and the two documents. **`scenes/`, `netlify/`,
+  `.github/`, `project.godot` and both runners are 0 LINES OF DIFF**, and so
+  is every other file under `scripts/` and every other file under `tests/`.
+
+  **WHAT IT CLOSES: 126's AND 127's SECOND ITEM, THE ONE BOTH OF THEM NAMED
+  AS "THE CHEAPEST HONEST PIECE LEFT THAT NEEDS NOBODY".** 127 found that
+  `player_door_test`'s `"and timed it"` row (`:592`) reads **0.000 s** and
+  FAILS when the suite is run by hand with `--fixed-fps`, counted it at 8
+  runs - seven failures=1, one failures=0 - and left the question it could not
+  answer from two lines of source: **is the row wrong, or is the clock?**
+
+  **THE ANSWER IS THE CLOCK, AND IT WAS SETTLED BY ASKING THE CLASS (TRAPS
+  11) RATHER THAN THE LINE.** Genesis reports **three** durations about things
+  that happened in its own world. Enumerated off the source rather than
+  recalled:
+
+  | | what it reports | how it was measured |
+  |---|---|---|
+  | `Npc.elapsed` (`npc.gd:178`) | the `"seconds"` an errand reports, and the cap it gives up at | **`+= delta`** in `_physics_process` |
+  | `RaceDirector._clock` (`race_director.gd:138`) | the countdown, and `player_time` - a race's finish time | **`+= delta`** in `_physics_process` |
+  | `CheckpointTracker` (`checkpoint_tracker.gd:51`, `:63`) | a lap time, and the best lap | **`Time.get_ticks_msec()`** - a WALL CLOCK |
+
+  **TWO OF THE THREE ALREADY DID IT THE RIGHT WAY. NOBODY HAD PUT THE THREE
+  SIDE BY SIDE.** The lap clock has been the odd one out since 002B.
+
+  **AND THE COST IS NOT CONFINED TO A SUITE FLAG, WHICH IS THE PART THAT
+  DECIDED THIS WAS A DEFECT IN `scripts/` AND NOT IN `tests/`.** Measured in a
+  throwaway clone outside the repository (TRAPS 50), on the fixture
+  `player_door_test` section 3 already drives - a real `CREATE_TRACK` through
+  the Build button, a real `/drive`, the car teleported through all twelve
+  checkpoints - with three clocks read over **the same lap**: the tracker's
+  own answer, the sum of `_process` delta, and the sum of `_physics_process`
+  delta. Frame cost was added with `OS.delay_msec` per frame to emulate a
+  machine that cannot hold the frame budget:
+
+  | condition | tracker said | `_process` delta | `_physics_process` delta | wall |
+  |---|---|---|---|---|
+  | no `--fixed-fps` | 0.1380 | 0.1459 | 0.1417 | 0.1450 |
+  | `--fixed-fps 120` | **0.0000** | 0.1736 | 0.1750 | 0.0000 |
+  | 50 ms/frame (~20 fps) | 1.0110 | 1.0630 | 1.0667 | 1.0620 |
+  | 200 ms/frame (~5 fps) | **4.0130** | 1.3997 | 1.4000 | 4.2150 |
+  | 400 ms/frame (~2.5 fps) | **8.0210** | 1.4027 | 1.4000 | 8.4220 |
+
+  **READ THE LAST ROW.** On a machine running at 2.5 frames a second, Genesis
+  told the player the lap took **8.02 s**. The engine had simulated
+  **1.40 s** of it. Godot clamps the delta it hands out - `_process` and
+  `_physics_process` both stop at **1.400** whether the frames cost 200 ms or
+  400 ms - and does not clamp the wall. **The two delta clocks agree with each
+  other to 3 ms over 1.4 s in every condition**, so this is not a choice
+  between two readings; it is one reading and one artefact.
+
+  **AND IT IS A DISAGREEMENT INSIDE ONE RACE, WHICH IS WHY IT IS NOT ONLY A
+  HARNESS PROBLEM.** `main.gd:858` calls `update_progress` on every process
+  frame **before** the `if race.running` branch, so the tracker times laps
+  during a `/race` too, and `_on_lap_completed` (`main.gd:1019`) writes
+  *"Lap 1 completed in ..."* into the history while the same race's
+  *"Finished P1 of 4 in ..."* comes from `RaceDirector._clock`. Until this
+  commit those two sentences, about the same minute of the same race, came
+  from two different clocks that disagree by a factor of six at 2.5 fps.
+  **The owner's machine is an Intel HD 3000 through ANGLE**, which is the one
+  recorded fact that makes the bottom of that table the interesting end
+  rather than a curiosity - said as the reason this was worth doing, NOT as a
+  claim about what his machine does. **Nothing here was run on his hardware.**
+
+  **WHAT CHANGED IN `scripts/`.** `CheckpointTracker` gains `_clock`,
+  accumulated `+= delta` in `_physics_process`, which is the same form the
+  other two members of the class already use; `initialize()` resets it;
+  the lap start and the lap time are differences of it. **No `Time.` call
+  survives anywhere in the file's code** - checked against the
+  comment-stripped source, because the new comment mentions the old call by
+  name. The signal, the field names, the formatter and `REACH` are untouched,
+  so `main.gd` and the status line did not have to change and did not.
+
+  **WHAT CHANGED IN `tests/`, AND IT IS NOT A WEAKENED ROW.** `:592`'s
+  `last_lap_time > 0.0` is **kept exactly as it was** and now reads
+  **0.167 s** at `--fixed-fps 120` instead of 0.000. What is added is the row
+  that `> 0.0` could never be: a row that **fails against a wall clock in
+  BOTH configurations**, because `> 0.0` is true of a wall clock whenever the
+  lap takes more than a millisecond of real time, which it does through
+  `run_tests.sh` (TRAPS 6). It drives the separation with
+  **`Engine.time_scale = 0.1`**, which scales the delta the engine hands out
+  and does not touch the wall, and asserts the lap time against **the
+  simulated span the suite itself stepped**, read off
+  `Engine.get_physics_frames()` and `Engine.physics_ticks_per_second` - a
+  different source from the tracker, so the two sides of the comparison do
+  not share a cause. **No lap time is typed in as an expected answer** (TRAPS
+  6, TRAPS 14): the band is a ratio, and changing the fixture, the checkpoint
+  count or the frame rate does not move it.
+
+  **THE INJECTION, BECAUSE A ROW THAT HAS NOT BEEN SEEN TO FAIL IS A CLAIM.**
+  The new `player_door_test.gd` was copied into a throwaway clone whose
+  `checkpoint_tracker.gd` is the **unfixed** one, and run in both
+  configurations: **no `--fixed-fps`: failures=1** - the new row alone, which
+  is the case `> 0.0` passes - and **`--fixed-fps 120`: failures=2**, the old
+  row and the new one. Against the fixed tree, failures=0 in both.
+
+  **WHAT 128 DID NOT DO.** It did not touch HDN 24, 38, 39 or 40, and did not
+  narrow any of them. It did not change where a thing is placed, a height, a
+  corridor slab, the walker, or `walkable()`. It did not add the lap clock to
+  any other suite - `player_door_test` is still the only file under `tests/`
+  that names `last_lap_time` or `best_lap_time`, grepped. It did not run on
+  the owner's hardware, in a browser, or against a live API key. And it did
+  not measure a race end to end: the claim that a lap time and a finish time
+  now come from the same clock is read off the two sources, and **the two
+  sentences were not driven side by side in one race** - see "Next action".
+  **NOTHING HERE TOUCHED A DEPLOYMENT SETTING, A SECRET, A FLAG OR A TARGET.**
+
+- Last commit before this one: **127**, and it is **DOCUMENTS PLUS
   COMMENTS PLUS TWO ASSERTION MESSAGES**. `docs/HANDOVER.md`, `docs/TRAPS.md`
   (TRAPS 121 corrected, new entry **122**) and five files under `tests/`:
   `panel_built_test.gd` and `asked_test.gd` (one message each, reworded, with
@@ -10496,7 +10617,72 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
-**THE LATEST RUN IS 127's, ON ITS OWN CHANGED TREE**, `--all`, through
+**THE LATEST RUN IS 128's, ON ITS OWN CHANGED TREE**, `--all`, through
+`run_tests.sh`, `user://` cleared by deleting `app_userdata/AI_Game_Builder`
+before each, **TWO BYTE-IDENTICAL RUNS, both with `docs/` in place**: md5
+**`3dc378b1fc35c21f17737312c88808f6`**, **85 suites, 0 with something to look
+at**, `player_door_test` **79, failures=0**, `result_line_test` **370,
+failures=0**, `source_scan_test` **80, failures=0**, `drive_test` **24,
+failures=0**, `session_test` **18, failures=0**, `halt_cause_test` **43,
+failures=0**, `behaviour_test` **12, failures=0**. `git status --porcelain`
+named **`scripts/checkpoint_tracker.gd` and `tests/player_door_test.gd` and
+nothing else**, so `project.godot` was not edited to take the measurement and
+no `.uid` was added.
+
+**`diff` AGAINST THE BASELINE IS EXACTLY ONE LINE**, and it is the one the
+prediction named: `player_door_test` **75 -> 79**. Every other suite is
+unmoved, line for line. The two worth naming are `drive_test` **24** and
+`session_test` **18**, the only two suites that run full races - this commit
+changes the clock a race's laps are timed by, and neither moved;
+and `result_line_test` **370** unmoved, which is the reading that no file
+under `tests/` was added or removed, taken by the project's own
+`dir.get_files()` rather than by `ls`.
+
+**128's BASELINE IS ITS OWN FRESH CONTAINER ON THE PUSHED COMMIT `d519089`,
+WHICH IS WHAT 127a's "Next action" SAID THE NEXT FIRING WOULD GET FOR
+NOTHING.** A clone of `d519089` (127a) in a container that had taken **none**
+of 126's, 126a's, 127's or 127a's measurements, with its own Godot download -
+**4.7.1.stable.official.a13da4feb**, `--version` read - `git status
+--porcelain` **EMPTY before the run**, and `user://` **genuinely absent
+rather than cleared**: `~/.local/share/godot/app_userdata/` did not exist in
+this container. **`5ecc88b884184e5abe8c37b3c8354b59`, 85 suites, 0 with
+something to look at**, `player_door_test` **75**, `result_line_test`
+**370**, `source_scan_test` **80**. **BYTE-IDENTICAL to the md5 126, 126a,
+127 and 127a all recorded.** `127a` is docs-only against `4b70bc1` - `git
+diff --name-only 4b70bc1 d519089` names `docs/HANDOVER.md` and nothing else,
+read rather than taken from the commit message - so this is a reading of
+`4b70bc1`'s tree as well, and **127a's one open item is closed**. That md5 has
+now reproduced in **three** separate containers.
+
+**AND THE ROW THIS COMMIT IS ABOUT WAS RUN ALONE, IN THE CONFIGURATION 127
+FOUND IT FAILING IN.** `player_door_test` by hand at `--fixed-fps 120`,
+**three runs, all 79 assertions, failures=0**, `"and timed it"` reading
+**0.167 s** every time rather than 0.000 and rather than varying. 127's count
+on the unfixed tree was 8 runs, seven failures=1 and one failures=0; the
+flake is gone because the number no longer depends on whether a millisecond
+of real time happened to elapse.
+
+**AND THE NEW ROW WAS SEEN TO FAIL, WHICH IS THE ONLY THING THAT MAKES IT A
+GUARD RATHER THAN A SENTENCE.** The changed `player_door_test.gd` over the
+**unfixed** `checkpoint_tracker.gd`, in a throwaway clone: **no `--fixed-fps`
+-> failures=1**, the new row alone - and that is the case the old `> 0.0` row
+PASSES, so without this row the fault is invisible in the configuration
+`run_tests.sh` uses; **`--fixed-fps 120` -> failures=2**, both rows.
+
+**WHAT THE RUNS DO NOT PROVE, AND IT IS THE SAME THING THEY NEVER PROVE.**
+The suite is green and it is green on a tree where a `go_to` errand cannot
+walk a corridor the lattice had to bend (HDN 40, any dungeon with a loop in
+it) and cannot cross or reach a room with a thing in it (HDN 39, 12 of 12).
+**Both faults were driven by hand, outside the suite, and neither is held by
+a row**, deliberately. A green `--all` is necessary and never sufficient:
+**eight faults the owner's own test sessions found and the assistant's suites
+did not**, and **two that a driven errand found inside a green run with
+nobody testing**. 128 adds a third kind to read beside those: **a fault the
+suite DID surface, as a row that went red under a flag nobody passes it, and
+that sat for two commits as "the cheapest piece left" because the row could
+not say which of the two candidate faults it had found.**
+
+**THE RUN BEFORE IT IS 127's, ON ITS OWN CHANGED TREE**, `--all`, through
 `run_tests.sh`, `user://` cleared by deleting `app_userdata/AI_Game_Builder`
 before each, **THREE BYTE-IDENTICAL RUNS, all with `docs/` in place**: md5
 **5ecc88b884184e5abe8c37b3c8354b59**, **85 suites, 0 with something to look
@@ -18583,6 +18769,93 @@ and recorded because it is what made this commit's own suite vacuous.
   and it is a move rather than a fix. Left for whoever has a reason.
 
 ## Next action
+
+**WHAT 128 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
+clone` OF ITS OWN PUSHED COMMIT.** 128 took its baseline as a clone of
+`d519089` in a container that had taken none of 126's, 127's or 127a's
+measurements, with its own Godot download, porcelain empty, `user://`
+genuinely absent, and reproduced `5ecc88b884184e5abe8c37b3c8354b59`
+byte-for-byte - which closes 127a's open item and makes that md5 reproduce in
+three separate containers. It wrote its predicted diff to a file before
+editing any repository file, and took two byte-identical `--all` runs on the
+changed tree. **What it did NOT take is a run against a fresh clone of its
+own push.** A `128a` would be a docs-only commit carrying that one
+measurement. Unlike 126's and 127's copies of this sentence, which both went
+false within the hour, **this one is expected to stay true**: 128 did not
+clone its own push, deliberately, because the cycle was spent on the work.
+**Take your own baseline on `128` anyway, read `3dc378b1fc35c21f17737312c88808f6`
+against it, and then spend the cycle on the work below.**
+**AND THE CLAUSE IT MATTERS FOR IS SHORT.** The whole prediction was a
+one-line diff - `player_door_test` **75 -> 79** - and `player_door_test`
+**79** unmoved against the remote is the only reading needed, with
+`drive_test` **24** and `session_test` **18** beside it because they are the
+two suites that run full races on the clock this commit changed.
+**AND ONE CLAUSE OF 128's OWN PREDICTION WAS WRONG, RECORDED RATHER THAN
+TIDIED (TRAPS 89).** It predicted `player_door_test` **75 -> 77**, with the
+words *"if I write only one it is 76"*. It is **79**: the block asserts four
+things, not one or two - that the second `/drive` re-armed the tracker, that
+the slowed lap was counted, the band itself, and that the time scale was put
+back. **That is the fourth commit running - 121, 124, 125 and now 128 - whose
+count clause missed**, and the shape is the same every time: a count
+predicted before the work is finished is a count of work that is not
+finished. The two clauses that took a READING rather than a guess both held:
+`result_line_test` **370** unmoved because it counts files and no file moved,
+and `source_scan_test` **80** unmoved, which 128 wrote down as a guess
+because it had not read what all 80 of its rows look for.
+**DO NOT RE-TAKE THE CLOCK TABLE.** The five conditions, the three clocks and
+the 2.5-fps row are all in the 128 entry with their numbers, and the
+injection against the unfixed tree in both configurations is there too.
+
+**THE WORK ITSELF. 128 CLOSED THE LAST ITEM ON THE LIST THAT NEEDED NOBODY
+AND WAS CHEAP. WHAT IS LEFT THAT NEEDS NOBODY IS 127's OWN FOUR, AND THEY ARE
+ALL MEASUREMENTS RATHER THAN FIXES.**
+
+**HDN 39 AND HDN 40 ARE BOTH STILL HIS AND BOTH STILL BREAK THE SAME
+MILESTONE**, and 128 did not touch either. HDN 40 reaches any dungeon with a
+loop in it, at 10 m rooms as well as 11 and above, with `_corridor()`'s range
+`{1, 4, 5}`. Together with HDN 39 - a `go_to` errand cannot cross or reach a
+room with a thing in it, 12 of 12 - that is *objects created, carried and
+delivered by NPCs*, which `docs/PROTOCOL.md` section 2 names as the current
+direction. **If he has answered either, that is the work.** Until then: do
+not change where a thing is placed, do not change a height, do not widen a
+corridor slab, and do not add avoidance or turn-slowing to the walker.
+**HDN 24 IS STILL A COSTED DECISION AND STILL HIS.** Do not apply the patch.
+**HDN 38 IS UNTOUCHED AND IS STILL HIS.**
+
+**WHAT 128 LEAVES OF ITS OWN, AND IT IS THE HALF OF ITS OWN CLAIM IT COULD
+NOT DRIVE.** 128 says a lap time and the finish time of the race it was
+driven in are now the same clock. That is read off **two sources** -
+`checkpoint_tracker.gd` and `race_director.gd:138`, both `+= delta` in
+`_physics_process` - and **the two sentences were never printed side by side
+in one race and compared**. The reading is cheap and `drive_test` and
+`session_test` already run full races: drive a `/race`, catch *"Lap N
+completed in ..."* and *"Finished P... in ..."* out of the same history, and
+check that the laps sum to the finish time within a tick. **That is the one
+row that would hold this commit's claim rather than its mechanism**, and 128
+did not write it because the claim it could hold is about a race and the
+fault it was fixing is about a lap.
+
+**AND 127's FOUR ARE ALL STILL THERE, UNTOUCHED BY 128.** In 127's own order
+of what they would tell the owner:
+**(1) WHERE THE RING'S OWN BAND STARTS.** Drive the ring of four at 4, 6 and
+8 m. 127 drove 10, 12 and 20 only; if it fails at `MIN_SIDE` the fault has no
+safe band at all.
+**(2) WHETHER THE TWO NEW FAILURES ARE THE SAME MECHANISM.** Position,
+`is_on_floor()`, `is_on_wall()` and the collider's owning piece at the halt,
+for the ring and for the five-leg shape. It decides whether this is one fault
+or two.
+**(3) WHETHER `carry` FAILS ON A RING.** HDN 40 has a `carry` row for its own
+shape and 127 drove none.
+**(4) THE REST OF THE MESSAGE-VERSUS-EXPRESSION CLASS.** 127 swept `tests/`
+for messages claiming a BODY walks or reaches and found two. The same
+question is unasked for *arrives*, *is delivered*, *is carried*,
+*is reachable*.
+**AND ONE 122 DELIBERATELY DID NOT TAKE, STILL NOT TAKEN:** whether a body
+can reach the cap while touching something.
+
+**128 LEFT THE 127 TEXT BELOW IN PLACE, UNSTRUCK AND UNEDITED**, because what
+it owed and how it was closed is the part a later session reads. The 127 text
+follows.
 
 **WHAT 127 OWES, STATED PLAINLY: ONE MEASUREMENT, AND IT IS A FRESH `git
 clone` OF ITS OWN PUSHED COMMIT.** 127 took its baseline as a fresh `git

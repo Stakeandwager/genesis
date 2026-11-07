@@ -165,6 +165,14 @@ const SCENE_PATH := "res://scenes/main.tscn"
 # file runs in a container with no api_key.txt, which is what this container
 # is. The three differ only in the length of the straights, so which of them
 # built the standing world is a number and not a judgement.
+# 128: the time scale the second lap of section 3 is driven at, and the band
+# the lap time has to land in as a multiple of the simulated span. The band is
+# wide because what it has to tell apart is wide: at this scale a wall clock
+# reads about 1/LAP_SCALE times the simulated span, or about zero under
+# --fixed-fps, and both are far outside it.
+const LAP_SCALE := 0.1
+const LAP_FLOOR := 0.25
+const LAP_CEILING := 3.0
 const A_LENGTH := 300
 const B_LENGTH := 400
 const C_LENGTH := 500
@@ -603,6 +611,73 @@ func _lap() -> void:
 	_check(_history().contains(expected),
 		"and the player was shown it, with the tracker's own times: " + expected)
 	notes.append("LAP: car position -> main.gd:809 -> tracker -> lap_completed -> " + expected)
+
+	# --- 128: the lap time is the SIMULATION's duration, not the wall's ---
+	#
+	# WHY THIS ROW IS NOT "last_lap_time > 0.0". That row above is true of a
+	# wall clock and of a simulation clock alike whenever the lap takes more
+	# than a millisecond of real time, which it does when this suite is run
+	# the way run_tests.sh runs it. It is the row 127 found reading 0.000 s
+	# and FAILING at --fixed-fps 120, seven runs out of eight - a lap the
+	# engine had simulated in 0.17 s, timed by a clock that had not ticked.
+	# So "> 0.0" cannot tell the two clocks apart in the configuration the
+	# runner actually uses, and a row that cannot fail against the fault it
+	# is about is TRAPS 6.
+	#
+	# THIS ROW SEPARATES THEM WITHOUT SLEEPING AND IN EITHER CONFIGURATION.
+	# Engine.time_scale scales the delta the engine hands out and does not
+	# touch the wall: at 0.1 a lap that takes a tenth of a second of real
+	# time is a hundredth of a second of simulated time. A wall clock then
+	# reads about ten times the simulated span with no --fixed-fps, and about
+	# zero with it, and both are outside the band below. The scale is set
+	# BEFORE the /drive that re-arms the tracker, so every frame of the lap
+	# it times is a scaled frame.
+	#
+	# WHAT IT ASSERTS IS THE CAPABILITY AND NOT A NUMBER (TRAPS 6, TRAPS 14).
+	# Nothing here is typed in as an expected lap time. The band is a ratio
+	# against the simulated span this suite itself stepped, read off
+	# Engine.get_physics_frames() and Engine.physics_ticks_per_second rather
+	# than off the tracker, so the two sides of the comparison have different
+	# sources. Change the fixture, the checkpoint count or the frame rate and
+	# this row still holds; put a wall clock back in the tracker and it fails.
+	Engine.time_scale = LAP_SCALE
+	main._handle_request("/drive")
+	await process_frame
+	if main.car == null:
+		Engine.time_scale = 1.0
+		_check(false, "and a second /drive put a car back on the circuit")
+		return
+	main.car.freeze = true
+	_check(main.checkpoint_tracker.lap_count == 0,
+		"a second /drive re-armed the tracker, so the next lap is timed from zero (lap_count %d)" % main.checkpoint_tracker.lap_count)
+
+	var tick := 1.0 / float(Engine.physics_ticks_per_second)
+	var wall_at_start := -1
+	var frames_at_start := -1
+	for i in range(1, checkpoints.size()):
+		main.car.global_position = checkpoints[i]
+		await process_frame
+		if frames_at_start < 0 and main.checkpoint_tracker.lap_started:
+			# The tracker has just taken its own lap start. Read the engine's
+			# frame counter and the wall at the same moment it did.
+			wall_at_start = Time.get_ticks_msec()
+			frames_at_start = Engine.get_physics_frames()
+		await process_frame
+
+	var wall_span := float(Time.get_ticks_msec() - wall_at_start) / 1000.0
+	var sim_span := float(Engine.get_physics_frames() - frames_at_start) * tick * Engine.time_scale
+	var timed: float = main.checkpoint_tracker.last_lap_time
+	Engine.time_scale = 1.0
+
+	_check(main.checkpoint_tracker.lap_count == 1,
+		"and the slowed lap was counted (lap_count %d)" % main.checkpoint_tracker.lap_count)
+	_check(timed > sim_span * LAP_FLOOR and timed < sim_span * LAP_CEILING,
+		"and the lap time is the SIMULATED duration and not the wall's: timed %.4f s, simulated %.4f s, wall %.4f s, band %.4f to %.4f" % [
+			timed, sim_span, wall_span, sim_span * LAP_FLOOR, sim_span * LAP_CEILING])
+	_check(is_equal_approx(Engine.time_scale, 1.0),
+		"and the engine's time scale is back to 1.0 for the sections after this one (%.2f)" % Engine.time_scale)
+	notes.append("LAP CLOCK: at time_scale %.2f the tracker timed %.4f s over a %.4f s simulated span and a %.4f s wall span" % [
+		LAP_SCALE, timed, sim_span, wall_span])
 
 
 # --- 4. race.announced (main.gd:98) ---
