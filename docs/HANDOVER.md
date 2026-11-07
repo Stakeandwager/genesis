@@ -11,7 +11,100 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
-- Last commit at the time of writing: **136a**, and it is **DOCS ONLY** - 0
+- Last commit at the time of writing: **137**, and it is **ONE FILE UNDER
+  `tests/` PLUS `docs/TRAPS.md` AND THIS FILE**.
+  `tests/scan_floor_test.gd` (**156 -> 164 assertions**: one new section 7,
+  one new helper `_subdirectories_of()`, and one new `FLOORS` row for the read
+  that helper makes). **`scripts/`, `scenes/`, `netlify/`, `.github/`,
+  `project.godot` and both runners are 0 LINES OF DIFF**, confirmed by
+  `git diff --name-only`, so **nothing a player meets changed** and **no fault
+  a player can meet was fixed**. What was done is the task `Next action` has
+  named first since 135 - asking a source reader what it cannot parse - and
+  the answer this time was not about a reader at all.
+
+  **ONE. THREE MORE OF THE 54 UNASKED READERS WERE ASKED, AND ALL THREE
+  ANSWERED THE SAME THING ABOUT SOMETHING ELSE.** The three `Next action`
+  named - `check_wiring_test::_verdict_functions`,
+  `refusal_reach_test::_sites_in_code` and `scan_floor_test::_function_body` -
+  were each fed a built `scripts/` whose answer was known, with the function
+  **sliced out of the committed source at harness-build time** rather than
+  retyped (136's habit, kept). Four shapes were put to the first two:
+
+  | shape | `_verdict_functions` | `_sites_in_code` |
+  |---|---|---|
+  | a `func` indented inside a `class` | **lost in silence** | not applicable |
+  | a `#` inside a double-quoted literal | **lost in silence** | **lost in silence** |
+  | a `"""` block holding text that reads as code | **INVENTED a row**, `prompt_block.gd:phantom_from_prompt`, out of prompt prose | **INVENTED a category**, `FAILED_FROM_PROMPT_TEXT` |
+  | a `.gd` in a subdirectory of `scripts/` | **lost in silence** | **lost in silence** |
+
+  **AND THE FIRST THREE COST NOTHING TODAY, COUNTED RATHER THAN HOPED.**
+  `scripts/` holds **0 indented `func` lines, 0 `class` declarations and 0
+  lines with a `#` inside a double-quoted literal**; its **8 `"""` blocks**
+  hold no column-0 `func` header, no `#` and no verdict key. (`tests/` has
+  **115** in-literal `#` lines in 21 files, so that one is NOT a claim that
+  could be made about `tests/` - which is why nothing here asserts it.) The
+  invented-row direction is also **loud** in both suites: a phantom key fails
+  `DECLARED.has(key)` by name. Written down, not guarded (TRAPS 6).
+
+  **TWO. THE FOURTH SHAPE IS THE FINDING, AND IT IS NOT ABOUT EITHER READER.**
+  `get_files()` and `get_files_at()` **DO NOT RECURSE**, and all **27
+  directory reads in `tests/`, in 24 functions across 13 files**, use one or
+  the other. A `.gd` one level down is never offered to any of them. Measured
+  in a throwaway copy with `scripts/farm_module.gd` moved to
+  `scripts/worlds/farm_module.gd` and nothing else changed:
+
+  | suite | before | with the file one level down |
+  |---|---|---|
+  | `loadcheck` | 39 assertions, bad=0 | **38 assertions, bad=0 - SILENT** |
+  | `check_wiring_test` | 217, failures=0 | 214, **failures=4** naming `farm_module.gd:validate`, `:solve`, `:_check_reachable` |
+  | `refusal_reach_test` | 219, failures=0 | 219, **failures=2** naming `FAILED_LAYOUT` |
+
+  **SO THE CLASS IS LOUD WHERE A ROW IS PINNED AND SILENT WHERE THE CLAIM IS
+  THE ENUMERATION ITSELF.** `loadcheck`'s whole job is *"every script in
+  `scripts/` loads"*; it loaded 36 of 37 and printed a pass. Its floor is
+  `loaded == 0`, which fires on a read that finds NOTHING and **cannot fire on
+  a read that is one file short** - the general shape, and TRAPS 134.
+
+  **THREE. WHAT WAS WRITTEN IS ONE ASSERTION FOR ALL 27 READS, NOT A COUNT IN
+  EACH SUITE.** `scan_floor_test` section 7 takes the literal paths off the
+  sites that file already derives, asks each for its subdirectories, and fails
+  **naming the subdirectory**. The red reading: with `scripts/worlds/` present
+  it printed *"a directory this class reads holds a subdirectory, and every
+  .gd under it is read by NONE of the 27 sites above, in silence: res://scripts
+  holds worlds"*, **164 assertions, failures=1**. A pinned count in each of
+  the 13 files would go stale on the next script anybody adds, and there would
+  be thirteen of them (TRAPS 11).
+
+  **FOUR. AND THE SECTION HAS A NEGATIVE CONTROL, BECAUSE A FAILED OPEN AND A
+  FLAT TREE ARE THE SAME ANSWER.** `_subdirectories_of()` whose `open` returns
+  null says *"no subdirectories"* about every path, and the flatness line
+  passes having read nothing. Measured, with that `open` pointed at a path
+  that does not exist: the flatness line **PASSED** and the control - *`res://`
+  itself has subdirectories* - **FAILED by name**, *"which has 0 - so its
+  silence below is a reading and not a failed open"*. **It is the pair that
+  tells the two apart, not either line alone.** That is the `FLOORS` row's
+  stated floor, and it is a measurement rather than a prediction. TRAPS 133's
+  rule at one more detector.
+
+  **FIVE. THE CLASS NAMED ITS AUTHOR'S OWN NEW READ ON THE RUN THAT ADDED IT,**
+  which is what section 5 is for: `scan_floor_test.gd::_subdirectories_of`
+  arrived as a site, was asked for a row, was asked whether it tests its
+  handle for null in its own function, and was asked whether the condition its
+  row names is in the file. Five of the eight new assertions are those, not
+  section 7's three.
+
+  **SIX. THE ONE HOLE, LEFT AS A HOLE.** The path is read off the `DirAccess`
+  line, so the three sites whose path is an **expression** are not asked.
+  `player_door_test.gd:478` iterates `["res://tests", "res://scripts"]`, which
+  section 7 already walks; `_subdirectories_of()` takes its path as a
+  parameter, so asking it of itself is circular; and
+  **`proxy_test.gd:297` walks `res://.github/workflows`**, assigned to a local
+  on the line above, which section 7 does **NOT** ask about. It holds no
+  subdirectory today - counted, one file, `web.yml`. Named in the section's
+  own header rather than closed, because widening the path reader is a change
+  to what that file's class IS and not a side effect of adding a section.
+
+- Last commit before this one: **136a**, and it is **DOCS ONLY** - 0
   lines of diff in `scripts/`, `scenes/`, `tests/`, `netlify/`, `.github/`,
   `project.godot` and both runners, confirmed by `git diff --name-only`. No
   fault a player can meet was fixed and no row was added. It carries **one
@@ -11795,7 +11888,73 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
-**THE LATEST RUN IS 136a's, AND IT IS A FRESH `git clone` OF THE PUSHED
+**THE LATEST RUN IS 137's, ON ITS OWN CHANGED TREE, AND ONE SUITE'S COUNT
+MOVED.** `--all` through `run_tests.sh`, `user://` cleared by deleting
+`app_userdata/AI_Game_Builder` before it, Godot
+**`4.7.1.stable.official.a13da4feb`** (binary md5
+**`c083304672e2b4264cfb7f823aba095f`**, checked with `md5sum` on the download
+rather than assumed): md5 **`4852ccd92e06da695bec0b98e0449113`**, **85 suites,
+0 with something to look at**, `player_door_test` **154, failures=0**,
+`source_scan_test` **115, failures=0**, `scan_floor_test` **164,
+failures=0**, `halt_cause_test` **53, failures=0**, `drive_test` **24,
+failures=0**, `session_test` **18, failures=0**, `result_line_test` **370,
+failures=0**. **177 s wall** (`2m56.643s`), timed with `time` around the
+runner, and **the runner wrote 0 bytes to stderr** - the capture holds 44
+bytes and all 44 are `time`'s own three lines, counted with `wc -c`.
+
+**THE `diff` AGAINST 137's OWN BASELINE IS ONE LINE, AND THAT IS THE WHOLE
+EFFECT OF THE CHANGE**: `scan_floor_test` **156 -> 164**. Every other suite's
+line is byte-identical, read off `diff | wc -l` rather than by eye.
+
+**AND 137's BASELINE IS THE INDEPENDENT CONTAINER `136a` COULD NOT BE.** Taken
+before any edit, on the pushed `90a2e59` (136a), in its own container with its
+own Godot download (same binary md5 `c083304672e2b4264cfb7f823aba095f`),
+`git status --porcelain` **EMPTY**, `user://` cleared: md5
+**`9875b872d12e6ea7c702939ea0ae6507`**, **85 suites, 0 to look at**,
+`player_door_test` **154**, `source_scan_test` **115**, `scan_floor_test`
+**156**, `halt_cause_test` **53**, `drive_test` **24**, `session_test` **18**,
+`result_line_test` **370**, 181 s wall (`3m0.752s`), stderr 43 bytes -
+**byte-identical to what 136 recorded on its changed tree and `136a` read off
+the remote. NINTH CONTAINER, SAME NUMBER.** `136a`'s one open item - that it was a reading of
+the remote by the same container and not an independent one - is **CLOSED**,
+and nothing is owed on it.
+
+**WHAT A GREEN RUN LOOKS LIKE, FOR A SESSION READING THIS TO FIND OUT:** 85
+suites, `suites with something to look at: 0`, and the suites worth naming at
+`player_door_test` **154**, `source_scan_test` **115**, `scan_floor_test`
+**164**, `halt_cause_test` **53**, `drive_test` **24**, `session_test` **18**,
+`result_line_test` **370**. If `scan_floor_test` reads 156 you are on 136a or
+earlier. **THIS IS THE ONLY LIVE ONE.** Five paragraphs with this heading are
+struck below; 137 struck two of them, because one had been left live since 132
+and carried different numbers from this one.
+
+
+**WHAT 137's RUN DID AND DID NOT MEASURE, SAID PLAINLY.** It was taken before
+this commit's `docs/` paragraphs were written, which is what a commit carrying
+a measurement and a document always is. What makes it a reading of the
+committed code rather than a promise is 136's own re-measured grep, unchanged
+by this commit: **0 lines under `tests/` or `scripts/` open or load a `docs/`
+path** - 30 lines under those two directories contain `docs/`, 29 are
+comments, the one that is not is a failure message at
+`field_type_test.gd:635` - so no suite can read what changed after the run.
+
+**AND IT IS THE THIRD RUN OF THIS CYCLE, NOT THE SECOND, FOR A REASON WORTH
+WRITING DOWN.** The second run was started and the section's
+`NOT IN SCOPE` comment block was added to `tests/scan_floor_test.gd` **while
+it was still going**, so that run read a tree that changed under it. A
+comment-only edit cannot move an assertion count, but *cannot* is a prediction
+and this file does not record those. The run was taken again on the final tree
+and `find tests scripts project.godot run_tests.sh run_tests.bat -newer` the
+run's own start marker is **EMPTY**; the `diff` between the two runs is **ZERO
+LINES**, counted with `diff | wc -l`. So the prediction was right and it is
+now a reading. **The rule is the cheap one: start the run after the last edit,
+not before it.**
+
+It did **not** run on the owner's hardware, in a browser, or against a live
+API key.
+
+
+**THE RUN BEFORE THE BASELINE IS 136a's, A FRESH `git clone` OF THE PUSHED
 `89d2700` (136)**: its own directory outside the repository, `git status
 --porcelain` EMPTY before and after, `user://` cleared by deleting
 `app_userdata/AI_Game_Builder`, Godot `4.7.1.stable.official.a13da4feb` -
@@ -11835,12 +11994,14 @@ or either runner is newer than the run's own start**, counted with `find
 message at `field_type_test.gd:635`, and 0 lines open or load a `docs/`
 path**. So no suite can read what changed after the run.
 
-**WHAT A GREEN RUN LOOKS LIKE, FOR A SESSION READING THIS TO FIND OUT:** 85
+~~**WHAT A GREEN RUN LOOKS LIKE, FOR A SESSION READING THIS TO FIND OUT:** 85
 suites, `suites with something to look at: 0`, and the suites worth naming at
 `player_door_test` **154**, `source_scan_test` **115**, `scan_floor_test`
 **156**, `halt_cause_test` **53**, `drive_test` **24**, `session_test` **18**,
 `result_line_test` **370**. If `source_scan_test` reads 109 you are on 135a or
-earlier.
+earlier.~~ **STRUCK IN 137, FOR THE REASON 136 STRUCK ITS
+PREDECESSOR:** `scan_floor_test` is **164** as of this commit. The live
+paragraph is the one at the top of this section, and there is only ever one.
 
 **AND THE BASELINE WAS AN INDEPENDENT CONTAINER ON THE PUSHED `7ffcc43`
 (135a), WHICH IS THE READING `135a` SAID THE NEXT FIRING WOULD GET FOR
@@ -12101,10 +12262,16 @@ the tick is the point: section 10's rows are in physics frames and metres,
 and one duration against another from the same clock, so a tick is a knob
 that cannot change them.
 
-**WHAT A GREEN RUN LOOKS LIKE, FOR A SESSION READING THIS TO FIND OUT:** 85
+~~**WHAT A GREEN RUN LOOKS LIKE, FOR A SESSION READING THIS TO FIND OUT:** 85
 suites, `suites with something to look at: 0`, and the five suites worth
 naming at **113 / 24 / 18 / 370 / 80**. If `player_door_test` reads 104 you
-are on 131 or earlier.
+are on 131 or earlier.~~ **STRUCK IN 137.** It was left live when 135
+struck its own predecessor and when 136 struck 135's, so this file carried
+TWO live green-run paragraphs with different numbers from 132 to 136 - the
+exact fault the rule exists to prevent. Found by grepping for the heading at a
+LINE START and counting the unstruck ones, rather than by trusting that the
+last cycle struck them all. The live paragraph is the one at the top of this
+section, and there is only ever one.
 
 **THE RUN BEFORE IT IS 131's, AN INDEPENDENT CONTAINER ON THE
 PUSHED `9822095` (130a)** - the reading `130a` said the next firing would get
@@ -20417,144 +20584,125 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
-**136's LEFTOVER IS NOTHING, AND THAT IS A READING AND NOT A PREDICTION.**
-~~**136 OWES ONE MEASUREMENT AND IT IS A FRESH `git clone` OF ITS OWN PUSHED
-COMMIT.**~~ **TAKEN, IN `136a`, BEFORE THE CYCLE ENDED** - `89d2700` cloned
-into its own directory, `git status --porcelain` EMPTY before and after, same
-md5 `9875b872d12e6ea7c702939ea0ae6507`, zero-line diff counted with
-`diff | wc -l`, 177 s.
-136 also took its own independent baseline on the pushed `7ffcc43` (135a) and
-reproduced `7f9f8c91889d7a014afb21309dae0cf3` byte for byte from an eighth
-container, which **closes `135a`'s one open item**. **DO NOT RE-TAKE ANY OF
-IT.** Take your own baseline on `89d2700` if you like it as a habit, because
-that is the independent container `136a` could not be, and then spend the
-cycle on the work.
+**137's LEFTOVER IS NOTHING. DO NOT RE-TAKE ITS BASELINE.** 137 took its own
+baseline on the pushed `90a2e59` (136a) in its OWN container with its OWN
+Godot download and reproduced **`9875b872d12e6ea7c702939ea0ae6507`** byte for
+byte - **ninth container, same number** - which **closes `136a`'s one open
+item**. Its own changed-tree run is md5
+**`4852ccd92e06da695bec0b98e0449113`**, one line of diff,
+`scan_floor_test` **156 -> 164**.
 
-**AND 135a's OWN OPEN ITEM IS ALREADY CLOSED BY THIS COMMIT'S BASELINE, WHICH
-IS THE READING IT SAID THE NEXT FIRING WOULD GET FOR NOTHING.** 136 took its
-baseline on the pushed `7ffcc43` (135a) in its OWN container with its OWN
-Godot download and reproduced **`7f9f8c91889d7a014afb21309dae0cf3`** byte for
-byte - eighth container, same number. **DO NOT RE-TAKE IT.**
+**WHAT 137 OWES: ONE MEASUREMENT, AND IT IS A FRESH `git clone` OF ITS OWN
+PUSHED COMMIT.** Nothing has run the pushed tree. Take it if you want the
+habit; the stronger reading is your own baseline on 137's commit, which is the
+independent container 137 cannot be for itself.
 
-**THE TASK THIS FILE HAS NAMED FIRST SINCE 135 IS STARTED AND NOT FINISHED:
-THREE OF THE 57 SOURCE READERS HAVE NOW BEEN ASKED WHAT THEY CANNOT PARSE,
-AND 54 HAVE NOT.** The three are in the 136 entry at the top of this file with
-their answers - **DO NOT RE-ASK THEM.** In short: `_keyed_reads` loses 38 of
-1184 `for` headers in silence and costs the class nothing today;
-`result_line_test`'s result-line reader gives a WRONG reading rather than a
-missing one on a continued `print(` and on a `'` literal, and both are zero on
-today's `tests/`; `scan_floor_test`'s path reader is loud in both directions
-and loses nothing, which is the design to copy.
+**THE TASK THIS FILE HAS NAMED FIRST SINCE 135 IS STILL THE TASK: SIX OF THE
+57 SOURCE READERS HAVE NOW BEEN ASKED WHAT THEY CANNOT PARSE, AND 51 HAVE
+NOT.** The six and their answers are in the 136 and 137 entries at the top of
+this file - **DO NOT RE-ASK THEM.** 136's three:
+`source_scan_test._keyed_reads` loses 38 of 1184 `for` headers in silence and
+costs the class nothing today; `result_line_test`'s result-line reader gives a
+WRONG reading rather than a missing one on a continued `print(` and on a `'`
+literal, both zero on today's `tests/`; `scan_floor_test`'s path reader is
+loud in both directions and loses nothing. 137's three:
+`check_wiring_test._verdict_functions` loses an indented `func`, an
+in-literal `#` and a subdirectory in silence and INVENTS a row out of `"""`
+prompt prose; `refusal_reach_test._sites_in_code` does the same minus the
+`func` anchor; `scan_floor_test._function_body`'s `""` abandon is **loud** -
+it makes section 3's null question fail by name.
 
-**THE NEXT ONES TO ASK, NAMED SO THE CHOICE IS NOT MADE AGAIN FROM SCRATCH.**
-The class-enumerating readers are the ones TRAPS 132's rule bites on, because
-only they claim a class is complete. The 23 functions in `tests/` that walk a
-directory and read `.gd` sources are: `agreement_test::_scripts`;
-`check_wiring_test::_verdict_functions` and `::_no_door_rows`;
-`controller_reach_test::_enumeration` and `::_guard_spawn_opponents`;
-`loadcheck::_initialize`; `player_door_test::_the_scene`,
-`::_the_scene_has_no_floor`, `::_the_name_is_not_the_worlds` and
-`::_the_class_cannot_grow_in_silence`; `prompt_numeral_test::_initialize`;
-`proxy_test::_initialize`; `record_id_test::_session_starts`;
-`refusal_reach_test::_categories_in_source` and `::_sites_in_code`;
+**AND 137 WOULD TELL YOU THE ANSWER IS OFTEN NOT ABOUT THE READER.** Four of
+its six shapes cost nothing today, and the fifth - a `.gd` in a subdirectory -
+turned out to be an assumption **all 27** directory reads share and the one
+place a reader whose claim IS the enumeration goes quiet (`loadcheck`, 39 ->
+38 assertions, `bad=0`). **Ask what the reader's SILENCE costs the section
+above it, not only what the reader cannot read.** TRAPS 134.
+
+**THE NEXT ONES TO ASK, carried forward from 136 with the three 137 did struck
+off.** The class-enumerating readers are the ones TRAPS 132's rule bites on.
+Remaining from 136's list of 23: `agreement_test::_scripts`;
+`check_wiring_test::_no_door_rows`; `controller_reach_test::_enumeration` and
+`::_guard_spawn_opponents`; `loadcheck::_initialize`;
+`player_door_test::_the_scene`, `::_the_scene_has_no_floor`,
+`::_the_name_is_not_the_worlds` and `::_the_class_cannot_grow_in_silence`;
+`prompt_numeral_test::_initialize`; `proxy_test::_initialize`;
+`record_id_test::_session_starts`; `refusal_reach_test::_categories_in_source`;
 `result_line_test::_test_files`; `scan_floor_test::_test_files`;
 `scene_light_test::_everything_that_points_has_been_pointed`;
-`source_scan_test::_class`, `::_scripts_code`, `::_registry_keyed_class`,
-`::_counter_equality_class` and `::_reader_reach`. **Four of those are asked
-or trivially safe** - `_reader_reach` and `_counter_equality_class` are the
-two measured; `_scripts_code` concatenates and abandons nothing but a null
-handle; `_class` is a per-line `contains` with no structure to fail on, so its
-only silence is `_code_of()`'s own. **Start with
-`check_wiring_test::_verdict_functions` and
-`refusal_reach_test::_sites_in_code`**, which read function bodies out of
-`scripts/` and therefore have a body walk to get wrong, and with
-`scan_floor_test::_function_body`, which walks BACKWARDS for a `func` line and
-returns `""` when it finds none - that `""` is the abandon to ask about.
+`source_scan_test::_class` and `::_scripts_code`. **Start with
+`refusal_reach_test::_categories_in_source`**, which is the sibling of the one
+137 asked and reads the RAW file rather than the code, so the two readings
+should differ in a way somebody can state; and with
+`player_door_test::_the_class_cannot_grow_in_silence`, whose name is a claim
+about exactly the silence 137 measured.
 
-**AND THE WAY TO DO IT IS STILL NOT A GREP, WHICH 135 TRIED AND WROTE DOWN AS
-INSUFFICIENT AND WHICH 136 CONFIRMS.** Feed the function a built source whose
-answer you know and READ WHAT IT SAYS. A harness is five lines - `preload` the
-suite script, `.new()` it, call the method, print; a second `SceneTree` leaks
-RIDs at exit and that noise is harmless - and for a helper taking a `String` a
-reading takes seconds. **136's own harness read the pattern it was measuring
-OUT OF the committed source at runtime**, which is worth copying: a retyped
-pattern is a measurement of something the scan does not use.
+**AND THE WAY TO DO IT IS STILL NOT A GREP.** Feed the function a built source
+whose answer you know and READ WHAT IT SAYS. 137's harness is worth copying
+exactly: the suites' autoloads make `load("res://tests/x.gd").new()` throw
+twenty parse errors, so **slice the function out of the committed source at
+harness-build time** (a 12-line python function over `^(static )?func (\w+)\(`
+headers), paste it into a bare `extends SceneTree`, and call it. That measures
+the committed reader and not a retyped copy of it, and it takes under a
+minute per reader.
 
-**AND THE THING 136 WOULD HAVE A LATER SESSION DO DIFFERENTLY: GIVE THE
-DETECTOR ITS OWN RED READING BEFORE BELIEVING WHAT IT SAYS.** The
-registry-bearing check in this commit was wrong on its first run - it looked
-for an accessor WITH its closing bracket on ONE line, which is the very shape
-it exists to catch - and the only reason that is a paragraph rather than a
-pushed fault is that the reconstruction was built and the output read. **A
-detector written in the same breath as its finding inherits the finding's
-blind spot.** TRAPS 133.
+**AND THE ONE HOLE 137 LEFT, NAMED SO IT IS NOT REDISCOVERED.**
+`scan_floor_test` section 7 reads the directory path off the `DirAccess` line,
+so **`proxy_test.gd:297`, which walks `res://.github/workflows` through a
+local assigned on the line above, is NOT asked whether that directory is
+flat.** It holds one file, `web.yml`, and no subdirectory today - counted.
+Closing it means teaching `_argument_on()` to follow a local, which is a
+change to what that file's class IS: its own commit with its own baseline, and
+section 6's rows are the rows to rewrite when it happens. Not a one-line edit
+and not a side effect of anything.
 
-**AND THE SECOND ITEM, CARRIED FORWARD UNCHANGED FROM 135 BECAUSE NOTHING IN
-THIS CYCLE TOUCHED IT.** `_condition_at()` reads at most 12 lines forward, and
-the window is the reason for none of today's 17 unread conditions. **But a
-tree with all in-literal hashes neutralised at once is NOT the same input, and
-it has ten abandoned conditions in six functions** - the denominator moves
-2299 -> 2325 and those ten are abandoned for some reason that is NOT the `#`.
-What those ten are has not been read. They may well be the window. Recorded as
-an observation and **not as a finding**, because a number taken under a changed
-input is not a number about `tests/`. **One new datum from this cycle that
-bears on it:** two of the 38 unreadable `for` headers span **13 lines**
-(`asked_test.gd:207`, `counted_said_test.gd:166`), so a 12-line forward window
-would not be enough for any reader taught to join continuations either.
-
-**A THING NOT TO DO, STATED SO IT IS NOT REDISCOVERED: DO NOT TEACH
-`_code_of()` ABOUT STRING LITERALS AS A WAY TO CLOSE THE 17.** It is copied
+**A THING NOT TO DO, CARRIED FORWARD UNCHANGED: DO NOT TEACH `_code_of()`
+ABOUT STRING LITERALS AS A WAY TO CLOSE THE 17.** It is copied
 byte-identically into other suites and section 3 of `source_scan_test` holds
 that identity; the four conditions it corrupts in `tests/` are exactly the
-four that test its own blindness to a `#` (110's reading, in this file); and a
-reader that blanks comments the way the suites do cannot read the assertions
-about the suites' blanking. If it is ever worth doing it is its own commit
-with its own baseline, not a side effect of closing a count. **AND THE SAME
-NOW APPLIES TO `_keyed_reads`' HEADER PATTERN:** widening it is a change to
-what section 6's class IS, the four rows in section 7 are the rows to rewrite
-when it happens, and the red reading in the 136 entry shows that widening the
-pattern alone does not reach the inline-body shape - the body walk has to move
-too. It is not a one-line edit and it is not a side effect of anything.
+four that test its own blindness to a `#`; and a reader that blanks comments
+the way the suites do cannot read the assertions about the suites' blanking.
+**137 adds a reason:** `tests/` holds **115** lines with a `#` inside a
+double-quoted literal, in 21 files, so this is ordinary style there and not a
+set anybody can pin. `scripts/` holds **0**, which is why 137's reading of
+that shape is written down and not guarded (TRAPS 6). **AND THE SAME APPLIES
+TO `_keyed_reads`' HEADER PATTERN:** widening it is a change to what section
+6's class IS, and 136's red reading shows the body walk has to move too.
+
+**AND THE SECOND ITEM, CARRIED FORWARD UNCHANGED FROM 135 AND 136 BECAUSE
+NOTHING IN THIS CYCLE TOUCHED IT.** `_condition_at()` reads at most 12 lines
+forward, and the window is the reason for none of today's 17 unread
+conditions. **But a tree with all in-literal hashes neutralised at once is NOT
+the same input, and it has ten abandoned conditions in six functions** - the
+denominator moves 2299 -> 2325 and those ten are abandoned for some reason
+that is NOT the `#`. What those ten are has not been read. Recorded as an
+observation and **not as a finding**. Two of the 38 unreadable `for` headers
+span **13 lines** (`asked_test.gd:207`, `counted_said_test.gd:166`), so a
+12-line forward window would not be enough for any reader taught to join
+continuations either.
 
 **BEFORE YOU WRITE ANY DOCUMENT PARAGRAPH, RUN 131's SWEEP** - TRAPS 126's
 third "Do" has the recipe, it is one command, and it has now found a fault in
-three separate cycles. 136 ran it: **TRAPS 1-132 all present and every
+**four** separate cycles. 137 ran it: **TRAPS 1-133 all present and every
 `TRAPS n` reference resolves; HDN 1-43 all present (4 and 5 struck, 42
 entries) and no dangling `HDN n` reference in either document; all 14
-`docs/...` paths named anywhere in the repository exist.** (136 then added
-TRAPS 133, so a sweep on the pushed tree reads 1-133 and 1-43.) Note the two
-parser traps, both still live: `H.index('## Human decision needed')` finds the
-**backticked mention** near the top of this file, so anchor the match to a
-line start; and HDN entries are numbered `N. **`, not `### N.`, so a parser
-keyed on a heading finds none and reports a clean sweep over nothing.
-**AND 136 PROVED THAT WARNING IS ABOUT A CLASS AND NOT ABOUT ONE HEADING.**
-The edit that inserted 136's own entry matched `'## Next action'` with
-`str.index` and found the **backticked mention inside the entry it had just
-written**, cutting 20,276 lines out of this file; `git diff --stat` caught it,
-`git checkout` restored it, and the re-made edits anchor every match against a
-whole line. **Any heading of this file mentioned in its own prose is in that
-class - `Starting state`, `Next action`, `Run the tests first`,
-`Human decision needed`. Match whole lines, and read `git diff --stat` before
-you run anything.**
-**And when you change a suite's count or an md5, grep for the old number and
-edit the index section that states it** - the other half of TRAPS 126, and the
-half nothing points at. 136 moved `source_scan_test` **109 -> 115** and left
-`scan_floor_test` at **156**; `Run the tests first` was edited in the same
-commit and the previous *"what a green run looks like"* paragraph was
-**STRUCK**, because two paragraphs with that heading and different numbers is
-the fault that section exists to prevent.
+`docs/...` paths named anywhere in the repository exist.** (137 then added
+TRAPS 134, so a sweep on the pushed tree reads 1-134.) The two parser traps
+are both still live and 137 hit the second: `'## Human decision needed'`
+occurs **8 times** in this file and exactly **ONE** is a whole-line heading,
+so anchor every match against a WHOLE LINE; and HDN entries are numbered
+`N. **`, not `### N.`, so a parser keyed on a heading finds none and reports a
+clean sweep over nothing.
+**AND 137's OWN FAULT WAS THE OTHER HALF OF TRAPS 126 - THE HALF NOTHING
+POINTS AT.** Grepping `^\*\*WHAT A GREEN RUN LOOKS LIKE` found **TWO** live
+paragraphs, not one: 136 struck its predecessor, but a third had been left
+live since 132 and named *"113 / 24 / 18 / 370 / 80"*. Both are struck now and
+there is exactly one live. **So when you change a suite's count or an md5,
+grep for the heading at a line start and COUNT THE UNSTRUCK ONES. Striking the
+one you just replaced is not the same as there being one left.**
 
-**AND THE RULE 136 WOULD PASS ON ABOVE ANY PARTICULAR TASK, BECAUSE IT IS THE
-ONE THAT PAID THIS CYCLE: A REACH NUMBER AND A PINNED TABLE ARE DIFFERENT
-INSTRUMENTS, AND PICKING THE WRONG ONE MAKES A TRIPWIRE INTO A CHORE.** Pin a
-set by name when membership is rare and deliberate - `UNREAD_CONDITIONS`,
-`PLACE_AT_SITES`. Print the fraction and assert **the thing that fails when
-the silence starts costing a member** when membership is ordinary style, which
-is what 38 continued `for` headers over arrays of probe strings are. A table
-of those 38 would have gone red on the next unrelated multi-line loop, been
-edited rather than read, and taught the next session that this suite's tables
-are bookkeeping. The assertion that earns its place here is one line: **none
-of the headers it cannot read is over a registry accessor.**
+**WHAT 136 AND 134 LEFT, KEPT BELOW BECAUSE WHAT IT WAS AND HOW IT CLOSED IS
+THE PART A LATER SESSION READS.**
 
 **WHAT 134 LEFT, KEPT BELOW BECAUSE WHAT IT WAS AND HOW IT CLOSED IS THE PART
 A LATER SESSION READS.**

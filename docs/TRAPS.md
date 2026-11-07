@@ -10174,3 +10174,61 @@ Found in 136, by doing what 135 named and could not finish in its own cycle,
 and then by disbelieving the detector before the suite was believed.
 
 > Two of the three readers were fine. The new code was not.
+
+---
+
+## 134. `get_files()` does not recurse, so "every file in the directory" is a claim about a flat tree
+
+**Signature:** a suite whose whole job is *"every script in `scripts/` loads"*
+prints `39 assertions, bad=0`, then prints `38 assertions, bad=0`, and both are
+a pass. Nothing names the file that stopped being read.
+
+**Cause.** `tests/` holds **27 directory reads in 24 functions across 13 files**, and every one
+of them loops over `DirAccess.get_files()` or `DirAccess.get_files_at()`.
+**Neither recurses.** A `.gd` moved into a subdirectory is never offered to any
+of them, so it is not read, not loaded, not required to have a row — and the
+reads that found it yesterday do not fail, they return a smaller set. The
+reader goes on claiming its class is complete, which is TRAPS 132 moved from a
+pattern to a directory.
+
+**MEASURED, in a throwaway copy with `scripts/farm_module.gd` moved to
+`scripts/worlds/farm_module.gd` and nothing else changed:**
+
+| suite | before | with the file one level down |
+|---|---|---|
+| `loadcheck` | 39 assertions, bad=0 | **38 assertions, bad=0 — SILENT** |
+| `check_wiring_test` | 217, failures=0 | 214, **failures=4**, naming `farm_module.gd:validate`, `:solve`, `:_check_reachable` |
+| `refusal_reach_test` | 219, failures=0 | 219, **failures=2**, naming `FAILED_LAYOUT` |
+
+**So the class is loud exactly where a row is already pinned, and silent where
+the claim is the enumeration itself.** `check_wiring_test` and
+`refusal_reach_test` fail because `DECLARED` still names things the read no
+longer returns — the staleness check firing in the direction it was built for.
+`loadcheck` has nothing pinned; "all of them load" was true of the 36 it was
+offered. Its floor is `loaded == 0`, which fires on a read that finds NOTHING
+and cannot fire on a read that is **one file short** — and that is the general
+shape of the error: **a non-zero floor does not catch a short read.**
+
+**Do:** when a scan's class is *"every file in a directory"*, assert the
+directory is **FLAT**, and derive the directory list off the sites rather than
+typing it. `scan_floor_test` section 7 does this for all 27 reads at once:
+every literal path in the class is asked for its subdirectories, and a
+subdirectory in any of them fails by name. Do not reach for a pinned count in
+each suite instead — a count goes stale on the next script anybody adds, and
+there would be fourteen of them.
+
+**And give that assertion a negative control, because a failed open and a flat
+tree are the same answer.** A subdirectory reader whose `open` returns null
+answers *"no subdirectories"* for every path, and the flatness line passes
+having read nothing. Measured, with the open pointed at a path that does not
+exist: the flatness line **PASSED** and the negative control — *`res://` itself
+has subdirectories* — **FAILED by name**. It is the pair that distinguishes the
+two, not either line alone. TRAPS 133's rule at one more detector.
+
+**What this is not.** It is not a fault a player can meet, and no code under
+`scripts/` changed. `scripts/` and `tests/` are flat today — counted, zero
+subdirectories each — so the assertion added here fails on nothing that exists.
+What makes it worth its place rather than a guard against an assumption
+(TRAPS 6) is that the input it fails on is **ordinary**: putting the four world
+modules in `scripts/worlds/` is a refactor somebody will propose, and the
+reading above shows what it would cost in silence.

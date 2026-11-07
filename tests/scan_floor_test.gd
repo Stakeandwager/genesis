@@ -279,6 +279,13 @@ const FLOORS := {
 	# same reason as the sixth, so this row still covers one read. The second
 	# measurement has its own floor in the same section, `for_offered > 0`,
 	# and the empty-read reading below was re-taken with both in place.
+	# 137: the read this file added with section 7, which section 1 named on
+	# the run that added it - the class working on its own author, which is
+	# what section 5 is for.
+	"scan_floor_test.gd::_subdirectories_of": {
+		"floor": "not _subdirectories_of(_res_prefix()).is_empty()",
+		"why": "137: section 7 reads a directory to ask whether it holds a subdirectory, and a FAILED open answers 'no subdirectory' for every path at once - the flat reading and the unread directory are the same answer. The floor is the negative control in that section: res:// itself has subdirectories, so a reader that opens nothing fails there by name rather than passing section 7 in silence. MEASURED on its own with the open pointed at a path that does not exist: the negative control fails and the flatness line passes, which is the pair that tells a failed open from a flat tree",
+	},
 	"source_scan_test.gd::_reader_reach": {
 		"floor": "reached > 0",
 		"why": "135: section 10 holds a hand-written table against the conditions this read abandons, and an empty read satisfies such a table the wrong way round - UNREAD_CONDITIONS would be ten rows describing code the scan did not look at. MEASURED on its own with the read pointed at a directory that does not exist: 95 assertions, failures=37, of which 11 are section 10's - one per row of UNREAD_CONDITIONS reading 'the reader abandons -1', plus this floor printing '0 ... out of the 0 offered to the reader'. So nothing in that section is silent on an empty read. 136: re-measured with section 10b's loop-header reach behind the same read, and the empty-read reading is section 10b's floor printing '0 ... out of the 0 offered to it' beside this one",
@@ -343,6 +350,24 @@ func _res_prefix() -> String:
 # --- reading ---
 
 var _code_cache := {}
+
+
+# The subdirectories of a res:// directory, for section 7. Its own read with
+# its own null question, like every other read in tests/ (078, 083), and it is
+# a member of the class this file derives: its row is in FLOORS above.
+#
+# RETURNS THE NAMES AND NOT A COUNT, because the assertion that uses it has to
+# be able to say WHICH subdirectory arrived; a count would report "1" about a
+# directory nobody has to go and look at.
+func _subdirectories_of(path: String) -> Array:
+	var out: Array = []
+	var dir := DirAccess.open(path)
+	if dir == null:
+		return out
+	for name in dir.get_directories():
+		out.append(str(name))
+	out.sort()
+	return out
 
 
 func _code_for(name: String) -> String:
@@ -929,6 +954,75 @@ func _run() -> void:
 	var mixed := _keys_for("a.gd", ["_one", "_same", "_same", "_two"])
 	_check(mixed == ["a.gd::_one", "a.gd::_same#1", "a.gd::_same#2", "a.gd::_two"],
 		"and one list can carry both shapes at once, each read keyed by its own function's count: %s" % str(mixed))
+
+	# --- 7. and the directories these reads WALK ARE FLAT (137) ---
+	#
+	# WHAT THIS IS ABOUT, and it is one assumption shared by every site above
+	# rather than a fault in any of them. `get_files()` and `get_files_at()`
+	# DO NOT RECURSE. Every read in this class loops over the files one
+	# directory offers and asks its question of those; a .gd moved into a
+	# subdirectory is never offered, so it is not read, not loaded, not
+	# required to have a row, and NOTHING SAYS SO. That is TRAPS 132 at the
+	# directory rather than at a pattern: "every script in scripts/ loads",
+	# "every verdict function has a row", "every FAILED_ category is
+	# declared" all stay true of what was read and go silent about what was
+	# not.
+	#
+	# MEASURED RATHER THAN REASONED, on a built scripts/ with one file in a
+	# subdirectory (137, in HANDOVER): check_wiring_test._verdict_functions
+	# did not return its verdict function and refusal_reach_test._sites_in_code
+	# did not return its category. Neither failed; both answered a smaller
+	# question than the one their section asks.
+	#
+	# WHY IT IS ONE ASSERTION AND NOT FOURTEEN. The paths come off the sites
+	# this file already derives, so the question is asked of every read in the
+	# class and of every read added after this - including a directory nobody
+	# reads today. A hand-written list of two directories would be the thing
+	# that goes stale (TRAPS 11: the class, not the member).
+	#
+	# NOT IN SCOPE, said plainly rather than quietly skipped (TRAPS 90). The
+	# path is read off the DirAccess line, so the three sites whose path is an
+	# EXPRESSION are not asked. Each was followed by hand:
+	#   - player_door_test.gd:478 iterates ["res://tests", "res://scripts"],
+	#     which are the two paths this section already walks, so it loses
+	#     nothing.
+	#   - proxy_test.gd:297 walks res://.github/workflows, assigned to a
+	#     local on the line above. That is a THIRD directory a reader in
+	#     tests/ enumerates and this section does NOT ask about. It holds no
+	#     subdirectory today - counted, one file, web.yml - and that is the
+	#     one hole here, left as a hole rather than closed by widening the
+	#     path reader, which is a change to what this file's class IS and not
+	#     a side effect of adding a section.
+	#   - this file's own _subdirectories_of() takes the path as a parameter,
+	#     so asking it of itself is circular and it is excluded by being the
+	#     reader rather than by a rule.
+	#
+	# AND IT IS LOUD ON AN EMPTY READ, which is this file's own subject. If
+	# every open failed, _subdirectories_of() would answer "no subdirectories"
+	# for everything and this section would pass by reading nothing. The floor
+	# is the negative control below: res:// itself HAS subdirectories, so the
+	# predicate is made to say so on a directory whose answer is known before
+	# its silence about scripts/ and tests/ is believed (TRAPS 133).
+	var walked := {}
+	for site in sites:
+		var s: Dictionary = site
+		if str(s["how"]) != "literal":
+			continue
+		walked[str(s["path"])] = true
+	var walked_names: Array = walked.keys()
+	walked_names.sort()
+	_check(not walked.is_empty(),
+		"the reads in this class walk %d distinct literal director(y/ies): %s" % [walked.size(), ", ".join(PackedStringArray(walked_names))])
+	_check(not _subdirectories_of(_res_prefix()).is_empty(),
+		"and the subdirectory reader CAN see one, asked of res:// itself, which has %d - so its silence below is a reading and not a failed open" % _subdirectories_of(_res_prefix()).size())
+	var nested: Array = []
+	for path in walked_names:
+		var subs := _subdirectories_of(str(path))
+		if not subs.is_empty():
+			nested.append("%s holds %s" % [str(path), ", ".join(PackedStringArray(subs))])
+	_check(nested.is_empty(),
+		"and none of them holds a subdirectory, so get_files() is offered the whole set" if nested.is_empty() else
+		"a directory this class reads holds a subdirectory, and every .gd under it is read by NONE of the %d sites above, in silence: %s" % [sites.size(), ", ".join(PackedStringArray(nested))])
 
 	print("SCAN FLOOR %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)
