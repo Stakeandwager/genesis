@@ -11,7 +11,165 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
-- Last commit at the time of writing: **129a**, and it is **DOCS ONLY** - 0
+- Last commit at the time of writing: **130**, and it is **ONE FILE UNDER
+  `scripts/`, ONE UNDER `tests/`, PLUS THE DOCUMENTS**.
+  `scripts/checkpoint_tracker.gd` (the lap boundary) and
+  `tests/player_door_test.gd` (**91 -> 104 assertions**: section 3 rewritten,
+  one new section 9, two new consts). **`scenes/`, `netlify/`, `.github/`,
+  `project.godot` and both runners are 0 LINES OF DIFF**, and so is every
+  other file under `scripts/` and every other file under `tests/`.
+
+  **WHAT IT FIXES: THE FAULT 129 FOUND IN WHAT A PLAYER IS SHOWN AND DID NOT
+  FIX, WHICH THIS FILE NAMED AS THE FIRST THING TO DO.** The first lap time
+  Genesis reported was short by two twelfths of a lap and became the "best
+  lap" for ever. `next_index` started at **1** and was only ever incremented
+  or reset to 1, so **`checkpoints[0]`, the start line, was never a target**:
+  timing began at `checkpoints[1]` and a lap was counted at `checkpoints[11]`,
+  ten of twelve segments. The file's own comment said *"A lap only counts when
+  they are passed in order and the start line is reached again"*, and the
+  start-line half of that was false from 002B to 129. **TRAPS 124.**
+
+  **THE RED READING FIRST, BEFORE ANY LINE OF `scripts/` WAS TOUCHED.** The
+  rows were written against the unfixed tracker and run against it:
+  `player_door_test` **104 assertions, failures=7**, and the seven are the
+  fault in three shapes -
+
+  | row | against the unfixed tracker |
+  |---|---|
+  | lap 1 was counted AT the start line | **182.2 m** from it, `REACH` is 30.0 |
+  | lap 2 | **197.3 m** from it |
+  | lap 3 | **193.5 m** from it |
+  | lap 1 is a WHOLE lap | **1989.6 m** driven of a **2376.9 m** circuit (0.8371; `10/12` is 0.8333) |
+  | the best lap shown is a lap he drove: lap 2 | **0.8250 s** against a best of **0.7000 s** |
+  | the same, lap 3 | **0.8333 s** against **0.7000 s** |
+  | passing every checkpoint in order is not yet a lap | got **1**: the lap was already counted before the line |
+
+  **WHAT CHANGED IN `scripts/`.** `next_index` cycles `0 -> 1 -> ... -> 11 ->
+  0`, so the line is a marker like the other eleven: reaching it in its turn
+  closes the lap that was running and starts the next. Lap 1 is a whole lap,
+  every lap is counted at the line, and the ordering requirement is **stronger
+  than before** rather than weaker, because the line itself now has to be
+  passed in its turn. The comment that was half false is **kept as it was
+  written** and the paragraph under it says which half was false and for how
+  long (TRAPS 14).
+
+  **AND THE FIRST VERSION OF THAT FIX WAS WRONG, CAUGHT BY THE SUITE ON THE
+  FIRST RUN AFTER IT, AND IS WRITTEN UP AS TRAPS 125 RATHER THAN TIDIED AWAY.**
+  A checkpoint is reached by **proximity**, and the player's car is placed
+  INSIDE the line's 30 m circle before he has driven anywhere - on the line by
+  `/drive` (`main.gd:728`) and 20 m behind it on a two-row grid by `/race`
+  (`race_director.gd:96`-`97`). So the first frame counted as a crossing and the
+  lap clock ran through the whole 3 s countdown: **section 8 read lap 1 at
+  3.0992 s against 0.0833 s for laps 2 and 3 of the same race**, one failure,
+  `sum / finish` **12.2087**. The line therefore only counts as reached once
+  the car has been **clear** of it (`_left_line`), and a car that began inside
+  it has its lap timed from the moment it drove off (`_began_at_line`).
+
+  **WHAT THAT LEAVES, MEASURED AND NOT FIXED.** Lap 1 is short by the distance
+  from the line to wherever the car was first seen clear of its `REACH`:
+  **53.2 m of a 2376.9 m circuit, 2.2%**, where the fault removed was 16.7%.
+  It is a fixed offset rather than a growing one and a real lap beats it - lap
+  1 read **0.8083 s** against **0.8333 s** for laps 2 and 3, **0.970**, inside
+  `LAP_AGREE` 0.10 with room to spare. **The change that would make lap 1
+  exact is "Human decision needed" 41 below and is NOT applied.**
+
+  **WHAT CHANGED IN `tests/`, AND WHY SECTION 9 IS IN METRES.** Section 3's
+  loop drove `range(1, size)` and stopped at `checkpoints[11]`, while the row
+  under it read *"and reaching the line again counts one lap"* - a sentence
+  neither the loop nor the tracker required. It now drives the line, then the
+  eleven, then the line again, and the sentence is **split in two rows**: that
+  eleven checkpoints in order is NOT yet a lap, and that the line closes it.
+  The first of those is one of the seven reds above.
+  **Section 9 is new and it asks the span question in a unit neither clock can
+  answer in.** It drives `LAP_BOUNDARY_LAPS` = 3 laps at one constant step
+  along `main._track_centreline()` - the line the checkpoints were spread
+  along - and reads **where the car was** when each lap was counted and **how
+  far it had driven**, against a circuit length it sums from that same
+  centreline. **No distance and no lap time is typed in.** The time scale is
+  deliberately NOT set: both sides of every row are in units a scale cannot
+  touch, and a scale here would be a knob that cannot change the answer
+  (TRAPS 6). The clock question is section 3's second half and section 8's,
+  and those still run at `LAP_SCALE`.
+
+  **WHAT SECTION 9 MEASURES ON THE FIXED TREE**, 3 laps at 19.7 m a step over
+  a 2377 m circuit:
+
+  | | lap 1 | lap 2 | lap 3 |
+  |---|---|---|---|
+  | metres driven over the lap | **2323.7** | **2359.8** | **2379.3** |
+  | reported time | **0.8083 s** | **0.8333 s** | **0.8333 s** |
+  | metres from the line when counted | **11.8** | **27.2** | **23.4** |
+
+  best **0.8083 s**. And section 8's own ratio moved with the boundary:
+  `sum / finish` **0.8789 -> 0.9255**, which is why the paragraph deriving
+  that band was rewritten rather than left to go quietly stale (TRAPS 14).
+
+  **THE CLASS, ASKED RATHER THAN ASSUMED, AND THE ANSWER IS THAT THIS FILE
+  HELD THE ONLY INSTANCE (TRAPS 11).** Every other ordered progress index in
+  `scripts/` was read: **`Npc.mark` is set to 0 in `follow()`
+  (`npc.gd:91`)**, so the first waypoint IS a target; **`RaceDirector` tracks
+  progress by arc length with a wrap at the line
+  (`race_director.gd:231`-`239`)**, not by a skipped index; and the two
+  `range(1, ...)` loops in `dungeon_module.gd` (**1175**, **1577**) are
+  consecutive-pair loops whose element 0 is handled on its own line.
+  **AND THE SPANS OF ALL THREE REPORTED DURATIONS WERE READ, NOT JUST THE ONE
+  THAT WAS WRONG** - which is what TRAPS 124's own "Do" asks for:
+
+  | duration | what it is measured BETWEEN | verdict |
+  |---|---|---|
+  | `CheckpointTracker.last_lap_time` | was `checkpoints[1]` -> `[11]`; now line -> line | **was wrong, fixed here** |
+  | `RaceDirector` -> `player_time` | `_clock - COUNTDOWN`, finishing at `raced >= RACE_LAPS * _length` with `lap = -1` on the grid: GO to three laps past the line | right for what it claims |
+  | `Npc.elapsed` | `+= delta` only while `state == GOING` (`npc.gd:172`, `178`), reset in `follow()`: time spent going | right for what it claims |
+
+  **AND ONE STALE LINE NUMBER IN THE SUITE WAS CORRECTED WHILE IN THE FILE**:
+  section 3's header and its note both said `main.gd:809` is the only
+  production caller of `update_progress()`. The caller is still the only one,
+  grepped, and it is at **`main.gd:858`**.
+
+  **WHAT WAS VERIFIED.** Baseline on a **fresh `git clone --branch
+  prototype-002a` of `3e8258a` into its own directory**, its own Godot
+  download `4.7.1.stable.official.a13da4feb` (binary md5
+  **`c083304672e2b4264cfb7f823aba095f`**), `git status --porcelain` EMPTY
+  before and after, `user://` cleared by deleting
+  `app_userdata/AI_Game_Builder`: **md5 `69ebfb9f7a462613107ecbb6d73c81eb`,
+  85 suites, 0 with something to look at, `player_door_test` 91, `drive_test`
+  24, `session_test` 18** - which **reproduces `129a`'s reading and closes its
+  one open item**, because this is the independent container `129a` said it
+  could not be.
+  After the change, `./run_tests.sh --all` **four times, byte-identical, md5
+  `4efdd84270a1ad5df50fc08fa0af46f3`**: **85 suites, 0 with something to look
+  at**. **THE FOURTH IS THE ONE ON THE TREE AS COMMITTED**, said plainly,
+  because the earlier three are not and saying "four runs" without this
+  sentence would be the claim rather than the measurement: the first three
+  were taken before four cited line numbers in comments were corrected against
+  the files (`main.gd:871` -> `869`-`873`, `main.gd:734` -> `728`,
+  `npc.gd:171`-`177` -> `172` and `178`, `race_director.gd:230` -> `231`), so
+  they differ from the committed tree in comment text only - which is why the
+  output carries the same md5. **Only `docs/HANDOVER.md` changed after the
+  fourth run**, and nothing under `tests/` opens a file under `docs/` - grepped
+  for `FileAccess`, `load`, `open` and `res://docs` across `tests/*.gd`, 0
+  hits - so no suite's answer can rest on this paragraph.
+  The `diff` against the baseline list is **ONE LINE** -
+  `player_door_test` **91 -> 104**. `drive_test` **24** and `session_test`
+  **18**, the two suites that run full races on the clock and boundary this
+  commit changed, are **unmoved**.
+
+  **WHAT WAS NOT VERIFIED.** It did not run on the owner's hardware, in a
+  browser, or against a live API key. **The 53.2 m / 2.2% lap-1 offset is
+  measured and NOT fixed** (HDN 41). **No suite holds the standing start
+  through real steering** - section 9 teleports a frozen car along the
+  centreline, so what is held is the tracker, `main.gd:858` and the handler,
+  not a player driving off a grid with his hands. **`Npc.elapsed` still has no
+  row holding that it is the simulation's clock**; the only row that reads it
+  is `halt_cause_test.gd:412`. **HDN 24, 38, 39 and 40 are untouched** and no
+  suite other than `player_door_test` moved.
+  **NOTHING HERE TOUCHED A DEPLOYMENT SETTING, A SECRET, A FLAG OR A TARGET.**
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE.** The last owner session
+  recorded in this file is still **2026-10-14**, checked this commit by
+  grepping every `OWNER, 2026-[0-9][0-9]-[0-9][0-9]` marker in `HANDOVER.md`
+  and `TRAPS.md`.
+
+- Last commit before this one: **129a**, and it is **DOCS ONLY** - 0
   lines of diff in `scripts/`, `scenes/`, `tests/`, `netlify/`, `.github/`,
   `project.godot` and both runners. It carries **one measurement and nothing
   else: a fresh `git clone --branch prototype-002a` of the pushed commit
@@ -18998,9 +19156,44 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
-**129 FOUND A FAULT IN WHAT A PLAYER IS SHOWN AND DID NOT FIX IT. IT IS THE
-FIRST THING TO DO AND IT IS NOT A DECISION ANYBODY HAS TO MAKE - IT IS THE
-CODE NOT DOING WHAT ITS OWN COMMENT SAYS.**
+**THE FIRST ITEM BELOW IS DONE. 130 FIXED IT.** The lap boundary is the start
+line, lap 1 is a whole lap, and `player_door_test` is 104 assertions with
+three new kinds of row that were red against the unfixed tracker. The numbers
+are in the 130 entry at the top of this file. **DO NOT RE-TAKE THEM**: the
+seven-red table, the three-lap distance table, the two byte-identical `--all`
+runs (md5 `4efdd84270a1ad5df50fc08fa0af46f3`) and the baseline that closed
+129a's open item (md5 `69ebfb9f7a462613107ecbb6d73c81eb`) are all there.
+**130 OWES ONE MEASUREMENT AND IT IS A FRESH `git clone` OF ITS OWN PUSHED
+COMMIT.** Three commits running (126, 127, 128) wrote a sentence predicting
+that measurement would not be taken and all three went false within the hour;
+129 took the run instead. **Take the run. It costs one `--all` and the
+sentence costs a paragraph.** Take your own baseline on 130's pushed commit
+too, in your own container, and then spend the cycle on the work.
+
+**AND ONE THING 130 LEFT THAT IS CHEAP AND NEEDS NOBODY: NO SUITE HOLDS THE
+STANDING START THROUGH REAL STEERING.** Section 9 teleports a frozen car along
+the centreline, so the `_left_line` / `_began_at_line` rule that TRAPS 125 is
+about is held only against a teleport. `physics_test` and `behaviour_test`
+already drive a body under real physics; the row that would hold this is a
+`/drive`, real throttle until the car is clear of the line, and the assertion
+that `lap_started` went true **after** the car moved and not on the frame it
+was placed. It can fail against the first version of 130's fix, which is in
+this file's 130 entry, so it is not a row that cannot fail (TRAPS 6).
+
+**AND "Human decision needed" 41 IS NEW AND IT IS HIS, BECAUSE IT MOVES A
+SENTENCE A PLAYER READS.** Lap 1 is still 53.2 m of 2376.9 m short (2.2%,
+measured) because a line event fires on **arrival** within `REACH` rather than
+at the **closest approach** to the line. Firing at closest approach instead
+would make lap 1 exact and make every lap exact to the centimetre - and it
+would move every *"Lap N completed in ..."* from about 30 m **before** the
+line to about 30 m **after** it, and delay the sentence by that much driving.
+That is a visible change to when the game speaks, so it is not the
+assistant's to make. **Do not apply it.** Costed: it is one function in
+`checkpoint_tracker.gd`, it needs `_closest` and `_closest_clock` fields, and
+section 9's rows already measure the thing it would change.
+
+**WHAT WAS THE FIRST ITEM, KEPT BELOW UNSTRUCK**, because what it was and how
+it was closed is the part a later session reads.
 
 **THE FIRST LAP TIME GENESIS REPORTS IS SHORT BY TWO TWELFTHS OF A LAP, AND
 IT BECOMES THE "BEST LAP" FOR EVER.** Measured in a throwaway clone outside

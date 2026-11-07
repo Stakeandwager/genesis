@@ -9580,3 +9580,53 @@ usually look.
 - A comment that describes a boundary is a claim about Genesis. `grep` the
   code for the thing it names. One read of `next_index` would have found that
   nothing ever looks for the start line.
+
+**Fixed in 130**, and fixing it produced TRAPS 125 below: making the start
+line a marker made a parked car's first frame count as a crossing. The
+residual - lap 1 short by the radius of the line's `REACH`, 2.2% against the
+16.7% removed - is measured in HANDOVER's 130 entry and is the owner's under
+HDN 41.
+
+---
+
+## 125. A proximity test cannot tell arriving from waiting
+
+**Signature:** a boundary marker is made to work and the first measurement
+between markers comes out *far too large* rather than too small — in this
+case 37 times the next one — and the extra is exactly the time the player
+spent sitting still before he moved.
+
+**Cause.** 130 fixed TRAPS 124 by making `checkpoints[0]`, the start line, a
+target like the other eleven, so that a lap is measured between two crossings
+of the same point. A checkpoint is "reached" when the car is within `REACH`
+(30 m) of it — and **the player's car is placed inside that circle before he
+has driven anywhere**: on the line by `/drive` (`main.gd:728`,
+`place_at(_track_start(), ...)`), and 20 m behind it on a two-row grid by
+`/race` (`race_director.gd:96`-`97`, `_behind(GRID_SPACING * 2)`). So the first frame of
+the session counted as a crossing, the lap clock started on the grid, and it
+ran through the whole 3 s countdown the player waits out. `player_door_test`
+section 8 read **lap 1 at 3.0992 s against 0.0833 s** for laps 2 and 3 of the
+same race, and it read it on the first run after the change — which is the
+only reason this is an entry about a draft and not about a release.
+
+The general shape: **proximity answers "where is it", and a boundary event
+asks "did it pass".** Those differ precisely when the thing is stationary
+inside the zone, which is exactly where a start line is. Every other
+checkpoint escapes this only because nothing ever parks on one.
+
+**Do:**
+
+- When a position test is used as an *event*, ask what it reports for
+  something that is already there and has not moved. If the answer is "the
+  event", the test needs a second condition — that the body has been outside
+  the zone since the last event — and the body that *started* inside it needs
+  its own rule.
+- Read where the subject is PLACED before trusting a trigger that fires on
+  arrival. `/drive` and `/race` both place the car inside the one zone that
+  matters, and both are two lines of source away from the file being changed.
+- A fix that moves a boundary changes the first measurement most. Look at
+  measurement **1** of the new series before the suite's verdict line, and
+  look at it in the configuration that has a wait in it — a countdown, a
+  loading pause, a grid hold. The green suite said `failures=1` here; the
+  number that explained it was in a note, not in a row.
+

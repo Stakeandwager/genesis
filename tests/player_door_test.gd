@@ -184,6 +184,13 @@ const STEP_METRES := 20.0
 const RACE_LAP_TICKS := 4.0
 const RACE_GRACE_TICKS := 6.0
 const RACE_SUM_FLOOR := 0.5
+# 130: section 9 drives LAP_BOUNDARY_LAPS laps at one constant step and asks
+# what the lap time is measured BETWEEN. LAP_AGREE is how far the laps may
+# differ from the best of them as a fraction of it; every lap is driven at the
+# same speed along the same line, so they must agree, and the fault this
+# section is about makes the first one 0.82 of the rest.
+const LAP_BOUNDARY_LAPS := 3
+const LAP_AGREE := 0.10
 const A_LENGTH := 300
 const B_LENGTH := 400
 const C_LENGTH := 500
@@ -576,7 +583,7 @@ func _enter_key() -> void:
 # --- 3. lap_completed (main.gd:93), through its production caller ---
 #
 # The tracker is not touched by this suite. The CAR is moved, and
-# main.gd:809 - the only production caller of update_progress(), grepped - is
+# main.gd:858 - the only production caller of update_progress(), grepped - is
 # what feeds the tracker, from _process, while driving. So what is held is
 # the whole of it: that line, the tracker's counting, the signal, the connect
 # and the handler's sentence.
@@ -601,13 +608,31 @@ func _lap() -> void:
 		"and spread %d checkpoints along it (got %d)" % [CheckpointTracker.CHECKPOINT_COUNT, checkpoints.size()])
 	_check(main.checkpoint_tracker.lap_count == 0, "with no lap counted yet")
 
+	# 130: THE START LINE IS A MARKER NOW, SO THIS LOOP DRIVES IT. Until 130
+	# it ran range(1, size), stopped at checkpoints[11], and the row under it
+	# still read "and reaching the line again counts one lap" - a sentence
+	# neither the loop nor the tracker required, because checkpoints[0] was
+	# never a target. The two rows below are the sentence split in half, and
+	# the first of them FAILS against the pre-130 tracker: it had already
+	# counted the lap a twelfth of a circuit before the line. TRAPS 124.
+	main.car.global_position = checkpoints[0]
+	await process_frame
+	await process_frame
+
 	for i in range(1, checkpoints.size()):
 		main.car.global_position = checkpoints[i]
 		await process_frame
 		await process_frame
 
+	_check(main.checkpoint_tracker.lap_count == 0,
+		"passing every checkpoint in order is not yet a lap: the line has not been reached again (got %d)" % main.checkpoint_tracker.lap_count)
+
+	main.car.global_position = checkpoints[0]
+	await process_frame
+	await process_frame
+
 	_check(main.checkpoint_tracker.lap_count == 1,
-		"passing every checkpoint in order and reaching the line again counts one lap (got %d)" % main.checkpoint_tracker.lap_count)
+		"and reaching the line again counts one lap (got %d)" % main.checkpoint_tracker.lap_count)
 	_check(main.checkpoint_tracker.last_lap_time > 0.0,
 		"and timed it (%.3f s)" % main.checkpoint_tracker.last_lap_time)
 
@@ -621,7 +646,7 @@ func _lap() -> void:
 	]
 	_check(_history().contains(expected),
 		"and the player was shown it, with the tracker's own times: " + expected)
-	notes.append("LAP: car position -> main.gd:809 -> tracker -> lap_completed -> " + expected)
+	notes.append("LAP: car position -> main.gd:858 -> tracker -> lap_completed -> " + expected)
 
 	# --- 128: the lap time is the SIMULATION's duration, not the wall's ---
 	#
@@ -665,8 +690,17 @@ func _lap() -> void:
 	var tick := 1.0 / float(Engine.physics_ticks_per_second)
 	var wall_at_start := -1
 	var frames_at_start := -1
+	# 130: the line, then the eleven, then the line again - the order the
+	# tracker requires since the start line became a marker. The lap this
+	# times is a WHOLE lap now; before 130 it was ten of twelve segments, and
+	# the band below is a ratio against the span this suite stepped, so it
+	# holds either way.
+	var order: Array = [0]
 	for i in range(1, checkpoints.size()):
-		main.car.global_position = checkpoints[i]
+		order.append(i)
+	order.append(0)
+	for i in order:
+		main.car.global_position = checkpoints[int(i)]
 		await process_frame
 		if frames_at_start < 0 and main.checkpoint_tracker.lap_started:
 			# The tracker has just taken its own lap start. Read the engine's
@@ -950,12 +984,18 @@ func _the_name_is_not_the_worlds() -> void:
 # the checkpoint count, the lap count or the frame rate and these rows hold.
 #
 # WHERE THE SUM BAND COMES FROM, SO IT IS NOT A NUMBER PULLED OUT OF THE AIR.
-# The tracker starts timing at the first checkpoint after the line and counts
-# a lap when it reaches the LAST checkpoint, so of a RACE_LAPS-lap race it
-# times RACE_LAPS laps less two twelfths of one: about 0.94 of the race at a
-# steady speed, and the grid-to-line run takes a little more off. It is
-# therefore BELOW the finish time for any track and any speed, and well above
-# half of it. Both edges are asserted; the measured value is in the note.
+# 130 REWROTE THIS PARAGRAPH BECAUSE 130 MOVED THE BOUNDARY IT DESCRIBES, and
+# what it said before is kept here because the band did not move with it.
+# ~~The tracker starts timing at the first checkpoint after the line and
+# counts a lap when it reaches the LAST checkpoint, so of a RACE_LAPS-lap race
+# it times RACE_LAPS laps less two twelfths of one: about 0.94 of the race at
+# a steady speed.~~ Since 130 the tracker times from the start line to the
+# start line, so it times RACE_LAPS WHOLE laps - but the race's clock runs
+# from GO, which is BEFORE the car reaches the line for the first time, and a
+# lap is counted within CheckpointTracker.REACH BEFORE the line while the race
+# finishes AT it. So the sum is still below the finish time for any track and
+# any speed, by a smaller margin than before, and still far above half of it.
+# Both edges are asserted; the measured value is in the note.
 func _one_race_two_clocks() -> void:
 	main._handle_request("/drive")
 	await process_frame
@@ -1036,10 +1076,13 @@ func _one_race_two_clocks() -> void:
 	_check(lap_count == RaceDirector.RACE_LAPS,
 		"the tracker counted the race's %d laps as the player drove them (counted %d)" % [RaceDirector.RACE_LAPS, lap_count])
 
-	# The FULL laps only. The first one starts at the first checkpoint after
-	# the line rather than at GO, so the span this suite stepped from GO is
-	# not the span it timed; every lap after it runs from one lap count to the
-	# next, which is exactly the span between two marks.
+	# From lap 2 on. Since 130 lap 1 is a whole lap like the others, but it
+	# starts when the car first reaches the START LINE, and the mark this
+	# suite has for its lower edge is GO - a few frames earlier, with the car
+	# still on the grid. So the span stepped from GO is still not the span
+	# lap 1 was timed over. Every lap after it runs from one lap count to the
+	# next, which is exactly the span between two marks. Whether lap 1 is a
+	# whole lap is section 9's question and it is asked there in metres.
 	var tolerance := RACE_LAP_TICKS * tick * LAP_SCALE
 	for k in range(1, timed.size()):
 		var stepped := float(int(marks[k]) - int(marks[k - 1])) * tick * LAP_SCALE
@@ -1088,6 +1131,153 @@ func _one_race_two_clocks() -> void:
 	main.race.stop()
 	main._stop_driving()
 
+# --- 9. what a lap time is measured BETWEEN (130) ---
+#
+# 128 fixed HOW a lap is timed - the engine's delta and not the wall - and 129
+# drove a whole race to hold that claim. Neither asked what the duration is
+# measured BETWEEN, and 129 found the answer by accident while driving: the
+# first reported lap came out 0.8209 of the three after it, on the same track
+# at the same constant speed. next_index started at 1 and was only ever
+# incremented or reset to 1, so checkpoints[0] - the start line - was never a
+# target: timing began at checkpoints[1] and the lap was counted at
+# checkpoints[11], ten of twelve segments. And because best_lap_time is a min,
+# that short lap became the "best lap" on main.gd:869-873's status line and in
+# the history for the rest of the session, a time the player had not driven
+# and could not beat. TRAPS 124, and the proximity trap that fixing it
+# produced is TRAPS 125.
+#
+# WHAT THIS SECTION ASSERTS IS GEOMETRY, NOT TIME, AND THAT IS THE POINT. The
+# two rows that catch the boundary read WHERE the car was when each lap was
+# counted and HOW FAR it had driven, off main._track_centreline() - the same
+# line the checkpoints were spread along, which is a third source and neither
+# clock. Nothing is typed in as an expected distance: the circuit's length is
+# summed from that centreline, and the tolerance is one step of this suite's
+# own driving plus CheckpointTracker.REACH at each end.
+#
+#   the boundary   the car is within REACH of checkpoints[0] - the start line
+#                  - every time a lap is counted. Before 130 it was about a
+#                  twelfth of a circuit short of it.
+#   the span       the distance driven during lap 1, and during lap 2, is the
+#                  circuit's length. Before 130 lap 1 was ten twelfths.
+#
+# AND THE THIRD ROW IS THE ONE THE PLAYER SEES. Every lap here is driven at
+# one constant step along one line, so the laps must agree with each other;
+# the row holds that best_lap_time agrees with ALL of them, which is exactly
+# the harm the short first lap did. No lap time is typed in.
+#
+# THE TIME SCALE IS NOT SET HERE AND THAT IS A CHOICE WITH A REASON (TRAPS 6).
+# What is under test is the span, and both sides of every row are in units a
+# scale cannot touch - metres, and laps as a fraction of each other. A scale
+# here would be a knob that cannot change the answer. The clock question is
+# section 3's second half and section 8's, and it is driven at LAP_SCALE
+# there.
+#
+# AGAINST THE PRE-130 TRACKER ALL THREE ROWS FAIL. The numbers are in
+# HANDOVER's 130 entry.
+func _a_lap_is_a_whole_lap() -> void:
+	main._handle_request("/drive")
+	await process_frame
+	if main.car == null:
+		_check(false, "a /drive put a car on the circuit to drive laps on")
+		return
+	var line: PackedVector3Array = main._track_centreline()
+	if line.size() < CheckpointTracker.CHECKPOINT_COUNT:
+		_check(false, "and the circuit has a centreline to drive (%d points)" % line.size())
+		return
+	_check(main.checkpoint_tracker.lap_count == 0,
+		"and re-armed the tracker, so these laps are timed from zero (lap_count %d)" % main.checkpoint_tracker.lap_count)
+
+	# Nobody steers in a headless test, so the car is moved along the line the
+	# checkpoints were spread along and frozen, because a loose car drifts off
+	# the point it was put on. The step is under REACH so no checkpoint is
+	# stepped over, and it is CONSTANT, which is what makes the laps
+	# comparable to each other without a number being typed in.
+	main.car.freeze = true
+	var n := line.size()
+	var circuit := 0.0
+	for i in n:
+		circuit += line[i].distance_to(line[(i + 1) % n])
+	var spacing := circuit / float(n)
+	var step := clampi(int(floor(STEP_METRES / maxf(spacing, 0.01))), 1, 15)
+
+	var timed: Array = []
+	var off_line: Array = []
+	var rounds: Array = []
+	var driven := 0.0
+	var driven_at_start := -1.0
+	var counted := 0
+	var at := 0
+	var steps := 0
+	var limit := int(float(LAP_BOUNDARY_LAPS + 2) * float(n) / float(step)) + 200
+	while counted < LAP_BOUNDARY_LAPS and steps < limit:
+		var was: Vector3 = line[at % n]
+		at += step
+		steps += 1
+		var now: Vector3 = line[at % n]
+		driven += was.distance_to(now)
+		main.car.global_position = now + Vector3(0.0, 0.5, 0.0)
+		await process_frame
+		if driven_at_start < 0.0 and main.checkpoint_tracker.lap_started:
+			driven_at_start = driven
+		if main.checkpoint_tracker.lap_count > counted:
+			counted = main.checkpoint_tracker.lap_count
+			timed.append(main.checkpoint_tracker.last_lap_time)
+			rounds.append(driven)
+			off_line.append(Vector2(now.x - line[0].x, now.z - line[0].z).length())
+
+	var best: float = main.checkpoint_tracker.best_lap_time
+
+	_check(counted == LAP_BOUNDARY_LAPS,
+		"%d laps were counted as the car drove them at %.1f m a step over a %.0f m circuit (counted %d in %d steps)" % [
+			LAP_BOUNDARY_LAPS, step * spacing, circuit, counted, steps])
+	if timed.size() < 2 or driven_at_start < 0.0:
+		main._stop_driving()
+		return
+
+	# THE BOUNDARY. Where the car was, in metres from the start line, each
+	# time a lap was counted.
+	for k in off_line.size():
+		_check(float(off_line[k]) <= CheckpointTracker.REACH,
+			"lap %d was counted AT the start line: %.1f m from it, REACH is %.1f m" % [
+				k + 1, float(off_line[k]), CheckpointTracker.REACH])
+
+	# THE SPAN. How far the car drove during the lap, against the circuit this
+	# suite measured for itself. One step at each end plus REACH at each end is
+	# the whole of the slack in a lap detected by proximity.
+	var allowed: float = float(step) * spacing * 2.0 + CheckpointTracker.REACH * 2.0
+	var lap1: float = float(rounds[0]) - driven_at_start
+	_check(absf(lap1 - circuit) <= allowed,
+		"lap 1 is a WHOLE lap: %.1f m driven over it against a %.1f m circuit, allowed %.1f m off" % [
+			lap1, circuit, allowed])
+	for k in range(1, rounds.size()):
+		var lap: float = float(rounds[k]) - float(rounds[k - 1])
+		_check(absf(lap - circuit) <= allowed,
+			"and so is lap %d: %.1f m against %.1f m" % [k + 1, lap, circuit])
+
+	# WHAT THE PLAYER IS SHOWN. Every lap was driven at the same step along the
+	# same line, so every lap must agree with the best of them.
+	for k in timed.size():
+		_check(best > 0.0 and absf(float(timed[k]) - best) <= best * LAP_AGREE,
+			"the best lap the player is shown is a lap he drove: lap %d read %.4f s against a best of %.4f s, allowed %.4f s off" % [
+				k + 1, float(timed[k]), best, best * LAP_AGREE])
+
+	var shown := "Lap %d completed in %s (best %s)" % [
+		counted,
+		main.checkpoint_tracker.get_formatted_time(float(timed[timed.size() - 1])),
+		main.checkpoint_tracker.get_formatted_time(best),
+	]
+	_check(_history().contains(shown),
+		"and the last of them reached him through the handler, with the tracker's own times: " + shown)
+
+	notes.append("LAP SPAN: %d laps at %.1f m a step over %.0f m: driven %s m, timed %s s, best %.4f s, counted %s m from the line" % [
+		counted, step * spacing, circuit,
+		str(([("%.1f" % lap1)] + range(1, rounds.size()).map(func(k): return "%.1f" % (float(rounds[k]) - float(rounds[k - 1]))))),
+		str(timed.map(func(t): return "%.4f" % float(t))), best,
+		str(off_line.map(func(d): return "%.1f" % float(d)))])
+
+	main._stop_driving()
+
+
 func _run() -> void:
 	print("--- PLAYER DOOR: the four unheld connects, in the scene the game runs ---")
 	main = load(SCENE_PATH).instantiate()
@@ -1104,6 +1294,7 @@ func _run() -> void:
 	_the_scene_has_no_floor()
 	_the_name_is_not_the_worlds()
 	await _one_race_two_clocks()
+	await _a_lap_is_a_whole_lap()
 
 	print("")
 	for note in notes:
