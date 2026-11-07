@@ -11,7 +11,28 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
-- Last commit at the time of writing: **132**, and it is **ONE FILE UNDER
+- Last commit at the time of writing: **132a**, and it is **DOCS ONLY** - 0
+  lines of diff in `scripts/`, `scenes/`, `tests/`, `netlify/`, `.github/`,
+  `project.godot` and both runners. It carries **one measurement and nothing
+  else, and it was taken rather than predicted**: a **fresh `git clone`
+  --branch prototype-002a of the pushed commit `04b939b`** into its own
+  directory outside the repository, `git status --porcelain` **EMPTY before
+  and after**, `user://` cleared by deleting `app_userdata/AI_Game_Builder`,
+  the same Godot download `4.7.1.stable.official.a13da4feb`: **md5
+  `f9f44ad3b36ed0eb04b8679640f17a8a`, 85 suites, 0 with something to look at,
+  `player_door_test` 113, `drive_test` 24, `session_test` 18,
+  `result_line_test` 370, `source_scan_test` 80**, 190 s wall, stderr 0
+  bytes, and the `diff` against 132's committed-tree run is **ZERO LINES**.
+  **So the tree on the remote is the tree that was measured**, and 132's one
+  open item - *"no clone of this push has been run yet"* - is closed.
+
+  **IT IS A READING OF THE REMOTE AND NOT OF AN INDEPENDENT CONTAINER**, said
+  plainly: like 126a through 130a it was taken immediately after the push by
+  the same container and the same Godot download. The next firing gets the
+  stronger reading for nothing by taking its own baseline on `04b939b`.
+  **132 OWES NOTHING ELSE AND THERE IS NO `132b` TO DO.**
+
+- Last commit before this one: **132**, and it is **ONE FILE UNDER
   `tests/` PLUS THE DOCUMENTS**. `tests/player_door_test.gd` (**104 -> 113
   assertions**: one new section 10, three new consts, one new helper).
   **`scripts/`, `scenes/`, `netlify/`, `.github/`, `project.godot` and both
@@ -11153,7 +11174,16 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
-**THE LATEST RUN IS 132's, ON ITS OWN CHANGED TREE, AND THE NUMBER THAT
+**THE LATEST RUN IS 132a's, AND IT IS A FRESH `git clone` OF THE PUSHED
+`04b939b` (132)**: `git status --porcelain` EMPTY before and after, `user://`
+cleared by deleting `app_userdata/AI_Game_Builder`, Godot
+`4.7.1.stable.official.a13da4feb`, `--all` through `run_tests.sh` - **md5
+`f9f44ad3b36ed0eb04b8679640f17a8a`, 85 suites, 0 with something to look at,
+`player_door_test` 113, `drive_test` 24, `session_test` 18,
+`result_line_test` 370, `source_scan_test` 80**, 190 s wall, stderr 0 bytes,
+and the `diff` against 132's committed-tree run is **ZERO LINES**.
+
+**THE RUNS BEFORE IT ARE 132's, ON ITS OWN CHANGED TREE, AND THE NUMBER THAT
 MOVED IS ONE SUITE'S COUNT.** `--all` through `run_tests.sh`, `user://`
 cleared by deleting `app_userdata/AI_Game_Builder` before it, Godot
 **`4.7.1.stable.official.a13da4feb`** (binary md5
@@ -19502,16 +19532,16 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
-**132's LEFTOVER IS ONE MEASUREMENT AND IT IS THE CHEAP ONE: A CLONE OF THE
-PUSHED COMMIT.** 132 ran `--all` on its own changed tree
+**132's LEFTOVER IS NOTHING, AND THAT IS A READING AND NOT A PREDICTION.**
+132 ran `--all` three times on its own changed tree
 (`f9f44ad3b36ed0eb04b8679640f17a8a`, 85 suites, 0 to look at,
-`player_door_test` 113) and it took its own independent baseline on `131`
-first (`4efdd84270a1ad5df50fc08fa0af46f3`, reproduced byte for byte). What it
-did **not** do is clone its own push and run that. **If that is still
-outstanding when you read this, take it: it is one fetch and one run, and the
-sentence predicting it would not be taken has gone false for every commit
-that wrote it (126, 127, 128).** If 132 already took it there will be a
-`132a` in the log saying so; read the log before re-taking anything.
+`player_door_test` 113) and took its own independent baseline on `131` first
+(`4efdd84270a1ad5df50fc08fa0af46f3`, reproduced byte for byte). **AND ITS OWN
+PUSH WAS CLONED AND RUN BEFORE THE CYCLE ENDED** - `04b939b`, same md5,
+zero-line diff, carried in the docs-only `132a`. **DO NOT RE-TAKE ANY OF
+IT.** Take your own baseline on `04b939b` if you like it as a habit, because
+that is the independent container `132a` could not be, and then spend the
+cycle on the work.
 
 **THE FIRST ITEM THIS FILE HAS CARRIED SINCE 130 IS DONE. 132 DID IT.** *"No
 suite holds the standing start through real steering"* is false as of 132:
