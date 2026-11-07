@@ -235,6 +235,70 @@ const COUNTER_EQUALITIES := {
 }
 
 
+# --- 135: what the condition reader never reaches, counted instead of assumed
+#          ---
+#
+# WHERE THIS CAME FROM. 134's "Next action" asked whether the nine properties
+# section 9 holds over ONE-LINE conditions still hold when the condition is
+# continued across lines. Six of the nine do not hold against the split 133a
+# committed, and are now driven both ways in section 9. The question that read
+# raised, and which nothing in this repository had asked, is the OTHER end of
+# the same reader: there are `_check(` conditions it does not read AT ALL.
+#
+# `_condition_at()` returns `closed` false and `_counter_equalities()` then
+# skips the assertion. SEVENTEEN conditions in tests/, in TEN functions, out
+# of the 2299 `_check(` lines this commit's tree offers the reader - and all
+# seventeen share one cause, MEASURED ONE AT A TIME and not inferred from the
+# fact that they look alike: every one of their `_check(` lines carries a `#`
+# INSIDE a string literal AND INSIDE THE CONDITION, not in the message.
+# `_code_of()` cuts the line at that `#`, and the unterminated quote it leaves
+# is one `_masked()` cannot close, so the depth count never meets the comma
+# that ends the first argument and walks to the end of the window. A `#` in
+# the MESSAGE costs nothing, because the top-level comma arrives first - which
+# is why the first attempt to build an eighteenth unread condition for the red
+# reading below did not produce one. The 2299 is not typed into this comment
+# as a guard: section 10's breadth line reads it off the directory and prints
+# it.
+#
+# THE CAUSAL READING WAS 17 SEPARATE RUNS, each replacing one site's
+# in-literal `#` with an `@` ON THAT LINE ONLY in a throwaway copy: all
+# seventeen dropped the total to 16 and their own key's count by one. Its
+# first pass reported SEVEN NON-RESPONDERS and they were the seven in the two
+# files this commit edits - the site list had been taken on the baseline tree
+# and those line numbers had moved. THAT IS WHY THIS TABLE IS KEYED BY
+# FUNCTION AND NOT BY LINE: a line-keyed table goes stale against the diff of
+# the commit that writes it. See TRAPS 132.
+#
+# WHY THIS IS A TABLE AND NOT A FIX. `_code_of()`'s blindness to a `#` in a
+# literal is deliberate and already written down in `_masked()`'s header, and
+# the conditions it costs are - every one of them - assertions ABOUT comment
+# handling, which is the shape 110 already recorded: a reader that blanks
+# comments the way the suites do cannot read the assertions about the suites'
+# blanking. Teaching `_code_of()` about literals changes a function that is
+# copied byte-identically into other suites and held that way by section 3,
+# so it is not a one-line edit and it is not this section's business.
+#
+# WHAT IS THIS SECTION'S BUSINESS is that the number stops being invisible.
+# Section 8 asserts `eq_sites.size() > 0` so that a scan reaching no code
+# cannot pass as a clean sweep; it says nothing about a scan reaching MOST of
+# the code. An eighteenth unread condition, or one in a new function, fails
+# section 10 BY NAME with the key printed - and if it ever holds a
+# counter-equality site, that site is in the class the scan is asked to
+# enumerate and the scan cannot see it.
+const UNREAD_CONDITIONS := {
+	"agreement_test.gd::_no_agreement_by_hand": 1,
+	"agreement_test.gd::_the_sites_read_the_reader": 1,
+	"check_wiring_test.gd::_enumeration": 1,
+	"errand_outcome_test.gd::_vocabulary_controls": 2,
+	"prompt_numeral_test.gd::_initialize": 1,
+	"proxy_test.gd::_initialize": 1,
+	"record_type_test.gd::_the_class_is_closed_by_the_code": 1,
+	"retry_test.gd::_every_branch_of_the_http_message": 2,
+	"scan_floor_test.gd::_run": 3,
+	"source_scan_test.gd::_run": 4,
+}
+
+
 func _check(ok: bool, what: String) -> void:
 	asserted += 1
 	if ok:
@@ -795,6 +859,90 @@ func _run() -> void:
 	_check(_counter_equalities(_code_of(two_loops + "\t# _check" + "(a == b, \"commented out\")\n")).is_empty(),
 		"and an assertion that exists only in a comment is not a site, because the scan reads what _code_of() leaves")
 
+	# 135: EVERY ONE OF THE PROPERTIES ABOVE WAS HELD OVER A CONDITION ON ONE
+	# LINE, which is what 134's "Next action" named first. All nine were fed
+	# their own multi-line twin, one built source at a time, and the output
+	# read rather than the count - against this file and against the scanner
+	# `cae0c70` (133a) committed, in throwaway copies with their own
+	# `config/name` (TRAPS 50). SIX OF THE NINE DISAGREE WITH 133a AND ARE
+	# BELOW. Each one therefore fails against a split this project shipped,
+	# which is the test TRAPS 6 asks of a row: not "can it fail on today's
+	# tree" but "can a legal implementation make it fail".
+	#
+	#   property                        133a read            now
+	#   match arm                       `a==a,b`             `a==b`
+	#   bracket inside a message        `a==a,b`             `a==b`
+	#   plain two counters              `a==a,b`             `a==b`
+	#   `a == 3` is not a site          **`a==a`**           nothing
+	#   sum against items.size()        `a,b==a`             `a,b==items.size()`
+	#   sum against others.size()       **`a,b==a`**         nothing
+	#
+	# THE TWO IN BOLD ARE THE ENTRY AND THEY ARE TRAPS 131'S FAULT AGAIN, IN
+	# TWO MORE COSTUMES: a comparison against a typed number, and a sum
+	# against the size of a collection the counters did not walk, are both
+	# explicitly NOT the shape - and the committed split reported each of them
+	# as a site. A scan asked to enumerate a class invented two more members
+	# of it, and both were reachable by adding one ordinary conjunct to an
+	# assertion the suites already write.
+	#
+	# THE OTHER THREE AGREE WITH THEIR SINGLE-LINE TWIN AND ARE NOT WRITTEN,
+	# WHICH IS A MEASUREMENT AND NOT AN OMISSION: two counters over DIFFERENT
+	# collections, a counter advanced outside every loop, and a commented-out
+	# `_check`, all read the same under both splits. They are decided in PASS 1
+	# and by `_code_of()`, before the conjunct split is reached, so a row for
+	# each would be a row no legal implementation of the split can fail -
+	# exactly the shape TRAPS 6 says not to add. Nine rows would have looked
+	# more thorough than six and three of them would have guarded nothing.
+	var arm_multi := _counter_equalities(on_arm + "\t_check" + "(a == b\n\t\t\tand a >= 0, \"same\")\n")
+	_check(arm_multi.size() == 1 and str((arm_multi[0] as Dictionary)["right"]) == "b",
+		"a match-arm counter in a MULTI-LINE condition still keys off the one conjunct that is the shape, which 133a read as a==a,b: %s" % str(arm_multi))
+	var past_multi := _counter_equalities(two_loops + "\t_check" + "(a == b\n\t\t\tand a >= 0, \"opens a ( and never closes it\")\n\t_check" + "(1 == 2, \"next\")\n")
+	_check(past_multi.size() == 1 and str((past_multi[0] as Dictionary)["right"]) == "b" and int((past_multi[0] as Dictionary)["line"]) == 8,
+		"and a bracket inside the message of a MULTI-LINE condition neither runs into the next assertion nor widens the key: %s" % str(past_multi))
+	var plain_multi := _counter_equalities(two_loops + "\t_check" + "(a == b\n\t\t\tand a >= 0, \"same\")\n")
+	_check(plain_multi.size() == 1 and str((plain_multi[0] as Dictionary)["left"]) == "a" and str((plain_multi[0] as Dictionary)["right"]) == "b",
+		"and the plain case keyed over two lines is the same site as over one, which 133a keyed a==a,b: %s" % str(plain_multi))
+	var lit_multi := _counter_equalities(decl + "\tfor x in items:\n\t\ta += 1\n\t_check" + "(a == 3\n\t\t\tand a >= 0, \"x\")\n")
+	_check(lit_multi.is_empty(),
+		"an equality against a typed number is STILL not two counts of one collection when the condition runs to a second line - 133a reported it as the site a==a: %s" % str(lit_multi))
+	var sum_multi := _counter_equalities(two_loops + "\t_check" + "(a + b == items.size()\n\t\t\tand a >= 0, \"x\")\n")
+	_check(sum_multi.size() == 1 and str((sum_multi[0] as Dictionary)["right"]) == "items.size()",
+		"a sum against the size of the walked collection keeps its right-hand side over two lines, where 133a read the next conjunct as the right side: %s" % str(sum_multi))
+	var other_multi := _counter_equalities(two_loops + "\t_check" + "(a + b == others.size()\n\t\t\tand a >= 0, \"x\")\n")
+	_check(other_multi.is_empty(),
+		"and the same sum against a DIFFERENT collection is still not a site over two lines - 133a reported one, over the collection the counters DID walk: %s" % str(other_multi))
+
+	# --- 10. and what the condition reader never reaches, by name ---
+	#
+	# See UNREAD_CONDITIONS above for the cause and for why the fix is not
+	# here. This is the reach of the scan section 8 trusts, held as a table so
+	# that a condition joining or leaving the unread set says so. Membership
+	# both ways, by key, so a function being renamed or a file losing its last
+	# unread condition is as loud as a new one arriving.
+	# EVERY MESSAGE HERE PRINTS THE MEASURED NUMBER BESIDE THE TABLE'S, so the
+	# sentence is true in both readings. A row phrased "holds the N this table
+	# says" prints "the 1 this table says, not 1" when it passes, which is
+	# TRAPS 129 in the section that was written to avoid it.
+	var reach := _condition_reach()
+	var unread: Dictionary = reach["unread"]
+	for key in unread:
+		_check(UNREAD_CONDITIONS.has(str(key)),
+			"%s: %d _check condition(s) abandoned unread, and UNREAD_CONDITIONS carries the key - a counter-equality site inside one would be invisible to section 8" % [str(key), int(unread[key])])
+	for key in UNREAD_CONDITIONS:
+		_check(int(unread.get(str(key), -1)) == int(UNREAD_CONDITIONS[key]),
+			"%s: this table says %d, the reader abandons %d (-1 means the key is gone, so the row describes code that is not there any more)" % [str(key), int(UNREAD_CONDITIONS[key]), int(unread.get(str(key), -1))])
+
+	# AND THE BREADTH IN ONE LINE, so no later session infers the scan's reach
+	# from an absence of failures - section 8's own rule, applied to section
+	# 8's input (TRAPS 78, TRAPS 105). The exact per-function numbers are
+	# pinned by the table above; what this line is for is the total being
+	# READABLE in a green run.
+	var reached := 0
+	for key in unread:
+		reached += int(unread[key])
+	_check(reached > 0,
+		"%d _check condition(s) in tests/ are abandoned unread, across %d function(s), out of the %d offered to the reader - IF THIS FAILS the enumeration reached no code and section 8's class is empty for a reason that has nothing to do with tests/" % [reached, unread.size(), int(reach["lines"])])
+
 	print("SOURCE SCAN %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)
 
@@ -1255,43 +1403,16 @@ func _counter_equalities(code: String) -> Array:
 			loop_indent.append(l.get_string(1).length())
 			loop_coll.append(l.get_string(2).strip_edges())
 
-	# PASS 2: the condition of every _check(), read from the _check( line
-	# forward until the comma that ends the first argument. Depth is counted
-	# over MASKED text, so a bracket inside a message cannot run the read past
-	# the end of the call - which is the second thing the first route got
-	# wrong.
+	# PASS 2: the condition of every _check(), read by _condition_at() - ONE
+	# reader, so the sites _condition_reach() reports as abandoned are the
+	# sites this pass actually abandons and not a copy's (TRAPS 64).
 	for i in range(lines.size()):
-		var masked_line := _masked(str(lines[i]))
-		var at := masked_line.find("_check(")
-		if at < 0:
+		if _masked(str(lines[i])).find("_check(") < 0:
 			continue
-		var condition := ""
-		var depth := 0
-		var closed := false
-		for j in range(i, mini(i + 12, lines.size())):
-			var seg := _masked(str(lines[j]))
-			if j == i:
-				seg = seg.substr(at + 7)
-			var k := 0
-			while k < seg.length():
-				var c := seg.substr(k, 1)
-				if c == "(" or c == "[":
-					depth += 1
-				elif c == ")" or c == "]":
-					if depth == 0:
-						closed = true
-						break
-					depth -= 1
-				elif c == "," and depth == 0:
-					closed = true
-					break
-				condition += c
-				k += 1
-			if closed:
-				break
-			condition += " "
-		if not closed:
+		var read := _condition_at(lines, i)
+		if not bool(read["closed"]):
 			continue
+		var condition := str(read["text"])
 		# Each top-level conjunct separately: `a == b and a > 0` is two claims
 		# and only one of them is this shape.
 		#
@@ -1351,6 +1472,105 @@ func _counter_equalities(code: String) -> Array:
 				"coll": ",".join(PackedStringArray(left_keys)),
 			})
 	return out
+
+
+# The first argument of the `_check(` on line `i`, read forward to the comma
+# that ends it. Depth is counted over MASKED text, so a bracket inside a
+# message cannot run the read past the end of the call - which is the second
+# thing the first route to this enumeration got wrong. Returns
+# {"text","closed"}; a condition continued across lines arrives with a single
+# space at each line break, which is why the conjunct boundary above is a
+# whitespace RUN (TRAPS 131).
+#
+# `closed` FALSE MEANS THE READ GAVE UP, AND _counter_equalities() THEN SKIPS
+# THAT ASSERTION ENTIRELY. There are two ways to reach it: a first argument
+# longer than the 12-line window, and - the one that happens - a line
+# `_code_of()` has truncated at a `#` INSIDE a string literal, which leaves an
+# unterminated quote that `_masked()` cannot close and the depth count walks
+# off the end of. That is not a new fault of `_code_of()`; it is stated in
+# `_masked()`'s own header. What was never written down is what it COSTS this
+# scan, and section 10 now holds that as a table rather than leaving it to be
+# inferred from an absence of failures.
+static func _condition_at(lines: PackedStringArray, i: int) -> Dictionary:
+	var at := _masked(str(lines[i])).find("_check(")
+	if at < 0:
+		return {"text": "", "closed": false}
+	var condition := ""
+	var depth := 0
+	var closed := false
+	for j in range(i, mini(i + 12, lines.size())):
+		var seg := _masked(str(lines[j]))
+		if j == i:
+			seg = seg.substr(at + 7)
+		var k := 0
+		while k < seg.length():
+			var c := seg.substr(k, 1)
+			if c == "(" or c == "[":
+				depth += 1
+			elif c == ")" or c == "]":
+				if depth == 0:
+					closed = true
+					break
+				depth -= 1
+			elif c == "," and depth == 0:
+				closed = true
+				break
+			condition += c
+			k += 1
+		if closed:
+			break
+		condition += " "
+	return {"text": condition, "closed": closed}
+
+
+# How far the condition reader gets over tests/: {"unread": {`file.gd::function`
+# -> count}, "lines": every `_check(` line it was offered}.
+#
+# The abandoned conditions are the assertions `_counter_equalities()` never
+# reads, so a site of its shape sitting in one of them joins the class in
+# SILENCE - section 8's "every site has a row" cannot fire for a condition the
+# reader never reached. The reach is therefore enumerated and tabled, which is
+# the same move 134 made for the placement sites: a checked count rather than
+# a prose claim.
+#
+# ONE DIRECTORY READ AND NOT TWO, deliberately. The first draft of this had
+# the denominator in a second function with its own `DirAccess.open`, and
+# `scan_floor_test` named both of them on the run that added them - which is
+# that class working. Two sites would have needed two FLOORS rows, and the
+# second one's honest row would have said "covered by the first one's floor",
+# which the FLOORS table does carry (`check_wiring_test.gd::_no_door_rows`)
+# but which is a dependency to maintain rather than one to create. One read
+# has one floor and it is section 10's breadth line.
+func _condition_reach() -> Dictionary:
+	var unread := {}
+	var lines_seen := 0
+	var dir := DirAccess.open("res://tests")
+	if dir == null:
+		return {"unread": unread, "lines": lines_seen}
+	var func_line := RegEx.create_from_string("^[\\t ]*(?:static[\\t ]+)?func[\\t ]+([A-Za-z_][A-Za-z0-9_]*)")
+	for file_name in dir.get_files():
+		var name := str(file_name)
+		if not name.ends_with(".gd"):
+			continue
+		var handle := FileAccess.open("res://tests/" + name, FileAccess.READ)
+		if handle == null:
+			continue
+		var lines := _code_of(handle.get_as_text()).split("\n")
+		handle.close()
+		var current := ""
+		for i in range(lines.size()):
+			var masked_line := _masked(str(lines[i]))
+			var f := func_line.search(masked_line)
+			if f != null:
+				current = f.get_string(1)
+			if masked_line.find("_check(") < 0:
+				continue
+			lines_seen += 1
+			if bool(_condition_at(lines, i)["closed"]):
+				continue
+			var key := "%s::%s" % [name, current]
+			unread[key] = int(unread.get(key, 0)) + 1
+	return {"unread": unread, "lines": lines_seen}
 
 
 # The counter names a piece of an expression mentions, sorted so a key written

@@ -9975,3 +9975,84 @@ Found in 134, by a scan correctly refusing to stay quiet about something, and
 then by disbelieving what it said about what that something was.
 
 > It asked for a row describing an assertion nobody had written.
+
+---
+
+## 132. The scan reports what it found and never what it could not read
+
+**Signature:** a suite says *"every member of this class carries a row"* and
+is green, and the question *"how much of the input did the scan actually
+parse?"* has no answer anywhere — not in the output, not in a table, not in a
+comment.
+
+**Cause.** `source_scan_test._counter_equalities()` enumerates a class over
+every `.gd` file in `tests/`. It reads the first argument of each `_check(`
+by counting brackets over string-masked text, and when that read does not
+reach the comma that ends the argument it does the only safe thing available
+to it: `if not closed: continue`. Safe, and silent. **Seventeen of the 2299
+`_check(` conditions in `tests/` are skipped that way**, in ten functions,
+and until 135 nothing in the repository said so.
+
+All seventeen share one cause, and it was measured one at a time rather than
+inferred from the fact that they look alike. Each of their `_check(` lines
+carries a `#` **inside a string literal and inside the condition**.
+`_code_of()` cuts a line at its first `#` even inside a literal — stated
+plainly in `_masked()`'s own header, so this is not a new fault of
+`_code_of()` — and the unterminated quote that leaves is one `_masked()`
+cannot close, so the depth count never meets the top-level comma. A `#` in the
+**message** costs nothing, because the comma arrives first; the first attempt
+to construct an eighteenth unread condition for a red reading put the `#` in
+the message and produced no new one, which is how the boundary got stated
+exactly instead of approximately.
+
+**The causal reading, 17 runs:** each site's in-literal `#` was replaced with
+an `@` **on that one line only**, in a throwaway copy, and the scan re-run.
+**All seventeen dropped the total to 16 and their own key's count by one.** It
+is worth saying what that cost, because the first pass of it reported **seven
+non-responders** — and they were the seven in the two files that same commit
+had edited. The site list had been enumerated on the baseline tree, both files
+had gained lines above those sites, and the line numbers no longer pointed at
+the conditions. **A co-occurrence read as a cause, and then a stale index read
+as a counter-example to it**, inside one measurement.
+
+**Why it is worth a number even though the fix is elsewhere.** Section 8 of
+that suite asserts `eq_sites.size() > 0` so that a scan reaching **no** code
+cannot pass as a clean sweep (TRAPS 78). It says nothing about a scan reaching
+**most** of the code, and those are different claims. A counter-equality site
+living inside one of the seventeen is in the class the scan is asked to
+enumerate, and the scan cannot see it: *"every site has a row"* is then true
+of what was read and silent about what was not.
+
+**Do:**
+
+- **A scan that enumerates a class owes two numbers, not one: what it found,
+  and what it could not read.** The second one belongs in the output of a
+  green run, because that is the run in which nobody goes looking.
+- **Table the unreadable set by name.** `UNREAD_CONDITIONS` is keyed
+  `file.gd::function` with a count, so an eighteenth fails by name with the
+  key printed and one going away fails too. A bare total would fail as well,
+  and with nothing to read (134's reason for `PLACE_AT_SITES`).
+- **And key it by FUNCTION, not by line, because a line number goes stale the
+  moment you edit the file above it.** That is not a style preference here: the
+  causal reading above produced seven false negatives on its first pass for
+  exactly that reason, in the same cycle that chose the key. A `file::line`
+  table would have gone stale against this commit's own diff.
+- **One read has one floor.** The first draft put the denominator in a second
+  function with its own `DirAccess.open`, and `scan_floor_test` demanded a
+  `FLOORS` row for both. The honest row for the second would have read
+  *"covered by the first one's floor"* — a real category the table carries,
+  and one to avoid creating. The two reads were folded into one.
+- **The class is wider than the instance and has not been read.** `tests/`
+  holds **57 functions** that open a `.gd` source. One of them has now been
+  asked what it cannot parse. The other 56 have not, and a grep for skip
+  branches cannot answer it, because most of those branches are ordinary
+  filtering rather than a failed read. Counted, not assumed — and left as the
+  next action rather than claimed closed (TRAPS 11).
+
+Found in 135, while adding the multi-line controls 134's *"Next action"* asked
+for: the six that disagreed with the committed split were the task, and the
+question *"what does this reader never reach at all?"* was the thing the task
+walked past.
+
+> It had an answer for every assertion it read, and no answer for the ones it
+> skipped.

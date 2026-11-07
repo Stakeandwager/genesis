@@ -11,7 +11,130 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
-- Last commit at the time of writing: **134a**, and it is **DOCS ONLY** - 0
+- Last commit at the time of writing: **135**, and it is **TWO FILES UNDER
+  `tests/` PLUS `docs/TRAPS.md` AND THIS FILE**.
+  `tests/source_scan_test.gd` (**82 -> 109 assertions**: one function split
+  out, two folded into one, six new rows in section 9, a new section 10 and a
+  new table) and `tests/scan_floor_test.gd` (**151 -> 156**: one new `FLOORS`
+  row). **`scripts/`, `scenes/`, `netlify/`, `.github/`, `project.godot` and
+  both runners are 0 LINES OF DIFF**, confirmed by `git diff --name-only`, so
+  **nothing a player meets changed** and **no fault a player can meet was
+  fixed**. What was found is in a suite, and it is the same shape as TRAPS 131
+  in two new costumes plus one thing nobody had asked.
+
+  **ONE. THE TASK `## Next action` HAS NAMED FIRST SINCE 134 IS DONE, AND THE
+  ANSWER IS SIX OF NINE.** Section 9 held nine properties of
+  `_counter_equalities()` and every built source in it was a condition on ONE
+  LINE. All nine were fed their multi-line twin, one at a time, output read
+  rather than counted, against this tree and against the scanner `cae0c70`
+  (133a) committed - throwaway copies, own `config/name` (TRAPS 50). **Six
+  disagree with 133a and are now rows; three do not and are deliberately not
+  rows.**
+
+  | property | 133a read | now |
+  |---|---|---|
+  | match arm | `a==a,b` | `a==b` |
+  | bracket inside a message | `a==a,b` | `a==b` |
+  | plain two counters | `a==a,b` | `a==b` |
+  | `a == 3` is not a site | **`a==a`** | nothing |
+  | sum against `items.size()` | `a,b==a` | `a,b==items.size()` |
+  | sum against `others.size()` | **`a,b==a`** | nothing |
+
+  **THE TWO IN BOLD ARE THE FINDING AND THEY ARE TRAPS 131 AGAIN:** a
+  comparison against a typed number, and a sum against the size of a
+  collection the counters did not walk, are both explicitly NOT the shape -
+  and the committed split reported each as a site. **The scan invented two
+  more members of the class it is asked to enumerate**, and both were reachable
+  by adding one ordinary conjunct to an assertion the suites already write.
+  All six were **seen red against the 133a split on this tree**: `--script`
+  alone, **109 assertions, failures=8** (the six plus 134's own two), each
+  printing the wrong reading rather than a bare count.
+
+  **THE THREE THAT AGREE ARE NOT WRITTEN, AND THAT IS A MEASUREMENT RATHER
+  THAN AN OMISSION** (TRAPS 6): two counters over DIFFERENT collections, a
+  counter advanced outside every loop, and a commented-out `_check`, all read
+  the same under both splits, because they are decided in PASS 1 and by
+  `_code_of()` before the conjunct split is reached. A row for each would be a
+  row no legal implementation of the split can fail. **Nine rows would have
+  looked more thorough than six and three of them would have guarded nothing.**
+
+  **TWO. AND THE QUESTION THAT TASK WALKED PAST: THE READER NEVER READS
+  SEVENTEEN OF THE CONDITIONS AT ALL.** `_condition_at()` returns `closed`
+  false and `_counter_equalities()` does `continue`. **Seventeen of the 2299
+  `_check(` conditions in `tests/`, in TEN functions**, measured with the
+  committed `_masked()` and `_code_of()` rather than a replica. **All
+  seventeen share one cause, and it was measured ONE AT A TIME rather than
+  inferred from the fact that they look alike:** each carries a `#` inside a
+  string literal **and inside the condition**; `_code_of()` cuts the line
+  there, and the unterminated quote it leaves is one `_masked()` cannot close,
+  so the depth count never meets the comma that ends the first argument. A `#`
+  in the **message** costs nothing - the comma arrives first - **which is how
+  that boundary got stated exactly: the first attempt to build an eighteenth
+  unread condition put the `#` in the message and produced no new one.**
+
+  **THE CAUSAL READING, 17 RUNS, AND IT COST A FALSE RESULT FIRST.** Each
+  site's in-literal `#` was replaced with an `@` **on that one line only**, in
+  a throwaway copy, and the scan re-run: **all seventeen dropped the total to
+  16 and their own key's count by one.** The first pass of that reported
+  **seven non-responders** - and they were exactly the seven in the two files
+  this commit edits. The site list had been enumerated on the BASELINE tree,
+  both files had gained lines above those sites, and the line numbers no
+  longer pointed at the conditions. **A co-occurrence had been written down as
+  a cause, and then a stale index was read as a counter-example to it, inside
+  one measurement.** Both halves are in TRAPS 132, and the second is why
+  `UNREAD_CONDITIONS` is keyed `file::function` and not `file:line`: a
+  line-keyed table would have gone stale against this commit's own diff.
+
+  **IT IS TABLED AND NOT FIXED, FOR A STATED REASON.** `_code_of()`'s
+  blindness to a `#` in a literal is deliberate, is already written down in
+  `_masked()`'s own header, and the conditions it costs are - every one of
+  them - assertions ABOUT comment handling, which is the shape 110 recorded.
+  `_code_of()` is copied byte-identically into other suites and held that way
+  by section 3, so teaching it about literals is not a one-line edit and is
+  **not this commit's business**. What is: the number stops being invisible.
+  Section 8 asserts `eq_sites.size() > 0` so a scan reaching **no** code
+  cannot pass as a clean sweep; it says nothing about a scan reaching **most**
+  of it, and those are different claims. **TRAPS 132.**
+
+  **THE TABLE IS KEYED BY NAME AND NOT A TOTAL, AND THREE RED READINGS SAY
+  WHAT IT CATCHES** - all taken on this tree, each in its own throwaway copy
+  with its own `config/name`:
+
+  | reconstruction | reading |
+  |---|---|
+  | an eighteenth unread condition, in `walk_test.gd::_solve`, with no row | **110 assertions, failures=1**, naming `walk_test.gd::_solve`, breadth line reading `18 ... across 11 function(s)` |
+  | one of the seventeen loses its in-literal `#` so the row describes code that is gone | **108 assertions, failures=1**: `check_wiring_test.gd::_enumeration: this table says 1, the reader abandons -1` |
+  | the directory read pointed at a path that does not exist | **95 assertions, failures=37**, of which **11 are section 10's** - one per row reading `-1`, plus the floor printing `0 ... out of the 0 offered to the reader` |
+
+  **THREE. `scan_floor_test` NAMED THE NEW READS ON THE RUN THAT ADDED THEM,
+  AND THE SECOND ONE WAS REMOVED RATHER THAN GIVEN A ROW.** The first draft
+  put the denominator in its own function with its own `DirAccess.open`, and
+  `scan_floor_test` went **155, failures=2** demanding a `FLOORS` row for
+  both. The honest row for the second would have read *"covered by the other
+  read's floor"* - a category the `FLOORS` table does carry
+  (`check_wiring_test.gd::_no_door_rows`) and one not worth creating. **The
+  two reads are folded into one `_condition_reach()`, so one read has one
+  floor**, and `scan_floor_test` is **156, failures=0**. That is the class
+  working rather than a chore.
+
+  **WHAT WAS WEIGHED AND LEFT AS A READ, BECAUSE `## Next action` SAID TO
+  WRITE IT DOWN RATHER THAN FIX IT IN THE SAME BREATH.** The rule TRAPS 132
+  produces - *a scan that enumerates a class owes what it could not read, not
+  only what it found* - holds wider than this function. **`tests/` holds 57
+  functions that open a `.gd` source**, counted rather than estimated. **One
+  of them has now been asked what it cannot parse. The other 56 have not**,
+  and a grep for skip branches does not answer it, because most of those
+  branches are ordinary filtering rather than a failed read. Named under
+  `## Next action`; **not claimed closed** (TRAPS 11).
+
+  **THE SWEEP, RUN BEFORE ANY DOCUMENT PARAGRAPH WAS WRITTEN** (TRAPS 126's
+  third "Do", anchored to a line start): **TRAPS 1-131 all present and every
+  `TRAPS n` reference resolves; HDN 1-43 all present (4 and 5 struck) and no
+  dangling `HDN n` reference in either document; all 14 `docs/...` paths named
+  anywhere in the repository exist.** This commit then added TRAPS 132, so a
+  sweep on the pushed tree reads 1-132. **No new "Human decision needed".**
+
+- Last commit before this one: **134a**, and it is **DOCS ONLY** - 0
   lines of diff in `scripts/`, `scenes/`, `tests/`, `netlify/`, `.github/`,
   `project.godot` and both runners, confirmed by `git diff --name-only`. No
   fault a player can meet was fixed and no row was added. It carries **one
@@ -11478,7 +11601,45 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
-**THE LATEST RUN IS 134a's, AND IT IS A FRESH `git clone` OF THE PUSHED
+**THE LATEST RUN IS 135's, ON ITS OWN CHANGED TREE, AND TWO SUITES' COUNTS
+MOVED.** `--all` through `run_tests.sh`, `user://` cleared by deleting
+`app_userdata/AI_Game_Builder` before it, Godot
+**`4.7.1.stable.official.a13da4feb`** (binary md5
+**`c083304672e2b4264cfb7f823aba095f`**): md5
+**`7f9f8c91889d7a014afb21309dae0cf3`**, **85 suites, 0 with something to look
+at**, `player_door_test` **154, failures=0**, `source_scan_test` **109,
+failures=0**, `scan_floor_test` **156, failures=0**, `halt_cause_test` **53,
+failures=0**, `drive_test` **24, failures=0**, `session_test` **18,
+failures=0**, `result_line_test` **370, failures=0**. **197 s wall**, timed
+with `time` around the runner, and **the runner wrote 0 bytes to stderr**,
+counted with `wc -c` on the capture rather than eyeballed.
+
+**THE `diff` AGAINST 135's OWN BASELINE IS TWO LINES, AND THAT IS THE WHOLE
+EFFECT OF THE CHANGE**: `source_scan_test` **82 -> 109** and
+`scan_floor_test` **151 -> 156**. Every other suite's line is byte-identical,
+read off `diff` rather than by eye.
+
+**AND THE BASELINE WAS AN INDEPENDENT CONTAINER ON THE PUSHED `c9a91e3`
+(134a), WHICH IS THE READING `134a` SAID THE NEXT FIRING WOULD GET FOR
+NOTHING.** Its own container, its own Godot download (same binary md5
+`c083304672e2b4264cfb7f823aba095f`), `git status --porcelain` **EMPTY**,
+`user://` cleared: md5 **`717e20a08a4a7d5239d0c4ad6137afe0`**, **85 suites, 0
+to look at**, `player_door_test` **154**, `source_scan_test` **82**,
+`scan_floor_test` **151**, `halt_cause_test` **53**, `drive_test` **24**,
+`session_test` **18**, `result_line_test` **370**, 199 s wall -
+**byte-identical to what 134 recorded on its changed tree and `134a` read off
+the remote**. Seventh container, same number. **`134a`'s one open item - that
+it was a reading of the remote by the same container and not an independent
+one - is CLOSED, and nothing is owed on it.**
+
+**WHAT A GREEN RUN LOOKS LIKE, FOR A SESSION READING THIS TO FIND OUT:** 85
+suites, `suites with something to look at: 0`, and the suites worth naming at
+`player_door_test` **154**, `source_scan_test` **109**, `scan_floor_test`
+**156**, `halt_cause_test` **53**, `drive_test` **24**, `session_test` **18**,
+`result_line_test` **370**. If `source_scan_test` reads 82 you are on 134a or
+earlier.
+
+**THE RUN BEFORE IT IS 134a's, AND IT IS A FRESH `git clone` OF THE PUSHED
 `386784d` (134)**: its own directory outside the repository, `git status
 --porcelain` EMPTY before and after, `user://` cleared by deleting
 `app_userdata/AI_Game_Builder`, Godot `4.7.1.stable.official.a13da4feb` -
@@ -11535,12 +11696,15 @@ no physics, so it costs about **0 s** either way; the 24 s is what the
 driving sections have always cost without the flag. **Both runners are 0 lines
 of diff**, and `run_tests.bat` needed no edit because no suite was added.
 
-**WHAT A GREEN RUN LOOKS LIKE, FOR A SESSION READING THIS TO FIND OUT:** 85
+~~**WHAT A GREEN RUN LOOKS LIKE, FOR A SESSION READING THIS TO FIND OUT:** 85
 suites, `suites with something to look at: 0`, and the suites worth naming at
 `player_door_test` **154**, `source_scan_test` **82**, `scan_floor_test`
 **151**, `halt_cause_test` **53**, `drive_test` **24**, `session_test` **18**,
 `result_line_test` **370**. If `player_door_test` reads 130 you are on 133a or
-earlier.
+earlier.~~ **STRUCK IN 135, FOR THE REASON 134 STRUCK ITS OWN PREDECESSOR:**
+`source_scan_test` is 109 and `scan_floor_test` is 156 as of this commit. The
+live paragraph is the one at the top of this section, and there is only ever
+one.
 
 **THE RUN BEFORE IT ALL IS 133a's, A FRESH `git clone` OF THE PUSHED
 `dc6767c` (133)**: its own directory outside the repository, `git status
@@ -11618,11 +11782,13 @@ no edit because no suite was added - checked by running all thirteen of its
 suites, `suites with something to look at: 0`, and the six suites worth naming
 at **130 / 53 / 24 / 18 / 370 / 80**. If `player_door_test` reads 113 and
 `halt_cause_test` reads 43 you are on 132a or earlier.~~ **STRUCK IN 134: that
-was current at 133 and is not now** - `player_door_test` is 154,
-`source_scan_test` 82 and `scan_floor_test` 151. Two paragraphs both headed
-*what a green run looks like*, one of them stale, is TRAPS 126's shape, so the
-one that has stopped being current is struck rather than left to be read as an
-alternative. The paragraph at the top of this section is the live one.
+was current at 133 and is not now.** Two paragraphs both headed *what a green
+run looks like*, one of them stale, is TRAPS 126's shape, so the one that has
+stopped being current is struck rather than left to be read as an alternative.
+**The live numbers are NOT restated here** - 135 moved two of them again, and
+an annotation that repeats a count is one more place for it to go stale, which
+is this entry's own lesson. **The paragraph at the top of this section is the
+live one.**
 
 **THE RUN BEFORE IT ALL IS 132a's, A FRESH `git clone` OF THE PUSHED
 `04b939b` (132)**: `git status --porcelain` EMPTY before and after, `user://`
@@ -19981,6 +20147,120 @@ and recorded because it is what made this commit's own suite vacuous.
   and it is a move rather than a fix. Left for whoever has a reason.
 
 ## Next action
+
+**135 OWES ONE MEASUREMENT AND IT IS A FRESH `git clone` OF ITS OWN PUSHED
+COMMIT.** Everything below was run on 135's working tree. The tree on the
+remote has not been cloned and run, so *"the tree that was measured is the
+tree that was pushed"* is an inference until somebody takes it. It is cheap -
+clone `--branch prototype-002a` into its own directory outside the
+repository, `git status --porcelain` before and after, clear `user://`, run
+`--all`, and `diff` against 135's run - and if the firing that reads this is
+the next one, **take it first and record the md5**. 135 also took its own
+independent baseline on the pushed `c9a91e3` (134a) and reproduced
+`717e20a08a4a7d5239d0c4ad6137afe0` byte for byte from a seventh container,
+which **closes `134a`'s one open item**. **DO NOT RE-TAKE THAT.**
+
+**THE ITEM THIS FILE HAS CARRIED SINCE 134 IS DONE, AND THE ANSWER IS A
+NUMBER: SIX OF THE NINE.** The nine properties section 9 held over one-line
+conditions were each fed their multi-line twin; six disagree with the split
+133a committed and are now rows, all six seen red; three agree and are
+deliberately not rows, because they are decided before the conjunct split is
+reached and no legal implementation of that split can fail them. **The table
+of both readings is in the 135 entry at the top of this file. DO NOT RE-TAKE
+IT.** Two of the six are TRAPS 131's fault in new costumes - the old split
+reported a site for `a == 3 and a >= 0` and for a sum against a collection
+the counters never walked. `scripts/` is **still 0 lines of diff** and the
+streak stands at **eight commits** (`130a` through `135`), counted with
+`git rev-list a67a8aa..HEAD` and a per-commit `git diff --name-only`.
+
+**SO THE FIRST THING TO DO NOW IS THE READ 135 FOUND, SIZED, AND DID NOT DO:
+THE OTHER 56 SOURCE READERS HAVE NOT BEEN ASKED WHAT THEY CANNOT PARSE.**
+TRAPS 132 is that a scan enumerating a class owes two numbers - what it found
+and what it could not read - and that `_counter_equalities()` was silently
+skipping **17 of 2299** `_check(` conditions in `tests/`. That one is now
+tabled by name in `source_scan_test` section 10. **`tests/` holds 57
+functions that open a `.gd` source** (counted, in the 135 entry); **one has
+been asked.** The others include `_registry_calls`, `_class`, `_keyed_reads`
+and `_scripts_code` in the same file, and the source readers in
+`scan_floor_test`, `result_line_test`, `formula_test`, `check_wiring_test`,
+`controller_reach_test`, `refusal_reach_test` and `record_id_test`.
+
+**AND THE WAY TO DO IT IS NOT A GREP, WHICH 135 TRIED AND WRITES DOWN AS
+INSUFFICIENT.** A grep for skip branches inside those 57 functions returns
+dozens, and **most are ordinary filtering** - `not name.ends_with(".gd")`,
+`handle == null` on a file that is not there - rather than *"I could not
+parse this input"*. The distinction is the whole question and a pattern
+cannot make it. **Ask each reader directly, the way 134 and 135 both had to:
+feed it a built source whose answer you know, and read what it says.** Several
+of these helpers take a String and need no scene and no physics, so a reading
+takes seconds; a harness for calling one from outside its suite is five lines
+(`preload` the suite script, `.new()` it, call the method, print - a second
+`SceneTree` leaks RIDs at exit and that noise is harmless). **Do them one
+reader at a time and write down what each one does rather than fixing what
+you find in the same breath** - 135's own fix was safe only because the class
+on today's `tests/` was measured unchanged by it first.
+
+**AND THE SECOND IS A READING 135 TOOK, COULD NOT INTERPRET CLEANLY, AND IS
+HANDING OVER RATHER THAN ROUNDING OFF.** `_condition_at()` reads at most 12
+lines forward, and **the window is the reason for none of today's 17** - that
+follows from the per-site causal reading above, where every one of them
+responded to its `#`. So the window costs `tests/` nothing as the tree stands.
+**But a tree with all in-literal hashes neutralised at once is NOT the same
+input, and it has ten abandoned conditions in six functions.** Neutralising
+every in-literal `#` across `tests/` stops `_code_of()` truncating those
+lines, which **reveals `_check(` lines that were previously cut away
+entirely**: the denominator moves 2299 -> 2325, and ten conditions are then
+abandoned for some reason that is NOT the `#`. **What those ten are has not
+been read.** They are the nearest thing to a second cause anybody has seen,
+they may well be the window, and the measurement that would say is to read
+them one at a time in that treated copy. Recorded as an observation and **not
+as a finding**, because the treatment changed the input and a number taken
+under a changed input is not a number about `tests/`.
+
+**A THING NOT TO DO, STATED SO IT IS NOT REDISCOVERED: DO NOT TEACH
+`_code_of()` ABOUT STRING LITERALS AS A WAY TO CLOSE THE 17.** It is copied
+byte-identically into other suites and section 3 of `source_scan_test` holds
+that identity; the four conditions it corrupts in `tests/` are exactly the
+four that test its own blindness to a `#` (110's reading, in this file); and
+a reader that blanks comments the way the suites do cannot read the
+assertions about the suites' blanking. If it is ever worth doing it is its
+own commit with its own baseline, not a side effect of closing a count.
+
+**BEFORE YOU WRITE ANY DOCUMENT PARAGRAPH, RUN 131's SWEEP** - TRAPS 126's
+third "Do" has the recipe, it is one command, and it has now found a fault in
+three separate cycles. 135 ran it: **TRAPS 1-131 all present and every
+`TRAPS n` reference resolves; HDN 1-43 all present (4 and 5 struck) and no
+dangling `HDN n` reference in either document; all 14 `docs/...` paths named
+anywhere in the repository exist.** (135 then added TRAPS 132, so a sweep on
+the pushed tree reads 1-132 and 1-43.) Note the two parser traps, both still
+live: `H.index('## Human decision needed')` finds the **backticked mention**
+near the top of this file, so anchor the match to a line start; and HDN
+entries are numbered `N. **`, not `### N.`, so a parser keyed on a heading
+finds none and reports a clean sweep over nothing.
+**And when you change a suite's count or an md5, grep for the old number and
+edit the index section that states it** - the other half of TRAPS 126, and
+the half nothing points at. 135 moved `source_scan_test` 82 -> 109 and
+`scan_floor_test` 151 -> 156; `## Run the tests first` was edited in the same
+commit, the previous *"what a green run looks like"* paragraph was **STRUCK**,
+and **134's own annotation on the paragraph IT struck was edited too, because
+it restated the then-current counts and two of them have now moved** - an
+annotation that repeats a number is one more place for it to go stale, which
+is that entry's own lesson arriving one level up.
+
+**AND THE RULE 135 WOULD PASS ON ABOVE ANY PARTICULAR TASK, BECAUSE IT IS THE
+ONE THAT PAID TWICE AGAIN: ASK A SCAN WHAT IT COULD NOT READ, NOT ONLY WHAT
+IT FOUND.** A green enumeration is a statement about the inputs it parsed.
+`eq_sites.size() > 0` keeps a scan that read NOTHING from passing as a clean
+sweep; nothing kept a scan that read 2282 of 2299 from passing as a complete
+one, and those are different claims that look identical in a result line.
+**The same applies to the red run: read its output, not its failure count** -
+the two inventions above showed themselves only as printed readings, and the
+first attempt at a red reading for section 10 produced failures=0 because the
+`#` went in the message instead of the condition, which a count would have
+reported as "the tripwire does not fire" instead of "I built the wrong tree".
+
+**WHAT 134 LEFT, KEPT BELOW BECAUSE WHAT IT WAS AND HOW IT CLOSED IS THE PART
+A LATER SESSION READS.**
 
 **134's LEFTOVER IS NOTHING, AND THAT IS A READING AND NOT A PREDICTION.**
 ~~**134 OWES ONE MEASUREMENT AND IT IS A FRESH `git clone` OF ITS OWN PUSHED

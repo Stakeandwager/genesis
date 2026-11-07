@@ -266,6 +266,16 @@ const FLOORS := {
 		"floor": "eq_sites.size() > 0",
 		"why": "108: section 8 asks a hand-written table to name the WHOLE class rather than a floor of it, and an empty read satisfies such a table trivially - every site it found has a row, because it found none. The breadth line is the only thing between that and a clean result",
 	},
+	# 135: the fifth read in that file, arriving with the enumeration of the
+	# conditions the counter-equality reader never reaches, and this suite
+	# named it on the run that added it - which is the class working rather
+	# than a chore. It named a SIXTH read too, a separate denominator helper,
+	# and that one was folded into this function instead of being given a row
+	# whose honest text would have been "covered by the other read's floor".
+	"source_scan_test.gd::_condition_reach": {
+		"floor": "reached > 0",
+		"why": "135: section 10 holds a hand-written table against the conditions this read abandons, and an empty read satisfies such a table the wrong way round - UNREAD_CONDITIONS would be ten rows describing code the scan did not look at. MEASURED on its own with the read pointed at a directory that does not exist: 95 assertions, failures=37, of which 11 are section 10's - one per row of UNREAD_CONDITIONS reading 'the reader abandons -1', plus this floor printing '0 ... out of the 0 offered to the reader'. So nothing in that section is silent on an empty read",
+	},
 }
 
 
