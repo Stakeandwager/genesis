@@ -10232,3 +10232,49 @@ What makes it worth its place rather than a guard against an assumption
 (TRAPS 6) is that the input it fails on is **ordinary**: putting the four world
 modules in `scripts/worlds/` is a refactor somebody will propose, and the
 reading above shows what it would cost in silence.
+
+---
+
+## 135. Adding the current paragraph is not the same as there being one
+
+**Signature:** `docs/HANDOVER.md` has two paragraphs headed
+`WHAT A GREEN RUN LOOKS LIKE`, both unstruck, naming different suite counts.
+Then it has two headed `THE LATEST RUN IS`, both unstruck, naming different
+md5s. A session reading either pair has no way to tell which is current, and
+nothing failed.
+
+**Cause.** The rule in this file has always been *"the live paragraph is the
+one at the top of the section, and there is only ever one."* Every cycle keeps
+it by adding its own paragraph and **striking or demoting the one it
+replaced** — which is correct, and is not the same thing as the rule. 136
+struck 135's green-run paragraph; a third had been left live since **132** and
+nobody looked past the one they were replacing. 136 demoted 136a's latest-run
+paragraph; 135a's was still reading `THE LATEST RUN IS` and nobody looked past
+that one either. **The error is local correctness: each cycle fixed the
+instance in front of it, and the count was nobody's job.** TRAPS 11 at a
+document.
+
+**Found in 137 and 137a by grepping the phrase anchored at a LINE START and
+counting the hits** — two of each, where the rule says one. Not by reading,
+and not by trusting the previous cycle's note that it had struck its
+predecessor, which was true and insufficient.
+
+**Do:** after adding a paragraph that claims to be the current one, **grep the
+phrase and COUNT.** The phrases carrying that claim in `docs/HANDOVER.md` are:
+
+```
+grep -c '^\*\*THE LATEST RUN IS'               docs/HANDOVER.md   # must be 1
+grep -c '^\*\*WHAT A GREEN RUN LOOKS LIKE'     docs/HANDOVER.md   # must be 1
+grep -n '^- Last commit at the time of writing' docs/HANDOVER.md   # first hit is this commit
+```
+
+The third is the one 136 and 136a already caught once, by hand, which makes
+this the **fourth** instance of the class and the reason it is a rule here
+rather than a third note in `Next action`. Anchor at a line start: these
+phrases also appear inside prose about themselves, which is TRAPS 126's own
+parser trap.
+
+**And the generalisation, since this will outlive these three phrases:** a
+document that holds *"there is exactly one live X"* needs that sentence to be
+**counted**, not maintained. Any claim of uniqueness in prose is a claim, and
+it gets checked like one (TRAPS 14).

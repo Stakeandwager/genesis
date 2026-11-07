@@ -11,7 +11,35 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
-- Last commit at the time of writing: **137**, and it is **ONE FILE UNDER
+- Last commit at the time of writing: **137a**, and it is **DOCS ONLY** - 0
+  lines of diff in `scripts/`, `scenes/`, `tests/`, `netlify/`, `.github/`,
+  `project.godot` and both runners, confirmed by `git diff --name-only`. No
+  fault a player can meet was fixed and no row was added. It carries **one
+  measurement and nothing else, and it was taken rather than predicted**: a
+  **fresh `git clone --branch prototype-002a` of the pushed commit `f5c35fd`
+  (137)** into its own directory outside the repository, `git status
+  --porcelain` **EMPTY before and after**, `user://` cleared by deleting
+  `app_userdata/AI_Game_Builder`, the same Godot download
+  `4.7.1.stable.official.a13da4feb` (binary md5
+  `c083304672e2b4264cfb7f823aba095f`), `--all` through `run_tests.sh`: md5
+  **`4852ccd92e06da695bec0b98e0449113`**, **85 suites, 0 with something to
+  look at**, `scan_floor_test` **164**, `source_scan_test` **115**,
+  `player_door_test` **154**, `loadcheck` **39**, `halt_cause_test` **53**,
+  `drive_test` **24**, `session_test` **18**, `result_line_test` **370**,
+  **182 s** wall, the runner 0 bytes on stderr (44 bytes captured, all 44
+  `time`'s own three lines), and the `diff` against 137's committed-tree run
+  is **ZERO LINES**, counted with `diff | wc -l` rather than read by eye.
+  **SO THE TREE ON THE REMOTE IS THE TREE THAT WAS MEASURED**, and 137's one
+  open item - *"no clone of this push has been run yet"* - is closed.
+
+  **IT IS A READING OF THE REMOTE AND NOT OF AN INDEPENDENT CONTAINER**, said
+  plainly: like 126a through 136a it was taken immediately after the push by
+  the same container and the same Godot download. The next firing gets the
+  stronger reading for nothing by taking its own baseline on `f5c35fd` - and
+  137 did exactly that on `90a2e59`, which is how `136a`'s equivalent item
+  closed. **137 OWES NOTHING ELSE AND THERE IS NO `137b` TO DO.**
+
+- Last commit before this one: **137**, and it is **ONE FILE UNDER
   `tests/` PLUS `docs/TRAPS.md` AND THIS FILE**.
   `tests/scan_floor_test.gd` (**156 -> 164 assertions**: one new section 7,
   one new helper `_subdirectories_of()`, and one new `FLOORS` row for the read
@@ -11888,7 +11916,20 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
-**THE LATEST RUN IS 137's, ON ITS OWN CHANGED TREE, AND ONE SUITE'S COUNT
+**THE LATEST RUN IS 137a's, AND IT IS A FRESH `git clone` OF THE PUSHED
+`f5c35fd` (137)**: its own directory outside the repository, `git status
+--porcelain` EMPTY before and after, `user://` cleared by deleting
+`app_userdata/AI_Game_Builder`, Godot `4.7.1.stable.official.a13da4feb` -
+**md5 `4852ccd92e06da695bec0b98e0449113`, 85 suites, 0 with something to look
+at, `scan_floor_test` 164, `source_scan_test` 115, `player_door_test` 154,
+`loadcheck` 39, `halt_cause_test` 53, `drive_test` 24, `session_test` 18,
+`result_line_test` 370**, 182 s wall, the runner 0 bytes on stderr, and the
+`diff` against 137's committed-tree run is **ZERO LINES**, counted with
+`diff | wc -l`. It is a reading of the remote by the same container, not of an
+independent one.
+
+
+**THE RUN BEFORE IT IS 137's, ON ITS OWN CHANGED TREE, AND ONE SUITE'S COUNT
 MOVED.** `--all` through `run_tests.sh`, `user://` cleared by deleting
 `app_userdata/AI_Game_Builder` before it, Godot
 **`4.7.1.stable.official.a13da4feb`** (binary md5
@@ -12018,8 +12059,13 @@ reading of the remote by the same container and not an independent one - is
 CLOSED, and nothing is owed on it.**
 
 
-**THE LATEST RUN IS 135a's, AND IT IS A FRESH `git clone` OF THE PUSHED
-`10bcaee` (135)**: its own directory outside the repository, `git status
+**THE RUN BEFORE THOSE IS 135a's, A FRESH `git clone` OF THE PUSHED
+`10bcaee` (135)** - *relabelled in 137a: it still read "THE LATEST RUN IS"
+having been the latest in 135a, so this file carried TWO paragraphs claiming
+to be the latest run from 136 to 137. The same fault as the two live green-run
+paragraphs 137 found, in the same section, found the same way - by grepping
+the phrase and COUNTING the hits rather than trusting that the last cycle
+demoted them all. There is exactly one of each now.* -: its own directory outside the repository, `git status
 --porcelain` EMPTY before and after, `user://` cleared by deleting
 `app_userdata/AI_Game_Builder`, Godot `4.7.1.stable.official.a13da4feb` -
 **md5 `7f9f8c91889d7a014afb21309dae0cf3`, 85 suites, 0 with something to look
@@ -20592,10 +20638,32 @@ item**. Its own changed-tree run is md5
 **`4852ccd92e06da695bec0b98e0449113`**, one line of diff,
 `scan_floor_test` **156 -> 164**.
 
-**WHAT 137 OWES: ONE MEASUREMENT, AND IT IS A FRESH `git clone` OF ITS OWN
-PUSHED COMMIT.** Nothing has run the pushed tree. Take it if you want the
-habit; the stronger reading is your own baseline on 137's commit, which is the
-independent container 137 cannot be for itself.
+~~**WHAT 137 OWES: ONE MEASUREMENT, AND IT IS A FRESH `git clone` OF ITS OWN
+PUSHED COMMIT.**~~ **TAKEN, IN `137a`, BEFORE THE CYCLE ENDED** - `f5c35fd`
+cloned into its own directory outside the repository, `git status --porcelain`
+EMPTY before and after, same md5 **`4852ccd92e06da695bec0b98e0449113`**,
+zero-line diff counted with `diff | wc -l`, 182 s. **DO NOT RE-TAKE IT.**
+Take your own baseline on `f5c35fd` if you like it as a habit, because that is
+the independent container `137a` could not be, and then spend the cycle on the
+work.
+
+**AND 137a's OWN OPEN ITEM IS THE ONLY ONE LEFT: it is a reading of the remote
+by the same container.** The next firing gets the stronger reading for nothing
+by taking its baseline on `f5c35fd`. That is one command and it is not the
+cycle's work.
+
+**AND A THIRD INSTANCE OF THE SAME DOCUMENT FAULT TURNED UP IN `137a`, WHICH
+MAKES IT A CLASS AND NOT TWO ACCIDENTS.** 137 found two live
+`WHAT A GREEN RUN LOOKS LIKE` paragraphs; `137a` found **two paragraphs
+reading `THE LATEST RUN IS`**, the second being 135a's, left undemoted when
+136 demoted its own. **THE RULE, AND IT IS CHEAP: after you add a paragraph
+that claims to be the current one, GREP THE PHRASE AND COUNT THE HITS.**
+Adding yours and demoting the one you replaced is not the same as there being
+one. The phrases that carry this claim in this file are
+`THE LATEST RUN IS`, `WHAT A GREEN RUN LOOKS LIKE` and
+`Last commit at the time of writing` - that last one 136 and 136a already
+caught once, which is the fourth instance and the reason it is now **TRAPS
+135** with the three `grep -c` commands in it rather than a third note here.
 
 **THE TASK THIS FILE HAS NAMED FIRST SINCE 135 IS STILL THE TASK: SIX OF THE
 57 SOURCE READERS HAVE NOW BEEN ASKED WHAT THEY CANNOT PARSE, AND 51 HAVE
