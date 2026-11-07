@@ -11,7 +11,35 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
-- Last commit at the time of writing: **136**, and it is **TWO FILES UNDER
+- Last commit at the time of writing: **136a**, and it is **DOCS ONLY** - 0
+  lines of diff in `scripts/`, `scenes/`, `tests/`, `netlify/`, `.github/`,
+  `project.godot` and both runners, confirmed by `git diff --name-only`. No
+  fault a player can meet was fixed and no row was added. It carries **one
+  measurement and nothing else, and it was taken rather than predicted**: a
+  **fresh `git clone` --branch prototype-002a of the pushed commit `89d2700`
+  (136)** into its own directory outside the repository, `git status
+  --porcelain` **EMPTY before and after**, `user://` cleared by deleting
+  `app_userdata/AI_Game_Builder`, the same Godot download
+  `4.7.1.stable.official.a13da4feb` (binary md5
+  `c083304672e2b4264cfb7f823aba095f`), `--all` through `run_tests.sh`: md5
+  **`9875b872d12e6ea7c702939ea0ae6507`**, **85 suites, 0 with something to
+  look at**, `player_door_test` **154**, `source_scan_test` **115**,
+  `scan_floor_test` **156**, `halt_cause_test` **53**, `drive_test` **24**,
+  `session_test` **18**, `result_line_test` **370**, **177 s** wall, the
+  runner 0 bytes on stderr (45 bytes captured, all 45 `time`'s own three
+  lines), and the `diff` against 136's committed-tree run is **ZERO LINES**,
+  counted with `diff | wc -l` rather than read by eye. **SO THE TREE ON THE
+  REMOTE IS THE TREE THAT WAS MEASURED**, and 136's one open item - *"no clone
+  of this push has been run yet"* - is closed.
+
+  **IT IS A READING OF THE REMOTE AND NOT OF AN INDEPENDENT CONTAINER**, said
+  plainly: like 126a through 135a it was taken immediately after the push by
+  the same container and the same Godot download. The next firing gets the
+  stronger reading for nothing by taking its own baseline on `89d2700` - and
+  136 did exactly that on `7ffcc43`, which is how `135a`'s equivalent item
+  closed. **136 OWES NOTHING ELSE AND THERE IS NO `136b` TO DO.**
+
+- Last commit before this one: **136**, and it is **TWO FILES UNDER
   `tests/` PLUS `docs/TRAPS.md` AND THIS FILE**.
   `tests/source_scan_test.gd` (**109 -> 115 assertions**: three patterns
   hoisted into functions, two helpers added, `_condition_reach()` renamed
@@ -150,7 +178,7 @@ that the owner has not ruled on.** Do not promote one to the other.
   added TRAPS 133, so a sweep on the pushed tree reads 1-133. **No new "Human
   decision needed".**
 
-- Last commit at the time of writing: **135a**, and it is **DOCS ONLY** - 0
+- Last commit before this one: **135a**, and it is **DOCS ONLY** - 0
   lines of diff in `scripts/`, `scenes/`, `tests/`, `netlify/`, `.github/`,
   `project.godot` and both runners, confirmed by `git diff --name-only`. No
   fault a player can meet was fixed and no row was added. It carries **one
@@ -11767,7 +11795,18 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
-**THE LATEST RUN IS 136's, ON ITS OWN CHANGED TREE, AND ONE SUITE'S COUNT
+**THE LATEST RUN IS 136a's, AND IT IS A FRESH `git clone` OF THE PUSHED
+`89d2700` (136)**: its own directory outside the repository, `git status
+--porcelain` EMPTY before and after, `user://` cleared by deleting
+`app_userdata/AI_Game_Builder`, Godot `4.7.1.stable.official.a13da4feb` -
+**md5 `9875b872d12e6ea7c702939ea0ae6507`, 85 suites, 0 with something to look
+at, `player_door_test` 154, `source_scan_test` 115, `scan_floor_test` 156,
+`halt_cause_test` 53, `drive_test` 24, `session_test` 18, `result_line_test`
+370**, 177 s wall, the runner 0 bytes on stderr, and the `diff` against 136's
+committed-tree run is **ZERO LINES**, counted with `diff | wc -l`. It is a
+reading of the remote by the same container, not of an independent one.
+
+**THE RUN BEFORE IT IS 136's, ON ITS OWN CHANGED TREE, AND ONE SUITE'S COUNT
 MOVED.** `--all` through `run_tests.sh`, `user://` cleared by deleting
 `app_userdata/AI_Game_Builder` before it, Godot
 **`4.7.1.stable.official.a13da4feb`** (binary md5
@@ -20378,14 +20417,18 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
-**136's LEFTOVER IS ONE MEASUREMENT AND IT IS A FRESH `git clone` OF ITS OWN
-PUSHED COMMIT.** Nothing else is owed. Take it the way `133a` through `135a`
-took theirs - clone `--branch prototype-002a` into its own directory outside
-the repository, `git status --porcelain` empty before and after, `user://`
-cleared by deleting `app_userdata/AI_Game_Builder`, `--all` through
-`run_tests.sh`, and `diff` the result against what the `Run the tests first`
-section records for 136's own tree. If it is zero lines, the tree on the
-remote is the tree that was measured and there is no `136b`.
+**136's LEFTOVER IS NOTHING, AND THAT IS A READING AND NOT A PREDICTION.**
+~~**136 OWES ONE MEASUREMENT AND IT IS A FRESH `git clone` OF ITS OWN PUSHED
+COMMIT.**~~ **TAKEN, IN `136a`, BEFORE THE CYCLE ENDED** - `89d2700` cloned
+into its own directory, `git status --porcelain` EMPTY before and after, same
+md5 `9875b872d12e6ea7c702939ea0ae6507`, zero-line diff counted with
+`diff | wc -l`, 177 s.
+136 also took its own independent baseline on the pushed `7ffcc43` (135a) and
+reproduced `7f9f8c91889d7a014afb21309dae0cf3` byte for byte from an eighth
+container, which **closes `135a`'s one open item**. **DO NOT RE-TAKE ANY OF
+IT.** Take your own baseline on `89d2700` if you like it as a habit, because
+that is the independent container `136a` could not be, and then spend the
+cycle on the work.
 
 **AND 135a's OWN OPEN ITEM IS ALREADY CLOSED BY THIS COMMIT'S BASELINE, WHICH
 IS THE READING IT SAID THE NEXT FIRING WOULD GET FOR NOTHING.** 136 took its
