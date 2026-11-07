@@ -191,6 +191,18 @@ const RACE_SUM_FLOOR := 0.5
 # section is about makes the first one 0.82 of the rest.
 const LAP_BOUNDARY_LAPS := 3
 const LAP_AGREE := 0.10
+# 132: section 10 drives the standing start with the car's own throttle
+# instead of teleporting it. STANDING_HOLD_FRAMES is how long the car is held
+# ON the line at zero throttle - the wait a player sits out - and
+# STANDING_DRIVE_FRAMES is the ceiling on the real-physics run that follows,
+# generous because how long a car takes to cover CheckpointTracker.REACH is
+# the car's business and not a number this suite should know. Both are in
+# ENGINE TICKS, so the frame rate is written into neither. CLOCK_RAN is the
+# fraction of the held span the tracker's own clock has to have advanced by
+# for the subtraction under it to mean anything.
+const STANDING_HOLD_FRAMES := 240
+const STANDING_DRIVE_FRAMES := 3600
+const CLOCK_RAN := 0.9
 const A_LENGTH := 300
 const B_LENGTH := 400
 const C_LENGTH := 500
@@ -1278,6 +1290,177 @@ func _a_lap_is_a_whole_lap() -> void:
 	main._stop_driving()
 
 
+# --- 10. the standing start, DRIVEN rather than teleported (132) ---
+#
+# WHAT THIS HOLDS AND WHY NOTHING ELSE HOLDS IT. TRAPS 125 is about a
+# boundary event detected by proximity: `at_line` answers *where is the car*,
+# and a lap boundary asks *did it pass*. Those differ in exactly one place -
+# a car standing still inside the zone - and that is where a start line is.
+# 130 fixed it with `_left_line` / `_began_at_line`: the line counts as
+# reached only once the car has been CLEAR of it, and a car that began inside
+# it is timed from the moment it drove off. Every row that has ever held that
+# rule moved the car by assignment. Section 3 freezes it and sets
+# `global_position`; section 9 steps it along the centreline frozen; section 8
+# steps it through a whole race. A teleport out of the zone is not a car
+# driving out of it: it skips the acceleration, the suspension settling and
+# the seconds a player actually spends sitting on the line, which is the span
+# the fault put into lap 1.
+#
+# SO THIS SECTION NEVER WRITES A POSITION. `/drive` places the car - that
+# placement is the premise and is asserted, not assumed - and then the car is
+# driven by its own `auto_drive` throttle through its own `_physics_process`,
+# which is the same door the race director drives the opponents through
+# (`race_director.gd:83`) and the one `physics_test` drives its cars
+# through. `behaviour_test` uses the SIBLING door on the walker
+# (`walker.gd:79`, `auto_walk`), which is not this one and is said so rather
+# than rounded up. Nothing here types a distance or a time in.
+#
+# THE FOUR THINGS IT ASKS, IN ORDER:
+#
+#   the premise    `/drive` really does put the car inside the line's REACH,
+#                  so there is a standing start here to be got wrong at all.
+#   the wait       held at ZERO throttle for STANDING_HOLD_FRAMES of real
+#                  physics, the lap clock does not start. This is the row the
+#                  first version of 130's fix FAILED: it started the clock on
+#                  the frame the car was placed, and section 8 read lap 1 at
+#                  3.0992 s against 0.0833 s for laps 2 and 3 because the
+#                  clock had run through the countdown. The numbers are in
+#                  HANDOVER's 130 entry.
+#   the moving off the clock starts only after the car has MOVED, and it is
+#                  measured against how far the car drifted while it was
+#                  held - its own suspension settling, measured in the same
+#                  run - rather than against a number typed in here.
+#   the clock      the tracker's clock DID advance through the wait, and the
+#                  lap's start is AFTER that, so the wait is not inside lap 1.
+#                  The first of those two is a guard and is labelled one
+#                  below (TRAPS 6); the second cannot hold without it.
+#
+# THE SECOND MEMBER OF THE CLASS CANNOT BE DRIVEN FROM A TEST, AND THAT IS
+# MEASURED RATHER THAN ASSUMED (TRAPS 11, TRAPS 14). TRAPS 125 names two
+# places that put the car inside the line's REACH before the player has
+# driven anywhere: `/drive`, on the line, which is this section; and `/race`,
+# which places the player a row back with `_behind(GRID_SPACING * 2)` -
+# `race_director.gd:96`-`97`, 20 m of centreline, measured at 23.41 m from
+# the line in the plane with one opponent. The `/race` one is NOT held here
+# because a real throttle cannot reach it: `race_director.gd:140`-`141` runs
+# `if racing and _player.auto_drive: _player.auto_drive = false` in
+# `_physics_process`, so the director takes the car back from `auto_drive`
+# every physics frame for as long as the race runs. Measured in a throwaway
+# copy outside the repository (TRAPS 50): with `auto_drive = true` and
+# `auto_throttle = 1.0` re-asserted before every one of 3000 physics frames,
+# `auto_drive` read false at every sample and the car moved 1.29 m in total
+# at 0.0 km/h - the same 1.29 m it drifted standing still. The reading is in
+# HANDOVER's 132 entry. That is the product behaving as written - in a race
+# the player drives - and it is the reason section 8 steps the car instead.
+# Nothing here changes it.
+#
+# THE TIME SCALE IS NOT SET, FOR THE SAME REASON SECTION 9 GIVES. Both sides
+# of every row below are in units a scale cannot touch: metres, physics
+# frames, and one duration compared against another duration from the same
+# clock.
+func _a_standing_start_is_driven() -> void:
+	main._handle_request("/drive")
+	await process_frame
+	if main.car == null:
+		_check(false, "a /drive put a car on the start line to drive off")
+		return
+	var t: CheckpointTracker = main.checkpoint_tracker
+	if t.checkpoints.size() < CheckpointTracker.CHECKPOINT_COUNT:
+		_check(false, "and spread the checkpoints the line is one of (%d)" % t.checkpoints.size())
+		main._stop_driving()
+		return
+
+	var placed: Vector3 = main.car.global_position
+	var tick := 1.0 / float(Engine.physics_ticks_per_second)
+
+	# THE PREMISE. If /drive stopped placing the car inside the line's REACH
+	# there would be no standing start to get wrong, and the three rows under
+	# this one would pass without holding anything.
+	_check(_from_line(t, placed) <= CheckpointTracker.REACH,
+		"/drive placed the car INSIDE the start line's REACH, which is what makes this a standing start: %.2f m from it, REACH is %.1f m" % [
+			_from_line(t, placed), CheckpointTracker.REACH])
+	_check(not t.lap_started,
+		"and no lap is timing on the frame it was placed")
+
+	# THE WAIT. The car's own throttle, held at zero: gravity, suspension and
+	# drag all run, and nothing drives it. This is a player sitting on the
+	# line before he moves.
+	main.car.auto_drive = true
+	main.car.auto_steer = 0.0
+	main.car.auto_throttle = 0.0
+	var drift := 0.0
+	var started_while_held := false
+	var held := 0
+	while held < STANDING_HOLD_FRAMES:
+		await physics_frame
+		held += 1
+		drift = maxf(drift, placed.distance_to(main.car.global_position))
+		if t.lap_started:
+			started_while_held = true
+	var waited_from_line := _from_line(t, main.car.global_position)
+	var clock_at_go: float = t._clock
+
+	_check(waited_from_line <= CheckpointTracker.REACH,
+		"and after %d physics frames of ZERO throttle it is still inside that REACH, so the wait happened where it matters: %.2f m from the line, drifted %.3f m settling" % [
+			held, waited_from_line, drift])
+	_check(not started_while_held,
+		"the lap clock did NOT start while the car stood on the line - not on any of those %d frames" % held)
+
+	# A GUARD, LABELLED (TRAPS 6). The clock there is right today, so this
+	# cannot fail against this tree. It is here because the row under it is a
+	# subtraction, and a subtraction from a clock that never ran would pass
+	# while holding nothing.
+	_check(clock_at_go >= float(held) * tick * CLOCK_RAN,
+		"GUARD: the tracker's own clock advanced through the wait: %.4f s against the %.4f s the suite held it for" % [
+			clock_at_go, float(held) * tick])
+
+	# THE MOVING OFF. Full throttle, and the only thing read is WHEN
+	# lap_started first goes true and where the car was at that moment.
+	main.car.auto_throttle = 1.0
+	var frames := 0
+	var at_frame := -1
+	var at_moved := 0.0
+	var at_from_line := 0.0
+	var lap_start := 0.0
+	while frames < STANDING_DRIVE_FRAMES and at_frame < 0:
+		await physics_frame
+		frames += 1
+		if t.lap_started:
+			at_frame = frames
+			at_moved = placed.distance_to(main.car.global_position)
+			at_from_line = _from_line(t, main.car.global_position)
+			lap_start = t._lap_start
+
+	_check(at_frame > 0,
+		"and real throttle DID start it: the lap clock started %d physics frames after the throttle was opened" % at_frame)
+	if at_frame < 0:
+		notes.append("STANDING START: no lap started in %d frames at full throttle, %.2f m driven" % [
+			frames, placed.distance_to(main.car.global_position)])
+		main._stop_driving()
+		return
+
+	_check(at_moved > drift,
+		"it started AFTER the car MOVED and not on the frame it was placed: %.2f m driven by then against %.3f m of drift while it was held" % [
+			at_moved, drift])
+	_check(at_from_line > CheckpointTracker.REACH,
+		"and the car was CLEAR of the line when it started, which is the rule 130 wrote: %.2f m from it, REACH is %.1f m" % [
+			at_from_line, CheckpointTracker.REACH])
+	_check(lap_start >= clock_at_go,
+		"so the wait is NOT inside lap 1: the lap is timed from %.4f s, and the clock already read %.4f s when the throttle was opened" % [
+			lap_start, clock_at_go])
+
+	notes.append("STANDING START, DRIVEN: held %d frames at zero throttle (drifted %.3f m, %.2f m from the line, clock %.4f s), then full throttle; lap clock started at frame %d, %.2f m driven, %.2f m from the line, _lap_start %.4f s" % [
+		held, drift, waited_from_line, clock_at_go, at_frame, at_moved, at_from_line, lap_start])
+
+	main._stop_driving()
+
+
+# How far a point is from the start line, in the plane, which is the same
+# measure CheckpointTracker.update_progress uses to decide `at_line`.
+func _from_line(t: CheckpointTracker, p: Vector3) -> float:
+	return Vector2(p.x - t.checkpoints[0].x, p.z - t.checkpoints[0].z).length()
+
+
 func _run() -> void:
 	print("--- PLAYER DOOR: the four unheld connects, in the scene the game runs ---")
 	main = load(SCENE_PATH).instantiate()
@@ -1295,6 +1478,7 @@ func _run() -> void:
 	_the_name_is_not_the_worlds()
 	await _one_race_two_clocks()
 	await _a_lap_is_a_whole_lap()
+	await _a_standing_start_is_driven()
 
 	print("")
 	for note in notes:

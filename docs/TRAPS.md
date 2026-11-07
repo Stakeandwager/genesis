@@ -9684,3 +9684,65 @@ through a single stale sentence.
   repository exists.
 - **Do not fix the reference by deleting it.** The pointer was right about what
   ought to exist; what was missing was the entry.
+
+---
+
+## 127. The body will not move, and production took the control door back
+
+**Signature:** a test sets the documented "something other than the keyboard
+drives this" flag, opens the throttle, waits thousands of physics frames, and
+the body does not move at all — 0.0 km/h, and the only displacement is the
+distance it settled onto its own suspension. Nothing errors and nothing warns.
+
+**Cause.** 132 set out to hold the standing start under real throttle at both
+the places TRAPS 125 names: `/drive`, which puts the car on the start line,
+and `/race`, which puts it 20 m behind it on the grid. The `/drive` one drove
+off exactly as expected. The `/race` one would not move, and the first reading
+was filed as *"the car cannot be driven on the grid"* — which is the wrong
+sentence. `RaceDirector.start()` sets `player.auto_drive = true` with zero
+throttle to hold the grid (`race_director.gd:99`-`101`), and then
+`_physics_process` runs, **every physics frame for as long as the race is
+running**:
+
+```
+if racing and _player.auto_drive and racers[0]["car"] == _player and not finished:
+    _player.auto_drive = false
+    announced.emit("GO!")
+```
+
+So the director hands the car back to the keyboard at GO, and it does so by a
+condition on `auto_drive` rather than once — which means anything that sets
+`auto_drive` true later has it cleared on the next physics frame, and emits a
+second `"GO!"` on the way. The measurement that settled it took one line:
+re-assert `auto_drive = true` immediately before each of 3000 physics frames
+and print it back. It read **false at every sample**, with the car at 0.0 km/h
+and 1.29 m of travel — the same 1.29 m it drifted standing still. That is
+production behaving as designed: in a race, the player drives.
+
+**What the wrong sentence would have cost.** Written as *"a car on the race
+grid cannot be driven"* it is a claim about Genesis, it is false, and it is the
+exact shape TRAPS 14 is about — a limitation that gets believed, repeated, and
+eventually taught to the AI or to the next session. The true sentence is about
+the harness: *a test cannot drive the player's car while a race is running,
+because the director reclaims the `auto_drive` door every physics frame.*
+
+**Do:**
+
+- When a body does not respond to an input door, **grep the door's name
+  across `scripts/` before concluding anything** and read every write to it,
+  not just the one you called. `grep -rn auto_drive scripts/` is five lines of
+  output and names all three writers.
+- **Re-assert the flag inside the loop and print it back.** A flag that
+  another `_physics_process` clears looks identical to a flag that does
+  nothing, and one `print` tells them apart.
+- Say which thing the limitation is about. *"The product cannot"* and *"a
+  test cannot reach"* are different claims with different consequences, and
+  only the second one was true here.
+- A node that reclaims control by testing a flag rather than by a one-shot is
+  worth noticing for its own sake: it re-fires every side effect beside it
+  (here, `announced.emit("GO!")`) each time something sets the flag.
+
+Found in 132, while writing the real-throttle standing start, after two probe
+runs were read as a fact about the car.
+
+> The flag was set. Something else unset it, a hundred and twenty times a second.

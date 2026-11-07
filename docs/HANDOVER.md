@@ -11,7 +11,112 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
-- Last commit at the time of writing: **131**, and it is **DOCS ONLY** - 0
+- Last commit at the time of writing: **132**, and it is **ONE FILE UNDER
+  `tests/` PLUS THE DOCUMENTS**. `tests/player_door_test.gd` (**104 -> 113
+  assertions**: one new section 10, three new consts, one new helper).
+  **`scripts/`, `scenes/`, `netlify/`, `.github/`, `project.godot` and both
+  runners are 0 LINES OF DIFF**, confirmed by `git diff --name-only` and not
+  by intention, so **nothing a player meets changed** and **no fault was
+  fixed**: this commit holds a rule that was already right.
+
+  **WHAT IT HOLDS, AND IT IS THE FIRST ITEM THIS FILE HAS NAMED AS THE NEXT
+  THING TO DO SINCE 130.** No suite held the standing start through real
+  steering. The `_left_line` / `_began_at_line` rule that TRAPS 125 is about -
+  the line counts as reached only once the car has been CLEAR of it, and a car
+  that began inside it is timed from the moment it drove off - had been held
+  only against a **teleport**. Section 3 freezes the car and assigns
+  `global_position`; section 9 steps it along the centreline frozen; section 8
+  steps it through a whole race. A teleport out of the zone skips the
+  acceleration, the suspension settling and the seconds a player spends
+  sitting on the line, which is exactly the span the fault put into lap 1.
+  **New section 10 writes no position at all**: `/drive` places the car, and
+  the car is then driven by its own `auto_drive` throttle through its own
+  `_physics_process` - the same door `race_director.gd:83` drives the
+  opponents through and `physics_test` drives its cars through.
+  (`behaviour_test` drives a body under real physics too, but through the
+  walker's sibling door `auto_walk`, `walker.gd:79` - a different flag, said
+  rather than rounded up.)
+
+  **THE MEASUREMENT, DRIVEN AND NOT TYPED.** `/drive` places the car **0.00 m**
+  from the start line (`REACH` is 30.0 m), so there is a standing start to get
+  wrong. Held at **ZERO throttle for 240 physics frames** of real physics it
+  drifts **1.655 m** settling onto its own suspension, stays **0.00 m** from
+  the line, and `lap_started` is false on every one of those frames while the
+  tracker's own clock advances to **2.0000 s**. Full throttle then starts the
+  lap at physics frame **499**, by which time the car has driven **30.21 m**
+  and is **30.19 m** from the line, and `_lap_start` reads **6.1583 s** -
+  **after** the 2.0000 s the clock already held. So the wait is not inside
+  lap 1, measured rather than argued.
+
+  **AND IT IS NOT A ROW THAT CANNOT FAIL (TRAPS 6).** The first version of
+  130's fix was reconstructed in a throwaway copy outside the repository
+  (TRAPS 50) - `checkpoints[0]` a target like the other eleven with **no**
+  `_left_line` guard - and the suite run against it: **113 assertions,
+  failures=6**. **FIVE of the six are section 10's new rows**: `lap_started`
+  true on the frame the car was placed; true during the held frames; the clock
+  started at frame **1** having moved **1.31 m** against **1.655 m** of drift;
+  **0.00 m** from the line when it started; and `_lap_start` **0.0000 s**
+  while the clock read **1.9917 s**. The sixth is section 8's existing
+  lap-sum row, which is the row that caught the fault in 130. The one new row
+  that stayed green is labelled a **GUARD** in the source and in this entry.
+
+  **THE SECOND MEMBER OF THE CLASS IS NOT HELD, AND THE REASON IS A
+  MEASUREMENT RATHER THAN A JUDGEMENT (TRAPS 11, TRAPS 14).** TRAPS 125 names
+  two placements inside the line's `REACH`: `/drive`, on the line, which
+  section 10 now drives; and `/race`, which puts the player a row back with
+  `_behind(GRID_SPACING * 2)` (`race_director.gd:96`-`97`) - 20 m of
+  centreline, **23.41 m** from the line in the plane as measured here, with
+  one opponent. **A real throttle cannot reach the `/race` one**:
+  `race_director.gd:140`-`141` runs
+  `if racing and _player.auto_drive: _player.auto_drive = false` in
+  `_physics_process`, so the director reclaims the car from `auto_drive`
+  **every physics frame** for as long as the race runs. Measured: with
+  `auto_drive = true` and `auto_throttle = 1.0` re-asserted immediately before
+  each of **3000** physics frames, `auto_drive` read **false at every sample**,
+  the car moved **1.29 m** in total at **0.0 km/h** - the same 1.29 m it
+  drifted standing still. **That is the product behaving as designed - in a
+  race the player drives - and it is why section 8 steps the car.** The first
+  reading of it was filed as *"a car on the race grid cannot be driven"*,
+  which is false and is a claim about Genesis; the true sentence is about the
+  harness. **New TRAPS 127.** Nothing in `scripts/` was changed to make the
+  row reachable, and whether it should be is **not** proposed here.
+
+  **THREE BYTE-IDENTICAL `--all` RUNS, AND WHAT EACH OF THEM WAS TAKEN ON.**
+  md5 **`f9f44ad3b36ed0eb04b8679640f17a8a`**, **85 suites, 0 with something to
+  look at**, `player_door_test` **113**, stderr **0 bytes** each, **192 s,
+  186 s and 190 s** wall, timed with `date` around the runner, and the `diff`
+  between all three is **ZERO LINES**. The first was on the changed code tree
+  with both documents still untouched; the second with this commit's document
+  insertions already in place, which is what makes *a document edit cannot
+  reach a suite* a reading here rather than an inherited claim; the third
+  after **two comment-only edits** to section 10's header (a line reference
+  corrected from `walker.gd:78` to `79`, and `/race`'s grid distance written
+  as both the 20 m parameter and the 23.41 m measured) - so the third is the
+  code tree **as committed**. The baseline before any of it was an independent
+  container on the pushed **`a958322` (131)** and read
+  **`4efdd84270a1ad5df50fc08fa0af46f3`**, byte-identical to what 130, 130a and
+  131 recorded. **ONE PARAGRAPH POSTDATES EVERY RUN - this one - and what
+  makes that harmless is the grep and not the promise:** 30 lines under
+  `tests/` and `scripts/` contain the string `docs/`, **29 are comments**, the
+  one that is not is a failure *message* at `field_type_test.gd:635`, and no
+  `FileAccess`, `load(` or `open(` anywhere in either directory names a
+  `docs/` path. Re-measured this commit.
+
+  **WHAT IT DID NOT DO.** It changed **no** line of `scripts/`, so `go_to`
+  still cannot walk a bent corridor (HDN 40) or reach a room with a thing in
+  it (HDN 39), and the lap-boundary residual (HDN 41) is untouched and still
+  the owner's. HDN 24, 38 and 42 are untouched. **It did not run on the
+  owner's hardware, in a browser, or against a live API key.**
+  **NOTHING HERE TOUCHED A DEPLOYMENT SETTING, A SECRET, A FLAG OR A TARGET.**
+  **NO UNADDRESSED OWNER FINDING WAS AVAILABLE**: every
+  `OWNER, 2026-[0-9][0-9]-[0-9][0-9]` marker in `HANDOVER.md` and `TRAPS.md`
+  was grepped this commit - **five markers, all in `HANDOVER.md`, all
+  2026-10-14; `TRAPS.md` carries none**, counted with `grep -o` over
+  occurrences rather than lines - so the last owner session on record is
+  still 2026-10-14.
+  New **TRAPS 127**. No new HDN.
+
+- Last commit before this one: **131**, and it is **DOCS ONLY** - 0
   lines of diff in `scripts/`, `scenes/`, `tests/`, `netlify/`, `.github/`,
   `project.godot` and both runners, confirmed by `git diff --stat` and not by
   intention. It does **two** things: it repairs a fault in these documents,
@@ -11048,7 +11153,45 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
-**THE LATEST RUN IS 131's, AND IT IS AN INDEPENDENT CONTAINER ON THE
+**THE LATEST RUN IS 132's, ON ITS OWN CHANGED TREE, AND THE NUMBER THAT
+MOVED IS ONE SUITE'S COUNT.** `--all` through `run_tests.sh`, `user://`
+cleared by deleting `app_userdata/AI_Game_Builder` before it, Godot
+**`4.7.1.stable.official.a13da4feb`** (binary md5
+**`c083304672e2b4264cfb7f823aba095f`**): md5
+**`f9f44ad3b36ed0eb04b8679640f17a8a`**, **85 suites, 0 with something to look
+at**, `player_door_test` **113, failures=0**, `drive_test` **24,
+failures=0**, `session_test` **18, failures=0**, `result_line_test` **370,
+failures=0**, `source_scan_test` **80, failures=0**. **192 s wall**, timed
+with `date` around the runner, **stderr 0 bytes**, and `git status
+--porcelain` after it names **`tests/player_door_test.gd` and the two
+documents and nothing else** - no `.uid`, `project.godot` untouched.
+
+**THE `diff` AGAINST 132's OWN BASELINE IS ONE LINE, AND THAT IS THE WHOLE
+EFFECT OF THE CHANGE**: `player_door_test` **104 -> 113**. Every other suite's
+line is byte-identical. The baseline was an independent container on the
+pushed **`a958322` (131)**, taken before any file was touched - same Godot
+download, `git status --porcelain` empty before and after - and it reproduced
+**`4efdd84270a1ad5df50fc08fa0af46f3`** byte for byte, which is the md5 130,
+130a and 131 all recorded. **So 131's reading is confirmed from a fourth
+container and nothing is owed on it.**
+
+**AND `player_door_test` ALONE AT `--fixed-fps 120`, WHICH IS THE
+CONFIGURATION THE NEW SECTION HAD TO BE READ IN**: **113, failures=0**, and
+section 10's numbers come back **IDENTICAL** to the unflagged run - drift
+**1.655 m**, clock at the throttle **2.0000 s**, lap started at physics frame
+**499**, **30.21 m** driven, **30.19 m** from the line, `_lap_start`
+**6.1583 s**. The suite is not in the runner's `TIMED` list and was not added
+to it; **the runner is 0 lines of diff**. That the answers do not move with
+the tick is the point: section 10's rows are in physics frames and metres,
+and one duration against another from the same clock, so a tick is a knob
+that cannot change them.
+
+**WHAT A GREEN RUN LOOKS LIKE, FOR A SESSION READING THIS TO FIND OUT:** 85
+suites, `suites with something to look at: 0`, and the five suites worth
+naming at **113 / 24 / 18 / 370 / 80**. If `player_door_test` reads 104 you
+are on 131 or earlier.
+
+**THE RUN BEFORE IT IS 131's, AN INDEPENDENT CONTAINER ON THE
 PUSHED `9822095` (130a)** - the reading `130a` said the next firing would get
 for nothing, taken. `git fetch origin prototype-002a` into the container's own
 checkout at **`9822095`**, its own Godot download
@@ -19359,7 +19502,75 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
-**131's LEFTOVER IS NOTHING, AND THAT IS A READING.** It took the independent
+**132's LEFTOVER IS ONE MEASUREMENT AND IT IS THE CHEAP ONE: A CLONE OF THE
+PUSHED COMMIT.** 132 ran `--all` on its own changed tree
+(`f9f44ad3b36ed0eb04b8679640f17a8a`, 85 suites, 0 to look at,
+`player_door_test` 113) and it took its own independent baseline on `131`
+first (`4efdd84270a1ad5df50fc08fa0af46f3`, reproduced byte for byte). What it
+did **not** do is clone its own push and run that. **If that is still
+outstanding when you read this, take it: it is one fetch and one run, and the
+sentence predicting it would not be taken has gone false for every commit
+that wrote it (126, 127, 128).** If 132 already took it there will be a
+`132a` in the log saying so; read the log before re-taking anything.
+
+**THE FIRST ITEM THIS FILE HAS CARRIED SINCE 130 IS DONE. 132 DID IT.** *"No
+suite holds the standing start through real steering"* is false as of 132:
+`player_door_test` section 10 drives it with the car's own throttle, writes no
+position, and **five of its rows were seen red** against the first version of
+130's fix. **DO NOT RE-TAKE THOSE NUMBERS** - the driven reading and the
+six-red reading are both in this file's 132 entry, and the `--fixed-fps 120`
+repeat is in `## Run the tests first`.
+
+**SO THE FIRST THING TO DO NOW IS THE LAST MEMBER OF 128's AND 129's CLASS:
+`Npc.elapsed` HAS NO ROW HOLDING IT IS THE SIMULATION'S CLOCK.** Unchanged by
+131 and by 132. `Npc.elapsed` - the `"seconds"` an errand reports and the 90 s
+cap it gives up at - is `+= delta` in `_physics_process` (`npc.gd:178`) and
+correct, and the only row that reads it is `halt_cause_test.gd:412`,
+`seconds >= NpcGoals.MAX_SECONDS`, which holds that the number advances to the
+cap and **not** that it is the simulation's clock. The row that would hold it
+is the same shape as `player_door_test` section 8's: drive an errand at
+`Engine.time_scale` and compare the reported seconds against the span the
+suite stepped. **Label it a GUARD and not a measurement (TRAPS 6): the clock
+there is already right, so the row cannot fail against today's tree** - which
+is a different thing from section 8's rows, every one of which has been seen
+red, and a different thing again from section 10's five.
+
+**AND ONE THING 132 FOUND AND LEFT, WHICH IS A HARNESS QUESTION AND NOT A
+PRODUCT ONE.** The second member of TRAPS 125's class - the `/race` grid, 20 m
+behind the line, inside `REACH` - is **still held only by a teleport**, and
+132 measured why a real throttle cannot reach it:
+`race_director.gd:140`-`141` clears `_player.auto_drive` every physics frame
+while the race runs, so a test that sets it has it taken back (TRAPS 127, with
+the 3000-frame reading). **Do not change `race_director.gd` to make a test
+reachable.** What would hold that member without touching production is an
+open question and is written here rather than guessed at: the honest options
+are a row that drives the grid start through `/drive` only (which is section
+10, already done), or holding the `/race` placement geometrically - that the
+car is placed inside `REACH` and that `lap_started` is false through the whole
+countdown - which needs no throttle at all and **is reachable today**. That
+last one is small, it can fail against the first version of 130's fix, and it
+is the obvious next row after `Npc.elapsed`.
+
+**BEFORE YOU WRITE ANY DOCUMENT PARAGRAPH, RUN 131's SWEEP** - TRAPS 126's
+third "Do" has the recipe, it is one command, and it found a fault that had
+survived two commits. 132 ran it: **TRAPS 1-127 all present and every `TRAPS
+n` reference resolves; HDN 1-42 all present (4 and 5 struck) and no dangling
+`HDN n` reference in either document; every `docs/...` path named anywhere in
+the repository exists.** Note the parser trap 132 hit: `H.index('## Human
+decision needed')` finds the **backticked mention** of that heading near the
+top of this file, not the heading - anchor the match to a line start. And
+`## Human decision needed` is the **LAST** section of this file, so the block
+runs to end of file and a parser that insists on a following `## ` heading
+finds none.
+**And when you change a suite's count or an md5, grep for the old number and
+edit the index section that states it**, which is the other half of TRAPS 126
+and the half that is easy to forget because nothing points at it. 132's change
+moved `player_door_test` 104 -> 113; `## Run the tests first` was edited in
+the same commit, and the 104s left standing elsewhere in this file are
+narrative sentences about what 130, 130a and 131 measured, which are still
+true of those commits.
+
+**131's LEFTOVER WAS NOTHING, AND THAT WAS A READING.** It took the independent
 baseline on `9822095` that `130a` was owed and it reproduced
 `4efdd84270a1ad5df50fc08fa0af46f3` byte for byte, so **there is no `131a` to
 do** and no measurement outstanding. **DO NOT RE-TAKE IT**, and do not take a
