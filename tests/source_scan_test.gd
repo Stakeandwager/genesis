@@ -701,6 +701,41 @@ func _run() -> void:
 	_check(alias_sites.size() == 1 and not bool((alias_sites[0] as Dictionary)["guarded"]),
 		"and a key DERIVED from the loop variable - str(command) - is still a key from elsewhere")
 
+	# THE SHAPES OF THE HEADER THIS READER CANNOT READ, measured rather than
+	# reasoned about (136, and `## Next action` has named this reader first
+	# since 135). The pattern is anchored `(.+):[\t ]*$`, so a header is read
+	# only when it is one line, the loop variable is bare, and the colon is
+	# the last thing on the line. THREE shapes break that and each was fed in
+	# and the output read, not counted - the registry call and the bare read
+	# are identical to the control above, so the only difference is the header.
+	#
+	# THESE ROWS RECORD WHAT THE READER DOES AND NOT WHAT IT SHOULD DO. If the
+	# header reading is ever widened, these are the rows to rewrite, and
+	# section 10b's breadth line is where to look for what that changed. The
+	# reach over tests/ is 38 of 1184 and NONE of the 38 is over a registry
+	# accessor, which is why this is a measurement rather than a fix.
+	var read_body := "\t\tvar row: Dictionary = table[command]\n"
+	var continued := "\tfor command in CommandParser.allowed_" + "commands(\n\t):\n" + read_body
+	_check(_keyed_reads(continued).is_empty(),
+		"a header CONTINUED across lines is read as no loop at all, so a registry-keyed read in its body is not in section 6's class: %s" % str(_keyed_reads(continued)))
+
+	var typed_var := "\tfor command: String in CommandParser.allowed_" + "commands():\n" + read_body
+	_check(_keyed_reads(typed_var).is_empty(),
+		"and so is a header with a TYPED loop variable - one line, colon at the end, and the pattern wants whitespace where the type's colon is, which is NOT the multi-line shape TRAPS 131 is about: %s" % str(_keyed_reads(typed_var)))
+
+	var inline_body := "\tfor command in CommandParser.allowed_" + "commands(): var row = table[command]\n"
+	# TWO REASONS AND NOT ONE, which a red reading said and the first draft of
+	# this row did not. Dropping the pattern's end-of-line anchor ALONE still
+	# leaves this at nothing: the greedy `(.+):` then matches, the loop IS
+	# recognised as registry-keyed, and the read is still missed because the
+	# body walk collects the lines BELOW the header and the read is on it.
+	_check(_keyed_reads(inline_body).is_empty(),
+		"and so is a header carrying its own body - the pattern requires the line to END at the colon AND the body walk only collects the lines below the header, so widening the pattern alone does not reach this read: %s" % str(_keyed_reads(inline_body)))
+
+	var split_alias := "\tvar whitelist: Array = CommandParser.allowed_" + "commands(\n\t)\n\tfor command in whitelist:\n" + read_body
+	_check(_keyed_reads(split_alias).is_empty(),
+		"and the ALIAS is read the same single-line way, so a registry call assigned across two lines makes the loop below it look local - the shape via_local above holds over one line: %s" % str(_keyed_reads(split_alias)))
+
 	# A WRITE creates the key and cannot throw, so it is not a site at all.
 	_check(_keyed_reads(loop + "\t\tout[command] = 1\n").is_empty(),
 		"a write to a table under a registry key is not a site, because an assignment creates the key")
@@ -923,7 +958,7 @@ func _run() -> void:
 	# sentence is true in both readings. A row phrased "holds the N this table
 	# says" prints "the 1 this table says, not 1" when it passes, which is
 	# TRAPS 129 in the section that was written to avoid it.
-	var reach := _condition_reach()
+	var reach := _reader_reach()
 	var unread: Dictionary = reach["unread"]
 	for key in unread:
 		_check(UNREAD_CONDITIONS.has(str(key)),
@@ -942,6 +977,43 @@ func _run() -> void:
 		reached += int(unread[key])
 	_check(reached > 0,
 		"%d _check condition(s) in tests/ are abandoned unread, across %d function(s), out of the %d offered to the reader - IF THIS FAILS the enumeration reached no code and section 8's class is empty for a reason that has nothing to do with tests/" % [reached, unread.size(), int(reach["lines"])])
+
+	# --- 10b. and what the LOOP-HEADER reader never reaches (136) ---
+	#
+	# THE SECOND READER IN THIS FILE, ASKED THE SAME QUESTION, which is what
+	# `## Next action` has named first since 135. `_keyed_reads()` finds a
+	# registry-keyed loop with a pattern anchored at a colon at end of line;
+	# section 7's shape rows above say what that pattern cannot read, measured
+	# on built sources. This says how much of tests/ it is, measured off the
+	# files.
+	#
+	# WHY THE BREADTH IS PRINTED AND NOT PINNED. A table of the 38 keyed by
+	# function would fail every time anybody wrote a multi-line loop anywhere
+	# in tests/ - 36 of the 38 are a continued header over a literal array of
+	# probe strings, which is ordinary style here and will grow. UNREAD_CONDITIONS
+	# is worth pinning because an in-literal `#` inside a condition is rare and
+	# deliberate; this is not that. So the number is READABLE in a green run
+	# (078's floor, section 8's own rule applied to section 6's input) and the
+	# thing ASSERTED is the one that fails when the silence starts costing a
+	# site.
+	var for_unread: Dictionary = reach["for_unread"]
+	var for_registry: Array = reach["for_registry"]
+	var for_missed := 0
+	for key in for_unread:
+		for_missed += int(for_unread[key])
+	_check(int(reach["for_offered"]) > 0,
+		"%d `for` header(s) in tests/ are never read by _keyed_reads, across %d function(s), out of the %d offered to it - IF THIS FAILS the read reached no code and section 6's class is empty for a reason that has nothing to do with tests/" % [for_missed, for_unread.size(), int(reach["for_offered"])])
+
+	# AND THE ONE THAT COSTS SECTION 6 A SITE, BY NAME. An unreadable header
+	# over a local collection is invisible and harmless; an unreadable header
+	# over a registry accessor puts every table read in its body into section
+	# 6's class where section 6 cannot see it, and "every registry-keyed read
+	# has a gate" becomes true of what was read and silent about what was not.
+	# That is TRAPS 132 at the second reader, and this is the sentence that
+	# stops it being a prose claim.
+	_check(for_registry.is_empty(),
+		"and NONE of them iterates a registry accessor or a local assigned from one, so section 6's class loses no site to the silence" if for_registry.is_empty() else
+		"a `for` header _keyed_reads CANNOT READ iterates a registry accessor or a local assigned from one - every table read in its body is in section 6's class and invisible to it: " + ", ".join(PackedStringArray(for_registry)))
 
 	print("SOURCE SCAN %d assertions, failures=%d" % [asserted, bad])
 	quit(bad)
@@ -1072,11 +1144,54 @@ func _registry_calls() -> Array:
 # point: TRAPS 105's fault had the membership question ASKED fourteen lines
 # above the read and nothing acting on the answer, so a check that accepted
 # `has()` alone would have called the fault guarded.
+# The three patterns `_keyed_reads()` reads a loop with, each in ONE place,
+# because section 10b measures how much of tests/ the first of them reaches
+# and a retyped copy would be a measurement of a pattern the scan does not
+# use. The replica read as a counter-example is what TRAPS 132's causal
+# reading paid for one level down, and this is that lesson arriving at the
+# shape of the code rather than at a number.
+static func _for_header_pattern() -> String:
+	return "^([\\t ]*)for[\\t ]+([A-Za-z_][A-Za-z0-9_]*)[\\t ]+in[\\t ]+(.+):[\\t ]*$"
+
+
+# A `for` at all, whatever shape its header is in - the DENOMINATOR for the
+# pattern above, and the only reason the reach above it is a fraction rather
+# than a bare count.
+static func _any_for_pattern() -> String:
+	return "^[\\t ]*for[\\t ]+"
+
+
+static func _alias_pattern() -> String:
+	return "^[\\t ]*var[\\t ]+([A-Za-z_][A-Za-z0-9_]*)[^=]*:?=[\\t ]*(.*)$"
+
+
+# An accessor's NAME, without the brackets that make it a call - the needle
+# for the risk question in `_reader_reach()`, where the call may be split over
+# two lines and `CommandParser.allowed_commands()` is therefore not a
+# substring of anything.
+static func _accessor_of(call_name: String) -> String:
+	return call_name.trim_suffix("()")
+
+
+# The net bracket depth a line adds, over MASKED text so a bracket inside a
+# string literal is not read as structure.
+func _bracket_depth(text: String) -> int:
+	var depth := 0
+	var masked := _masked(text)
+	for i in masked.length():
+		var c := masked.substr(i, 1)
+		if c == "(" or c == "[" or c == "{":
+			depth += 1
+		elif c == ")" or c == "]" or c == "}":
+			depth -= 1
+	return depth
+
+
 func _keyed_reads(code: String) -> Array:
 	var out: Array = []
 	var lines := code.split("\n")
-	var in_for := RegEx.create_from_string("^([\\t ]*)for[\\t ]+([A-Za-z_][A-Za-z0-9_]*)[\\t ]+in[\\t ]+(.+):[\\t ]*$")
-	var alias_of := RegEx.create_from_string("^[\\t ]*var[\\t ]+([A-Za-z_][A-Za-z0-9_]*)[^=]*:?=[\\t ]*(.*)$")
+	var in_for := RegEx.create_from_string(_for_header_pattern())
+	var alias_of := RegEx.create_from_string(_alias_pattern())
 	var words := RegEx.create_from_string("[A-Za-z_][A-Za-z0-9_]*")
 
 	# A registry call assigned to a local and the LOCAL iterated, which is what
@@ -1404,7 +1519,7 @@ func _counter_equalities(code: String) -> Array:
 			loop_coll.append(l.get_string(2).strip_edges())
 
 	# PASS 2: the condition of every _check(), read by _condition_at() - ONE
-	# reader, so the sites _condition_reach() reports as abandoned are the
+	# reader, so the sites _reader_reach() reports as abandoned are the
 	# sites this pass actually abandons and not a copy's (TRAPS 64).
 	for i in range(lines.size()):
 		if _masked(str(lines[i])).find("_check(") < 0:
@@ -1523,8 +1638,10 @@ static func _condition_at(lines: PackedStringArray, i: int) -> Dictionary:
 	return {"text": condition, "closed": closed}
 
 
-# How far the condition reader gets over tests/: {"unread": {`file.gd::function`
-# -> count}, "lines": every `_check(` line it was offered}.
+# How far THE TWO SOURCE READERS IN THIS FILE get over tests/, from one
+# directory read: {"unread": {`file.gd::function` -> count} and "lines", for
+# the `_check(` condition reader; "for_unread", "for_offered" and
+# "for_registry" for the loop-header reader `_keyed_reads()` uses}.
 #
 # The abandoned conditions are the assertions `_counter_equalities()` never
 # reads, so a site of its shape sitting in one of them joins the class in
@@ -1533,21 +1650,52 @@ static func _condition_at(lines: PackedStringArray, i: int) -> Dictionary:
 # the same move 134 made for the placement sites: a checked count rather than
 # a prose claim.
 #
-# ONE DIRECTORY READ AND NOT TWO, deliberately. The first draft of this had
-# the denominator in a second function with its own `DirAccess.open`, and
-# `scan_floor_test` named both of them on the run that added them - which is
-# that class working. Two sites would have needed two FLOORS rows, and the
-# second one's honest row would have said "covered by the first one's floor",
-# which the FLOORS table does carry (`check_wiring_test.gd::_no_door_rows`)
-# but which is a dependency to maintain rather than one to create. One read
-# has one floor and it is section 10's breadth line.
-func _condition_reach() -> Dictionary:
+# 136: AND THE SAME QUESTION ASKED OF THE SECOND READER IN THIS FILE, which
+# is what `## Next action` has named first since 135 - the 56 source readers
+# in tests/ that had never been asked what they cannot parse. `_keyed_reads()`
+# reads a loop header with a pattern anchored at a colon at END OF LINE, and
+# 38 of the 1184 `for` headers in the code of tests/ do not match it. Each of
+# the 38 was treated one at a time rather than inferred from the fact that
+# they look alike, and there are THREE causes, not one: 36 headers continued
+# across lines (2 to 13 of them), ONE typed loop variable
+# (`for probe: float in ...`, one line, colon-terminated) and ONE body on the
+# header line (`for n in names: out.append(...)`). The last two are not the
+# multi-line shape at all, so TRAPS 131's rule would not have found them.
+#
+# WHAT IT COSTS TODAY IS NOTHING, AND THAT IS A MEASUREMENT: none of the 38
+# iterates a registry accessor or a local assigned from one, so section 6's
+# class loses no site to the silence. "for_registry" is that number, section
+# 10b asserts it is empty BY NAME, and it is the assertion that starts
+# failing the day the silence begins to cost a site - which a count of 38
+# never would, because 38 goes up whenever anybody writes an unrelated
+# multi-line loop.
+#
+# ONE DIRECTORY READ AND NOT TWO, deliberately, and now THREE measurements
+# behind it. The first draft of the condition reach had the denominator in a
+# second function with its own `DirAccess.open`, and `scan_floor_test` named
+# both of them on the run that added them - which is that class working. Two
+# sites would have needed two FLOORS rows, and the second one's honest row
+# would have said "covered by the first one's floor", which the FLOORS table
+# does carry (`check_wiring_test.gd::_no_door_rows`) but which is a dependency
+# to maintain rather than one to create. 136 had the loop-header reach in its
+# own function with its own directory read for exactly as long as it took to
+# remember that, which is this entry's own lesson arriving before the suite
+# had to teach it. One read has one floor.
+func _reader_reach() -> Dictionary:
 	var unread := {}
 	var lines_seen := 0
+	var for_unread := {}
+	var for_offered := 0
+	var for_registry: Array = []
 	var dir := DirAccess.open("res://tests")
 	if dir == null:
-		return {"unread": unread, "lines": lines_seen}
+		return {"unread": unread, "lines": lines_seen, "for_unread": for_unread,
+			"for_offered": for_offered, "for_registry": for_registry}
 	var func_line := RegEx.create_from_string("^[\\t ]*(?:static[\\t ]+)?func[\\t ]+([A-Za-z_][A-Za-z0-9_]*)")
+	var in_for := RegEx.create_from_string(_for_header_pattern())
+	var any_for := RegEx.create_from_string(_any_for_pattern())
+	var alias_of := RegEx.create_from_string(_alias_pattern())
+	var word := RegEx.create_from_string("[A-Za-z_][A-Za-z0-9_]*")
 	for file_name in dir.get_files():
 		var name := str(file_name)
 		if not name.ends_with(".gd"):
@@ -1557,20 +1705,83 @@ func _condition_reach() -> Dictionary:
 			continue
 		var lines := _code_of(handle.get_as_text()).split("\n")
 		handle.close()
+
+		# EACH LINE JOINED WITH ITS OWN CONTINUATIONS, for the risk question
+		# BELOW ONLY and never for the reach above it. The reach has to be
+		# what `_keyed_reads()` sees, line by line; the question "could this
+		# header have been over a registry accessor" has to be what the header
+		# SAYS, which for a continued header is spread over several lines.
+		# 136 learned the difference from a red reading: the first version of
+		# the risk check read one line and looked for the accessor WITH its
+		# closing bracket, so the reconstruction that added a continued
+		# `for command in CommandParser.allowed_commands(\n):` to a suite moved
+		# the breadth line to 39 and left this check empty. A detector for a
+		# fault that cannot see the fault's own shape is the fault one level up.
+		var joined: Array = []
+		for i in range(lines.size()):
+			var acc := str(lines[i])
+			var depth := _bracket_depth(acc)
+			var j := i + 1
+			while depth > 0 and j < lines.size() and j < i + 16:
+				acc += str(lines[j]).strip_edges()
+				depth += _bracket_depth(str(lines[j]))
+				j += 1
+			joined.append(acc)
+
+		# The locals this file assigns a registry accessor to. The accessor is
+		# matched WITHOUT its brackets, so a call split across lines is still
+		# recognised - this errs towards asking about a header that turns out
+		# to be harmless rather than towards passing one over in silence,
+		# which is the direction `scan_floor_test._argument_on` chose for the
+		# same question and for the same reason.
+		var from_registry := {}
+		for i in range(joined.size()):
+			var a := alias_of.search(str(joined[i]))
+			if a == null:
+				continue
+			for call_name in _registry_calls():
+				if a.get_string(2).contains(_accessor_of(str(call_name))):
+					from_registry[a.get_string(1)] = true
+
 		var current := ""
 		for i in range(lines.size()):
 			var masked_line := _masked(str(lines[i]))
 			var f := func_line.search(masked_line)
 			if f != null:
 				current = f.get_string(1)
+			var key := "%s::%s" % [name, current]
+
+			# THE LOOP-HEADER READER's reach, over the same lines and the same
+			# directory read, because one read has one floor (TRAPS 132) and a
+			# second DirAccess.open here would need a FLOORS row whose honest
+			# text is "covered by the other read's floor".
+			if any_for.search(str(lines[i])) != null:
+				for_offered += 1
+				if in_for.search(str(lines[i])) == null:
+					for_unread[key] = int(for_unread.get(key, 0)) + 1
+					# Could this loop have held a site? Only a header over a
+					# registry accessor, or over a local assigned from one,
+					# costs section 6 anything when it cannot be read.
+					var at := str(joined[i]).find(" in ")
+					var after := str(joined[i]).substr(at + 4) if at >= 0 else ""
+					var bears := false
+					for call_name in _registry_calls():
+						if after.contains(_accessor_of(str(call_name))):
+							bears = true
+					for w in word.search_all(after):
+						if from_registry.has(w.get_string(0)):
+							bears = true
+					if bears:
+						for_registry.append("%s:%d" % [name, i + 1])
+
 			if masked_line.find("_check(") < 0:
 				continue
 			lines_seen += 1
 			if bool(_condition_at(lines, i)["closed"]):
 				continue
-			var key := "%s::%s" % [name, current]
 			unread[key] = int(unread.get(key, 0)) + 1
-	return {"unread": unread, "lines": lines_seen}
+	return {"unread": unread, "lines": lines_seen, "for_unread": for_unread,
+		"for_offered": for_offered, "for_registry": for_registry}
 
 
 # The counter names a piece of an expression mentions, sorted so a key written

@@ -10056,3 +10056,121 @@ walked past.
 
 > It had an answer for every assertion it read, and no answer for the ones it
 > skipped.
+
+---
+
+## 133. Three readers asked what they cannot parse, and the one that was wrong was the detector
+
+**Signature:** a scan enumerating a class over `tests/` is green, and the
+reader that finds the class's members is anchored on a construct fitting on
+one line. Nothing anywhere says how many of them do not.
+
+**Cause.** TRAPS 132 left this as the next action: `tests/` holds **57
+functions that open a `.gd` source**, one had been asked what it cannot read,
+and the other 56 had not. Three were asked in 136, each by feeding it a built
+source whose answer was known rather than by grepping for skip branches.
+
+**`source_scan_test._keyed_reads()` — 38 of 1184, and three causes.** It finds
+a registry-keyed loop with `^([\t ]*)for[\t ]+(\w+)[\t ]+in[\t ]+(.+):[\t ]*$`,
+so a header is read only when it is one line, the loop variable is bare, and
+the colon is the last thing on the line. **38 of the 1184 `for` headers in the
+code of `tests/`, in 30 functions, do not match it, and the miss is a
+`continue`.** Each of the 38 was treated one at a time, not inferred from the
+fact that they look alike, and the causes are **three**, not one:
+
+| cause | count | shape |
+|---|---|---|
+| header continued across lines | 36 | the iterable is a bracketed literal; 2 to 13 lines |
+| typed loop variable | 1 | `for probe: float in [...]:` — one line, colon at the end |
+| body on the header line | 1 | `for n in names: out.append(...)` |
+
+**The last two are not the multi-line shape at all**, so TRAPS 131's rule — *a
+boundary in source text is a whitespace run* — would not have found either.
+A fourth shape was found on built input: a registry accessor **assigned across
+two lines** makes the loop below the alias look local, because the alias is
+read with a single-line pattern too.
+
+**What it costs today is nothing, and that is the measurement that decided
+what to write.** None of the 38 iterates a registry accessor or a local
+assigned from one, so the class loses no site. 36 of them are a continued
+array of probe strings, which is ordinary style here and will grow — so a
+table of the 38 keyed by function would fail on every unrelated multi-line
+loop anybody writes. **`UNREAD_CONDITIONS` is worth pinning because an
+in-literal `#` inside a condition is rare and deliberate; this is not that.**
+
+**`result_line_test._result_lines_of()` / `_format_args()` — asked, and it is
+a WRONG reading rather than a missing one.** A verdict `print(` whose format
+arguments continue onto the next line is read as carrying **zero** arguments,
+not skipped, so the suite would report a line with no live name in it. And
+`_without_strings()` knows `"` and not `'`, so a single-quoted literal is
+mis-split. **Both are zero on today's `tests/`: 87 verdict-bearing print
+lines, 0 continued, 0 carrying a `'`.** Written down, not guarded — a row for
+either is a row no legal input can fail today (TRAPS 6).
+
+**`scan_floor_test._argument_on()` / `_member_on()` — asked, and it is the
+member of the class that got it right.** A continued `DirAccess.open(` comes
+back `["expression", ""]`, which is **admitted as a site needing a row**; a
+`DirAccess` whose member is on the next line comes back `""`, which lands in
+`unknown`, and section 1a asserts `unknown` is empty, so it **fails by name**.
+It is loud in both directions and loses nothing in silence. The reason is in
+its own header: *a site this file cannot classify is a site that needs a row,
+not a site to skip.*
+
+**And the fault 136 actually shipped was in its own detector, found by a red
+reading.** The first version of the "could this unreadable header have been
+over a registry accessor" check read ONE line and looked for
+`CommandParser.allowed_commands()` **with its closing bracket**. The
+reconstruction — a continued `for command in CommandParser.allowed_commands(`
+added to a suite — moved the breadth line from 38 to 39 and left the check
+**empty**. A detector for a fault that cannot see the fault's own shape is the
+fault one level up, and a count would have reported it as *"the tripwire does
+not fire"*.
+
+**Do:**
+
+- **Ask a reader; do not grep it.** A grep for skip branches inside those 57
+  functions returns dozens and most are ordinary filtering. Feeding the
+  function a built source whose answer you know takes seconds for any helper
+  that takes a `String`, and it answers the actual question.
+- **Treat each site, do not infer the cause from the fact that they look
+  alike.** 36 of 38 were the obvious cause and the other two were not it. One
+  of them is a typed loop variable on a single line, which no amount of
+  reasoning about multi-line constructs reaches.
+- **A reach number and a pinned table are different instruments.** Pin the
+  set by name when membership is rare and deliberate; print the fraction and
+  assert **the thing that fails when the silence starts costing a member**
+  when membership is ordinary style. Here that assertion is *"none of the
+  unreadable headers is over a registry accessor"* — it stays quiet while 38
+  grows and fails by name the day it matters.
+- **One pattern, one place.** The pattern the reach measures is now returned
+  by a function both the reader and the reach call, so the reach cannot be the
+  reach of a pattern the scan does not use. A retyped copy read as evidence is
+  what TRAPS 132's causal reading paid for one level down.
+- **A detector written in the same breath as its finding gets its own red
+  reading.** The three suite-level readings for this one — a widened reader,
+  an added registry-bearing header, and the read pointed at a directory that
+  does not exist — are in the 136 entry of `HANDOVER.md`.
+- **A reader that admits what it cannot classify has no silence to measure.**
+  `scan_floor_test`'s choice is the cheaper design: a site it cannot read
+  becomes a site that needs a row. Prefer it to a `continue` when the class
+  matters.
+- **AND THE ONE THIS ENTRY PAID FOR IN ITS OWN DOCUMENT EDIT: anchor every
+  match against a WHOLE LINE, and read `git diff --stat` before you run
+  anything.** `HANDOVER.md` has warned since 132 that
+  `H.index('## Human decision needed')` finds the **backticked mention** near
+  the top of the file. 136 read that warning, recorded it in its own sweep,
+  and then inserted its entry with `s.index('## Next action')` — whose first
+  occurrence was the backticked mention **in the paragraph it had just
+  written**. The replacement cut **20,276 lines** out of the file. Nothing was
+  run or committed: `git diff --stat` showed `127 insertions, 20276
+  deletions`, `git checkout` restored it, and both edits were re-made against
+  whole lines. **The warning named one heading and the fault is about every
+  heading this file mentions in its own prose** — `Starting state`,
+  `Next action`, `Run the tests first`, `Human decision needed`. That is
+  TRAPS 11 with the document as the list, and a document that describes its
+  own structure is a document whose every section name is a decoy.
+
+Found in 136, by doing what 135 named and could not finish in its own cycle,
+and then by disbelieving the detector before the suite was believed.
+
+> Two of the three readers were fine. The new code was not.

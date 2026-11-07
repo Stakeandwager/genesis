@@ -272,9 +272,16 @@ const FLOORS := {
 	# than a chore. It named a SIXTH read too, a separate denominator helper,
 	# and that one was folded into this function instead of being given a row
 	# whose honest text would have been "covered by the other read's floor".
-	"source_scan_test.gd::_condition_reach": {
+	# 136: renamed from ::_condition_reach, because it now carries the reach
+	# of BOTH source readers in that file - the `_check(` condition reader and
+	# the loop-header reader `_keyed_reads()` uses - over the one traversal.
+	# A SEVENTH read was written for the second of those and folded in for the
+	# same reason as the sixth, so this row still covers one read. The second
+	# measurement has its own floor in the same section, `for_offered > 0`,
+	# and the empty-read reading below was re-taken with both in place.
+	"source_scan_test.gd::_reader_reach": {
 		"floor": "reached > 0",
-		"why": "135: section 10 holds a hand-written table against the conditions this read abandons, and an empty read satisfies such a table the wrong way round - UNREAD_CONDITIONS would be ten rows describing code the scan did not look at. MEASURED on its own with the read pointed at a directory that does not exist: 95 assertions, failures=37, of which 11 are section 10's - one per row of UNREAD_CONDITIONS reading 'the reader abandons -1', plus this floor printing '0 ... out of the 0 offered to the reader'. So nothing in that section is silent on an empty read",
+		"why": "135: section 10 holds a hand-written table against the conditions this read abandons, and an empty read satisfies such a table the wrong way round - UNREAD_CONDITIONS would be ten rows describing code the scan did not look at. MEASURED on its own with the read pointed at a directory that does not exist: 95 assertions, failures=37, of which 11 are section 10's - one per row of UNREAD_CONDITIONS reading 'the reader abandons -1', plus this floor printing '0 ... out of the 0 offered to the reader'. So nothing in that section is silent on an empty read. 136: re-measured with section 10b's loop-header reach behind the same read, and the empty-read reading is section 10b's floor printing '0 ... out of the 0 offered to it' beside this one",
 	},
 }
 
