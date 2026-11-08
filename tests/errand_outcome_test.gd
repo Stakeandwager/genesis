@@ -535,9 +535,17 @@ static func _arms(body: String) -> Array:
 
 
 # Every ALL-CAPS literal handed to a named function at a call site.
+#
+# 140: THE GAP IS `\\s*` AND NOT `[ \t]*`, which is the difference between
+# seeing a call whose first argument sits on the next line and not seeing it.
+# This search already ran over the whole file rather than line by line, so the
+# newline was reachable and only the character class was refusing it. Driven
+# on a built wrapped call in the row beside the digit rows below; the same
+# class, found by asking controller_reach_test's site reader the same
+# question, is TRAPS 138.
 static func _hand_called(code: String, fn: String) -> Array:
 	var found: Dictionary = {}
-	var call := RegEx.create_from_string(fn + "\\([ \t]*\"([A-Z][A-Z_0-9]*)\"")
+	var call := RegEx.create_from_string(fn + "\\(\\s*\"([A-Z][A-Z_0-9]*)\"")
 	for m in call.search_all(code):
 		found[m.get_string(1)] = true
 	return _sorted(found)
@@ -707,6 +715,32 @@ func _vocabulary_controls() -> void:
 	_check(_hand_called(digit_hand, "outcome_line") == ["ARRIVED2"],
 		"and so is one HANDED to a named function, which is the reader row D uses (%s)" % str(
 			_hand_called(digit_hand, "outcome_line")))
+
+	# 140: AND THE SAME CALL WITH ITS ARGUMENT ON THE NEXT LINE. THE SHAPE IS
+	# OCCUPIED IN THE TREE TODAY, counted rather than supposed: 109 calls in
+	# `scripts/` continue their argument list onto the next line, and ONE OF
+	# THEM IS AN `outcome_line(` CALL - game_controller.gd:452, whose four
+	# arguments all sit on 453. It hands `outcome`, a VARIABLE, so no name is
+	# lost today and this reader's answer is unchanged (measured: every other
+	# number in this suite held). What the row holds is that the day somebody
+	# wraps a call handing a LITERAL, the name is still read. SEEN RED against
+	# the `[ \t]*` gap this reader carried through 139, which returned [].
+	var wrapped_hand := "\toutcome_line(\n\t\t\"ARRIVED2\", room, 0.0, 0.0)\n"
+	_check(_hand_called(wrapped_hand, "outcome_line") == ["ARRIVED2"],
+		"and a call whose first argument is on the NEXT line is read too (%s)" % str(
+			_hand_called(wrapped_hand, "outcome_line")))
+
+	# WHAT THE SAME QUESTION SAYS ABOUT `_assigned()` AND `_base_returns()` IS
+	# RECORDED IN docs/TRAPS.md AND NOT ASSERTED HERE. Both are fed one
+	# PHYSICAL line at a time and both anchor on `$`, so a newline-tolerant
+	# gap alone cannot reach a wrapped form and the repair is the line-joining
+	# `_sites_in()` got. Measured: `_assigned("\\tvar outcome :=\\n\\t\\t\"GAVE_UP2\"")`
+	# and the matching wrapped `return` both read []. A ROW ASSERTING THAT
+	# EMPTY RESULT WAS WRITTEN AND THEN DELETED: it would have gone RED the
+	# day somebody taught either reader to join continuations, which is a
+	# tripwire pointing at an improvement, and it guards the limitation
+	# instead of checking a fact (TRAPS 6). The hole is named in HANDOVER's
+	# Next action instead.
 
 
 func _run() -> void:

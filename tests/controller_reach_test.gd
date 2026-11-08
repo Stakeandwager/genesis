@@ -509,38 +509,120 @@ func _answers(category: String, branch: String) -> void:
 
 # --- 1. the enumeration, read off the source rather than typed ---
 
+# THE FORMS, IN ONE PLACE, so the matching below and the assertions in
+# section 1a read the same patterns. Every gap that has to cross from the
+# callee to its category argument is `\\s*`, which matches a newline: these
+# patterns were WRITTEN to allow a call whose arguments wrap, and until 140
+# the loop below took that away by feeding them one physical line at a time.
+# ELEVEN refusal calls in game_controller.gd already continue their argument
+# list onto the next line, four of them with the third argument itself there.
+const REFUSAL_FORMS := [
+	"_finish_failed\\(\\s*record\\s*,\\s*(\"FAILED_[A-Z][A-Z_0-9]*\"|[A-Z][A-Z_0-9]*|[a-z_][a-z_0-9]*\\[\"category\"\\])",
+	"_finish_nothing\\(\\s*(?:record|_new_record\\([^)]*\\))\\s*,\\s*(\"FAILED_[A-Z][A-Z_0-9]*\"|[A-Z][A-Z_0-9]*)",
+	"record_rejection\\(\\s*(\"FAILED_[A-Z][A-Z_0-9]*\"|\"UNSUPPORTED\")",
+	"\\w+\\[\"category\"\\]\\s*=\\s*(\"FAILED_[A-Z][A-Z_0-9]*\")",
+	"\"category\"\\s*:\\s*(\"FAILED_[A-Z][A-Z_0-9]*\")",
+]
+
+
+# 140: THE SITES IN ONE SOURCE, TAKEN AS A STRING so the reader can be fed a
+# built file and ASKED, rather than only pointed at the repository (138's
+# cheaper route, 139's `_site_keys` shape).
+#
+# IT SEARCHES THE WHOLE TEXT. Before 140 this loop ran each pattern over one
+# physical line at a time, and a refusal call whose category argument sat on
+# the NEXT line was invisible - though eleven of these calls in
+# `game_controller.gd` already continue onto the next line and four put the
+# third argument there, so wrapping the second is ordinary input. Measured in a throwaway copy: a new
+# `_finish_failed(record, "FAILED_SCHEMA", ...)` branch written flat took
+# section 1 to failures=1 naming the count, and THE SAME BRANCH with the
+# category on the next line read failures=0 - SILENT. The comment the split
+# used to carry was about commented-out sites; `_code_of()` has stripped
+# those, whole-line and trailing, since 067, so the split was buying nothing.
+static func _sites_in(code: String) -> Dictionary:
+	var found := {}
+	for pattern in REFUSAL_FORMS:
+		var re := RegEx.create_from_string(pattern)
+		for m in re.search_all(code):
+			var arg := m.get_string(1).replace("\"", "")
+			var cat := str(CATEGORY_CONSTS.get(arg, arg))
+			found[cat] = int(found.get(cat, 0)) + 1
+	return found
+
+
 func _refusal_sites() -> Dictionary:
 	var found := {}
-	var forms := [
-		"_finish_failed\\(\\s*record\\s*,\\s*(\"FAILED_[A-Z][A-Z_0-9]*\"|[A-Z][A-Z_0-9]*|[a-z_][a-z_0-9]*\\[\"category\"\\])",
-		"_finish_nothing\\(\\s*(?:record|_new_record\\([^)]*\\))\\s*,\\s*(\"FAILED_[A-Z][A-Z_0-9]*\"|[A-Z][A-Z_0-9]*)",
-		"record_rejection\\(\\s*(\"FAILED_[A-Z][A-Z_0-9]*\"|\"UNSUPPORTED\")",
-		"\\w+\\[\"category\"\\]\\s*=\\s*(\"FAILED_[A-Z][A-Z_0-9]*\")",
-		"\"category\"\\s*:\\s*(\"FAILED_[A-Z][A-Z_0-9]*\")",
-	]
 	for name in CONTROLLER_FILES:
 		var file := FileAccess.open("res://scripts/" + name, FileAccess.READ)
 		if file == null:
 			continue
 		var text := _code_of(file.get_as_text())
 		file.close()
-		for raw_line in text.split("\n"):
-			var line := str(raw_line)
-			# A commented-out site is not a site. The whole-line case was
-			# already skipped here from the start - so that the explanatory
-			# comments beside these very calls, which quote the category
-			# names, are not counted as branches. 067 moved the skip into
-			# _code_of() so the TRAILING case is cut too: a comment after
-			# code on the same line is prose as well, and nothing was reading
-			# it that way. No count moved when this changed - measured, all
-			# nineteen rows held. See TRAPS 64.
-			for pattern in forms:
-				var re := RegEx.create_from_string(pattern)
-				for m in re.search_all(line):
-					var arg := m.get_string(1).replace("\"", "")
-					var cat := str(CATEGORY_CONSTS.get(arg, arg))
-					found[cat] = int(found.get(cat, 0)) + 1
+		var here := _sites_in(text)
+		for cat in here:
+			found[cat] = int(found.get(cat, 0)) + int(here[cat])
 	return found
+
+
+# --- 1a. the site reader, DRIVEN on built sources (140) ---
+#
+# WHAT IS HELD HERE IS THE CAPABILITY, CALLED, NOT THE WORDING, GREPPED
+# (TRAPS 6). `_sites_in()` is handed a source whose answer is known and asked
+# what it found. The pattern text is NOT asserted anywhere: a sweep for
+# `\\s*` would pass over a reader that had been re-split into lines the
+# following week, which is the exact fault these rows exist for.
+#
+# THE ONE ROW THAT WAS SEEN RED AGAINST THE COMMITTED READER IS THE SECOND.
+# Measured, not predicted: against 139's per-line loop the wrapped call read
+# `{}` and the row failed by name. The flat row and the comment row PASS
+# UNDER BOTH READERS and are GUARDS, not measurements of this fault - said
+# here rather than counted as four readings (TRAPS 6).
+func _site_reader() -> void:
+	var flat := "\tif not ok:\n\t\t_finish_failed(record, \"FAILED_PROBE\", [\"no\"])\n"
+	var flat_seen := _sites_in(flat)
+	_check(int(flat_seen.get("FAILED_PROBE", 0)) == 1,
+		"a refusal call written on one line is one site (got %s)" % str(flat_seen))
+
+	# The same call, the category argument on the NEXT line. Four of these
+	# calls in game_controller.gd already put their THIRD argument there, so
+	# this is the file's own style applied one argument earlier.
+	var wrapped := "\tif not ok:\n\t\t_finish_failed(record,\n\t\t\t\"FAILED_PROBE\", [\"no\"])\n"
+	var wrapped_seen := _sites_in(wrapped)
+	_check(int(wrapped_seen.get("FAILED_PROBE", 0)) == 1,
+		"and the SAME call with its category on the next line is also one site (got %s)" % str(wrapped_seen))
+
+	# The counting half, which is the half that was silent: a branch ADDED to
+	# a category that already has sites has to move the number.
+	var both := flat + wrapped
+	var both_seen := _sites_in(both)
+	_check(int(both_seen.get("FAILED_PROBE", 0)) == 2,
+		"one flat site and one wrapped site of the same category count 2 (got %s)" % str(both_seen))
+
+	# The second form, wrapped the same way, so the fix is held at more than
+	# one of the five patterns.
+	var nothing_src := "\t\t_finish_nothing(record,\n\t\t\t\"FAILED_PROBE2\", \"nope\")\n"
+	var nothing_seen := _sites_in(nothing_src)
+	_check(int(nothing_seen.get("FAILED_PROBE2", 0)) == 1,
+		"a wrapped _finish_nothing is one site (got %s)" % str(nothing_seen))
+
+	# THE NEGATIVE CONTROL FOR THE CHANGE ITSELF. Searching the whole text
+	# instead of one line at a time could have widened what counts as a site
+	# across a comment boundary. It does not, because `_code_of()` blanks a
+	# commented-out line before this reader sees it - and that, not the line
+	# split, is what keeps a commented-out call out of the count.
+	var commented := _code_of(_commented_source())
+	var commented_seen := _sites_in(commented)
+	_check(not commented_seen.has("FAILED_PROBE3"),
+		"a commented-out refusal call is not a site (got %s)" % str(commented_seen))
+
+
+# The built source for the row above, HOISTED OUT OF THE ASSERTION because
+# `_code_of()` truncates a line at its first `#` even inside a double-quoted
+# literal, and a condition written with the literal inline is abandoned
+# unread by source_scan_test's reader-reach scan. 139 paid for this once.
+static func _commented_source() -> String:
+	var hash_mark := "#"
+	return "\t\t" + hash_mark + " _finish_failed(record,\n\t\t" + hash_mark + "\t\"FAILED_PROBE3\", [\"no\"])\n"
 
 
 func _enumeration() -> void:
@@ -1347,6 +1429,7 @@ func _run() -> void:
 	await process_frame
 
 	_enumeration()
+	_site_reader()
 	await _reachable_at_launch()
 	await _reachable_after_a_clear()
 	await _reachable_parse()

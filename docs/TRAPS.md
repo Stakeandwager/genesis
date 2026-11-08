@@ -10476,3 +10476,126 @@ invisible to section 8 with the table's blessing. The literals are hoisted to a
 unread set to **17 across 10 functions**. TRAPS 130 and TRAPS 131's rule in a
 third costume: the failure message was a plausible request for a table row, and
 writing it was the wrong move that looked like the obvious one.
+
+---
+
+## 138. The gap between a callee and its argument is where a wrapped call hides, and the patterns were already written to allow it
+
+**140. `controller_reach_test::_enumeration` is the reader `Next action` named
+first, and its site scan was green and wrong.** `_refusal_sites()` holds five
+patterns for the five ways `scripts/` records a refusal, and **every gap in
+them that has to cross from the callee to its category argument is `\s*`,
+which matches a newline.** The patterns were written to allow a call whose
+arguments wrap. **The loop around them took that away**, because it ran each
+pattern over `text.split("\n")` — one physical line at a time, where a newline
+never appears.
+
+**And wrapping these calls is the file's own style, counted rather than
+asserted.** **ELEVEN** of these calls in `game_controller.gd` already continue
+their argument list onto the next line - counted with a script over unbalanced
+parentheses, lines 184, 286, 302, 308, 345, 813, 1451, 1464, 1485, 1504, 1521
+- and in **four** of them (1451, 1464, 1485, 1504) the **third argument
+itself** begins on the next line. Wrapping the second is what a person does
+when the line gets long, without thinking about it. **The first draft of this
+entry said "four of these very calls" for the whole count; it is eleven, and
+the correction is kept here because an uncounted number in a document is
+TRAPS 14's shape however small it is.**
+
+**AND THE SHAPE IS OCCUPIED IN THE TREE TODAY.** 109 calls in `scripts/`
+continue their argument list onto the next line, and one of them is an
+`outcome_line(` call - `game_controller.gd:452`, whose four arguments all sit
+on 453. It hands `outcome`, a **variable**, so no ALL-CAPS name is lost there
+today and `_hand_called()`'s answer did not move. **The wrap point is not
+hypothetical; it is already in use, and what is missing is only a literal in
+it.**
+
+**MEASURED IN THROWAWAY COPIES, three readings, each a separate tree:**
+
+| input to `scripts/` | `controller_reach_test` under 139 | under 140 |
+|---|---|---|
+| nothing changed | 330, failures=0 | 330, failures=0 — **unchanged** |
+| a NEW `_finish_failed(record, "FAILED_SCHEMA", …)` branch, written flat | 330, **failures=1**, *"FAILED_SCHEMA: 12 branches in the source, 11 rows here"* | same |
+| **the same branch with its category on the next line** | 330, **failures=0 — SILENT** | 330, **failures=1**, same sentence |
+| an EXISTING branch merely re-wrapped, no behaviour changed at all | 330, **failures=1**, *"FAILED_SCHEMA: 10 branches in the source, 11 rows here"* | 330, failures=0 |
+
+**Both directions are wrong and the fourth row is the one that is easy to
+miss.** A pure reformat of `scripts/` — zero semantic change — turned the
+suite red with a **false sentence about the code**: the source did not lose a
+branch. A reader that converts formatting into a fact produces alarms nobody
+can act on as well as silences nobody can hear.
+
+**The fix is to delete the line split.** The comment the split carried was
+about commented-out sites, and `_code_of()` has blanked those, whole-line and
+trailing, since 067 — so the split was buying nothing and costing the
+newline. The matching is lifted into `static func _sites_in(code)` so it can
+be fed a built source, which is 139's `_site_keys` shape and 138's cheaper
+route in one.
+
+**THE CLASS, GREPPED RATHER THAN THE INSTANCE FIXED (TRAPS 11).** Every regex
+in `tests/` was enumerated and classified by two questions: does the pattern
+have to **cross from one token to another**, and is the gap it crosses
+**newline-tolerant**. A second member fell out: `errand_outcome_test`'s
+`_hand_called()`, whose gap is `\([ \t]*"([A-Z][A-Z_0-9]*)"` — the character
+class refuses the newline even though that search already ran over the whole
+file. Widened to `\s*` and driven: a wrapped `outcome_line(\n\t"ARRIVED2", …)`
+read `[]` before and reads `["ARRIVED2"]` now, **seen red by name**.
+
+**What was ruled out, each with a reason, because a gap is only a hole where
+GDScript lets an author wrap.** A function header, a `for` header and a
+counter declaration are **anchored to a line start** and a line start is a
+physical line by definition. `(\w+)\.size\(\)`, `func (\w+)\(` and
+`function[ \t]*\(` cross from a name to **its own** brackets, which nothing
+separates. `receiver[\t ]*\.place_at` and `corner_nodes[ \t]*=` would need a
+backslash continuation, which the tree does not use. `"(ok|errors|…)"[ \t]*:`
+crosses a dict key to its colon, which nobody wraps. `prompt_numeral_test`'s
+patterns read the assembled prompt, not source.
+
+**AND ONE MEMBER LEFT OPEN WITH A MEASUREMENT RATHER THAN A ONE-CHARACTER
+FIX.** `refusal_reach_test`'s `decl` pattern
+(`const[ \t]+(NAME)[ \t]*:=[ \t]*"(FAILED_X)"`) is a member of the class, and
+widening the gap alone makes the answer **worse**. Measured, with
+`const NOTHING_BUILT :=` wrapped in `game_controller.gd`:
+
+| decl pattern | `refusal_reach_test` |
+|---|---|
+| `[ \t]*` (as committed) | 219, failures=1, *"produced in **1** place(s) … row says 3"* |
+| `\s*` | 219, failures=1, *"produced in **5** place(s) … row says 3"* |
+
+The true count is **3**. The function skips a declaration line with
+`if decl.search(line) != null: continue` **inside a per-line loop**, so once
+the declaration spans two lines the skip cannot recognise it and the
+declaration's own literal is counted as a refusal site. The alarm is loud
+either way and the number is wrong in both directions. **Closing it needs the
+skip to work on logical lines too, which is the line-joining repair and its
+own commit.**
+
+**Do:**
+
+- When a pattern must **cross from one token to another** in source, write the
+  gap as `\s*` or `\s+`, never `[ \t]*` — and then **check that nothing
+  upstream split the text into physical lines**, because a tolerant gap fed
+  one line at a time is not tolerant. The pattern and the loop around it are
+  one reader, and 139's rule — *ask what happens to the reading after the
+  reader returns it* — has a mirror: **ask what happened to the text before
+  the pattern saw it.**
+- **Ask a reader about formatting, not only about content.** The input that
+  found this was not a new capability or an odd identifier; it was the same
+  call with a line break in it. Reformat something the reader reads and see
+  whether the number moves.
+- **A red line that says the source lost something it did not lose is a
+  fault, not a passing test.** Run the reformat case and check the suite stays
+  green, as well as running the addition case and checking it goes red.
+- **A set of numbers in a document has to be checked for REPEATS, not only
+  for gaps.** 140's run of 131's document sweep found two `Human decision
+  needed` entries numbered 33, after fourteen cycles of reporting those
+  numbers as *present* with *no dangling reference* - both true, and both
+  blind to it, because every number 1-43 existed and every `HDN n` reference
+  resolved to one of the two. **Scope the sweep to the section**: `^\d+\. \*\*`
+  over the whole of `HANDOVER.md` catches ordinary numbered lists and reports
+  44 entries spanning 0-43, which is a clean-looking sweep over the wrong set.
+
+- Do **not** assert the hole you are leaving. A row asserting
+  `_assigned(wrapped) == []` was written in this commit and **deleted**: it
+  would go red the day somebody taught the reader to join continuations, which
+  is a tripwire aimed at an improvement, and it guards the limitation instead
+  of checking a fact (TRAPS 6). Name the hole in `HANDOVER.md` instead.
