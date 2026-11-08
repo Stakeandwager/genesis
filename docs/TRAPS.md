@@ -10599,3 +10599,151 @@ own commit.**
   would go red the day somebody taught the reader to join continuations, which
   is a tripwire aimed at an improvement, and it guards the limitation instead
   of checking a fact (TRAPS 6). Name the hole in `HANDOVER.md` instead.
+
+---
+
+## 139. A character class cannot skip an argument, because an argument is allowed to contain a comma
+
+**141. `agreement_test::_scripts` is the reader `Next action` named first, and
+the fault was not in `_scripts()` at all - it was in `_plural_nouns()`, which
+is what the loop around `_scripts()` hands its files to.** The derived noun
+class is collected with
+`Readback\.plural\([^,]+,\s*"([^"]+)"(?:\s*,\s*"([^"]+)")?`. The gap `[^,]+`
+has to **skip over the whole first argument** to reach the noun, and it is
+written as a character class that refuses a comma. **An argument is an
+expression, and an expression is allowed to contain a comma.**
+
+**AND THE SHAPE IS NOT HYPOTHETICAL; IT IS THE FILE'S OWN STYLE, COUNTED
+RATHER THAN SUPPOSED.** **43** calls in `scripts/` already hand a
+comma-bearing expression as a first argument - counted with a bracket-depth
+script, not by eye - and they are the most ordinary GDScript there is:
+`float(spec.get("push", DEFAULT_PUSH))` five times over in `boots_tool.gd`,
+`mini(a, b)` in `dungeon_module.gd` and `separation_check.gd`,
+`str(z.get("crop", ""))` in `farm_module.gd`, `minf(low.x, p.x)` in
+`track_geometry.gd`. The wrap point TRAPS 138 was about needed a person to
+break a line; **this one needs nothing but a default value.**
+
+**MEASURED IN THROWAWAY COPIES, AND THE SILENCE IS NOT IN THE NOUN COUNT - IT
+IS IN A SWEEP THAT STOPS LOOKING.** `_no_agreement_by_hand()` sweeps every
+file in `scripts/` for `"%d <plural>"` written by hand, using **the plurals
+derived from the call sites** rather than a list typed in the suite. A noun
+the reader cannot collect is a noun the sweep never looks for. Each row is a
+separate tree: a `Readback.plural(..., "whatnot")` call added to
+`scripts/track_log.gd` and a hand-written `"%d whatnots"` added to
+`scripts/track_metrics.gd`, which is a real offender of exactly the kind this
+section exists to catch.
+
+| first argument of the added call | `agreement_test` under 140 | under 141 |
+|---|---|---|
+| `int(d["k"])` - no comma | **53, failures=1**, *"track_metrics.gd: %d whatnots"* | same direction |
+| **`int(d.get("k", 0))` - one comma** | **53, failures=0 - SILENT** | **61, failures=1**, names the offender |
+| an existing call merely re-wrapped over three lines, no behaviour changed | 53, failures=0 | **61, failures=0 - no false alarm** |
+
+**The two calls are the same value and the same noun.** The only difference is
+a default argument, and it decides whether a hand-written plural in another
+file is reported or not.
+
+**THE REFORMAT CASE WAS RUN BECAUSE TRAPS 138 SAYS TO RUN IT, AND IT CAME BACK
+CLEAN IN BOTH DIRECTIONS.** `scripts/world_store.gd`'s
+`Readback.plural(names.size(), "saved world")` was re-wrapped two ways - first
+argument on the next line, then noun on the next line - and both readers read
+the same **25** nouns. The `\s*` gaps 140 widened already admitted the
+newline. **This is a different gap in the same pattern**, and that is the part
+worth keeping: one reader can have a hole that is closed and a hole that is
+open, and closing the first says nothing about the second.
+
+**THE FIX IS A WALK, NOT A WIDER CLASS.** No character class can skip a
+balanced expression. `_args_in(text, masked, open)` counts bracket depth over
+**masked** text so a comma or a bracket inside a string literal is not read as
+structure, and returns the top-level arguments as their own text;
+`_plural_sites_in()` masks once per file, because masking per site is
+quadratic, and `_literal()` accepts an argument only when it is one plain
+double-quoted string. `source_scan_test::_masked` is the same function - **the
+convention was reused rather than invented a second time** (TRAPS 11), the way
+139 took `scan_floor_test::_keys_for`'s ordinal.
+
+**AND THE WALK PAID FOR SOMETHING THE REGEX NEVER COULD: THE SITES IT COULD
+NOT READ.** `_plural_sites_in()` returns **one entry per site** whether or not
+a literal can be read off it, so a site this reader cannot parse is **counted**
+instead of absent (TRAPS 132). On the real tree that is **53 sites under 141
+against 51 under 140** - `RacingModule._counted()` hands `str(type)` and
+`FarmModule` hands `str(key)`, both correctly uncollectible and both covered by
+the `\b1 [a-z_]+s\b` half of the net, and neither of them visible to the old
+reader as having existed at all. Two live assertions hold it: every site's
+argument list was walked to the end, and every site whose noun **is** written
+as a literal became a pair.
+
+**A SECOND FAULT THE REGEX WAS HIDING, FOUND BY A DRIVEN ROW RATHER THAN BY
+READING.** A `Readback.plural(n, "room")` written **inside a string literal**
+was read as a call site by the committed reader: the driven row printed
+`[["room", "rooms"]]` where the answer is `[]`. `_source()` blanks comments
+(TRAPS 63) and nothing blanked literals, so the derived class could take a
+noun out of prose. Searching the needle in masked text closes it.
+
+**THE COST IN TIME, MEASURED, BECAUSE IT WAS LARGE ENOUGH TO MATTER.**
+`_plural_nouns()` was called **128** times per run - `_counts_one_in_plural()`
+calls it for every line it sweeps and `_no_agreement_by_hand()` for every file
+- and each call re-read all of `scripts/`. A regex absorbed that; a
+bracket-depth walk in GDScript does not, and the uncached walk took this suite
+from **3.142 s to 44.641 s**. The read is now done once, which is **0.817 s** -
+faster than the regex was. **Nothing in the process writes `scripts/`, so one
+read is the same answer as 128**, and the 25 nouns are the evidence for that
+rather than the argument for it.
+
+**THE CLASS WAS GREPPED, NOT THE INSTANCE FIXED (TRAPS 11), AND EVERY MEMBER'S
+CONSEQUENCE WAS MEASURED RATHER THAN REASONED ABOUT.** All **70** regex
+literals in `tests/` were enumerated with a script and classified by one
+question: **does the pattern have to reach past a whole argument to read a
+later one?** Five do. Each was then driven by making one real call site's
+first argument a comma-bearing expression **of the same value**
+(`x.get("nope", x)` returns `x`), so the only thing that changed was the comma:
+
+| reader | gap | what happened |
+|---|---|---|
+| `agreement_test::_plural_nouns` | `[^,]+` | **SILENT** - fixed here |
+| `field_type_test::_read_sites` | `([a-z_]+)` | **LOUD**: 279 -> 265, failures=1, naming `"source"` as unread |
+| `field_type_test::_the_value_fits_the_member` | `[a-z_]+` | silent on its own (`_check(pairs.size() > 0)` is its only floor) but **cannot be reached without the row above going red**, because both read the same call |
+| `record_type_test` section 1, field read at **one** site | `_field\(r,` | **LOUD**: 388, failures=1, naming `"player_place"` |
+| `record_type_test` section 1, field read at **two** sites | `_field\(r,` | **SILENT**: 388, failures=0 - the set still holds the field off the other site |
+| `prompt_numeral_test:574` | `([a-z_0-9]+(?:, [a-z_0-9]+)+)` | **NOT A MEMBER**: it reads an assembled sentence, where the comma is English |
+
+**`record_type_test` IS THE SECOND SILENT MEMBER AND IT IS LEFT OPEN WITH ITS
+MEASUREMENT, NOT PATCHED.** Its silence has **two** causes stacked: the gap
+cannot reach past a comma-bearing first argument, **and** the reader keys a
+**set by field name**, so one of several sites for the same field going unread
+is invisible. `"reasons"` is read at `session_report.gd:213` **and** `:216`,
+and that is why breaking one of them reads green. Widening the gap alone fixes
+the trigger and leaves the blindness - the set would still be blind to any
+other cause of an unread site - so closing it properly is TRAPS 137's fix
+(a key that distinguishes sites) **and** this one, in its own commit with its
+own baseline.
+
+**Do:**
+
+- **A pattern that must reach past a whole argument to read a later one cannot
+  be a character class.** `[^,]+`, `[^)]+` and a captured `([a-z_]+)` all
+  assume the argument is simple, and `spec.get("push", DEFAULT)` is not. Walk
+  the argument list by **bracket depth over masked text**. The question to ask
+  of any gap is not only *does it admit a newline* (TRAPS 138) but **what is
+  the gap allowed to contain**, and the answer for an argument is *anything
+  balanced*.
+- **Closing one hole in a pattern says nothing about the others.** The same
+  five patterns 140 widened for the newline were still blind to the comma.
+  Re-ask the question for each kind of thing the gap has to cross.
+- **A reader that drops a site must say which sites it dropped** (TRAPS 132).
+  The regex reported 51 call sites as 51 nouns and had no way to say that two
+  more existed. The walk reports 53 sites and 51 pairs, and two live
+  assertions hold the difference to sites with genuinely no literal in them.
+- **Measure the time, not only the answer.** A correct reader that makes its
+  suite 14x slower is a cost somebody pays every two hours. 128 reads of
+  `scripts/` were invisible while a regex absorbed them.
+- **Drive every member of the class and record whether it is LOUD or SILENT,
+  rather than fixing the ones that look like the first.** Four of the five
+  members here are loud, one of the loud ones is loud with a **false sentence**
+  (it names a field as unread that **is** read), and the one remaining silent
+  one is silent for a second reason that a wider gap would not touch.
+- **A probe has to change one thing.** `x.get("nope", x)` returns `x`, so the
+  value and the noun are unchanged and the only difference is the comma. The
+  first probe written here used an identifier that was not in scope, and the
+  reading it produced was a parse error dressed up as a finding - **35
+  assertions, failures=1** - which looks like a measurement and is not one.

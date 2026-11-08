@@ -11,6 +11,132 @@ that the owner has not ruled on.** Do not promote one to the other.
 
 ## Starting state
 
+- Last commit at the time of writing: **141**, and it is **ONE FILE UNDER
+  `tests/` PLUS `docs/TRAPS.md` AND THIS FILE**. `scripts/`, `scenes/`,
+  `netlify/`, `.github/`, `project.godot`, both runners, `export_presets` and
+  `netlify.toml` are **0 LINES OF DIFF**, confirmed by
+  `git diff --name-only`, so **nothing a player meets changed**. What was done
+  is the task `Next action` named first: driving `agreement_test::_scripts`,
+  the tenth of the 57 source readers to be asked what it cannot parse. **The
+  answer was that `_scripts()` is correct and the thing it hands its files to
+  could not read past a comma.**
+
+  **ONE. THE GAP WAS NOT A NEWLINE THIS TIME, IT WAS A COMMA.**
+  `_plural_nouns()` collects the derived noun class with
+  `Readback\.plural\([^,]+,\s*"([^"]+)"...`. The gap `[^,]+` has to **skip the
+  whole first argument** to reach the noun, and it is a character class that
+  refuses a comma. **An argument is an expression and an expression may
+  contain a comma**, so the reader reads nothing at such a site and says
+  nothing about it. 140 widened five `\s*` gaps in a sibling suite for the
+  newline; **this is a different gap in the same pattern, and closing the
+  first said nothing about it.**
+
+  **TWO. THE SHAPE IS THE TREE'S OWN STYLE, COUNTED RATHER THAN SUPPOSED.**
+  **43** calls in `scripts/` already hand a comma-bearing expression as a
+  first argument, counted with a bracket-depth script:
+  `float(spec.get("push", DEFAULT_PUSH))` five times in `boots_tool.gd`,
+  `mini(a, b)` in `dungeon_module.gd` and `separation_check.gd`,
+  `str(z.get("crop", ""))` in `farm_module.gd`, `minf(low.x, p.x)` in
+  `track_geometry.gd`. TRAPS 138's wrap point needed a person to break a line.
+  **This one needs nothing but a default value.**
+
+  **THREE. THE SILENCE IS NOT IN THE NOUN COUNT, IT IS IN A SWEEP THAT STOPS
+  LOOKING - MEASURED IN THREE THROWAWAY COPIES, each its own tree.**
+  `_no_agreement_by_hand()` sweeps `scripts/` for a hand-written
+  `"%d <plural>"` using **the plurals derived from the call sites**. A noun the
+  reader cannot collect is a noun the sweep never looks for. Each row adds a
+  `Readback.plural(..., "whatnot")` call to `scripts/track_log.gd` and a real
+  offender, `"%d whatnots"`, to `scripts/track_metrics.gd`:
+
+  | first argument of the added call | under 140 | under 141 |
+  |---|---|---|
+  | `int(d["k"])` - no comma | **53, failures=1**, *"track_metrics.gd: %d whatnots"* | same direction |
+  | **`int(d.get("k", 0))` - one comma** | **53, failures=0 - SILENT** | **61, failures=1**, names the offender |
+  | an existing call merely re-wrapped over three lines | 53, failures=0 | **61, failures=0 - no false alarm** |
+
+  **The two calls are the same value and the same noun.** The only difference
+  is a default argument, and it decides whether a hand-written plural in
+  another file is reported.
+
+  **FOUR. THE REFORMAT CASE WAS RUN BECAUSE TRAPS 138 SAYS TO RUN IT, AND IT
+  CAME BACK CLEAN BOTH WAYS.** `world_store.gd`'s
+  `Readback.plural(names.size(), "saved world")` was re-wrapped twice - first
+  argument on the next line, then noun on the next line - and **both readers
+  read the same 25 nouns**. The `\s*` gaps are genuinely newline-tolerant; the
+  fault is elsewhere in the same pattern.
+
+  **FIVE. THE FIX IS A WALK AND NOT A WIDER CLASS, AND THE CONVENTION ALREADY
+  EXISTED IN A SIBLING SUITE (TRAPS 11).** No character class can skip a
+  balanced expression. `_args_in(text, masked, open)` counts bracket depth
+  over **masked** text so a comma or bracket inside a literal is not read as
+  structure; `_plural_sites_in()` masks once per file because masking per site
+  is quadratic; `_literal()` accepts an argument only when it is one plain
+  double-quoted string. **`source_scan_test::_masked` is the same function**,
+  reused rather than invented again, the way 139 took
+  `scan_floor_test::_keys_for`'s ordinal.
+
+  **SIX. THE WALK PAID FOR SOMETHING THE REGEX COULD NOT: THE SITES IT CANNOT
+  READ** (TRAPS 132). `_plural_sites_in()` returns **one entry per site**
+  whether or not a literal can be read off it. On the real tree that is **53
+  sites under 141 against 51 under 140**: `RacingModule._counted()` hands
+  `str(type)` and `FarmModule` hands `str(key)`, both correctly uncollectible,
+  both covered by the `\b1 [a-z_]+s\b` half of the net, and **neither visible
+  to the old reader as having existed**. Two live assertions hold it - every
+  site's argument list was walked to the end, and every site whose noun **is**
+  a literal became a pair.
+
+  **SEVEN. A SECOND FAULT THE REGEX WAS HIDING, FOUND BY A DRIVEN ROW AND NOT
+  BY READING.** A `Readback.plural(n, "room")` written **inside a string
+  literal** was read as a call site: the row printed `[["room", "rooms"]]`
+  where the answer is `[]`. `_source()` blanks comments (TRAPS 63) and nothing
+  blanked literals, so **the derived class could take a noun out of prose.**
+
+  **EIGHT. WHAT IS HELD IS THE CAPABILITY, DRIVEN, NOT THE WORDING, GREPPED**
+  (TRAPS 6, TRAPS 136). Six rows feed the statics built sources: **53 -> 61**.
+  **FOUR were seen red against 140's reader** (61, failures=4), printing `[]`,
+  `[]`, `[["room", "rooms"]]` and a site count of 0 where it is 1. **Two pass
+  under both readers and are GUARDS, not measurements** - the flat shape, and
+  a call wrapped over three lines. **The first draft of that comment called
+  the fourth row a guard too; it is a measurement, and the correction is
+  recorded in the comment rather than quietly fixed** (TRAPS 14). No pattern
+  text is asserted anywhere.
+
+  **NINE. THE TIME COST, MEASURED, BECAUSE IT WAS LARGE ENOUGH TO MATTER.**
+  `_plural_nouns()` was called **128 times per run** - counted with a
+  counter, not estimated - and each call re-read all of `scripts/`. A regex
+  absorbed that; a bracket-depth walk does not, and the uncached walk took
+  this suite from **3.142 s to 44.641 s**. The read is now done once:
+  **0.817 s**, faster than the regex was, same 25 nouns. **The first draft of
+  that comment said the read happened 199 times. It is 128, counted, and the
+  wrong number was replaced rather than left as a round-sounding one**
+  (TRAPS 14).
+
+  **TEN. THE CLASS WAS GREPPED, NOT THE INSTANCE FIXED (TRAPS 11), AND EVERY
+  MEMBER WAS DRIVEN RATHER THAN REASONED ABOUT.** All **70** regex literals in
+  `tests/` were enumerated and classified by one question: must the pattern
+  reach past a whole argument to read a later one? **Five do.** Each was then
+  driven by making one real call site's first argument a comma-bearing
+  expression **of the same value** (`x.get("nope", x)` returns `x`), so the
+  only thing that changed was the comma:
+
+  | reader | what happened |
+  |---|---|
+  | `agreement_test::_plural_nouns` | **SILENT** - fixed here |
+  | `field_type_test::_read_sites` | **LOUD**: 279 -> 265, failures=1, naming `"source"` as unread |
+  | `field_type_test::_the_value_fits_the_member` | silent alone (`pairs.size() > 0` is its only floor) but **unreachable without the row above going red**, because both read the same call |
+  | `record_type_test` s1, field at **one** site | **LOUD**: 388, failures=1, naming `"player_place"` |
+  | `record_type_test` s1, field at **two** sites | **SILENT**: 388, failures=0 |
+  | `prompt_numeral_test:574` | **NOT A MEMBER** - it reads an assembled sentence, where the comma is English |
+
+  **ELEVEN. ONE MEMBER IS LEFT OPEN WITH ITS MEASUREMENT RATHER THAN PATCHED,
+  AND THE REASON IS THAT A WIDER GAP WOULD NOT CLOSE IT.**
+  `record_type_test` section 1 is silent for **two stacked causes**: the gap
+  cannot reach past a comma, **and** the reader keys a **set by field name**,
+  so one of several sites for the same field going unread is invisible.
+  `"reasons"` is read at `session_report.gd:213` **and** `:216`, which is why
+  breaking one of them reads green. That is TRAPS 137's fault plus this one,
+  and it is **its own commit with its own baseline.**
+
 - Last commit at the time of writing: **140**, and it is **TWO FILES UNDER
   `tests/` PLUS `docs/TRAPS.md` AND THIS FILE**. `scripts/`, `scenes/`,
   `netlify/`, `.github/`, `project.godot` and both runners are **0 LINES OF
@@ -12194,8 +12320,56 @@ accomplishment"* would be the worst available outcome.
 
 ## Run the tests first
 
-**THE LATEST RUN IS 140's, ON ITS OWN CHANGED TREE, AND TWO SUITES' COUNTS
+**THE LATEST RUN IS 141's, ON ITS OWN CHANGED TREE, AND ONE SUITE'S COUNT
 MOVED.** `--all` through `run_tests.sh`, `user://` cleared by deleting
+`app_userdata/AI_Game_Builder` before it, Godot
+**`4.7.1.stable.official.a13da4feb`** (binary md5
+**`c083304672e2b4264cfb7f823aba095f`**, checked with `md5sum` on the download
+rather than assumed): md5 **`14d3a6f0f91aa4b5b66fd963f5b1e7d9`**, **85 suites,
+0 with something to look at**, `agreement_test` **61, failures=0**,
+`controller_reach_test` **335**, `errand_outcome_test` **48**,
+`player_door_test` **158**, `source_scan_test` **115**, `scan_floor_test`
+**164**, `refusal_reach_test` **219**, `field_type_test` **279**,
+`record_type_test` **388**, `loadcheck` **39**, `halt_cause_test` **53**,
+`drive_test` **24**, `session_test` **18**, `result_line_test` **370**.
+**166 s wall** (`2m46.493s`), and the runner wrote **0 bytes to stderr** - the
+capture holds 44 bytes and all 44 are `time`'s own three lines, counted with
+`wc -c` and read with `cat -A`. `find tests scripts project.godot run_tests.sh
+run_tests.bat -newer` the run's own start marker is **EMPTY**, so nothing
+changed under it.
+
+**THE `diff` AGAINST 141's OWN BASELINE IS ONE LINE, AND THAT IS THE WHOLE
+EFFECT OF THE CHANGE**: `agreement_test` **53 -> 61**. Every other suite's
+line is byte-identical, read off `diff | wc -l` (4 lines, which is one changed
+line) rather than by eye. **So replacing a character class with a bracket-depth
+walk changed no reading on the committed tree** - the derived class is the same
+**25** nouns - which is the "costs nothing today" claim as a measurement
+instead of a prediction.
+
+**AND 141's BASELINE IS AN INDEPENDENT CONTAINER, TAKEN BEFORE ANY EDIT.** A
+fresh `git clone --branch prototype-002a` of the pushed `277753c` (140) into
+its own directory outside the repository, `git status --porcelain` **EMPTY**,
+`user://` cleared, in a new container with its own `md5sum`-checked Godot
+download: md5 **`f0cf2633c51325d94521a1fc3f16b551`**, **85 suites, 0 to look
+at**, `controller_reach_test` **335**, `errand_outcome_test` **48**,
+`agreement_test` **53**, `player_door_test` **158**, `source_scan_test`
+**115**, `scan_floor_test` **164**, 172 s wall (`2m52.451s`) -
+**BYTE-IDENTICAL to what 140 recorded on its changed tree. THIRTEENTH
+CONTAINER, SAME NUMBER.** 140's one open item - *"no clone of this push has
+been run yet"* - is **CLOSED, and 140 owes nothing.**
+
+**SEVEN READINGS ARE RECORDED HERE BECAUSE THEY ARE THE POINT OF THE COMMIT**,
+all taken in throwaway copies, none predicted. The three `scripts/` inputs in
+the table above. The six new rows run against 140's reader: **61, failures=4**,
+printing `[]`, `[]`, `[["room", "rooms"]]` and a site count of 0.
+`field_type_test` with one `_field()` first argument made comma-bearing:
+**265, failures=1**. `record_type_test` the same way on a field read at one
+site: **388, failures=1**; on a field read at two sites: **388, failures=0 -
+SILENT**. And the time: **3.142 s** before, **44.641 s** walking uncached,
+**0.817 s** reading once.
+
+~~**THE LATEST RUN WAS 140's, ON ITS OWN CHANGED TREE, AND TWO SUITES' COUNTS
+MOVED.**~~ **SUPERSEDED BY 141's ABOVE.** `--all` through `run_tests.sh`, `user://` cleared by deleting
 `app_userdata/AI_Game_Builder` before it, Godot
 **`4.7.1.stable.official.a13da4feb`** (binary md5
 **`c083304672e2b4264cfb7f823aba095f`**, checked with `md5sum` on the download
@@ -12371,10 +12545,12 @@ and nothing is owed on it.
 
 **WHAT A GREEN RUN LOOKS LIKE, FOR A SESSION READING THIS TO FIND OUT:** 85
 suites, `suites with something to look at: 0`, and the suites worth naming at
-`controller_reach_test` **335**, `errand_outcome_test` **48**,
-`player_door_test` **158**, `source_scan_test` **115**, `scan_floor_test`
-**164**, `halt_cause_test` **53**, `drive_test` **24**, `session_test` **18**,
-`result_line_test` **370**. If `controller_reach_test` reads 330 and
+`agreement_test` **61**, `controller_reach_test` **335**,
+`errand_outcome_test` **48**, `player_door_test` **158**, `source_scan_test`
+**115**, `scan_floor_test` **164**, `halt_cause_test` **53**, `drive_test`
+**24**, `session_test` **18**, `result_line_test` **370**. If
+`agreement_test` reads 53 you are on **140 or earlier**; if
+`controller_reach_test` reads 330 and
 `errand_outcome_test` reads 47 you are on **139 or earlier**; if
 `player_door_test` reads 154 you are on 138 or earlier; if
 `errand_outcome_test` reads 44 you are on 137a or earlier; if `scan_floor_test`
@@ -21043,8 +21219,134 @@ and recorded because it is what made this commit's own suite vacuous.
 
 ## Next action
 
-**139's OPEN ITEM IS CLOSED AND 140 DID IT FOR NOTHING, WHICH IS THE PATTERN
-TO KEEP.** 140's first command was the baseline it was going to take anyway: a
+**140's OPEN ITEM IS CLOSED AND 141 DID IT FOR NOTHING, WHICH IS THE PATTERN
+TO KEEP.** 141's first command was the baseline it was going to take anyway: a
+fresh `git clone --branch prototype-002a` of the pushed `277753c` (140) into
+its own directory, in a new container with its own `md5sum`-checked Godot
+download, and it reproduced **`f0cf2633c51325d94521a1fc3f16b551`** byte for
+byte with `controller_reach_test` at **335** and `errand_outcome_test` at
+**48** - **thirteenth container, same number.** **DO NOT RE-TAKE IT.**
+
+**AND 141 DID NOT PUSH A `141a`, FOR THE REASON 138 WROTE DOWN AND 139 AND 140
+KEPT.** The clone-and-run of this push is worth having and is not worth a
+commit: the next firing's own baseline takes it from a genuinely independent
+container, which is strictly the stronger reading, and costs one command it
+was going to run anyway. **So the first thing you do is that baseline, on the
+pushed `141`, and if its md5 is `14d3a6f0f91aa4b5b66fd963f5b1e7d9` with
+`agreement_test` at 61 then the pushed tree is the measured tree and nothing
+is owed.** If it is not, that disagreement is the most important thing in the
+repository and it is the cycle's work.
+
+**THE TASK THIS FILE HAS NAMED FIRST SINCE 135 IS STILL THE TASK: TEN OF THE
+57 SOURCE READERS HAVE NOW BEEN ASKED WHAT THEY CANNOT PARSE, AND 47 HAVE
+NOT.** The nine before this cycle are in the 136, 137, 138, 139 and 140
+entries at the top of this file - **DO NOT RE-ASK THEM.** 141 drove the tenth,
+`agreement_test::_scripts`, and **the answer was again not about the reader
+that was named**: `_scripts()` is correct, and the thing the loop around it
+hands its files to could not read past a comma. Written as **TRAPS 139**,
+fixed, and the class enumerated across all 70 regex literals in `tests/` -
+**five members, every one driven, one silent member fixed, one silent member
+left open with its measurement and three loud ones recorded** (see the 141
+entry, point TEN).
+
+**AND THE RULE 141 WOULD ADD, WHICH IS 140's QUESTION ASKED OF A SECOND KIND
+OF GAP.** 140 said *ask what happened to the text before the pattern saw it*,
+and widened five gaps so they would admit a **newline**. The same five gaps
+were still blind to a **comma**, and the fix was not a wider class at all.
+**SO: ASK WHAT THE GAP IS ALLOWED TO CONTAIN, AND IF THE ANSWER IS "A WHOLE
+ARGUMENT", THE ANSWER IS A WALK AND NOT A PATTERN.** `[^,]+`, `[^)]+` and a
+captured `([a-z_]+)` all quietly assume the argument is simple, and
+`spec.get("push", DEFAULT)` is not simple - it is the shape of **43** calls in
+`scripts/` today. **Closing one hole in a pattern says nothing about the
+others**, which is the part that is easy to walk past after a cycle that
+widened the same patterns for a different reason.
+
+**THE NEXT ONES TO ASK, with `_scripts` struck off.** Remaining:
+`check_wiring_test::_no_door_rows`;
+`controller_reach_test::_guard_spawn_opponents`; `loadcheck::_initialize`;
+`player_door_test::_the_scene`, `::_the_scene_has_no_floor` and
+`::_the_name_is_not_the_worlds`; `prompt_numeral_test::_initialize`;
+`proxy_test::_initialize`; `record_id_test::_session_starts`;
+`result_line_test::_test_files`; `scan_floor_test::_test_files`;
+`scene_light_test::_everything_that_points_has_been_pointed`;
+`source_scan_test::_class` and `::_scripts_code`. **Start with
+`check_wiring_test::_no_door_rows`**: it is the first on the list, and 141 has
+just shown for the second cycle running that the reader a list names is not
+necessarily where the fault is - so the question to put to it is what the whole
+path from its scan to its assertion can and cannot represent, not only what
+its own pattern admits.
+
+**AND THE WAY TO DO IT IS STILL NOT A GREP. 141 CONFIRMS 140's THIRD ROUTE AND
+ADDS A COST TO IT.** Feed the function a built source whose answer you know
+and READ WHAT IT SAYS. 137's harness (slice the function out of the committed
+source, paste into a bare `extends SceneTree`, call it) is for a reader that
+takes its source off disk; 138's cheaper route is to drive it from inside its
+own suite; **140's route - lift the matching into a `static func` that takes
+the text, leave the disk-reading wrapper calling it, and drive the static -**
+is what `_plural_sites_in()` and `_pairs_from()` are, and it worked again.
+**THE COST 141 ADDS: MEASURE THE TIME, NOT ONLY THE ANSWER.** A bracket walk
+is not free where a regex was, `_plural_nouns()` turned out to be called
+**128** times per run, and the correct reader made its suite **14x slower**
+until the read was done once. Nobody would have noticed from a green run; the
+`time` on the suite is what noticed.
+
+**WHAT 141 LEFT OPEN, NAMED SO IT IS NOT REDISCOVERED.**
+
+**ONE. `record_type_test` SECTION 1 IS THE SECOND SILENT MEMBER OF TRAPS 139's
+CLASS AND A WIDER GAP WOULD NOT CLOSE IT.** Measured: with
+`session_report.gd`'s `_field(r, "player_place", 0)` made
+`_field(r.get("nope", r), "player_place", 0)` - the same value, one comma
+added - it reads **388, failures=1** and names the field. With the same change
+made to `_field(r, "reasons", [])` at line 213 it reads **388, failures=0 -
+SILENT**, because `"reasons"` is read at **213 and 216** and the reader keys a
+**set by field name**, so the other site still supplies it. **Two causes
+stacked**: the gap cannot reach past a comma, and the key drops the field that
+tells two sites apart, which is TRAPS 137 exactly. Closing it is both fixes,
+and **it is its own commit with its own baseline.** `agreement_test`'s
+`_masked()`/`_args_in()`/`_literal()` are the tools for the first half and
+`scan_floor_test::_keys_for`'s ordinal for the second.
+
+**TWO. TWO LOUD MEMBERS ARE LOUD WITH A FALSE SENTENCE, WHICH IS A FAULT AND
+NOT A PASSING TEST (TRAPS 138's fourth row).** `field_type_test::_read_sites`
+reads **279 -> 265, failures=1** naming `"source"` as *not read through
+`_field()`* when it **is** read through `_field()` - the reader could not
+parse the call, not the file. `record_type_test` does the same for
+`"player_place"`. Neither is silent, so neither is urgent, but an alarm nobody
+can act on costs a cycle to diagnose. Both want the same walk.
+
+**THREE. NOTHING HOLDS THAT A SIXTH ARGUMENT-SKIPPING GAP CANNOT ARRIVE.** The
+enumeration in the 141 entry's point TEN is a reading of today's 70 regex
+literals in `tests/`, not a tripwire, and no assertion guards the class. **A
+text sweep for `[^,]` is NOT the answer** and is rejected for the reason 138
+and 140 both gave: the line declaring the needle contains the needle, and what
+it asserts is the wording rather than the capability (TRAPS 6, TRAPS 136).
+
+**FOUR. THE TWO FLOOR QUESTIONS 139 AND 140 LEFT ARE STILL OPEN AND
+UNMEASURED, AND 141 ADDS A THIRD.** `player_door_test::_the_class_cannot_grow_in_silence`
+reads `scripts/` with `DirAccess.get_files_at()`, which does not recurse, and
+its floor is `read >= PLACE_AT_FILES_FLOOR` where the constant is a typed
+**25** against **37** files actually present.
+`controller_reach_test::_enumeration`'s floor is `_check(scanned > 0, ...)`,
+which passes on any non-zero read. **And `agreement_test::_scripts()` has no
+floor at all**: it returns `[]` when `DirAccess.open()` fails and the suite's
+only guard on the derived class is `nouns.size() >= 10` against **25** nouns
+off **53** call sites, so a `scripts/` read most of the way short still passes.
+All three are TRAPS 134's shape, all three are already caught loudly by
+`scan_floor_test` section 7's subdirectory tripwire, and **141 read the third
+and did not change it.** Whether a floor should be the measured count rather
+than a typed number is a question nobody has put to any of them; it is small
+and it is one commit for all three (TRAPS 11).
+
+**FIVE. 140's OWN OPEN ITEMS ARE UNTOUCHED BY THIS COMMIT AND STILL STAND.**
+`refusal_reach_test`'s `decl` pattern needs the line-joining repair (the
+one-character fix makes the answer worse - measured, see the 140 entry's point
+SEVEN); `errand_outcome_test::_assigned` and `::_base_returns` cannot be fixed
+by a character class at all. **If you close either, close it with the
+line-joining repair and delete nothing.** `source_scan_test::_bracket_depth`
+and now `agreement_test::_args_in` are both tools for it.
+
+~~**139's OPEN ITEM IS CLOSED AND 140 DID IT FOR NOTHING, WHICH IS THE PATTERN
+TO KEEP.**~~ **140's EQUIVALENT, KEPT BECAUSE THE PATTERN IS THE POINT.** 140's first command was the baseline it was going to take anyway: a
 fresh `git clone --branch prototype-002a` of the pushed `89a0e91` (139) into
 its own directory, in a new container with its own `md5sum`-checked Godot
 download, and it reproduced **`fe87c7e18ed4a0609c8242849afa3caf`** byte for

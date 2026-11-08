@@ -99,6 +99,10 @@ extends SceneTree
 
 const READER := "res://scripts/readback.gd"
 
+# The callee whose argument list `_plural_sites_in()` walks. Named once so the
+# walk and the sweep cannot drift apart.
+const CALL := "Readback.plural("
+
 # The one place a count and a plural are written together on purpose, named
 # rather than skipped by file, with the reason. This is the PLURAL BRANCH of a
 # Readback.agrees() call: agrees() makes the decision and the two forms are
@@ -208,6 +212,19 @@ const READS_THE_READER := {
 var lines: Array = []
 var failures: Array = []
 
+# The derived noun class, read off disk ONCE.
+#
+# COUNTED, NOT SUPPOSED: `_plural_nouns()` was called 128 times per run before
+# this commit - `_counts_one_in_plural()` calls it for every line it sweeps and
+# `_no_agreement_by_hand()` calls it for every file - and each call re-read all
+# of `scripts/`. A regex absorbed that; walking a call's arguments by bracket
+# depth does not, and the uncached walk took this suite from 3.142 s to
+# 44.641 s. With the read done once it is 0.817 s, which is FASTER than the
+# regex was, and the answer is the same 25 nouns. Nothing in this process
+# writes `scripts/`, so one read is the same answer as 128.
+var _nouns_cache: Array = []
+var _nouns_read := false
+
 
 func _check(ok: bool, what: String) -> void:
 	lines.append("%s %s" % ["PASS" if ok else "FAIL", what])
@@ -257,6 +274,7 @@ func _initialize() -> void:
 	_no_agreement_by_hand()
 	_the_sites_read_the_reader()
 	_the_nouns_off_the_code()
+	_the_walk_reaches_past_an_argument()
 	_the_sweeps_breadth()
 
 	for line in lines:
@@ -486,6 +504,101 @@ func _the_nouns_off_the_code() -> void:
 	_check(not irregular.is_empty(),
 		"and at least one plural is not the singular plus an s, so the pair is read from the call and not assembled here (%s)" % str(irregular))
 
+	# AND THE SITES THIS READER COULD NOT TURN INTO A PAIR, NAMED RATHER THAN
+	# ABSENT (TRAPS 132). A site drops out only when its noun is genuinely not
+	# a literal - RacingModule._counted() hands str(type) and FarmModule hands
+	# str(key), and the pattern half of the net covers those. This fails if a
+	# site whose noun IS written as a literal was dropped, which is the fault
+	# TRAPS 139 is about.
+	var reached := 0
+	var unwalked: Array = []
+	var dropped: Array = []
+	for path in _scripts():
+		for site in _plural_sites_in(_source(path)):
+			var second := str((site as Array)[0])
+			if second == "":
+				unwalked.append(path.get_file())
+				continue
+			reached += 1
+			if _literal(second) == "" and second.strip_edges().begins_with("\""):
+				dropped.append("%s: %s" % [path.get_file(), second.strip_edges()])
+	_check(unwalked.is_empty(),
+		"every Readback.plural() call site in scripts/ had its argument list walked to the end (%d reached)%s" % [
+			reached, "" if unwalked.is_empty() else " - UNWALKED IN: %s" % str(unwalked)])
+	_check(dropped.is_empty(),
+		"and every site whose noun is written as a literal became a pair%s" % (
+			"" if dropped.is_empty() else " - DROPPED: %s" % "; ".join(PackedStringArray(dropped))))
+
+
+# --- the argument walk, driven on built sources (TRAPS 139) ---
+#
+# The reader is asked what it can parse by being HANDED a source whose answer
+# is known, which is the only way to ask: a grep for the gap would assert the
+# wording of the pattern and not the capability (TRAPS 6, TRAPS 136).
+#
+# WHICH OF THESE WAS SEEN RED AND WHICH IS A GUARD, said here rather than
+# counted as six readings (TRAPS 6). Run against the `[^,]+` gap committed
+# through 140, this suite read 61, failures=4:
+#
+#   1  FAILED, `[]`                  a comma in the first argument
+#   2  FAILED, `[]`                  the same, with an explicit plural
+#   3  FAILED, `[["room", "rooms"]]` a noun invented out of a string literal
+#   6  FAILED                        a site with no literal was not a site
+#   4  passed under both             GUARD, the flat shape
+#   5  passed under both             GUARD, a call wrapped over three lines
+#
+# THE FIRST DRAFT OF THIS COMMENT CALLED ROW 6 A GUARD and said there was no
+# older reading for it to be red against. It is a measurement: the committed
+# reader does not count a site it cannot turn into a pair, so `size() == 1`
+# fails against it. The correction is recorded here rather than quietly fixed
+# (TRAPS 14). So there are FOUR readings and TWO guards, not three and three.
+func _the_walk_reaches_past_an_argument() -> void:
+	# 1. The shape that is already the style of 43 calls in scripts/ and that
+	#    the character class could not skip: a first argument with a comma in
+	#    it. SEEN RED: `[]`.
+	_check(_pairs_from(_plural_sites_in(
+			"\tvar s := Readback.plural(int(d.get(\"k\", 0)), \"whatnot\")\n")) == [["whatnot", "whatnots"]],
+		"a count written as an expression containing a comma still yields its noun (got %s)" % str(
+			_pairs_from(_plural_sites_in("\tvar s := Readback.plural(int(d.get(\"k\", 0)), \"whatnot\")\n"))))
+
+	# 2. The same hole with an explicit plural, so the THIRD argument is read
+	#    through the same walk. SEEN RED: `[]`.
+	_check(_pairs_from(_plural_sites_in(
+			"\tvar s := Readback.plural(mini(a, b), \"corner or hairpin\", \"corners or hairpins\")\n")) == [
+				["corner or hairpin", "corners or hairpins"]],
+		"and so does its explicit plural (got %s)" % str(_pairs_from(_plural_sites_in(
+			"\tvar s := Readback.plural(mini(a, b), \"corner or hairpin\", \"corners or hairpins\")\n"))))
+
+	# 3. A call NAMED INSIDE A STRING LITERAL is not a call. SEEN RED: the
+	#    committed pattern read `[["room", "rooms"]]` off a sentence, which is
+	#    a noun invented out of prose - TRAPS 63's fault reaching the derived
+	#    class.
+	var quoted := "\tvar s := 'Readback.plural(n, \"room\")'\n"
+	_check(_pairs_from(_plural_sites_in(quoted)) == [],
+		"a Readback.plural() call written inside a string literal is not a call site (got %s)" % str(
+			_pairs_from(_plural_sites_in(quoted))))
+
+	# 4. GUARD. The flat shape every site in scripts/ uses today.
+	_check(_pairs_from(_plural_sites_in("\tvar s := Readback.plural(n, \"room\")\n")) == [["room", "rooms"]],
+		"the flat shape still yields its noun (guard, not a measurement of this fault)")
+
+	# 5. GUARD. A first argument that WRAPS onto the next line, which 140's
+	#    `\\s*` gap already admitted - measured, not assumed, in two
+	#    throwaway copies of scripts/world_store.gd that both read 25 nouns.
+	_check(_pairs_from(_plural_sites_in(
+			"\tvar s := Readback.plural(\n\t\tnames.size(),\n\t\t\"saved world\")\n")) == [
+				["saved world", "saved worlds"]],
+		"a call whose arguments wrap over three lines still yields its noun (guard)")
+
+	# 6. A site whose noun is NOT a literal is still a SITE, counted, and
+	#    yields no pair (TRAPS 132: report what you could not read). SEEN RED:
+	#    the committed reader counts no site there at all. On the real tree
+	#    that difference is 53 sites against 51.
+	var not_a_literal := "\tvar s := Readback.plural(n, str(key))\n"
+	_check(_plural_sites_in(not_a_literal).size() == 1 and _pairs_from(_plural_sites_in(not_a_literal)) == [],
+		"a site whose noun is not a literal is COUNTED as a site and yields no pair (sites %d, pairs %s)" % [
+			_plural_sites_in(not_a_literal).size(), str(_pairs_from(_plural_sites_in(not_a_literal)))])
+
 
 # --- the regex-breadth question, asked of both sweeps at once ---
 #
@@ -548,14 +661,129 @@ func _the_sweeps_breadth() -> void:
 # hairpin" is why this matters: its plural is "corners or hairpins", which no
 # rule about adding an "s" would produce.
 func _plural_nouns() -> Array:
-	var found := {}
-	var call := RegEx.new()
-	call.compile("Readback\\.plural\\([^,]+,\\s*\"([^\"]+)\"(?:\\s*,\\s*\"([^\"]+)\")?")
+	if _nouns_read:
+		return _nouns_cache
+	var sites: Array = []
 	for path in _scripts():
-		for hit in call.search_all(_source(path)):
-			var singular := hit.get_string(1)
-			var many := hit.get_string(2)
-			found[singular] = many if many != "" else singular + "s"
+		sites.append_array(_plural_sites_in(_source(path)))
+	_nouns_cache = _pairs_from(sites)
+	_nouns_read = true
+	return _nouns_cache
+
+
+# A text with every string literal's CONTENTS replaced by "x", so that a comma
+# or a bracket inside a literal is not read as structure. LENGTHS ARE
+# PRESERVED, so an offset found in the masked text indexes the original.
+# `source_scan_test::_masked` is this same function: the convention is reused
+# where it is needed rather than invented a second time (TRAPS 11).
+static func _masked(text: String) -> String:
+	var out := ""
+	var in_string := false
+	var quote := ""
+	var i := 0
+	while i < text.length():
+		var c := text.substr(i, 1)
+		if in_string:
+			if c == "\\" and i + 1 < text.length():
+				out += "xx"
+				i += 2
+				continue
+			if c == quote:
+				out += c
+				in_string = false
+			else:
+				out += "x"
+		elif c == "\"" or c == "'":
+			in_string = true
+			quote = c
+			out += c
+		else:
+			out += c
+		i += 1
+	return out
+
+
+# The top-level arguments of the call whose opening bracket is at `open`, in
+# order, as their own text. Walked by BRACKET DEPTH over `masked` - which the
+# caller masks once, because masking per site is quadratic - and sliced out of
+# `text`, whose offsets are the same.
+#
+# THIS IS A WALK AND NOT A CHARACTER CLASS FOR THE REASON TRAPS 139 RECORDS.
+# What sits between a callee and the argument you want is a whole EXPRESSION,
+# and an expression is allowed to contain a comma: `spec.get("push",
+# DEFAULT_PUSH)` and `mini(a, b)` are the shape of 43 calls in `scripts/`
+# already, counted rather than supposed. A `[^,]+` gap cannot skip one, reads
+# nothing, and says nothing.
+#
+# Empty when the brackets do not close, so an unreadable site is an absent
+# ANSWER and never a wrong one; the caller holds a site with no arguments.
+static func _args_in(text: String, masked: String, open: int) -> Array:
+	var out: Array = []
+	var depth := 0
+	var start := open + 1
+	var i := open
+	while i < masked.length():
+		var c := masked.substr(i, 1)
+		if c == "(" or c == "[" or c == "{":
+			depth += 1
+		elif c == ")" or c == "]" or c == "}":
+			depth -= 1
+			if depth == 0:
+				out.append(text.substr(start, i - start))
+				return out
+		elif c == "," and depth == 1:
+			out.append(text.substr(start, i - start))
+			start = i + 1
+		i += 1
+	return []
+
+
+# The inside of `arg` when it is one plain double-quoted literal, and "" for
+# anything else - `str(key)` and `str(type)`, which no literal can be
+# collected for, and which the pattern half of the net covers instead.
+static func _literal(arg: String) -> String:
+	var t := arg.strip_edges()
+	if t.length() < 2 or not t.begins_with("\"") or not t.ends_with("\""):
+		return ""
+	var inside := t.substr(1, t.length() - 2)
+	if inside.contains("\""):
+		return ""
+	return inside
+
+
+# Every `Readback.plural(` call site in `code`, as [second argument, third
+# argument] in their own text - ONE ENTRY PER SITE, whether or not a literal
+# can be read off it, so a site this reader cannot parse is COUNTED rather
+# than absent (TRAPS 132). A pair of empty strings is a site whose brackets
+# did not close.
+#
+# The needle is searched in MASKED text, so a call named inside a string
+# literal is not a site. `_source()` has already blanked comments.
+static func _plural_sites_in(code: String) -> Array:
+	var masked := _masked(code)
+	var out: Array = []
+	var at := masked.find(CALL)
+	while at >= 0:
+		var args := _args_in(code, masked, at + CALL.length() - 1)
+		out.append([
+			str(args[1]) if args.size() >= 2 else "",
+			str(args[2]) if args.size() >= 3 else "",
+		])
+		at = masked.find(CALL, at + 1)
+	return out
+
+
+# The [singular, plural] pairs those sites hand in, sorted. The plural is the
+# call's own third argument when it has one and singular + "s" when it does
+# not, which is exactly what plural() itself does.
+static func _pairs_from(sites: Array) -> Array:
+	var found := {}
+	for site in sites:
+		var singular := _literal(str((site as Array)[0]))
+		if singular == "":
+			continue
+		var many := _literal(str((site as Array)[1]))
+		found[singular] = many if many != "" else singular + "s"
 	var out: Array = []
 	var keys: Array = found.keys()
 	keys.sort()
